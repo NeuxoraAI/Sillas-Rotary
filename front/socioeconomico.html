@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+
+<html lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Estudio Socioeconómico | ecosistema VIDA UG</title>
+<!-- BEGIN: Tailwind CSS & Plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;600;700&amp;display=swap" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#003366', // UG Dark Blue
+                        secondary: '#eab308', // Yellow for highlight
+                        ug: {
+                            blue: '#003366',
+                            lightBlue: '#0056b3',
+                            gray: '#f8fafc'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['"Public Sans"', 'sans-serif'],
+                    },
+                    borderRadius: {
+                        'custom': '0.5rem',
+                    }
+                }
+            }
+        }
+    </script>
+<!-- END: Tailwind CSS & Plugins -->
+<!-- BEGIN: Custom Styling -->
+<style data-purpose="layout-customizations">
+        body {
+            font-family: 'Public Sans', sans-serif;
+        }
+        input, select, textarea {
+            border-radius: 0.5rem !important;
+        }
+        button {
+            border-radius: 0.5rem !important;
+        }
+        .section-divider {
+            border-top: 2px solid #e2e8f0;
+            margin-top: 3rem;
+            padding-top: 3rem;
+        }
+    </style>
+<style data-purpose="typography">
+        h1, h2, h3 {
+            color: #0f172a;
+            font-weight: 700;
+        }
+    </style>
+<!-- END: Custom Styling -->
+</head>
+<body class="bg-slate-100 min-h-screen py-10 px-4 flex flex-col items-center">
+<main class="max-w-5xl w-full bg-white shadow-2xl rounded-lg overflow-hidden border border-slate-200">
+<!-- BEGIN: Branding Header -->
+<div class="bg-slate-50 px-8 py-3 border-b border-slate-200 flex justify-between items-center">
+<div class="flex items-center gap-2">
+<span class="text-primary font-bold text-xl tracking-tighter">UG <span class="text-slate-400 font-light mx-1">|</span> <span class="text-primary/80 font-medium">ecosistema VIDA UG</span></span>
+</div>
+<div class="flex items-center gap-4">
+<span class="text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Sistema Integral de Gestión</span>
+<button id="btn-cambiar-capturista" type="button" class="text-[10px] uppercase tracking-widest text-red-500 font-semibold border border-red-200 rounded px-2 py-1 hover:bg-red-50 transition-colors">Cambiar capturista</button>
+</div>
+</div>
+<!-- END: Branding Header -->
+<form class="p-8 space-y-12">
+<!-- PART 1: ESTUDIO SOCIOECONÓMICO -->
+<header class="bg-slate-800 text-white p-6 -mx-8 -mt-8 mb-8">
+<h1 class="text-2xl font-bold uppercase tracking-wider text-white">ESTUDIO SOCIOECONÓMICO</h1>
+</header>
+<!-- Datos del Beneficiario -->
+<section data-purpose="beneficiary-data">
+<h2 class="text-xl font-bold mb-6 text-primary flex items-center gap-2 border-b-2 border-primary/10 pb-2">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+                Datos del Beneficiario
+            </h2>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="md:col-span-2 space-y-2">
+<label class="block text-sm font-semibold text-slate-700">Nombre Completo</label>
+<input class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary" name="nombre" type="text"/>
+</div>
+<div class="space-y-2">
+<label class="block text-sm font-semibold text-slate-700">Fecha de Nacimiento</label>
+<input class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary" name="fecha_nacimiento" type="date"/>
+</div>
+<div class="space-y-2">
+<label class="block text-sm font-semibold text-slate-700">Diagnóstico Médico</label>
+<input class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary" name="diagnostico" type="text"/>
+</div>
+<div class="space-y-2">
+<label class="block text-sm font-semibold text-slate-700">Domicilio (Calle y número)</label>
+<input class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary" name="calle" type="text"/>
+</div>
+<div class="space-y-2">
+<label class="block text-sm font-semibold text-slate-700">Colonia</label>
+<input class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary" name="colonia" type="text"/>
+</div>
+<div class="space-y-2">
+<label class="block text-sm font-semibold text-slate-700">Ciudad</label>
+<input class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary" name="ciudad" type="text"/>
+</div>
+<div class="space-y-2">
+<label class="block text-sm font-semibold text-slate-700">Teléfonos de contacto</label>
+<input class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary" name="telefonos" type="text"/>
+</div>
+</div>
+</section>
+<!-- Datos de los Tutores -->
+<section class="space-y-8" data-purpose="tutor-data">
+<h2 class="text-xl font-bold text-primary flex items-center gap-2 border-b-2 border-primary/10 pb-2">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+                Datos de los Tutores
+            </h2>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+<!-- Tutor 1 -->
+<div class="bg-slate-50 p-6 rounded-lg border border-slate-200 space-y-4">
+<h3 class="font-bold text-slate-800 border-b border-slate-200 pb-2">Tutor 1</h3>
+<div class="space-y-3">
+<div><label class="text-xs font-bold text-slate-500 uppercase">Nombre</label><input class="w-full mt-1 border-slate-300" name="tutor1_nombre" type="text"/></div>
+<div class="grid grid-cols-2 gap-4">
+<div><label class="text-xs font-bold text-slate-500 uppercase">Edad</label><input class="w-full mt-1 border-slate-300" name="tutor1_edad" type="number"/></div>
+<div><label class="text-xs font-bold text-slate-500 uppercase">Estudios</label><input class="w-full mt-1 border-slate-300" name="tutor1_nivel_estudios" type="text"/></div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div><label class="text-xs font-bold text-slate-500 uppercase">Edo. Civil</label><input class="w-full mt-1 border-slate-300" name="tutor1_estado_civil" type="text"/></div>
+<div><label class="text-xs font-bold text-slate-500 uppercase">No. Hijos</label><input class="w-full mt-1 border-slate-300" name="tutor1_num_hijos" type="number"/></div>
+</div>
+<div><label class="text-xs font-bold text-slate-500 uppercase">Vivienda</label>
+<select class="w-full mt-1 border-slate-300" name="tutor1_vivienda"><option>Propia</option><option>Rentada</option></select>
+</div>
+<div><label class="text-xs font-bold text-slate-500 uppercase">Fuente Empleo</label><input class="w-full mt-1 border-slate-300" name="tutor1_fuente_empleo" type="text"/></div>
+<div class="grid grid-cols-2 gap-4">
+<div><label class="text-xs font-bold text-slate-500 uppercase">Antigüedad</label><input class="w-full mt-1 border-slate-300" name="tutor1_antiguedad" type="text"/></div>
+<div><label class="text-xs font-bold text-slate-500 uppercase">Ingreso Mensual</label><input class="w-full mt-1 border-slate-300" name="tutor1_ingreso_mensual" type="text"/></div>
+</div>
+<div class="flex gap-6 mt-4">
+<label class="inline-flex items-center"><input class="text-primary h-4 w-4" name="tutor1_imss" type="checkbox"/><span class="ml-2 text-sm">IMSS</span></label>
+<label class="inline-flex items-center"><input class="text-primary h-4 w-4" name="tutor1_infonavit" type="checkbox"/><span class="ml-2 text-sm">INFONAVIT</span></label>
+</div>
+</div>
+</div>
+<!-- Tutor 2 -->
+<div class="bg-slate-50 p-6 rounded-lg border border-slate-200 space-y-4">
+<h3 class="font-bold text-slate-800 border-b border-slate-200 pb-2">Tutor 2</h3>
+<div class="space-y-3">
+<div><label class="text-xs font-bold text-slate-500 uppercase">Nombre</label><input class="w-full mt-1 border-slate-300" name="tutor2_nombre" type="text"/></div>
+<div class="grid grid-cols-2 gap-4">
+<div><label class="text-xs font-bold text-slate-500 uppercase">Edad</label><input class="w-full mt-1 border-slate-300" name="tutor2_edad" type="number"/></div>
+<div><label class="text-xs font-bold text-slate-500 uppercase">Estudios</label><input class="w-full mt-1 border-slate-300" name="tutor2_nivel_estudios" type="text"/></div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div><label class="text-xs font-bold text-slate-500 uppercase">Edo. Civil</label><input class="w-full mt-1 border-slate-300" name="tutor2_estado_civil" type="text"/></div>
+<div><label class="text-xs font-bold text-slate-500 uppercase">No. Hijos</label><input class="w-full mt-1 border-slate-300" name="tutor2_num_hijos" type="number"/></div>
+</div>
+<div><label class="text-xs font-bold text-slate-500 uppercase">Vivienda</label>
+<select class="w-full mt-1 border-slate-300" name="tutor2_vivienda"><option>Propia</option><option>Rentada</option></select>
+</div>
+<div><label class="text-xs font-bold text-slate-500 uppercase">Fuente Empleo</label><input class="w-full mt-1 border-slate-300" name="tutor2_fuente_empleo" type="text"/></div>
+<div class="grid grid-cols-2 gap-4">
+<div><label class="text-xs font-bold text-slate-500 uppercase">Antigüedad</label><input class="w-full mt-1 border-slate-300" name="tutor2_antiguedad" type="text"/></div>
+<div><label class="text-xs font-bold text-slate-500 uppercase">Ingreso Mensual</label><input class="w-full mt-1 border-slate-300" name="tutor2_ingreso_mensual" type="text"/></div>
+</div>
+<div class="flex gap-6 mt-4">
+<label class="inline-flex items-center"><input class="text-primary h-4 w-4" name="tutor2_imss" type="checkbox"/><span class="ml-2 text-sm">IMSS</span></label>
+<label class="inline-flex items-center"><input class="text-primary h-4 w-4" name="tutor2_infonavit" type="checkbox"/><span class="ml-2 text-sm">INFONAVIT</span></label>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Otros y Cierre -->
+<section data-purpose="socioeconomic-closing">
+<h2 class="text-xl font-bold mb-6 text-primary border-b-2 border-primary/10 pb-2">Otros y Cierre</h2>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="space-y-2">
+<label class="block text-sm font-semibold text-slate-700">Otras fuentes de ingresos</label>
+<input class="w-full border-slate-300" name="otras_fuentes_ingreso" type="text"/>
+</div>
+<div class="space-y-2">
+<label class="block text-sm font-semibold text-slate-700">Monto ($)</label>
+<input class="w-full border-slate-300" name="monto_otras_fuentes" placeholder="0.00" type="text"/>
+</div>
+<div class="space-y-2">
+<label class="block text-sm font-semibold text-slate-700">¿El paciente ha tenido silla previamente?</label>
+<select class="w-full border-slate-300" name="silla_previa"><option>No</option><option>Sí</option></select>
+</div>
+<div class="space-y-2">
+<label class="block text-sm font-semibold text-slate-700">¿Cómo la obtuvo?</label>
+<input class="w-full border-slate-300" name="como_obtuvo_silla" type="text"/>
+</div>
+<div class="space-y-2">
+<label class="block text-sm font-semibold text-slate-700">Elaboró el estudio</label>
+<input class="w-full border-slate-300" name="elaboro_estudio" type="text"/>
+</div>
+<div class="space-y-2">
+<label class="block text-sm font-semibold text-slate-700">Fecha del estudio</label>
+<input class="w-full border-slate-300" name="fecha_estudio" type="date"/>
+</div>
+<div class="md:col-span-2 space-y-2">
+<label class="block text-sm font-semibold text-slate-700">Sede</label>
+<input class="w-full border-slate-300" name="sede" type="text"/>
+</div>
+</div>
+</section>
+<!-- Footer Actions -->
+<footer class="pt-10 border-t border-slate-200">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+<div class="flex items-center gap-4">
+<div class="bg-blue-50 p-3 rounded-full">
+<span class="text-primary font-black">UG</span>
+</div>
+<div>
+<p class="text-xs font-bold text-slate-400 tracking-widest uppercase">Estatus de Solicitud</p>
+<p class="text-sm font-semibold text-slate-700">Borrador de Estudio Socioeconómico</p>
+</div>
+</div>
+<div class="flex flex-col sm:flex-row gap-4">
+<button class="px-6 py-3 border border-slate-300 text-slate-700 font-bold hover:bg-slate-50 transition-all uppercase text-sm tracking-wide" type="button">
+                        Guardar Borrador
+                    </button>
+<button class="px-10 py-3 bg-secondary text-slate-900 font-bold shadow-lg hover:bg-yellow-500 transition-all uppercase text-sm tracking-wide active:scale-95" type="submit">
+                        GUARDAR ESTUDIO
+                    </button>
+</div>
+</div>
+<p id="error-msg" class="hidden text-red-500 text-sm mt-2"></p>
+<!-- UG Footer Branding -->
+<div class="mt-12 pt-6 border-t border-slate-100 flex flex-col items-center gap-2">
+<span class="text-[11px] font-bold text-slate-400 tracking-[0.2em] uppercase text-center">DESARROLLADO POR C-MED</span>
+<span class="text-[10px] text-slate-300 font-medium uppercase">Plataforma de Control Técnica v2.0 - ecosistema VIDA UG</span>
+</div>
+</footer>
+</form>
+</main>
+<script data-purpose="form-logic">
+    // Auth guard
+    (function () {
+        const session = localStorage.getItem('session');
+        if (!session) {
+            window.location.href = 'login.html';
+        }
+    })();
+
+    // Cambiar capturista
+    document.getElementById('btn-cambiar-capturista').addEventListener('click', function () {
+        if (confirm('¿Cerrar sesión y cambiar de capturista?')) {
+            localStorage.removeItem('session');
+            localStorage.removeItem('beneficiario_id');
+            window.location.href = 'login.html';
+        }
+    });
+
+    function getFormData(status) {
+        const f = document.querySelector('form');
+        const fd = new FormData(f);
+        const get = (name) => fd.get(name) || '';
+
+        const session = JSON.parse(localStorage.getItem('session'));
+
+        const toIntOrNull = (v) => { const n = parseInt(v, 10); return isNaN(n) ? null : n; };
+        const toFloatOrNull = (v) => { const n = parseFloat(v); return isNaN(n) ? null : n; };
+
+        const tutores = [];
+        tutores.push({
+            numero_tutor: 1,
+            nombre: get('tutor1_nombre'),
+            edad: toIntOrNull(get('tutor1_edad')),
+            nivel_estudios: get('tutor1_nivel_estudios'),
+            estado_civil: get('tutor1_estado_civil'),
+            num_hijos: toIntOrNull(get('tutor1_num_hijos')) || 0,
+            vivienda: get('tutor1_vivienda'),
+            fuente_empleo: get('tutor1_fuente_empleo'),
+            antiguedad: get('tutor1_antiguedad'),
+            ingreso_mensual: toFloatOrNull(get('tutor1_ingreso_mensual')),
+            tiene_imss: f.querySelector('[name="tutor1_imss"]').checked,
+            tiene_infonavit: f.querySelector('[name="tutor1_infonavit"]').checked,
+        });
+
+        const tutor2Nombre = get('tutor2_nombre').trim();
+        if (tutor2Nombre) {
+            tutores.push({
+                numero_tutor: 2,
+                nombre: tutor2Nombre,
+                edad: toIntOrNull(get('tutor2_edad')),
+                nivel_estudios: get('tutor2_nivel_estudios'),
+                estado_civil: get('tutor2_estado_civil'),
+                num_hijos: toIntOrNull(get('tutor2_num_hijos')) || 0,
+                vivienda: get('tutor2_vivienda'),
+                fuente_empleo: get('tutor2_fuente_empleo'),
+                antiguedad: get('tutor2_antiguedad'),
+                ingreso_mensual: toFloatOrNull(get('tutor2_ingreso_mensual')),
+                tiene_imss: f.querySelector('[name="tutor2_imss"]').checked,
+                tiene_infonavit: f.querySelector('[name="tutor2_infonavit"]').checked,
+            });
+        }
+
+        return {
+            capturista_id: session.capturista_id,
+            beneficiario: {
+                nombre: get('nombre'),
+                fecha_nacimiento: get('fecha_nacimiento'),
+                diagnostico: get('diagnostico'),
+                calle: get('calle'),
+                colonia: get('colonia'),
+                ciudad: get('ciudad'),
+                telefonos: get('telefonos'),
+            },
+            tutores,
+            estudio: {
+                otras_fuentes_ingreso: get('otras_fuentes_ingreso'),
+                monto_otras_fuentes: toFloatOrNull(get('monto_otras_fuentes')),
+                tuvo_silla_previa: get('silla_previa') === 'Sí',
+                como_obtuvo_silla: get('como_obtuvo_silla'),
+                elaboro_estudio: get('elaboro_estudio'),
+                fecha_estudio: get('fecha_estudio'),
+                sede: get('sede'),
+                status,
+            }
+        };
+    }
+
+    async function submitEstudio(status) {
+        const errorEl = document.getElementById('error-msg');
+        errorEl.classList.add('hidden');
+        errorEl.textContent = '';
+
+        const payload = getFormData(status);
+
+        try {
+            const res = await fetch('http://localhost:8001/api/estudios', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                errorEl.textContent = data.detail || 'Error al guardar el estudio. Intente de nuevo.';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+
+            const data = await res.json();
+            localStorage.setItem('beneficiario_id', data.beneficiario_id);
+            window.location.href = 'tecnica.html';
+        } catch (err) {
+            errorEl.textContent = 'No se pudo conectar con el servidor.';
+            errorEl.classList.remove('hidden');
+        }
+    }
+
+    // Guardar Borrador button
+    document.querySelector('button[type="button"]').addEventListener('click', () => {
+        submitEstudio('borrador');
+    });
+
+    // Guardar Estudio (submit)
+    document.querySelector('form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        submitEstudio('completo');
+    });
+</script>
+</body></html>

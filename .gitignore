@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+backend/venv/
+venv/
+.venv/
+
+# Environment variables
+.env
+*.env
+
+# Database (SQLite dev file — no commitear datos)
+backend/sillas.db
+
+# Uploads (archivos de usuarios)
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
