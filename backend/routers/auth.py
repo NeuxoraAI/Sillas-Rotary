@@ -26,12 +26,12 @@ class LoginResponse(BaseModel):
 @router.post("/login", response_model=LoginResponse)
 def login(body: LoginRequest) -> LoginResponse:
     with get_db() as conn:
-        conn.execute(
-            "INSERT OR IGNORE INTO capturistas(nombre) VALUES (?)",
-            (body.nombre,),
-        )
         row = conn.execute(
-            "SELECT id, nombre FROM capturistas WHERE nombre = ?",
+            """
+            INSERT INTO capturistas(nombre) VALUES (%s)
+            ON CONFLICT(nombre) DO UPDATE SET nombre=excluded.nombre
+            RETURNING id, nombre
+            """,
             (body.nombre,),
         ).fetchone()
 

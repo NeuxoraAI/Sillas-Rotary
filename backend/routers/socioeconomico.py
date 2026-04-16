@@ -108,11 +108,12 @@ def crear_estudio(body: EstudioCreateRequest) -> EstudioCreateResponse:
 
     with get_db() as conn:
         # 1. INSERT beneficiario
-        cur = conn.execute(
+        beneficiario_id = conn.execute(
             """
             INSERT INTO beneficiarios
                 (nombre, fecha_nacimiento, diagnostico, calle, colonia, ciudad, telefonos)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            RETURNING id
             """,
             (
                 body.beneficiario.nombre,
@@ -123,8 +124,7 @@ def crear_estudio(body: EstudioCreateRequest) -> EstudioCreateResponse:
                 body.beneficiario.ciudad,
                 body.beneficiario.telefonos,
             ),
-        )
-        beneficiario_id = cur.lastrowid
+        ).fetchone()["id"]
 
         # 2. INSERT tutores
         for tutor in body.tutores:
@@ -134,20 +134,20 @@ def crear_estudio(body: EstudioCreateRequest) -> EstudioCreateResponse:
                     (beneficiario_id, numero_tutor, nombre, edad, nivel_estudios,
                      estado_civil, num_hijos, vivienda, fuente_empleo, antiguedad,
                      ingreso_mensual, tiene_imss, tiene_infonavit)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """,
                 (
                     beneficiario_id,
                     tutor.numero_tutor,
                     tutor.nombre,
-                    tutor.edad,                          # NULL si no se ingresó
+                    tutor.edad,
                     tutor.nivel_estudios or None,
                     tutor.estado_civil or None,
                     tutor.num_hijos if tutor.num_hijos is not None else 0,
-                    tutor.vivienda or None,              # NULL si no se seleccionó
+                    tutor.vivienda or None,
                     tutor.fuente_empleo or None,
                     tutor.antiguedad or None,
-                    tutor.ingreso_mensual,               # NULL si no se ingresó
+                    tutor.ingreso_mensual,
                     1 if tutor.tiene_imss else 0,
                     1 if tutor.tiene_infonavit else 0,
                 ),
@@ -155,19 +155,20 @@ def crear_estudio(body: EstudioCreateRequest) -> EstudioCreateResponse:
 
         # 3. INSERT estudio
         estudio = body.estudio
-        cur = conn.execute(
+        estudio_id = conn.execute(
             """
             INSERT INTO estudios_socioeconomicos
                 (beneficiario_id, capturista_id, otras_fuentes_ingreso,
                  monto_otras_fuentes, tuvo_silla_previa, como_obtuvo_silla,
                  elaboro_estudio, fecha_estudio, sede, status)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            RETURNING id
             """,
             (
                 beneficiario_id,
                 body.capturista_id,
                 estudio.otras_fuentes_ingreso,
-                estudio.monto_otras_fuentes if estudio.monto_otras_fuentes is not None else 0.0,
+                estudio.monto_otras_fuentes,
                 1 if estudio.tuvo_silla_previa else 0,
                 estudio.como_obtuvo_silla,
                 estudio.elaboro_estudio,
@@ -175,8 +176,7 @@ def crear_estudio(body: EstudioCreateRequest) -> EstudioCreateResponse:
                 estudio.sede,
                 estudio.status,
             ),
-        )
-        estudio_id = cur.lastrowid
+        ).fetchone()["id"]
 
     return EstudioCreateResponse(
         estudio_id=estudio_id,
@@ -189,27 +189,25 @@ def crear_estudio(body: EstudioCreateRequest) -> EstudioCreateResponse:
 def obtener_estudio(id: int) -> dict:
     with get_db() as conn:
         estudio_row = conn.execute(
-            "SELECT * FROM estudios_socioeconomicos WHERE id = ?", (id,)
+            "SELECT * FROM estudios_socioeconomicos WHERE id = %s", (id,)
         ).fetchone()
 
         if estudio_row is None:
             raise HTTPException(status_code=404, detail="Estudio no encontrado")
 
         beneficiario_row = conn.execute(
-            "SELECT * FROM beneficiarios WHERE id = ?",
+            "SELECT * FROM beneficiarios WHERE id = %s",
             (estudio_row["beneficiario_id"],),
         ).fetchone()
 
         tutores_rows = conn.execute(
-            "SELECT * FROM tutores WHERE beneficiario_id = ? ORDER BY numero_tutor",
+            "SELECT * FROM tutores WHERE beneficiario_id = %s ORDER BY numero_tutor",
             (estudio_row["beneficiario_id"],),
         ).fetchall()
 
-    beneficiario = dict(beneficiario_row)
-    tutores = [dict(t) for t in tutores_rows]
     result = dict(estudio_row)
-    result["beneficiario"] = beneficiario
-    result["tutores"] = tutores
+    result["beneficiario"] = dict(beneficiario_row)
+    result["tutores"] = [dict(t) for t in tutores_rows]
 
     return result
 
@@ -218,7 +216,7 @@ def obtener_estudio(id: int) -> dict:
 def actualizar_estudio(id: int, body: EstudioUpdateRequest) -> EstudioUpdateResponse:
     with get_db() as conn:
         existing = conn.execute(
-            "SELECT id FROM estudios_socioeconomicos WHERE id = ?", (id,)
+            "SELECT id FROM estudios_socioeconomicos WHERE id = %s", (id,)
         ).fetchone()
 
         if existing is None:
@@ -227,37 +225,36 @@ def actualizar_estudio(id: int, body: EstudioUpdateRequest) -> EstudioUpdateResp
         fields = body.model_dump(exclude_none=True)
         if not fields:
             row = conn.execute(
-                "SELECT id, status, updated_at FROM estudios_socioeconomicos WHERE id = ?",
+                "SELECT id, status, updated_at FROM estudios_socioeconomicos WHERE id = %s",
                 (id,),
             ).fetchone()
             return EstudioUpdateResponse(
                 estudio_id=row["id"],
                 status=row["status"],
-                updated_at=row["updated_at"],
+                updated_at=row["updated_at"].isoformat(),
             )
 
-        # Convert bool to int for SQLite
         if "tuvo_silla_previa" in fields:
             fields["tuvo_silla_previa"] = 1 if fields["tuvo_silla_previa"] else 0
 
-        set_clause = ", ".join(f"{k} = ?" for k in fields)
+        set_clause = ", ".join(f"{k} = %s" for k in fields)
         values = list(fields.values())
         values.append(id)
 
         conn.execute(
-            f"UPDATE estudios_socioeconomicos SET {set_clause}, updated_at = datetime('now') WHERE id = ?",
+            f"UPDATE estudios_socioeconomicos SET {set_clause}, updated_at = NOW() WHERE id = %s",
             values,
         )
 
         row = conn.execute(
-            "SELECT id, status, updated_at FROM estudios_socioeconomicos WHERE id = ?",
+            "SELECT id, status, updated_at FROM estudios_socioeconomicos WHERE id = %s",
             (id,),
         ).fetchone()
 
     return EstudioUpdateResponse(
         estudio_id=row["id"],
         status=row["status"],
-        updated_at=row["updated_at"],
+        updated_at=row["updated_at"].isoformat(),
     )
 
 
@@ -267,21 +264,10 @@ def actualizar_estudio(id: int, body: EstudioUpdateRequest) -> EstudioUpdateResp
 
 def _validar_tutores(tutores: list[TutorIn]) -> None:
     if not tutores:
-        raise HTTPException(
-            status_code=400,
-            detail="Se requiere al menos un tutor",
-            # FastAPI HTTPException does not support extra fields natively,
-            # but we follow the spec's shape for 400 responses where possible.
-        )
+        raise HTTPException(status_code=400, detail="Se requiere al menos un tutor")
     numeros = [t.numero_tutor for t in tutores]
     if len(numeros) != len(set(numeros)):
-        raise HTTPException(
-            status_code=400,
-            detail="No se pueden repetir los números de tutor",
-        )
+        raise HTTPException(status_code=400, detail="No se pueden repetir los números de tutor")
     for num in numeros:
         if num not in (1, 2):
-            raise HTTPException(
-                status_code=400,
-                detail=f"numero_tutor inválido: {num}",
-            )
+            raise HTTPException(status_code=400, detail=f"numero_tutor inválido: {num}")

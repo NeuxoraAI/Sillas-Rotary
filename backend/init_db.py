@@ -1,17 +1,20 @@
-import sqlite3
+import os
+
+import psycopg2
+from supabase import create_client
 
 
 DDL = [
     """
     CREATE TABLE IF NOT EXISTS capturistas (
-        id              INTEGER PRIMARY KEY AUTOINCREMENT,
-        nombre          TEXT    NOT NULL CHECK(length(nombre) >= 2),
-        fecha_registro  TEXT    NOT NULL DEFAULT (date('now'))
+        id              SERIAL PRIMARY KEY,
+        nombre          TEXT    NOT NULL CHECK(length(nombre) >= 2) UNIQUE,
+        fecha_registro  DATE    NOT NULL DEFAULT CURRENT_DATE
     )
     """,
     """
     CREATE TABLE IF NOT EXISTS beneficiarios (
-        id                INTEGER PRIMARY KEY AUTOINCREMENT,
+        id                SERIAL PRIMARY KEY,
         nombre            TEXT NOT NULL,
         fecha_nacimiento  TEXT NOT NULL,
         diagnostico       TEXT NOT NULL,
@@ -19,12 +22,12 @@ DDL = [
         colonia           TEXT NOT NULL,
         ciudad            TEXT NOT NULL,
         telefonos         TEXT NOT NULL,
-        created_at        TEXT NOT NULL DEFAULT (datetime('now'))
+        created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
     """,
     """
     CREATE TABLE IF NOT EXISTS tutores (
-        id               INTEGER PRIMARY KEY AUTOINCREMENT,
+        id               SERIAL PRIMARY KEY,
         beneficiario_id  INTEGER NOT NULL REFERENCES beneficiarios(id) ON DELETE CASCADE,
         numero_tutor     INTEGER NOT NULL CHECK(numero_tutor IN (1, 2)),
         nombre           TEXT    NOT NULL,
@@ -43,24 +46,24 @@ DDL = [
     """,
     """
     CREATE TABLE IF NOT EXISTS estudios_socioeconomicos (
-        id                      INTEGER PRIMARY KEY AUTOINCREMENT,
+        id                      SERIAL PRIMARY KEY,
         beneficiario_id         INTEGER NOT NULL REFERENCES beneficiarios(id) ON DELETE RESTRICT,
         capturista_id           INTEGER NOT NULL REFERENCES capturistas(id) ON DELETE RESTRICT,
         otras_fuentes_ingreso   TEXT,
-        monto_otras_fuentes     REAL    NOT NULL DEFAULT 0,
+        monto_otras_fuentes     REAL,
         tuvo_silla_previa       INTEGER CHECK(tuvo_silla_previa IN (0, 1)),
         como_obtuvo_silla       TEXT,
         elaboro_estudio         TEXT    NOT NULL,
         fecha_estudio           TEXT    NOT NULL,
         sede                    TEXT    NOT NULL,
         status                  TEXT    NOT NULL DEFAULT 'borrador' CHECK(status IN ('borrador', 'completo')),
-        created_at              TEXT    NOT NULL DEFAULT (datetime('now')),
-        updated_at              TEXT    NOT NULL DEFAULT (datetime('now'))
+        created_at              TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at              TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
     """,
     """
     CREATE TABLE IF NOT EXISTS solicitudes_tecnicas (
-        id                          INTEGER PRIMARY KEY AUTOINCREMENT,
+        id                          SERIAL PRIMARY KEY,
         beneficiario_id             INTEGER NOT NULL REFERENCES beneficiarios(id) ON DELETE RESTRICT,
         capturista_id               INTEGER NOT NULL REFERENCES capturistas(id) ON DELETE RESTRICT,
         entorno                     TEXT    NOT NULL,
@@ -79,11 +82,10 @@ DDL = [
         prioridad                   TEXT    CHECK(prioridad IS NULL OR prioridad IN ('Alta', 'Media')),
         justificacion               TEXT,
         status                      TEXT    NOT NULL DEFAULT 'borrador' CHECK(status IN ('borrador', 'completo')),
-        created_at                  TEXT    NOT NULL DEFAULT (datetime('now')),
-        updated_at                  TEXT    NOT NULL DEFAULT (datetime('now'))
+        created_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
     """,
-    # Indexes on FK columns
     "CREATE INDEX IF NOT EXISTS idx_tutores_beneficiario ON tutores(beneficiario_id)",
     "CREATE INDEX IF NOT EXISTS idx_estudios_beneficiario ON estudios_socioeconomicos(beneficiario_id)",
     "CREATE INDEX IF NOT EXISTS idx_estudios_capturista ON estudios_socioeconomicos(capturista_id)",
@@ -93,15 +95,35 @@ DDL = [
 
 
 def init() -> None:
-    conn = sqlite3.connect("sillas.db")
+    conn = psycopg2.connect(
+        host=os.environ["DB_HOST"],
+        port=int(os.environ.get("DB_PORT", "5432")),
+        dbname=os.environ.get("DB_NAME", "postgres"),
+        user=os.environ.get("DB_USER", "postgres"),
+        password=os.environ["DB_PASSWORD"],
+        sslmode="require",
+    )
     try:
-        conn.execute("PRAGMA foreign_keys = ON")
-        conn.execute("PRAGMA journal_mode = WAL")
-        for statement in DDL:
-            conn.execute(statement)
+        with conn.cursor() as cur:
+            for statement in DDL:
+                cur.execute(statement)
         conn.commit()
     finally:
         conn.close()
+
+    _init_storage()
+
+
+def _init_storage() -> None:
+    client = create_client(
+        os.environ["SUPABASE_URL"],
+        os.environ["SUPABASE_SERVICE_KEY"],
+    )
+    try:
+        client.storage.create_bucket("fotos-tecnica", options={"public": True})
+        print("Storage bucket 'fotos-tecnica' created.")
+    except Exception:
+        print("Storage bucket 'fotos-tecnica' already exists — skipping.")
 
 
 if __name__ == "__main__":
