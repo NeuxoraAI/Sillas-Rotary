@@ -1,10 +1,14 @@
 {
   "version": 2,
-  "functions": {
-    "api/index.py": {
-      "includeFiles": "front/**"
+  "builds": [
+    {
+      "src": "api/index.py",
+      "use": "@vercel/python",
+      "config": {
+        "includeFiles": "front/**"
+      }
     }
-  },
+  ],
   "rewrites": [
     {
       "source": "/(.*)",
