@@ -1,189 +1,269 @@
 <!DOCTYPE html>
-
-<html lang="es"><head>
+<html lang="es">
+<head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Acceso | Ecosistema VIDA UG</title>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block" rel="stylesheet"/>
 <script id="tailwind-config">
-        tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    colors: {
-                        "primary": "#ec5b13",
-                        "ug-blue": "#1e3a8a",
-                        "ug-yellow": "#facc15",
-                        "ug-yellow-light": "#fef08a",
-                        "background-light": "#ffffff",
-                        "background-dark": "#1a1a1a",
-                    },
-                    fontFamily: {
-                        "display": ["Public Sans"]
-                    },
-                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
-                },
-            },
-        }
-    </script>
-<style>
-        body {
-            font-family: 'Public Sans', sans-serif;
-        }
-        .backdrop-blur-md {
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-        }
-    </style>
-</head>
-<body class="bg-background-light dark:bg-background-dark font-display">
-<div class="relative min-h-screen flex flex-col items-center overflow-hidden">
-<!-- Top Blue Header Bar -->
-<header class="w-full bg-ug-blue py-8 px-6 shadow-lg z-20">
-<div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-<!-- Logos centrados -->
-<div class="flex-1 flex items-center justify-center gap-8 md:gap-14">
-<!-- Logo 1: UG -->
-<div class="flex flex-col items-center gap-2 group">
-<div class="w-28 h-28 bg-white rounded-2xl flex items-center justify-center shadow-lg overflow-hidden transition-all duration-300 group-hover:scale-105 group-hover:shadow-2xl group-hover:shadow-white/20">
-<img alt="Universidad de Guanajuato" class="w-5/6 h-5/6 object-contain" src="assets/Logo_ug.png"/>
-</div>
-<span class="text-white/60 text-[10px] uppercase tracking-widest font-semibold">Univ. Guanajuato</span>
-</div>
-<div class="w-px h-20 bg-white/20 hidden sm:block"></div>
-<!-- Logo 2: Rotary -->
-<div class="flex flex-col items-center gap-2 group">
-<div class="w-28 h-28 bg-white rounded-2xl flex items-center justify-center shadow-lg overflow-hidden transition-all duration-300 group-hover:scale-105 group-hover:shadow-2xl group-hover:shadow-white/20">
-<img alt="Rotary 200" class="w-5/6 h-5/6 object-contain" src="assets/Logo_rotary_200.png"/>
-</div>
-<span class="text-white/60 text-[10px] uppercase tracking-widest font-semibold">Rotary 200</span>
-</div>
-<div class="w-px h-20 bg-white/20 hidden sm:block"></div>
-<!-- Logo 3: VIDA UG -->
-<div class="flex flex-col items-center gap-2 group">
-<div class="w-28 h-28 bg-white rounded-2xl flex items-center justify-center shadow-lg overflow-hidden transition-all duration-300 group-hover:scale-105 group-hover:shadow-2xl group-hover:shadow-white/20">
-<img alt="Ecosistema VIDA UG" class="w-5/6 h-5/6 object-contain" src="assets/logo_vida_ug.png"/>
-</div>
-<span class="text-white/60 text-[10px] uppercase tracking-widest font-semibold">Ecosistema VIDA</span>
-</div>
-</div>
-<!-- Versión (derecha) -->
-<div class="flex flex-col items-center md:items-end text-white/60 shrink-0">
-<span class="text-[10px] uppercase tracking-[0.2em] font-bold">Versión 6.2</span>
-<span class="text-xs font-medium">Estado: Operativo</span>
-</div>
-</div>
-</header>
-<!-- Main Login Card -->
-<main class="flex-1 flex items-center justify-center px-4 py-12 w-full z-10">
-<div class="w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.1)] p-8 border border-slate-100 dark:border-slate-800 flex flex-col items-center">
-<div class="mb-8 text-center">
-<div class="w-16 h-16 rounded-full flex items-center justify-center mb-4 mx-auto overflow-hidden">
-<img src="assets/iconografia_silla.png" alt="Silla de ruedas" class="w-full h-full object-contain"/>
-</div>
-<h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-2">Acceso al Sistema</h1>
-<p class="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
-                    Captura | Estudio Socioeconómico + Solicitud de Silla
-                </p>
-</div>
-<div class="w-full space-y-6">
-<div class="space-y-2">
-<label class="block text-sm font-semibold text-slate-700 dark:text-slate-300" for="capturista">
-                        Nombre del Capturista
-                    </label>
-<div class="relative">
-<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl">person</span>
-<input class="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl focus:border-primary focus:ring-0 transition-colors text-slate-900 dark:text-white placeholder:text-slate-400" id="capturista" name="capturista" placeholder="Ingrese su nombre completo" type="text"/>
-</div>
-</div>
-<!-- Translucent Blue Button Style from Screen 5 -->
-<button id="btn-login" class="w-full py-4 bg-ug-blue/70 backdrop-blur-md hover:bg-ug-blue/80 text-white font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 group border border-white/20">
-<span>COMENZAR REGISTRO</span>
-<span class="material-symbols-outlined text-xl group-hover:translate-x-1 transition-transform">arrow_forward</span>
-</button>
-<p id="error-login" class="hidden text-red-500 text-sm text-center mt-2"></p>
-<div class="pt-4 flex flex-col gap-3">
-<div class="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-xs justify-center">
-<span class="material-symbols-outlined text-sm">info</span>
-<span>Este acceso no requiere contraseña</span>
-</div>
-</div>
-</div>
-</div>
-</main>
-<!-- Unified Gradient Footer Section -->
-<footer class="w-full bg-gradient-to-b from-ug-yellow via-ug-yellow to-ug-yellow-light z-10">
-<div class="py-5 px-6">
-<div class="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
-<!-- Crédito NEUXORA -->
-<div class="flex items-center gap-2 text-ug-blue/70">
-<span class="material-symbols-outlined text-base">code</span>
-<span class="text-xs font-medium">Desarrollado por <strong class="text-ug-blue font-bold">NEUXORA - C-MED</strong> · León, Gto.</span>
-</div>
-<!-- Links -->
-<div class="flex gap-6 text-[10px] font-bold uppercase tracking-wider text-ug-blue/60">
-<a class="hover:text-ug-blue transition-colors" href="#">Aviso de Privacidad</a>
-<a class="hover:text-ug-blue transition-colors" href="https://andreraz.github.io/" target="_blank" rel="noopener noreferrer">Soporte Técnico</a>
-</div>
-</div>
-</div>
-</footer>
-<!-- Subtle Background Accent -->
-<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full pointer-events-none opacity-[0.03]">
-<svg class="w-full h-full" preserveaspectratio="none" viewbox="0 0 100 100">
-<path class="text-slate-900" d="M0 100 L100 0" fill="none" stroke="currentColor" stroke-width="0.1"></path>
-</svg>
-</div>
-</div>
-<script>
-    // Si ya hay sesión activa, pre-llenar el nombre para agilizar
-    (function () {
-        const raw = localStorage.getItem('session');
-        if (!raw) return;
-        try {
-            const session = JSON.parse(raw);
-            const input = document.getElementById('capturista');
-            if (session.nombre) input.value = session.nombre;
-        } catch (_) {}
-    })();
-
-    document.getElementById('btn-login').addEventListener('click', async function () {
-        const errorEl = document.getElementById('error-login');
-        const input = document.getElementById('capturista');
-        const nombre = input.value.trim();
-
-        errorEl.classList.add('hidden');
-        errorEl.textContent = '';
-
-        if (nombre.length < 2) {
-            errorEl.textContent = 'El nombre debe tener al menos 2 caracteres.';
-            errorEl.classList.remove('hidden');
-            return;
-        }
-
-        try {
-            const res = await fetch('/api/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ nombre })
-            });
-
-            if (!res.ok) {
-                const data = await res.json().catch(() => ({}));
-                errorEl.textContent = data.detail || 'Error al iniciar sesión. Intente de nuevo.';
-                errorEl.classList.remove('hidden');
-                return;
-            }
-
-            const data = await res.json();
-            localStorage.setItem('session', JSON.stringify({ capturista_id: data.capturista_id, nombre: data.nombre }));
-            window.location.href = 'socioeconomico.html';
-        } catch (err) {
-            errorEl.textContent = 'No se pudo conectar con el servidor.';
-            errorEl.classList.remove('hidden');
-        }
-    });
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        colors: {
+          "primary":          "#ec5b13",
+          "ug-blue":          "#1e3a8a",
+          "ug-yellow":        "#facc15",
+          "ug-yellow-light":  "#fef08a",
+        },
+        fontFamily: { "display": ["Public Sans"] },
+        borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+      },
+    },
+  }
 </script>
-</body></html>
+<style>
+  body { font-family: 'Public Sans', sans-serif; }
+  .backdrop-blur-md { backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+  .material-symbols-outlined {
+    font-family: 'Material Symbols Outlined';
+    font-weight: normal;
+    font-style: normal;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    display: inline-block;
+    white-space: nowrap;
+    word-wrap: normal;
+    direction: ltr;
+    -webkit-font-feature-settings: 'liga';
+    -webkit-font-smoothing: antialiased;
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  }
+</style>
+</head>
+<body class="bg-slate-50 font-display min-h-screen flex flex-col">
+
+<!-- Header -->
+<header class="w-full bg-ug-blue py-6 px-6 shadow-lg">
+  <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+    <div class="flex-1 flex items-center justify-center gap-8 md:gap-14">
+      <div class="flex flex-col items-center gap-2 group">
+        <div class="w-20 h-20 bg-white rounded-2xl flex items-center justify-center shadow-lg overflow-hidden transition-all duration-300 group-hover:scale-105">
+          <img alt="Universidad de Guanajuato" class="w-5/6 h-5/6 object-contain" src="assets/Logo_ug.png"/>
+        </div>
+        <span class="text-white/60 text-[10px] uppercase tracking-widest font-semibold">Univ. Guanajuato</span>
+      </div>
+      <div class="w-px h-16 bg-white/20 hidden sm:block"></div>
+      <div class="flex flex-col items-center gap-2 group">
+        <div class="w-20 h-20 bg-white rounded-2xl flex items-center justify-center shadow-lg overflow-hidden transition-all duration-300 group-hover:scale-105">
+          <img alt="Rotary 200" class="w-5/6 h-5/6 object-contain" src="assets/Logo_rotary_200.png"/>
+        </div>
+        <span class="text-white/60 text-[10px] uppercase tracking-widest font-semibold">Rotary 200</span>
+      </div>
+      <div class="w-px h-16 bg-white/20 hidden sm:block"></div>
+      <div class="flex flex-col items-center gap-2 group">
+        <div class="w-20 h-20 bg-white rounded-2xl flex items-center justify-center shadow-lg overflow-hidden transition-all duration-300 group-hover:scale-105">
+          <img alt="Ecosistema VIDA UG" class="w-5/6 h-5/6 object-contain" src="assets/logo_vida_ug.png"/>
+        </div>
+        <span class="text-white/60 text-[10px] uppercase tracking-widest font-semibold">Ecosistema VIDA</span>
+      </div>
+    </div>
+    <div class="flex flex-col items-center md:items-end text-white/60 shrink-0">
+      <span class="text-[10px] uppercase tracking-[0.2em] font-bold">Versión 7.0</span>
+      <span class="text-xs font-medium">Estado: Operativo</span>
+    </div>
+  </div>
+</header>
+
+<!-- Main -->
+<main class="flex-1 flex items-center justify-center px-4 py-12">
+  <div class="w-full max-w-md bg-white rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.08)] p-8 border border-slate-100 flex flex-col items-center">
+
+    <!-- Icon + Title -->
+    <div class="mb-8 text-center">
+      <div class="w-16 h-16 rounded-full flex items-center justify-center mb-4 mx-auto overflow-hidden">
+        <img src="assets/iconografia_silla.png" alt="Silla de ruedas" class="w-full h-full object-contain"/>
+      </div>
+      <h1 class="text-2xl font-bold text-slate-900 mb-1">Iniciar Sesión</h1>
+      <p class="text-slate-500 text-sm">Sistema Integral de Gestión Social y Técnica</p>
+    </div>
+
+    <!-- Form -->
+    <form id="form-login" class="w-full space-y-5" novalidate>
+
+      <!-- Email -->
+      <div class="space-y-1.5">
+        <label class="block text-sm font-semibold text-slate-700" for="email">Correo electrónico</label>
+        <div class="relative">
+          <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl pointer-events-none">mail</span>
+          <input
+            id="email" name="email" type="email" autocomplete="email"
+            placeholder="usuario@ejemplo.com"
+            class="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-ug-blue focus:outline-none transition-colors text-slate-900 placeholder:text-slate-400 text-sm"
+          />
+        </div>
+      </div>
+
+      <!-- Password -->
+      <div class="space-y-1.5">
+        <label class="block text-sm font-semibold text-slate-700" for="password">Contraseña</label>
+        <div class="relative">
+          <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl pointer-events-none">lock</span>
+          <input
+            id="password" name="password" type="password" autocomplete="current-password"
+            placeholder="••••••••"
+            class="w-full pl-12 pr-12 py-4 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-ug-blue focus:outline-none transition-colors text-slate-900 placeholder:text-slate-400 text-sm"
+          />
+          <button type="button" id="toggle-pwd" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors" tabindex="-1" aria-label="Mostrar/ocultar contraseña">
+            <span class="material-symbols-outlined text-xl" id="toggle-pwd-icon">visibility</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Error -->
+      <p id="error-login" class="hidden text-red-600 text-sm text-center bg-red-50 border border-red-200 rounded-lg px-4 py-3" role="alert"></p>
+
+      <!-- Submit -->
+      <button
+        id="btn-login" type="submit"
+        class="w-full py-4 bg-ug-blue hover:bg-ug-blue/90 active:scale-[0.98] text-white font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 group disabled:opacity-60 disabled:cursor-not-allowed"
+      >
+        <span id="btn-text">INGRESAR AL SISTEMA</span>
+        <span id="btn-icon" class="material-symbols-outlined text-xl group-hover:translate-x-1 transition-transform">arrow_forward</span>
+        <svg id="btn-spinner" class="hidden animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+        </svg>
+      </button>
+
+    </form>
+
+    <!-- Info badge -->
+    <div class="mt-6 flex items-center gap-2 text-slate-400 text-xs">
+      <span class="material-symbols-outlined text-sm">security</span>
+      <span>Acceso seguro con autenticación JWT</span>
+    </div>
+
+  </div>
+</main>
+
+<!-- Footer -->
+<footer class="w-full bg-gradient-to-b from-ug-yellow via-ug-yellow to-ug-yellow-light">
+  <div class="py-5 px-6">
+    <div class="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div class="flex items-center gap-2 text-ug-blue/70">
+        <span class="material-symbols-outlined text-base">code</span>
+        <span class="text-xs font-medium">Desarrollado por <strong class="text-ug-blue font-bold">NEUXORA - C-MED</strong> · León, Gto.</span>
+      </div>
+      <div class="flex gap-6 text-[10px] font-bold uppercase tracking-wider text-ug-blue/60">
+        <a class="hover:text-ug-blue transition-colors" href="#">Aviso de Privacidad</a>
+        <a class="hover:text-ug-blue transition-colors" href="https://andreraz.github.io/" target="_blank" rel="noopener noreferrer">Soporte Técnico</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Redirect if already authenticated
+  (function () {
+    const session = _getSession();
+    if (session?.token) _redirectByRole(session.rol);
+  })();
+
+  // Toggle password visibility
+  document.getElementById('toggle-pwd').addEventListener('click', function () {
+    const input = document.getElementById('password');
+    const icon  = document.getElementById('toggle-pwd-icon');
+    const show  = input.type === 'password';
+    input.type  = show ? 'text' : 'password';
+    icon.textContent = show ? 'visibility_off' : 'visibility';
+  });
+
+  // Form submit
+  document.getElementById('form-login').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const email    = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const errorEl  = document.getElementById('error-login');
+
+    _clearError(errorEl);
+
+    if (!email || !password) {
+      _showError(errorEl, 'Ingrese su correo y contraseña.');
+      return;
+    }
+
+    _setLoading(true);
+
+    try {
+      const res = await fetch('/api/auth/login', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        _showError(errorEl, data.detail || 'Credenciales inválidas. Verifique e intente de nuevo.');
+        return;
+      }
+
+      localStorage.setItem('session', JSON.stringify({
+        token:      data.access_token,
+        nombre:     data.nombre,
+        rol:        data.rol,
+        usuario_id: data.usuario_id,
+      }));
+
+      _redirectByRole(data.rol);
+
+    } catch (_) {
+      _showError(errorEl, 'No se pudo conectar con el servidor. Verifique su conexión.');
+    } finally {
+      _setLoading(false);
+    }
+  });
+
+  // ── Helpers ──────────────────────────────────────────────────────────────
+
+  function _getSession() {
+    try { return JSON.parse(localStorage.getItem('session') || 'null'); }
+    catch (_) { return null; }
+  }
+
+  function _redirectByRole(rol) {
+    if (rol === 'admin') {
+      window.location.href = 'admin-usuarios.html';
+    } else {
+      // capturista and tecnico both need to select region before their form
+      window.location.href = 'seleccion-region.html';
+    }
+  }
+
+  function _showError(el, msg) {
+    el.textContent = msg;
+    el.classList.remove('hidden');
+  }
+
+  function _clearError(el) {
+    el.textContent = '';
+    el.classList.add('hidden');
+  }
+
+  function _setLoading(on) {
+    const btn     = document.getElementById('btn-login');
+    const txt     = document.getElementById('btn-text');
+    const icon    = document.getElementById('btn-icon');
+    const spinner = document.getElementById('btn-spinner');
+    btn.disabled  = on;
+    txt.textContent = on ? 'Verificando...' : 'INGRESAR AL SISTEMA';
+    icon.classList.toggle('hidden', on);
+    spinner.classList.toggle('hidden', !on);
+  }
+</script>
+</body>
+</html>

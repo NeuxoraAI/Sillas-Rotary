@@ -4,50 +4,97 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Sistema Integral de Gestión Social y Técnica** — a digital data collection system for a wheelchair donation program (Ecosistema VIDA UG, developed by C-MED). Replaces paper-based field registration with a mobile-first web app used by non-technical field workers ("capturistas").
+**Sistema Integral de Gestión Social y Técnica** — a digital data collection system for a wheelchair donation program (Ecosistema VIDA UG, developed by C-MED). Replaces paper-based field registration with a mobile-first web app used by non-technical field workers ("capturistas") and technical staff.
 
-The project is currently in **pre-implementation phase**. Only `PRD.md` exists as the source of truth. All architecture and screen decisions should align with it.
+The project is in **active implementation** (Fase 7 Frontend complete). The `PRD.md` file is the source of truth for requirements.
 
 ## Tech Stack
 
-| Layer      | Technology                      | Notes                                       |
-| ---------- | ------------------------------- | ------------------------------------------- |
-| Frontend   | HTML5, Tailwind CSS, Vanilla JS | Mobile-first; Fetch API to backend          |
-| Backend    | Python (FastAPI or Flask)       | RESTful API; business logic + Supabase glue |
-| Database   | Supabase (PostgreSQL)           | Relational storage for all form data        |
-| Storage    | Supabase Storage                | Images (PNG/JPG) from technical exams       |
+| Layer      | Technology                      | Notes                                                     |
+| ---------- | ------------------------------- | --------------------------------------------------------- |
+| Frontend   | HTML5, Tailwind CSS (CDN), Vanilla JS | Mobile-first; Fetch API with Bearer JWT auth        |
+| Backend    | Python (FastAPI)                | RESTful API; JWT auth, role-based access, Supabase glue   |
+| Database   | PostgreSQL (via Supabase)       | Relational storage; multi-region, atomic folio counters   |
+| Storage    | Supabase Storage                | Images (PNG/JPG) from technical exams (`fotos-tecnica`)   |
+| Auth       | JWT (HS256, 8h expiry)          | `python-jose` + `passlib[bcrypt]`                         |
 
 ## Screens & Modules
 
-| File               | Module                     | Purpose                                      |
-| ------------------ | -------------------------- | -------------------------------------------- |
-| `Login_Andre.html` | Module 1 – Access          | Capturista name capture; no password         |
-| `code (1).html`    | Module 2 – Socioeconomic   | Beneficiary + guardian data + study closure  |
-| `code.html`        | Module 3 – Technical Exam  | Posture, measurements, photo upload, priority |
+| File                       | Role Access          | Purpose                                                    |
+| -------------------------- | -------------------- | ---------------------------------------------------------- |
+| `front/login.html`         | All                  | Email + password → JWT; routes by role                     |
+| `front/seleccion-region.html` | capturista, tecnico | Select país/región + sede; saves `region_ctx` to localStorage |
+| `front/socioeconomico.html`| capturista           | Beneficiary + guardian data + study; sends region_id + sede |
+| `front/tecnica.html`       | tecnico              | Posture, measurements, photo upload, priority              |
+| `front/admin-usuarios.html`| admin                | Create/list/deactivate system users                        |
+| `front/admin-regiones.html`| admin                | Create/list países and regiones (folio catalog)            |
 
-## Architecture Decisions (from PRD)
-
-- **Session identity**: Backend generates a temporary token or `localStorage` ID tied to the capturista name — no full auth system.
-- **Draft saving**: Socioeconomic study supports "borrador" state stored locally or in DB with `status = 'incompleto'`.
-- **Image upload flow**: Frontend sends file via `multipart/form-data` → Python backend validates extension + size → uploads to Supabase Storage bucket → returns public/signed URL saved in `solicitudes_tecnicas.foto_url`.
-- **File security**: Accept only `.jpg` / `.png` on both frontend (`accept` attribute) and backend (MIME + extension check). This is a hard requirement.
-- **Backend validation**: All numeric fields (measurements in inches, weight, age, monthly income) must be validated server-side before Supabase insertion.
-
-## Database Schema (Supabase PostgreSQL)
+## Auth & Session Flow
 
 ```
-capturistas            (id, nombre, fecha_registro)
-beneficiarios          (id, nombre, fecha_nacimiento, diagnostico, domicilio, ...)
-tutores                (id, beneficiario_id, nombre, ingreso, empleo, ...)
-estudios_socioeconomicos (id, beneficiario_id, capturista_id, fecha, sede, ...)
-solicitudes_tecnicas   (id, beneficiario_id, capturista_id, entorno,
-                        control_tronco, peso, foto_url, ...)
+login.html
+  POST /api/auth/login {email, password}
+  → localStorage['session'] = {token, nombre, rol, usuario_id}
+  → admin        → admin-usuarios.html
+  → capturista   → seleccion-region.html → socioeconomico.html
+  → tecnico      → seleccion-region.html → tecnica.html
+
+seleccion-region.html
+  → localStorage['region_ctx'] = {pais_id, region_id, sede, nombres}
 ```
 
-`tutores` supports 1–2 guardians per beneficiary (linked via `beneficiario_id`).
+Every protected fetch MUST include: `Authorization: Bearer {session.token}`
+
+## localStorage Keys
+
+| Key           | Contents                                              | Cleared when      |
+| ------------- | ----------------------------------------------------- | ----------------- |
+| `session`     | `{token, nombre, rol, usuario_id}`                    | Logout            |
+| `region_ctx`  | `{pais_id, region_id, sede, pais_nombre, region_nombre}` | Logout          |
+| `estudio_id`  | Draft estudio ID for PATCH resumption                 | Study completed   |
+| `beneficiario_id` | Links socioeconomico → tecnica                    | Tecnica completed |
+| `solicitud_id`| Draft solicitud ID for PATCH resumption               | Solicitud completed |
+
+## Backend Routers (`backend/routers/`)
+
+| File              | Prefix       | Auth Required      | Key Endpoints                          |
+| ----------------- | ------------ | ------------------ | -------------------------------------- |
+| `auth.py`         | `/api`       | —                  | `POST /auth/login`, `GET /auth/me`     |
+| `usuarios.py`     | `/api`       | admin              | `POST/GET /usuarios`, `DELETE /usuarios/{id}` |
+| `regiones.py`     | `/api`       | auth / admin       | `GET /paises`, `POST /paises`, `GET /regiones`, `POST /regiones` |
+| `socioeconomico.py` | `/api`     | auth               | `POST /estudios`, `GET/PATCH /estudios/{id}` |
+| `tecnica.py`      | `/api`       | auth               | `POST /solicitudes`, `GET/PATCH /solicitudes/{id}`, `POST /upload-foto` |
+
+## Architecture Decisions
+
+- **JWT auth**: HS256 tokens, 8h expiry. Secret from `JWT_SECRET` env var. `require_auth` / `require_admin` FastAPI dependencies.
+- **Roles**: `admin`, `capturista`, `tecnico`. Admin manages users and regions. Capturista does socioeconomic studies. Tecnico does technical exams.
+- **Folio generation**: Atomic `INSERT ... ON CONFLICT DO UPDATE` on `region_counters`. Format: `{PAIS}-{REGION}-{YEAR}-{SEQ:03d}`. Generated server-side on POST /estudios.
+- **Region context**: `region_id` and `sede` travel from `seleccion-region.html` via `localStorage['region_ctx']` into the POST /estudios body. NOT re-prompted per study.
+- **Draft saving**: Both `/estudios` and `/solicitudes` support `status = 'borrador'`. IDs stored in localStorage for PATCH resumption.
+- **Image upload**: `multipart/form-data` → backend validates MIME + extension (`.jpg`/`.png`) + size (≤ 10MB) → Supabase Storage → returns `foto_url`. Auth required.
+- **Soft delete**: Users are deactivated (`activo = FALSE`), never hard-deleted.
+
+## Database Schema (PostgreSQL)
+
+```
+usuarios               (id, nombre, email, password_hash, rol, activo)
+paises                 (id, nombre, codigo, activo)
+regiones               (id, pais_id, nombre, codigo, activo)
+region_counters        (pais_codigo, region_codigo, anio, ultimo_numero)  ← atomic folio counter
+beneficiarios          (id, nombre, fecha_nacimiento, diagnostico, calle, colonia, ciudad,
+                        telefonos, email, folio, region_id, sede)
+tutores                (id, beneficiario_id, numero_tutor, nombre, edad, ...)
+estudios_socioeconomicos (id, beneficiario_id, usuario_id, sede, status, ...)
+solicitudes_tecnicas   (id, beneficiario_id, usuario_id, entorno, control_tronco,
+                        peso_kg, foto_url, status, ...)
+```
+
+`tutores` supports 1–2 guardians per beneficiary (`numero_tutor` ∈ {1, 2}).
 
 ## Non-Functional Requirements
 
 - **Mobile-first**: Fully functional on phones and tablets — field workers have no desktop access.
 - **Responsiveness**: All forms must be usable on small screens (Tailwind responsive utilities required).
 - **Numeric integrity**: Backend rejects malformed numeric inputs; frontend provides immediate client-side feedback.
+- **Security**: JWT required on all non-login endpoints. Role enforcement in FastAPI dependencies, not just frontend redirects.

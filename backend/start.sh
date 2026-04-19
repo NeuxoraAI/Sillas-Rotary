@@ -3,7 +3,7 @@
 # Uso: bash start.sh [--port 8000]
 set -e
 
-PORT=${1:-8000}
+PORT=${1:-8080}
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 cd "$SCRIPT_DIR"
@@ -17,7 +17,7 @@ echo "Activando entorno virtual..."
 source venv/bin/activate
 
 echo "Instalando/verificando dependencias..."
-pip install -r requirements.txt -q
+pip install -r ../requirements.txt -q
 
 echo "Iniciando servidor en http://localhost:${PORT}"
 echo "Abre http://localhost:${PORT}/ en tu navegador para acceder al sistema."

@@ -1,8 +1,22 @@
-from typing import Optional
-from fastapi import APIRouter, HTTPException
+"""
+Estudio socioeconómico router (v2).
+
+Changes from v1:
+- Uses Depends(get_db) instead of context manager
+- Uses require_auth (JWT) — capturista_id replaced by usuario.usuario_id
+- region_id + sede at top level of EstudioCreateRequest (moved from EstudioIn)
+- Calls generate_folio() to assign structured folio to each beneficiario
+- Returns folio in EstudioCreateResponse
+"""
+
+from typing import Annotated, Optional
+
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, field_validator
 
-from database import get_db
+from database import get_db, _DBAdapter
+from routers.auth import CurrentUser, require_auth
+from routers.regiones import generate_folio
 
 router = APIRouter()
 
@@ -19,6 +33,7 @@ class BeneficiarioIn(BaseModel):
     colonia: str
     ciudad: str
     telefonos: str
+    email: Optional[str] = None
 
 
 class TutorIn(BaseModel):
@@ -50,7 +65,6 @@ class EstudioIn(BaseModel):
     como_obtuvo_silla: Optional[str] = None
     elaboro_estudio: str
     fecha_estudio: str
-    sede: str
     status: str = "borrador"
 
     @field_validator("status")
@@ -62,7 +76,14 @@ class EstudioIn(BaseModel):
 
 
 class EstudioCreateRequest(BaseModel):
-    capturista_id: int
+    """
+    Top-level request for creating a full estudio socioeconómico.
+
+    Note: region_id and sede are set here (not inside estudio) because they
+    describe WHEN and WHERE the registration happens, not the study itself.
+    """
+    region_id: int
+    sede: str
     beneficiario: BeneficiarioIn
     tutores: list[TutorIn]
     estudio: EstudioIn
@@ -71,6 +92,7 @@ class EstudioCreateRequest(BaseModel):
 class EstudioCreateResponse(BaseModel):
     estudio_id: int
     beneficiario_id: int
+    folio: str
     status: str
 
 
@@ -81,7 +103,6 @@ class EstudioUpdateRequest(BaseModel):
     como_obtuvo_silla: Optional[str] = None
     elaboro_estudio: Optional[str] = None
     fecha_estudio: Optional[str] = None
-    sede: Optional[str] = None
     status: Optional[str] = None
 
     @field_validator("status")
@@ -103,107 +124,127 @@ class EstudioUpdateResponse(BaseModel):
 # ---------------------------------------------------------------------------
 
 @router.post("/estudios", status_code=201, response_model=EstudioCreateResponse)
-def crear_estudio(body: EstudioCreateRequest) -> EstudioCreateResponse:
+def crear_estudio(
+    body: EstudioCreateRequest,
+    db: Annotated[_DBAdapter, Depends(get_db)],
+    usuario: Annotated[CurrentUser, Depends(require_auth)],
+) -> EstudioCreateResponse:
+    """Create a complete estudio socioeconómico with beneficiario, tutores, and study data."""
     _validar_tutores(body.tutores)
 
-    with get_db() as conn:
-        # 1. INSERT beneficiario
-        beneficiario_id = conn.execute(
-            """
-            INSERT INTO beneficiarios
-                (nombre, fecha_nacimiento, diagnostico, calle, colonia, ciudad, telefonos)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
-            RETURNING id
-            """,
-            (
-                body.beneficiario.nombre,
-                body.beneficiario.fecha_nacimiento,
-                body.beneficiario.diagnostico,
-                body.beneficiario.calle,
-                body.beneficiario.colonia,
-                body.beneficiario.ciudad,
-                body.beneficiario.telefonos,
-            ),
-        ).fetchone()["id"]
+    # 1. Generate structured folio (atomic counter per region/year)
+    folio = generate_folio(db, body.region_id)
 
-        # 2. INSERT tutores
-        for tutor in body.tutores:
-            conn.execute(
-                """
-                INSERT INTO tutores
-                    (beneficiario_id, numero_tutor, nombre, edad, nivel_estudios,
-                     estado_civil, num_hijos, vivienda, fuente_empleo, antiguedad,
-                     ingreso_mensual, tiene_imss, tiene_infonavit)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                """,
-                (
-                    beneficiario_id,
-                    tutor.numero_tutor,
-                    tutor.nombre,
-                    tutor.edad,
-                    tutor.nivel_estudios or None,
-                    tutor.estado_civil or None,
-                    tutor.num_hijos if tutor.num_hijos is not None else 0,
-                    tutor.vivienda or None,
-                    tutor.fuente_empleo or None,
-                    tutor.antiguedad or None,
-                    tutor.ingreso_mensual,
-                    1 if tutor.tiene_imss else 0,
-                    1 if tutor.tiene_infonavit else 0,
-                ),
-            )
+    # 2. INSERT beneficiario (with folio + region + sede)
+    beneficiario_id = db.execute(
+        """
+        INSERT INTO beneficiarios
+            (nombre, fecha_nacimiento, diagnostico, calle, colonia, ciudad,
+             telefonos, email, folio, region_id, sede)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        RETURNING id
+        """,
+        (
+            body.beneficiario.nombre,
+            body.beneficiario.fecha_nacimiento,
+            body.beneficiario.diagnostico,
+            body.beneficiario.calle,
+            body.beneficiario.colonia,
+            body.beneficiario.ciudad,
+            body.beneficiario.telefonos,
+            body.beneficiario.email,
+            folio,
+            body.region_id,
+            body.sede,
+        ),
+    ).fetchone()["id"]
 
-        # 3. INSERT estudio
-        estudio = body.estudio
-        estudio_id = conn.execute(
+    # 3. INSERT tutores
+    for tutor in body.tutores:
+        db.execute(
             """
-            INSERT INTO estudios_socioeconomicos
-                (beneficiario_id, capturista_id, otras_fuentes_ingreso,
-                 monto_otras_fuentes, tuvo_silla_previa, como_obtuvo_silla,
-                 elaboro_estudio, fecha_estudio, sede, status)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            RETURNING id
+            INSERT INTO tutores
+                (beneficiario_id, numero_tutor, nombre, edad, nivel_estudios,
+                 estado_civil, num_hijos, vivienda, fuente_empleo, antiguedad,
+                 ingreso_mensual, tiene_imss, tiene_infonavit)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """,
             (
                 beneficiario_id,
-                body.capturista_id,
-                estudio.otras_fuentes_ingreso,
-                estudio.monto_otras_fuentes,
-                1 if estudio.tuvo_silla_previa else 0,
-                estudio.como_obtuvo_silla,
-                estudio.elaboro_estudio,
-                estudio.fecha_estudio,
-                estudio.sede,
-                estudio.status,
+                tutor.numero_tutor,
+                tutor.nombre,
+                tutor.edad,
+                tutor.nivel_estudios or None,
+                tutor.estado_civil or None,
+                tutor.num_hijos if tutor.num_hijos is not None else 0,
+                tutor.vivienda or None,
+                tutor.fuente_empleo or None,
+                tutor.antiguedad or None,
+                tutor.ingreso_mensual,
+                tutor.tiene_imss,
+                tutor.tiene_infonavit,
             ),
-        ).fetchone()["id"]
+        )
+
+    # 4. INSERT estudio (now uses usuario_id instead of capturista_id)
+    estudio = body.estudio
+    estudio_id = db.execute(
+        """
+        INSERT INTO estudios_socioeconomicos
+            (beneficiario_id, usuario_id, otras_fuentes_ingreso,
+             monto_otras_fuentes, tuvo_silla_previa, como_obtuvo_silla,
+             elaboro_estudio, fecha_estudio, sede, status)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        RETURNING id
+        """,
+        (
+            beneficiario_id,
+            usuario.usuario_id,
+            estudio.otras_fuentes_ingreso,
+            estudio.monto_otras_fuentes,
+            estudio.tuvo_silla_previa,
+            estudio.como_obtuvo_silla,
+            estudio.elaboro_estudio,
+            estudio.fecha_estudio,
+            body.sede,
+            estudio.status,
+        ),
+    ).fetchone()["id"]
 
     return EstudioCreateResponse(
         estudio_id=estudio_id,
         beneficiario_id=beneficiario_id,
-        status=body.estudio.status,
+        folio=folio,
+        status=estudio.status,
     )
 
 
 @router.get("/estudios/{id}")
-def obtener_estudio(id: int) -> dict:
-    with get_db() as conn:
-        estudio_row = conn.execute(
-            "SELECT * FROM estudios_socioeconomicos WHERE id = %s", (id,)
-        ).fetchone()
+def obtener_estudio(
+    id: int,
+    db: Annotated[_DBAdapter, Depends(get_db)],
+    usuario: Annotated[CurrentUser, Depends(require_auth)],
+) -> dict:
+    """Retrieve a full estudio by ID. Only the owner or an admin may read it."""
+    estudio_row = db.execute(
+        "SELECT * FROM estudios_socioeconomicos WHERE id = %s", (id,)
+    ).fetchone()
 
-        if estudio_row is None:
-            raise HTTPException(status_code=404, detail="Estudio no encontrado")
+    if estudio_row is None:
+        raise HTTPException(status_code=404, detail="Estudio no encontrado")
 
-        beneficiario_row = conn.execute(
-            "SELECT * FROM beneficiarios WHERE id = %s",
-            (estudio_row["beneficiario_id"],),
-        ).fetchone()
+    if usuario.rol != "admin" and estudio_row["usuario_id"] != usuario.usuario_id:
+        raise HTTPException(status_code=403, detail="No tiene acceso a este estudio")
 
-        tutores_rows = conn.execute(
-            "SELECT * FROM tutores WHERE beneficiario_id = %s ORDER BY numero_tutor",
-            (estudio_row["beneficiario_id"],),
-        ).fetchall()
+    beneficiario_row = db.execute(
+        "SELECT * FROM beneficiarios WHERE id = %s",
+        (estudio_row["beneficiario_id"],),
+    ).fetchone()
+
+    tutores_rows = db.execute(
+        "SELECT * FROM tutores WHERE beneficiario_id = %s ORDER BY numero_tutor",
+        (estudio_row["beneficiario_id"],),
+    ).fetchall()
 
     result = dict(estudio_row)
     result["beneficiario"] = dict(beneficiario_row)
@@ -213,43 +254,48 @@ def obtener_estudio(id: int) -> dict:
 
 
 @router.patch("/estudios/{id}", response_model=EstudioUpdateResponse)
-def actualizar_estudio(id: int, body: EstudioUpdateRequest) -> EstudioUpdateResponse:
-    with get_db() as conn:
-        existing = conn.execute(
-            "SELECT id FROM estudios_socioeconomicos WHERE id = %s", (id,)
-        ).fetchone()
+def actualizar_estudio(
+    id: int,
+    body: EstudioUpdateRequest,
+    db: Annotated[_DBAdapter, Depends(get_db)],
+    usuario: Annotated[CurrentUser, Depends(require_auth)],
+) -> EstudioUpdateResponse:
+    """Partial update of an estudio. Only the owner or an admin may update it."""
+    existing = db.execute(
+        "SELECT id, usuario_id FROM estudios_socioeconomicos WHERE id = %s", (id,)
+    ).fetchone()
 
-        if existing is None:
-            raise HTTPException(status_code=404, detail="Estudio no encontrado")
+    if existing is None:
+        raise HTTPException(status_code=404, detail="Estudio no encontrado")
 
-        fields = body.model_dump(exclude_none=True)
-        if not fields:
-            row = conn.execute(
-                "SELECT id, status, updated_at FROM estudios_socioeconomicos WHERE id = %s",
-                (id,),
-            ).fetchone()
-            return EstudioUpdateResponse(
-                estudio_id=row["id"],
-                status=row["status"],
-                updated_at=row["updated_at"].isoformat(),
-            )
+    if usuario.rol != "admin" and existing["usuario_id"] != usuario.usuario_id:
+        raise HTTPException(status_code=403, detail="No tiene acceso a este estudio")
 
-        if "tuvo_silla_previa" in fields:
-            fields["tuvo_silla_previa"] = 1 if fields["tuvo_silla_previa"] else 0
-
-        set_clause = ", ".join(f"{k} = %s" for k in fields)
-        values = list(fields.values())
-        values.append(id)
-
-        conn.execute(
-            f"UPDATE estudios_socioeconomicos SET {set_clause}, updated_at = NOW() WHERE id = %s",
-            values,
-        )
-
-        row = conn.execute(
+    fields = body.model_dump(exclude_none=True)
+    if not fields:
+        row = db.execute(
             "SELECT id, status, updated_at FROM estudios_socioeconomicos WHERE id = %s",
             (id,),
         ).fetchone()
+        return EstudioUpdateResponse(
+            estudio_id=row["id"],
+            status=row["status"],
+            updated_at=row["updated_at"].isoformat(),
+        )
+
+    set_clause = ", ".join(f"{k} = %s" for k in fields)
+    values = list(fields.values())
+    values.append(id)
+
+    db.execute(
+        f"UPDATE estudios_socioeconomicos SET {set_clause}, updated_at = NOW() WHERE id = %s",
+        values,
+    )
+
+    row = db.execute(
+        "SELECT id, status, updated_at FROM estudios_socioeconomicos WHERE id = %s",
+        (id,),
+    ).fetchone()
 
     return EstudioUpdateResponse(
         estudio_id=row["id"],

@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Selección de Región | Ecosistema VIDA UG</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block" rel="stylesheet"/>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        colors: {
+          "ug-blue":         "#1e3a8a",
+          "ug-yellow":       "#facc15",
+          "ug-yellow-light": "#fef08a",
+          "primary":         "#ec5b13",
+        },
+        fontFamily: { "display": ["Public Sans"] },
+        borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+      },
+    },
+  }
+</script>
+<style>
+  body { font-family: 'Public Sans', sans-serif; }
+  .select-field {
+    appearance: none;
+    -webkit-appearance: none;
+  }
+  .material-symbols-outlined {
+    font-family: 'Material Symbols Outlined';
+    font-weight: normal;
+    font-style: normal;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    display: inline-block;
+    white-space: nowrap;
+    word-wrap: normal;
+    direction: ltr;
+    -webkit-font-feature-settings: 'liga';
+    -webkit-font-smoothing: antialiased;
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  }
+</style>
+</head>
+<body class="bg-slate-50 font-display min-h-screen flex flex-col">
+
+<!-- Header -->
+<header class="w-full bg-ug-blue py-4 px-6 shadow-lg">
+  <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
+    <!-- Logos (compact) -->
+    <div class="flex items-center gap-4">
+      <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow overflow-hidden">
+        <img alt="UG" class="w-4/5 h-4/5 object-contain" src="assets/Logo_ug.png"/>
+      </div>
+      <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow overflow-hidden">
+        <img alt="Rotary" class="w-4/5 h-4/5 object-contain" src="assets/Logo_rotary_200.png"/>
+      </div>
+      <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow overflow-hidden">
+        <img alt="VIDA UG" class="w-4/5 h-4/5 object-contain" src="assets/logo_vida_ug.png"/>
+      </div>
+    </div>
+
+    <!-- User info + logout -->
+    <div class="flex items-center gap-3">
+      <div class="text-right hidden sm:block">
+        <p id="user-nombre" class="text-white text-sm font-semibold leading-none">—</p>
+        <p id="user-rol" class="text-white/50 text-[10px] uppercase tracking-wider mt-0.5">—</p>
+      </div>
+      <button id="btn-logout" title="Cerrar sesión" class="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/70 hover:text-white transition-all">
+        <span class="material-symbols-outlined text-base">logout</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- Step indicator -->
+<div class="w-full bg-ug-blue/5 border-b border-slate-200">
+  <div class="max-w-lg mx-auto px-4 py-3 flex items-center gap-3">
+    <div class="flex items-center gap-2 shrink-0">
+      <div class="w-7 h-7 rounded-full bg-ug-blue text-white text-xs font-bold flex items-center justify-center shadow">1</div>
+      <span class="text-sm font-semibold text-ug-blue">Región</span>
+    </div>
+    <div class="flex-1 h-0.5 bg-gradient-to-r from-ug-blue/40 to-slate-300 rounded"></div>
+    <div class="flex items-center gap-2 opacity-40 shrink-0">
+      <div class="w-7 h-7 rounded-full bg-slate-300 text-slate-600 text-xs font-bold flex items-center justify-center">2</div>
+      <span class="text-sm font-semibold text-slate-500">Captura</span>
+    </div>
+  </div>
+</div>
+
+<!-- Main -->
+<main class="flex-1 flex items-start justify-center px-4 py-10">
+  <div class="w-full max-w-lg">
+
+    <!-- Card -->
+    <div class="bg-white rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.07)] border border-slate-100 overflow-hidden">
+
+      <!-- Card header -->
+      <div class="px-8 pt-8 pb-6 border-b border-slate-100">
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 bg-ug-blue/10 rounded-xl flex items-center justify-center shrink-0">
+            <span class="material-symbols-outlined text-ug-blue text-2xl">public</span>
+          </div>
+          <div>
+            <h1 class="text-xl font-bold text-slate-900">Selección de Región</h1>
+            <p class="text-slate-500 text-sm mt-0.5">Elija el país, región y sede donde realizará la captura.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Form body -->
+      <div class="px-8 py-7 space-y-6">
+
+        <!-- País -->
+        <div class="space-y-2">
+          <label class="block text-sm font-semibold text-slate-700" for="pais">
+            País <span class="text-red-400">*</span>
+          </label>
+          <div class="relative">
+            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl pointer-events-none">flag</span>
+            <select id="pais" class="select-field w-full pl-12 pr-10 py-4 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-ug-blue focus:outline-none transition-colors text-slate-900 text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+              <option value="">— Cargando países… —</option>
+            </select>
+            <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl pointer-events-none">expand_more</span>
+          </div>
+        </div>
+
+        <!-- Región -->
+        <div class="space-y-2">
+          <label class="block text-sm font-semibold text-slate-700" for="region">
+            Región <span class="text-red-400">*</span>
+          </label>
+          <div class="relative">
+            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl pointer-events-none">location_on</span>
+            <select id="region" disabled class="select-field w-full pl-12 pr-10 py-4 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-ug-blue focus:outline-none transition-colors text-slate-900 text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+              <option value="">— Seleccione un país primero —</option>
+            </select>
+            <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl pointer-events-none">expand_more</span>
+          </div>
+        </div>
+
+        <!-- Sede -->
+        <div class="space-y-2">
+          <label class="block text-sm font-semibold text-slate-700" for="sede">
+            Sede <span class="text-red-400">*</span>
+          </label>
+          <div class="relative">
+            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl pointer-events-none">apartment</span>
+            <input
+              id="sede" type="text" autocomplete="off"
+              placeholder="Ej: Hospital Civil, Centro DIF, Escuela…"
+              class="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-ug-blue focus:outline-none transition-colors text-slate-900 placeholder:text-slate-400 text-sm"
+            />
+          </div>
+          <p class="text-slate-400 text-xs">Nombre del lugar donde se aplica el estudio.</p>
+        </div>
+
+        <!-- Error -->
+        <p id="error-region" class="hidden text-red-600 text-sm bg-red-50 border border-red-200 rounded-lg px-4 py-3" role="alert"></p>
+
+        <!-- Submit -->
+        <button
+          id="btn-continuar" type="button"
+          class="w-full py-4 bg-ug-blue hover:bg-ug-blue/90 active:scale-[0.98] text-white font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 group disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          <span id="btn-text">CONTINUAR</span>
+          <span class="material-symbols-outlined text-xl group-hover:translate-x-1 transition-transform">arrow_forward</span>
+        </button>
+
+      </div>
+    </div>
+
+    <!-- Info box -->
+    <div class="mt-5 flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-xl px-5 py-4">
+      <span class="material-symbols-outlined text-blue-400 text-xl mt-0.5 shrink-0">info</span>
+      <p class="text-blue-700 text-sm leading-relaxed">
+        Esta información quedará registrada en todos los estudios que capture durante esta sesión. Si necesita cambiar de región, cierre sesión y vuelva a ingresar.
+      </p>
+    </div>
+
+  </div>
+</main>
+
+<!-- Footer -->
+<footer class="w-full bg-gradient-to-b from-ug-yellow via-ug-yellow to-ug-yellow-light">
+  <div class="py-4 px-6">
+    <div class="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div class="flex items-center gap-2 text-ug-blue/70">
+        <span class="material-symbols-outlined text-base">code</span>
+        <span class="text-xs font-medium">Desarrollado por <strong class="text-ug-blue font-bold">NEUXORA - C-MED</strong> · León, Gto.</span>
+      </div>
+      <div class="flex gap-6 text-[10px] font-bold uppercase tracking-wider text-ug-blue/60">
+        <a class="hover:text-ug-blue transition-colors" href="#">Aviso de Privacidad</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // ── Auth guard ──────────────────────────────────────────────────────────────
+  const session = _getSession();
+  if (!session?.token) {
+    window.location.replace('login.html');
+  }
+
+  // Populate header user info
+  document.getElementById('user-nombre').textContent = session.nombre  || '—';
+  document.getElementById('user-rol').textContent    = _formatRol(session.rol);
+
+  // Logout
+  document.getElementById('btn-logout').addEventListener('click', function () {
+    localStorage.removeItem('session');
+    localStorage.removeItem('region_ctx');
+    window.location.href = 'login.html';
+  });
+
+  // ── Load países on page load ────────────────────────────────────────────────
+  const paisSelect   = document.getElementById('pais');
+  const regionSelect = document.getElementById('region');
+
+  loadPaises();
+
+  async function loadPaises() {
+    try {
+      const res = await _authFetch('/api/paises');
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const paises = await res.json();
+
+      paisSelect.innerHTML = '<option value="">— Seleccione un país —</option>';
+      paises.forEach(function (p) {
+        const opt = document.createElement('option');
+        opt.value       = p.pais_id;
+        opt.textContent = p.nombre + ' (' + p.codigo + ')';
+        paisSelect.appendChild(opt);
+      });
+
+      if (paises.length === 1) {
+        paisSelect.value = paises[0].pais_id;
+        await loadRegiones(paises[0].pais_id);
+      }
+    } catch (_) {
+      _showError('No se pudieron cargar los países. Verifique su conexión.');
+    }
+  }
+
+  // ── Load regiones when país changes ────────────────────────────────────────
+  paisSelect.addEventListener('change', async function () {
+    const paisId = this.value;
+    regionSelect.innerHTML = '<option value="">— Seleccione una región —</option>';
+    regionSelect.disabled  = true;
+    _clearError();
+
+    if (!paisId) return;
+    await loadRegiones(paisId);
+  });
+
+  async function loadRegiones(paisId) {
+    try {
+      const res = await _authFetch('/api/regiones?pais_id=' + paisId);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const regiones = await res.json();
+
+      if (regiones.length === 0) {
+        regionSelect.innerHTML = '<option value="">— Sin regiones disponibles —</option>';
+        regionSelect.disabled  = true;
+        return;
+      }
+
+      regionSelect.innerHTML = '<option value="">— Seleccione una región —</option>';
+      regiones.forEach(function (r) {
+        const opt = document.createElement('option');
+        opt.value       = r.region_id;
+        opt.textContent = r.nombre + ' (' + r.codigo + ')';
+        regionSelect.appendChild(opt);
+      });
+      regionSelect.disabled = false;
+    } catch (_) {
+      _showError('No se pudieron cargar las regiones.');
+    }
+  }
+
+  // ── Continue ────────────────────────────────────────────────────────────────
+  document.getElementById('btn-continuar').addEventListener('click', function () {
+    _clearError();
+
+    const paisId   = paisSelect.value;
+    const regionId = regionSelect.value;
+    const sede     = document.getElementById('sede').value.trim();
+
+    if (!paisId) {
+      _showError('Seleccione un país.');
+      return;
+    }
+    if (!regionId) {
+      _showError('Seleccione una región.');
+      return;
+    }
+    if (sede.length < 3) {
+      _showError('Ingrese el nombre de la sede (mínimo 3 caracteres).');
+      return;
+    }
+
+    // Persist region context for socioeconomico and tecnica screens
+    const paisNombre   = paisSelect.options[paisSelect.selectedIndex].text;
+    const regionNombre = regionSelect.options[regionSelect.selectedIndex].text;
+
+    localStorage.setItem('region_ctx', JSON.stringify({
+      pais_id:      parseInt(paisId, 10),
+      pais_nombre:  paisNombre,
+      region_id:    parseInt(regionId, 10),
+      region_nombre: regionNombre,
+      sede,
+    }));
+
+    // Route by role: tecnico goes to technical exam, capturista to socioeconomic
+    if (session.rol === 'tecnico') {
+      window.location.href = 'tecnica.html';
+    } else {
+      window.location.href = 'socioeconomico.html';
+    }
+  });
+
+  // ── Helpers ─────────────────────────────────────────────────────────────────
+
+  function _getSession() {
+    try { return JSON.parse(localStorage.getItem('session') || 'null'); }
+    catch (_) { return null; }
+  }
+
+  function _authFetch(url, opts) {
+    opts = opts || {};
+    opts.headers = Object.assign({ 'Authorization': 'Bearer ' + session.token }, opts.headers || {});
+    return fetch(url, opts);
+  }
+
+  function _formatRol(rol) {
+    const map = { admin: 'Administrador', capturista: 'Capturista', tecnico: 'Técnico' };
+    return map[rol] || rol || '—';
+  }
+
+  function _showError(msg) {
+    const el = document.getElementById('error-region');
+    el.textContent = msg;
+    el.classList.remove('hidden');
+  }
+
+  function _clearError() {
+    const el = document.getElementById('error-region');
+    el.textContent = '';
+    el.classList.add('hidden');
+  }
+</script>
+</body>
+</html>

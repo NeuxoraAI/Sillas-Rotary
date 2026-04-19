@@ -1,12 +1,13 @@
 import os
 import uuid
-from typing import Optional
+from typing import Annotated, Optional
 
-from fastapi import APIRouter, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from pydantic import BaseModel, field_validator
 from supabase import create_client
 
-from database import get_db
+from database import get_db, _DBAdapter
+from routers.auth import CurrentUser, require_auth
 
 router = APIRouter()
 
@@ -28,7 +29,6 @@ def _storage():
 # ---------------------------------------------------------------------------
 
 class SolicitudCreateRequest(BaseModel):
-    capturista_id: int
     beneficiario_id: int
     entorno: str
     control_tronco: str
@@ -121,7 +121,10 @@ class SolicitudUpdateResponse(BaseModel):
 # ---------------------------------------------------------------------------
 
 @router.post("/upload-foto")
-async def upload_foto(foto: UploadFile = File(...)) -> dict:
+async def upload_foto(
+    foto: UploadFile = File(...),
+    _usuario: Annotated[CurrentUser, Depends(require_auth)] = None,
+) -> dict:
     if foto.content_type not in _ALLOWED_CONTENT_TYPES:
         raise HTTPException(status_code=400, detail="Tipo de archivo no permitido")
 
@@ -149,43 +152,46 @@ async def upload_foto(foto: UploadFile = File(...)) -> dict:
 
 
 @router.post("/solicitudes", status_code=201, response_model=SolicitudCreateResponse)
-def crear_solicitud(body: SolicitudCreateRequest) -> SolicitudCreateResponse:
-    with get_db() as conn:
-        try:
-            solicitud_id = conn.execute(
-                """
-                INSERT INTO solicitudes_tecnicas
-                    (beneficiario_id, capturista_id, entorno, control_tronco, control_cabeza,
-                     observaciones_posturales, altura_total_in, peso_kg,
-                     medida_cabeza_asiento, medida_hombro_asiento, medida_prof_asiento,
-                     medida_rodilla_talon, medida_ancho_cadera, foto_url,
-                     entidad_solicitante, prioridad, justificacion, status)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                RETURNING id
-                """,
-                (
-                    body.beneficiario_id,
-                    body.capturista_id,
-                    body.entorno,
-                    body.control_tronco,
-                    body.control_cabeza,
-                    body.observaciones_posturales,
-                    body.altura_total_in,
-                    body.peso_kg,
-                    body.medida_cabeza_asiento,
-                    body.medida_hombro_asiento,
-                    body.medida_prof_asiento,
-                    body.medida_rodilla_talon,
-                    body.medida_ancho_cadera,
-                    body.foto_url,
-                    body.entidad_solicitante,
-                    body.prioridad,
-                    body.justificacion,
-                    body.status,
-                ),
-            ).fetchone()["id"]
-        except Exception as exc:
-            raise HTTPException(status_code=400, detail="Datos de solicitud inválidos") from exc
+def crear_solicitud(
+    body: SolicitudCreateRequest,
+    db: Annotated[_DBAdapter, Depends(get_db)],
+    usuario: Annotated[CurrentUser, Depends(require_auth)],
+) -> SolicitudCreateResponse:
+    try:
+        solicitud_id = db.execute(
+            """
+            INSERT INTO solicitudes_tecnicas
+                (beneficiario_id, usuario_id, entorno, control_tronco, control_cabeza,
+                 observaciones_posturales, altura_total_in, peso_kg,
+                 medida_cabeza_asiento, medida_hombro_asiento, medida_prof_asiento,
+                 medida_rodilla_talon, medida_ancho_cadera, foto_url,
+                 entidad_solicitante, prioridad, justificacion, status)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            RETURNING id
+            """,
+            (
+                body.beneficiario_id,
+                usuario.usuario_id,
+                body.entorno,
+                body.control_tronco,
+                body.control_cabeza,
+                body.observaciones_posturales,
+                body.altura_total_in,
+                body.peso_kg,
+                body.medida_cabeza_asiento,
+                body.medida_hombro_asiento,
+                body.medida_prof_asiento,
+                body.medida_rodilla_talon,
+                body.medida_ancho_cadera,
+                body.foto_url,
+                body.entidad_solicitante,
+                body.prioridad,
+                body.justificacion,
+                body.status,
+            ),
+        ).fetchone()["id"]
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail="Datos de solicitud inválidos") from exc
 
     return SolicitudCreateResponse(
         solicitud_id=solicitud_id,
@@ -195,53 +201,66 @@ def crear_solicitud(body: SolicitudCreateRequest) -> SolicitudCreateResponse:
 
 
 @router.get("/solicitudes/{id}")
-def obtener_solicitud(id: int) -> dict:
-    with get_db() as conn:
-        row = conn.execute(
-            "SELECT * FROM solicitudes_tecnicas WHERE id = %s", (id,)
-        ).fetchone()
+def obtener_solicitud(
+    id: int,
+    db: Annotated[_DBAdapter, Depends(get_db)],
+    usuario: Annotated[CurrentUser, Depends(require_auth)],
+) -> dict:
+    row = db.execute(
+        "SELECT * FROM solicitudes_tecnicas WHERE id = %s", (id,)
+    ).fetchone()
 
     if row is None:
         raise HTTPException(status_code=404, detail="Solicitud no encontrada")
+
+    if usuario.rol != "admin" and row["usuario_id"] != usuario.usuario_id:
+        raise HTTPException(status_code=403, detail="No tiene acceso a esta solicitud")
 
     return dict(row)
 
 
 @router.patch("/solicitudes/{id}", response_model=SolicitudUpdateResponse)
-def actualizar_solicitud(id: int, body: SolicitudUpdateRequest) -> SolicitudUpdateResponse:
-    with get_db() as conn:
-        existing = conn.execute(
-            "SELECT id FROM solicitudes_tecnicas WHERE id = %s", (id,)
-        ).fetchone()
+def actualizar_solicitud(
+    id: int,
+    body: SolicitudUpdateRequest,
+    db: Annotated[_DBAdapter, Depends(get_db)],
+    usuario: Annotated[CurrentUser, Depends(require_auth)],
+) -> SolicitudUpdateResponse:
+    existing = db.execute(
+        "SELECT id, usuario_id FROM solicitudes_tecnicas WHERE id = %s", (id,)
+    ).fetchone()
 
-        if existing is None:
-            raise HTTPException(status_code=404, detail="Solicitud no encontrada")
+    if existing is None:
+        raise HTTPException(status_code=404, detail="Solicitud no encontrada")
 
-        fields = body.model_dump(exclude_none=True)
-        if not fields:
-            row = conn.execute(
-                "SELECT id, status, updated_at FROM solicitudes_tecnicas WHERE id = %s",
-                (id,),
-            ).fetchone()
-            return SolicitudUpdateResponse(
-                solicitud_id=row["id"],
-                status=row["status"],
-                updated_at=row["updated_at"].isoformat(),
-            )
+    if usuario.rol != "admin" and existing["usuario_id"] != usuario.usuario_id:
+        raise HTTPException(status_code=403, detail="No tiene acceso a esta solicitud")
 
-        set_clause = ", ".join(f"{k} = %s" for k in fields)
-        values = list(fields.values())
-        values.append(id)
-
-        conn.execute(
-            f"UPDATE solicitudes_tecnicas SET {set_clause}, updated_at = NOW() WHERE id = %s",
-            values,
-        )
-
-        row = conn.execute(
+    fields = body.model_dump(exclude_none=True)
+    if not fields:
+        row = db.execute(
             "SELECT id, status, updated_at FROM solicitudes_tecnicas WHERE id = %s",
             (id,),
         ).fetchone()
+        return SolicitudUpdateResponse(
+            solicitud_id=row["id"],
+            status=row["status"],
+            updated_at=row["updated_at"].isoformat(),
+        )
+
+    set_clause = ", ".join(f"{k} = %s" for k in fields)
+    values = list(fields.values())
+    values.append(id)
+
+    db.execute(
+        f"UPDATE solicitudes_tecnicas SET {set_clause}, updated_at = NOW() WHERE id = %s",
+        values,
+    )
+
+    row = db.execute(
+        "SELECT id, status, updated_at FROM solicitudes_tecnicas WHERE id = %s",
+        (id,),
+    ).fetchone()
 
     return SolicitudUpdateResponse(
         solicitud_id=row["id"],

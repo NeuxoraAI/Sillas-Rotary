@@ -283,15 +283,15 @@
 <script data-purpose="form-logic">
     // Auth guard + Draft Resume
     (async function () {
-        const session = localStorage.getItem('session');
+        const session = JSON.parse(localStorage.getItem('session') || 'null');
         const beneficiarioIdRaw = parseInt(localStorage.getItem('beneficiario_id'), 10);
         const solicitudId = localStorage.getItem('solicitud_id');
 
         // Check if we have a draft to resume
-        if (solicitudId) {
+        if (solicitudId && session?.token) {
             try {
                 const res = await fetch(`/api/solicitudes/${solicitudId}`, {
-                    headers: { 'Accept': 'application/json' }
+                    headers: { 'Accept': 'application/json', 'Authorization': 'Bearer ' + session.token }
                 });
 
                 if (res.ok) {
@@ -348,7 +348,7 @@
         }
 
         // Standard auth check for new submissions
-        if (!session || !beneficiarioIdRaw || isNaN(beneficiarioIdRaw)) {
+        if (!session?.token || !beneficiarioIdRaw || isNaN(beneficiarioIdRaw)) {
             window.location.href = 'login.html';
         }
     })();
@@ -361,6 +361,7 @@
         formData.append('foto', fileInput.files[0]);
         const res = await fetch('/api/upload-foto', {
             method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + session.token },
             body: formData
         });
         if (!res.ok) throw new Error('Error al subir la foto.');
@@ -373,7 +374,6 @@
         errorEl.classList.add('hidden');
         errorEl.textContent = '';
 
-        const session = JSON.parse(localStorage.getItem('session'));
         const beneficiarioId = parseInt(localStorage.getItem('beneficiario_id'), 10);
         const solicitudId = localStorage.getItem('solicitud_id');
         const f = document.querySelector('form');
@@ -395,7 +395,6 @@
         }
 
         const payload = {
-            capturista_id: session.capturista_id,
             beneficiario_id: beneficiarioId,
             entorno: get('entorno'),
             control_tronco: get('control_tronco'),
@@ -422,7 +421,7 @@
                 // PATCH existing draft
                 res = await fetch(`/api/solicitudes/${solicitudId}`, {
                     method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.token },
                     body: JSON.stringify(payload)
                 });
 
@@ -447,7 +446,7 @@
                 // POST new solicitud
                 res = await fetch('/api/solicitudes', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.token },
                     body: JSON.stringify(payload)
                 });
 

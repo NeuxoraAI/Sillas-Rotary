@@ -241,8 +241,9 @@
 <script data-purpose="form-logic">
     // Auth guard + Draft Resume
     (async function () {
-        const session = localStorage.getItem('session');
-        if (!session) {
+        const session = JSON.parse(localStorage.getItem('session') || 'null');
+        const regionCtx = JSON.parse(localStorage.getItem('region_ctx') || 'null');
+        if (!session?.token || !regionCtx?.region_id) {
             window.location.href = 'login.html';
             return;
         }
@@ -252,7 +253,7 @@
         if (estudioId) {
             try {
                 const res = await fetch(`/api/estudios/${estudioId}`, {
-                    headers: { 'Accept': 'application/json' }
+                    headers: { 'Accept': 'application/json', 'Authorization': 'Bearer ' + session.token }
                 });
 
                 if (res.ok) {
@@ -332,6 +333,7 @@
     document.getElementById('btn-cambiar-capturista').addEventListener('click', function () {
         if (confirm('¿Cerrar sesión y cambiar de capturista?')) {
             localStorage.removeItem('session');
+            localStorage.removeItem('region_ctx');
             localStorage.removeItem('beneficiario_id');
             localStorage.removeItem('estudio_id');
             window.location.href = 'login.html';
@@ -342,8 +344,6 @@
         const f = document.querySelector('form');
         const fd = new FormData(f);
         const get = (name) => fd.get(name) || '';
-
-        const session = JSON.parse(localStorage.getItem('session'));
 
         const toIntOrNull = (v) => { const n = parseInt(v, 10); return isNaN(n) ? null : n; };
         const toFloatOrNull = (v) => { const n = parseFloat(v); return isNaN(n) ? null : n; };
@@ -383,7 +383,8 @@
         }
 
         return {
-            capturista_id: session.capturista_id,
+            region_id: regionCtx.region_id,
+            sede: regionCtx.sede,
             beneficiario: {
                 nombre: get('nombre'),
                 fecha_nacimiento: get('fecha_nacimiento'),
@@ -401,7 +402,6 @@
                 como_obtuvo_silla: get('como_obtuvo_silla'),
                 elaboro_estudio: get('elaboro_estudio'),
                 fecha_estudio: get('fecha_estudio'),
-                sede: get('sede'),
                 status,
             }
         };
@@ -438,7 +438,7 @@
 
                 res = await fetch(`/api/estudios/${estudioId}`, {
                     method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.token },
                     body: JSON.stringify(patchPayload)
                 });
 
@@ -465,7 +465,7 @@
 
                 res = await fetch('/api/estudios', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.token },
                     body: JSON.stringify(payload)
                 });
 

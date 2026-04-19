@@ -1,63 +1,126 @@
 """
-Tests for the auth (login) endpoint.
+Integration tests for JWT authentication.
 
-Covers:
-- C2: Login upsert (no duplicate capturistas)
-- Validation: name must be >= 2 characters
+TDD: Tests written BEFORE the implementation of the new auth router.
+Spec reference: user-auth specification (fase-1-fundacion).
 """
-import sqlite3
+
 import pytest
 
 
 class TestLogin:
-    """POST /api/login — upsert login for capturistas."""
+    """POST /api/auth/login scenarios."""
 
-    def test_create_new_capturista(self, client):
-        """New name creates a new capturista."""
-        response = client.post("/api/login", json={"nombre": "Ana García"})
-        assert response.status_code == 200
-        data = response.json()
-        assert data["capturista_id"] is not None
-        assert data["nombre"] == "Ana García"
+    def test_login_valid_credentials_returns_jwt(self, client, admin_user):
+        """Valid email+password returns access_token with rol and user info."""
+        res = client.post("/api/auth/login", json={
+            "email": "admin@test.mx",
+            "password": "adminpass123",
+        })
 
-    def test_login_same_name_returns_same_id(self, client):
-        """C2: Re-login with same name returns same capturista_id (no duplicates)."""
-        r1 = client.post("/api/login", json={"nombre": "Carlos López"})
-        assert r1.status_code == 200
-        id_first = r1.json()["capturista_id"]
+        assert res.status_code == 200
+        data = res.json()
+        assert "access_token" in data
+        assert data["rol"] == "admin"
+        assert data["nombre"] == "Admin Test"
+        assert "usuario_id" in data
+        # Token should be a non-empty string
+        assert len(data["access_token"]) > 10
 
-        r2 = client.post("/api/login", json={"nombre": "Carlos López"})
-        assert r2.status_code == 200
-        id_second = r2.json()["capturista_id"]
+    def test_login_wrong_password_returns_401(self, client, capturista_user):
+        """Wrong password returns 401 with generic message (no info leakage)."""
+        res = client.post("/api/auth/login", json={
+            "email": "cap@test.mx",
+            "password": "wrongpassword",
+        })
 
-        assert id_first == id_second, "Same name should return same capturista_id"
+        assert res.status_code == 401
+        assert "Credenciales inválidas" in res.json()["detail"]
 
-    def test_different_names_different_ids(self, client):
-        """Different names get different IDs."""
-        r1 = client.post("/api/login", json={"nombre": "Persona Uno"})
-        r2 = client.post("/api/login", json={"nombre": "Persona Dos"})
-        assert r1.json()["capturista_id"] != r2.json()["capturista_id"]
+    def test_login_unknown_email_returns_401(self, client):
+        """Non-existent email returns 401 — does NOT reveal email doesn't exist."""
+        res = client.post("/api/auth/login", json={
+            "email": "nobody@nope.mx",
+            "password": "whatever",
+        })
 
-    def test_name_too_short_rejected(self, client):
-        """Name < 2 characters is rejected by Pydantic validation."""
-        response = client.post("/api/login", json={"nombre": "A"})
-        assert response.status_code == 422
+        assert res.status_code == 401
+        assert "Credenciales inválidas" in res.json()["detail"]
 
-    def test_name_stripped_before_validation(self, client):
-        """Name with leading/trailing whitespace is stripped."""
-        r = client.post("/api/login", json={"nombre": "  Juan  "})
-        assert r.status_code == 200
-        assert r.json()["nombre"] == "Juan"
+    def test_login_inactive_user_returns_401(self, client, _test_db_conn, capturista_user):
+        """Deactivated user cannot login."""
+        import psycopg2.extras
+        with _test_db_conn.cursor() as cur:
+            cur.execute(
+                "UPDATE usuarios SET activo = FALSE WHERE id = %s",
+                (capturista_user["id"],),
+            )
+        _test_db_conn.commit()
 
-    def test_no_duplicate_rows_in_db(self, client, _session_db):
-        """Verify the database has no duplicate nombres after multiple logins."""
-        client.post("/api/login", json={"nombre": "Repetido"})
-        client.post("/api/login", json={"nombre": "Repetido"})
-        client.post("/api/login", json={"nombre": "Repetido"})
+        res = client.post("/api/auth/login", json={
+            "email": "cap@test.mx",
+            "password": "cappass123",
+        })
 
-        conn = sqlite3.connect(_session_db)
-        rows = conn.execute(
-            "SELECT id, nombre FROM capturistas WHERE nombre = 'Repetido'"
-        ).fetchall()
-        conn.close()
-        assert len(rows) == 1, f"Expected 1 row, got {len(rows)}"
+        assert res.status_code == 401
+
+    def test_login_capturista_returns_capturista_rol(self, client, capturista_user):
+        """Capturista login returns correct rol."""
+        res = client.post("/api/auth/login", json={
+            "email": "cap@test.mx",
+            "password": "cappass123",
+        })
+
+        assert res.status_code == 200
+        assert res.json()["rol"] == "capturista"
+
+
+class TestGetMe:
+    """GET /api/auth/me scenarios."""
+
+    def test_me_with_valid_token_returns_user(self, client, admin_headers, admin_user):
+        """Valid JWT returns current user data."""
+        res = client.get("/api/auth/me", headers=admin_headers)
+
+        assert res.status_code == 200
+        data = res.json()
+        assert data["email"] == "admin@test.mx"
+        assert data["rol"] == "admin"
+        assert data["nombre"] == "Admin Test"
+        assert "usuario_id" in data
+
+    def test_me_without_token_returns_401(self, client):
+        """No Authorization header → 401."""
+        res = client.get("/api/auth/me")
+        assert res.status_code == 401
+
+    def test_me_with_invalid_token_returns_401(self, client):
+        """Garbled token → 401."""
+        res = client.get("/api/auth/me", headers={"Authorization": "Bearer notavalidtoken"})
+        assert res.status_code == 401
+
+
+class TestRoleEnforcement:
+    """Role-based access control scenarios."""
+
+    def test_admin_can_access_admin_endpoint(self, client, admin_headers):
+        """Admin JWT allows accessing admin-only endpoint (POST /api/usuarios)."""
+        res = client.post("/api/usuarios", json={
+            "nombre": "New User",
+            "email": "new@test.mx",
+            "password": "password123",
+            "rol": "capturista",
+        }, headers=admin_headers)
+
+        assert res.status_code == 201
+
+    def test_capturista_blocked_from_admin_endpoint(self, client, capturista_headers):
+        """Capturista JWT blocked from admin-only endpoint → 403."""
+        res = client.post("/api/usuarios", json={
+            "nombre": "Hacker",
+            "email": "hacker@test.mx",
+            "password": "password123",
+            "rol": "admin",
+        }, headers=capturista_headers)
+
+        assert res.status_code == 403
