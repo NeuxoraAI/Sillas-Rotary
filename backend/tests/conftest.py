@@ -2,11 +2,12 @@
 Test fixtures for Sillas Rotary v2 API.
 
 Strategy:
-- Uses a real PostgreSQL test database (same Supabase project, separate test schema
-  OR the main DB with TRUNCATE per test — configure via TEST_* env vars).
+- Uses a real PostgreSQL test database (same Supabase project, separate test
+  schema OR the main DB with scoped cleanup per test — configure via TEST_* env vars).
 - Overrides FastAPI's get_db dependency with a test connection via
   app.dependency_overrides[get_db].
-- Each test gets a clean DB state via autouse TRUNCATE fixture.
+- Each test gets a clean DB state via scoped cleanup (DELETE WHERE id IN …)
+  instead of global TRUNCATE CASCADE.
 """
 
 import os
@@ -29,7 +30,7 @@ from database import build_test_conn_kwargs
 
 # ---------------------------------------------------------------------------
 # Re-use the same env vars as production. Point to a test Supabase DB or
-# set TEST_DB_* vars to isolate. For CI, ensure TRUNCATE is safe.
+# set TEST_DB_* vars to isolate. For CI, ensure DELETE-based cleanup is safe.
 # ---------------------------------------------------------------------------
 
 _pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -104,9 +105,11 @@ def override_db(_test_db_conn):
 
 
 # ---------------------------------------------------------------------------
-# Clean DB state per test (autouse TRUNCATE)
+# Scoped cleanup per test (DELETE-based, no TRUNCATE)
 # ---------------------------------------------------------------------------
 
+# Tables in dependency order: children (leaf nodes) first, parents last.
+# This ensures FK constraints are respected when deleting.
 _TABLES_ORDER = [
     "historial_estados",
     "solicitudes_tecnicas",
@@ -120,19 +123,44 @@ _TABLES_ORDER = [
 ]
 
 
+def _track(table: str, id_value: int | dict, tracker: dict[str, list]) -> None:
+    """Register an ID (or composite key dict) for later cleanup."""
+    tracker.setdefault(table, []).append(id_value)
+
+
+def _scoped_cleanup(conn, tracker: dict[str, list]) -> None:
+    """Delete only the rows we seeded, in FK-safe order."""
+    with conn.cursor() as cur:
+        for table in _TABLES_ORDER:
+            ids = tracker.get(table, [])
+            if not ids:
+                continue
+            if isinstance(ids[0], dict):
+                # Composite key table (e.g. region_counters)
+                for key in ids:
+                    conditions = " AND ".join(f"{k} = %s" for k in key)
+                    values = tuple(key.values())
+                    cur.execute(f"DELETE FROM {table} WHERE {conditions}", values)
+            else:
+                # Simple integer PK
+                placeholders = ", ".join("%s" for _ in ids)
+                cur.execute(f"DELETE FROM {table} WHERE id IN ({placeholders})", tuple(ids))
+    conn.commit()
+
+
 @pytest.fixture(autouse=True)
 def clean_db(request):
-    """Truncate all tables before each test for isolation."""
+    """Scoped cleanup: only delete rows seeded by the current test."""
     if "client" not in request.fixturenames:
         yield
         return
 
     _test_db_conn = request.getfixturevalue("_test_db_conn")
-    with _test_db_conn.cursor() as cur:
-        tables = ", ".join(_TABLES_ORDER)
-        cur.execute(f"TRUNCATE TABLE {tables} RESTART IDENTITY CASCADE")
-    _test_db_conn.commit()
+    # Tracker populated by seed fixtures via _track
+    tracker: dict[str, list] = {table: [] for table in _TABLES_ORDER}
+    request.node._cleanup_tracker = tracker
     yield
+    _scoped_cleanup(_test_db_conn, tracker)
     _test_db_conn.rollback()
 
 
@@ -149,11 +177,16 @@ def client(_test_db_conn, override_db):
 
 
 # ---------------------------------------------------------------------------
-# Seed fixtures
+# Seed fixtures — each registers its IDs for scoped cleanup
 # ---------------------------------------------------------------------------
 
+def _get_tracker(request) -> dict:
+    """Get the cleanup tracker from the current test node."""
+    return getattr(request.node, "_cleanup_tracker", {})
+
+
 @pytest.fixture
-def pais_mx(_test_db_conn) -> dict:
+def pais_mx(_test_db_conn, request) -> dict:
     """Insert pais México and return its data."""
     with _test_db_conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
         cur.execute(
@@ -162,11 +195,12 @@ def pais_mx(_test_db_conn) -> dict:
         )
         row = dict(cur.fetchone())
     _test_db_conn.commit()
+    _track("paises", row["id"], _get_tracker(request))
     return row
 
 
 @pytest.fixture
-def pais_us(_test_db_conn) -> dict:
+def pais_us(_test_db_conn, request) -> dict:
     """Insert pais USA and return its data."""
     with _test_db_conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
         cur.execute(
@@ -175,11 +209,12 @@ def pais_us(_test_db_conn) -> dict:
         )
         row = dict(cur.fetchone())
     _test_db_conn.commit()
+    _track("paises", row["id"], _get_tracker(request))
     return row
 
 
 @pytest.fixture
-def region_lon(pais_mx, _test_db_conn) -> dict:
+def region_lon(pais_mx, _test_db_conn, request) -> dict:
     """Insert region León (MX/LON) and return its data."""
     with _test_db_conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
         cur.execute(
@@ -188,11 +223,12 @@ def region_lon(pais_mx, _test_db_conn) -> dict:
         )
         row = dict(cur.fetchone())
     _test_db_conn.commit()
+    _track("regiones", row["id"], _get_tracker(request))
     return row
 
 
 @pytest.fixture
-def region_ira(pais_mx, _test_db_conn) -> dict:
+def region_ira(pais_mx, _test_db_conn, request) -> dict:
     """Insert region Irapuato (MX/IRA) and return its data."""
     with _test_db_conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
         cur.execute(
@@ -201,6 +237,7 @@ def region_ira(pais_mx, _test_db_conn) -> dict:
         )
         row = dict(cur.fetchone())
     _test_db_conn.commit()
+    _track("regiones", row["id"], _get_tracker(request))
     return row
 
 
@@ -221,39 +258,45 @@ def _create_user(conn, nombre: str, email: str, password: str, rol: str) -> dict
 
 
 @pytest.fixture
-def admin_user(_test_db_conn) -> dict:
+def admin_user(_test_db_conn, request) -> dict:
     """Create an admin user. Returns DB row (no password exposed)."""
-    return _create_user(
+    row = _create_user(
         _test_db_conn,
         nombre="Admin Test",
         email="admin@test.mx",
         password="adminpass123",
         rol="admin",
     )
+    _track("usuarios", row["id"], _get_tracker(request))
+    return row
 
 
 @pytest.fixture
-def capturista_user(_test_db_conn) -> dict:
+def capturista_user(_test_db_conn, request) -> dict:
     """Create a capturista user."""
-    return _create_user(
+    row = _create_user(
         _test_db_conn,
         nombre="Capturista Test",
         email="cap@test.mx",
         password="cappass123",
         rol="capturista",
     )
+    _track("usuarios", row["id"], _get_tracker(request))
+    return row
 
 
 @pytest.fixture
-def tecnico_user(_test_db_conn) -> dict:
+def tecnico_user(_test_db_conn, request) -> dict:
     """Create a técnico user."""
-    return _create_user(
+    row = _create_user(
         _test_db_conn,
         nombre="Técnico Test",
         email="tec@test.mx",
         password="tecpass123",
         rol="tecnico",
     )
+    _track("usuarios", row["id"], _get_tracker(request))
+    return row
 
 
 def _get_token(client, email: str, password: str) -> str:
