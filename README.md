@@ -379,6 +379,72 @@ solicitudes_tecnicas  ──→  beneficiarios + usuarios
 
 ---
 
+## Gates por Fase (Cleanup v2)
+
+Cada fase del cleanup de seguridad y estabilidad tiene gates de verificación
+objetivos. **No avanzar a la siguiente fase sin PASS en todos los gates.**
+
+| Fase | Gate | Verificación | Estado |
+|---|---|---|---|
+| **0 — Contención** | `/docs`, `/redoc`, `/openapi.json` bloqueados en prod | `ENV=production pytest tests/test_main.py` → 3 passed | ✅ |
+| | `migrate_v2.sql` marcado LEGACY, no ejecutable | `pytest tests/test_migration_deprecation.py` → passes | ✅ |
+| | Tests abortan si DB no es test | `pytest tests/test_database_safety.py` → RuntimeError sin `TEST_DATABASE_URL` | ✅ |
+| **1 — RBAC** | `require_roles()` centralizado en `auth.py` | `pytest tests/test_auth_helpers.py` → 5 casos allow/reject | ✅ |
+| | Socioeconómico: solo `capturista`/`admin` | `pytest tests/test_socioeconomico.py` → 403 para `tecnico` | ✅ |
+| | Técnica: solo `tecnico`/`admin` | `pytest tests/test_tecnica.py` → 403 para `capturista` | ✅ |
+| **2 — Storage** | Bucket `fotos-tecnica` privado | `init_db.py` crea/actualiza con `public=False` | ✅ |
+| | `foto_path` canónico + dual-write | Migración `0002` aplicada; backfill desde `foto_url` | ✅ |
+| | Endpoint `GET /api/solicitudes/{id}/foto` autenticado | `pytest tests/test_tecnica_storage_security.py` → signed URL + 403 | ✅ |
+| **3 — Hardening** | Security headers en cada respuesta | `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy` presentes | ✅ |
+| | `GET /api/health` disponible | Retorna `{"status":"ok"}` sin auth | ✅ |
+| | `vercel.json` bloquea rutas internas | `/backend/*`, `*.sql`, `*.py` → 404 | ✅ |
+| **4 — Cleanup v1** | Sin referencias activas a `capturista_id` en código | `pytest tests/test_v1_legacy_cleanup.py` → 13 passed | ✅ |
+| | `init_db.py` sin tabla `capturistas` | DDL solo crea `usuarios` | ✅ |
+| | README sin badge SQLite ni endpoint `/api/login` | Documentación v2 verificada | ✅ |
+| **5 — Tests aislados** | Cleanup por scope (sin TRUNCATE global) | `pytest tests/test_cleanup_scope.py` → DELETE WHERE id IN | ✅ |
+| | Contratos 4xx estructurados | `test_estudio_error_contract.py` + `test_solicitud_error_contract.py` | ✅ |
+| | Suite mínima pasa sin DB | 57 tests unitarios sin `TEST_DATABASE_URL` | ✅ |
+| **6 — Documentación** | README con gates y rollback | Esta sección + runbook operativo | ✅ |
+| | Runbook ejecutable | `docs/cleanup-runbook.md` con checklist PASS/FAIL | ✅ |
+
+## Rollback por Lote
+
+Si una fase falla en producción, revertir en orden inverso usando el commit
+inmediatamente anterior al despliegue de esa fase.
+
+| Fase | Rollback | Impacto |
+|---|---|---|
+| **0** | `git revert <commit-f0>` → re-deploy | `/docs` vuelve a estar accesible en prod (riesgo bajo) |
+| **1** | `git revert <commit-f1>` → re-deploy | RBAC se desactiva; endpoints vuelven a solo `require_auth` |
+| **2** | (a) `git revert <commit-f2>` → re-deploy<br>(b) `ALTER TABLE solicitudes_tecnicas DROP COLUMN IF EXISTS foto_path;` | Bucket vuelve a público; `foto_path` se pierde (backfill reversible si `foto_url` existe) |
+| **3** | `git revert <commit-f3>` → re-deploy | Headers de seguridad se eliminan; `vercel.json` vuelve a versión anterior |
+| **4** | `git revert <commit-f4>` → re-deploy | Referencias v1 se restauran (comentadas/deprecadas); sin impacto funcional |
+| **5** | `git revert <commit-f5>` → re-deploy | Tests vuelven a TRUNCATE global (solo afecta CI, no producción) |
+| **6** | `git revert <commit-f6>` → re-deploy | Solo documentación; cero impacto operacional |
+
+### Procedimiento genérico de rollback
+
+```bash
+# 1. Identificar el commit de la fase a revertir
+git log --oneline -20
+
+# 2. Revertir el commit (crea un nuevo commit de deshacer)
+git revert <hash-del-commit>
+
+# 3. Push a develop y deploy
+git push origin develop
+
+# 4. Si hubo migración SQL, revertir manualmente en Supabase
+#    Ejemplo para Fase 2:
+#    ALTER TABLE solicitudes_tecnicas DROP COLUMN IF EXISTS foto_path;
+```
+
+> **Regla de oro:** Nunca revertir una fase sin revertir primero las fases
+> posteriores que dependen de ella. Ejemplo: si Fase 2 falla, revertir
+> Fase 3, 4, 5 primero (si ya se deployaron), luego Fase 2.
+
+---
+
 ## Roadmap
 
 - [x] Migrar SQLite → Supabase (PostgreSQL)
