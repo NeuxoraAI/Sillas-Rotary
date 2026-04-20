@@ -25,6 +25,8 @@ import psycopg2.extras
 from fastapi.testclient import TestClient
 from passlib.context import CryptContext
 
+from database import build_test_conn_kwargs
+
 # ---------------------------------------------------------------------------
 # Re-use the same env vars as production. Point to a test Supabase DB or
 # set TEST_DB_* vars to isolate. For CI, ensure TRUNCATE is safe.
@@ -39,14 +41,7 @@ _pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def _make_test_conn():
     """Create a psycopg2 connection for tests using environment variables."""
-    return psycopg2.connect(
-        host=os.environ["DB_HOST"],
-        port=int(os.environ.get("DB_PORT", "5432")),
-        dbname=os.environ.get("DB_NAME", "postgres"),
-        user=os.environ.get("DB_USER", "postgres"),
-        password=os.environ["DB_PASSWORD"],
-        sslmode="require",
-    )
+    return psycopg2.connect(**build_test_conn_kwargs())
 
 
 # ---------------------------------------------------------------------------
@@ -87,7 +82,7 @@ def _test_db_conn():
 # Important: override FastAPI dependency BEFORE importing app
 # ---------------------------------------------------------------------------
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="session")
 def override_db(_test_db_conn):
     """
     Override FastAPI's get_db dependency with a test adapter backed by
@@ -126,8 +121,13 @@ _TABLES_ORDER = [
 
 
 @pytest.fixture(autouse=True)
-def clean_db(_test_db_conn):
+def clean_db(request):
     """Truncate all tables before each test for isolation."""
+    if "client" not in request.fixturenames:
+        yield
+        return
+
+    _test_db_conn = request.getfixturevalue("_test_db_conn")
     with _test_db_conn.cursor() as cur:
         tables = ", ".join(_TABLES_ORDER)
         cur.execute(f"TRUNCATE TABLE {tables} RESTART IDENTITY CASCADE")

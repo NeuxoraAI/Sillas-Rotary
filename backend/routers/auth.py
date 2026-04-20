@@ -135,16 +135,37 @@ def require_admin(
     return user
 
 
+def require_roles(*roles: str):
+    """Build a dependency that allows only the provided roles."""
+    allowed = set(roles)
+
+    def _require_roles(user: Annotated[CurrentUser, Depends(require_auth)]) -> CurrentUser:
+        if user.rol not in allowed:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="No tiene permisos para esta acción",
+            )
+        return user
+
+    return _require_roles
+
+
+def assert_resource_owner(row_user_id: int, user: CurrentUser) -> None:
+    """Allow admin access or enforce ownership by usuario_id."""
+    if user.rol == "admin":
+        return
+    if row_user_id != user.usuario_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No tiene permisos para este recurso",
+        )
+
+
 def require_tecnico_or_admin(
     user: Annotated[CurrentUser, Depends(require_auth)],
 ) -> CurrentUser:
     """Ensure current user is técnico or admin. Raises 403 otherwise."""
-    if user.rol not in ("tecnico", "admin"):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Se requieren permisos de técnico o administrador",
-        )
-    return user
+    return require_roles("tecnico", "admin")(user)
 
 
 # ---------------------------------------------------------------------------

@@ -124,3 +124,42 @@ class TestRoleEnforcement:
         }, headers=capturista_headers)
 
         assert res.status_code == 403
+
+
+class TestRouterRoleGuards:
+    def test_tecnico_blocked_from_socioeconomico_create(self, client, tecnico_headers, region_lon):
+        payload = {
+            "region_id": region_lon["id"],
+            "sede": "León sede Forum",
+            "beneficiario": {
+                "nombre": "RBAC Auth",
+                "fecha_nacimiento": "2001-01-15",
+                "diagnostico": "Parálisis cerebral",
+                "calle": "Calle Test 123",
+                "colonia": "Centro",
+                "ciudad": "León",
+                "telefonos": "4621234567",
+            },
+            "tutores": [{"numero_tutor": 1, "nombre": "Tutor", "tiene_imss": True, "tiene_infonavit": False}],
+            "estudio": {
+                "tuvo_silla_previa": False,
+                "elaboro_estudio": "Capturista Test",
+                "fecha_estudio": "2026-04-19",
+                "status": "borrador",
+            },
+        }
+
+        res = client.post("/api/estudios", json=payload, headers=tecnico_headers)
+        assert res.status_code == 403
+
+    def test_capturista_blocked_from_tecnica_create(self, client, capturista_headers, sample_estudio):
+        payload = {
+            "beneficiario_id": sample_estudio["beneficiario_id"],
+            "entorno": "Urbano / Interiores",
+            "control_tronco": "Completo",
+            "control_cabeza": "Independiente",
+            "status": "borrador",
+        }
+
+        res = client.post("/api/solicitudes", json=payload, headers=capturista_headers)
+        assert res.status_code == 403

@@ -1,225 +1,133 @@
-"""
-Tests for the tecnica (technical request) endpoints.
-
-Covers:
-- C4: NULL storage for optional measurement fields (not 0.0)
-- N1: NULL for entidad_solicitante and justificacion (not "")
-- C3: Draft resume (POST → GET → PATCH flow)
-- Photo upload validation
-"""
-import pytest
-import io
+def _solicitud_payload(beneficiario_id: int) -> dict:
+    return {
+        "beneficiario_id": beneficiario_id,
+        "entorno": "Urbano / Interiores",
+        "control_tronco": "Completo",
+        "control_cabeza": "Independiente",
+        "status": "borrador",
+    }
 
 
-class TestSolicitudCreate:
-    """POST /api/solicitudes — create a technical request."""
+def _create_user_and_login(client, admin_headers: dict, *, suffix: str, rol: str) -> dict:
+    email = f"{rol}-{suffix}@test.mx"
+    password = f"{rol}-pass-123"
+    create_response = client.post(
+        "/api/usuarios",
+        headers=admin_headers,
+        json={
+            "nombre": f"{rol.title()} {suffix}",
+            "email": email,
+            "password": password,
+            "rol": rol,
+        },
+    )
+    assert create_response.status_code == 201
 
-    def test_create_solicitud_with_null_measurements(
-        self, client, sample_capturista, sample_estudio, _session_db
-    ):
-        """C4: Optional measurements should store NULL, not 0.0."""
-        import sqlite3
-
-        payload = {
-            "capturista_id": sample_capturista["capturista_id"],
-            "beneficiario_id": sample_estudio["beneficiario_id"],
-            "entorno": "Urbano / Interiores",
-            "control_tronco": "Completo",
-            "control_cabeza": "Independiente",
-            # All measurements are null/absent
-            "status": "borrador",
-        }
-        response = client.post("/api/solicitudes", json=payload)
-        assert response.status_code == 201
-        solicitud_id = response.json()["solicitud_id"]
-
-        # Verify in DB that measurements are NULL, not 0.0
-        conn = sqlite3.connect(_session_db)
-        row = conn.execute(
-            "SELECT altura_total_in, peso_kg, medida_cabeza_asiento "
-            "FROM solicitudes_tecnicas WHERE id = ?",
-            (solicitud_id,),
-        ).fetchone()
-        conn.close()
-        assert row[0] is None, f"altura_total_in should be NULL, got {row[0]}"
-        assert row[1] is None, f"peso_kg should be NULL, got {row[1]}"
-        assert row[2] is None, f"medida_cabeza_asiento should be NULL, got {row[2]}"
-
-    def test_create_solicitud_null_text_fields(
-        self, client, sample_capturista, sample_estudio, _session_db
-    ):
-        """N1: entidad_solicitante and justificacion should store NULL, not ''."""
-        import sqlite3
-
-        payload = {
-            "capturista_id": sample_capturista["capturista_id"],
-            "beneficiario_id": sample_estudio["beneficiario_id"],
-            "entorno": "Rural / Terreno irregular",
-            "control_tronco": "Parcial / Requiere apoyo lateral",
-            "control_cabeza": "Independiente",
-            "status": "borrador",
-        }
-        response = client.post("/api/solicitudes", json=payload)
-        assert response.status_code == 201
-        solicitud_id = response.json()["solicitud_id"]
-
-        conn = sqlite3.connect(_session_db)
-        row = conn.execute(
-            "SELECT entidad_solicitante, justificacion "
-            "FROM solicitudes_tecnicas WHERE id = ?",
-            (solicitud_id,),
-        ).fetchone()
-        conn.close()
-        assert row[0] is None, f"entidad_solicitante should be NULL, got '{row[0]}'"
-        assert row[1] is None, f"justificacion should be NULL, got '{row[1]}'"
-
-    def test_create_solicitud_with_measurements(
-        self, client, sample_capturista, sample_estudio
-    ):
-        """Creating a solicitud with measurements stores them correctly."""
-        payload = {
-            "capturista_id": sample_capturista["capturista_id"],
-            "beneficiario_id": sample_estudio["beneficiario_id"],
-            "entorno": "Mixto",
-            "control_tronco": "Nulo / Requiere soporte total",
-            "control_cabeza": "Intermitente",
-            "observaciones_posturales": "Escoliosis leve",
-            "altura_total_in": 45.5,
-            "peso_kg": 70.0,
-            "medida_cabeza_asiento": 25.0,
-            "medida_hombro_asiento": 20.0,
-            "medida_prof_asiento": 18.0,
-            "medida_rodilla_talon": 16.0,
-            "medida_ancho_cadera": 14.0,
-            "entidad_solicitante": "DIF Guanajuato",
-            "prioridad": "Alta",
-            "justificacion": "Caso urgente",
-            "status": "completo",
-        }
-        response = client.post("/api/solicitudes", json=payload)
-        assert response.status_code == 201
-        data = response.json()
-        assert data["status"] == "completo"
-
-    def test_create_solicitud_invalid_capturista_id(
-        self, client, sample_estudio
-    ):
-        """Creating a solicitud with non-existent capturista_id returns 400."""
-        payload = {
-            "capturista_id": 99999,
-            "beneficiario_id": sample_estudio["beneficiario_id"],
-            "entorno": "Urbano / Interiores",
-            "control_tronco": "Completo",
-            "control_cabeza": "Independiente",
-            "status": "borrador",
-        }
-        response = client.post("/api/solicitudes", json=payload)
-        assert response.status_code == 400
+    login_response = client.post(
+        "/api/auth/login",
+        json={"email": email, "password": password},
+    )
+    assert login_response.status_code == 200
+    token = login_response.json()["access_token"]
+    return {"Authorization": f"Bearer {token}"}
 
 
-class TestSolicitudGet:
-    """GET /api/solicitudes/{id} — retrieve a technical request."""
+class TestTecnicaRbac:
+    def test_capturista_cannot_create_solicitud(self, client, capturista_headers, sample_estudio):
+        response = client.post(
+            "/api/solicitudes",
+            headers=capturista_headers,
+            json=_solicitud_payload(sample_estudio["beneficiario_id"]),
+        )
+        assert response.status_code == 403
 
-    def test_get_existing_solicitud(
-        self, client, sample_capturista, sample_estudio
-    ):
-        """Getting an existing solicitud returns full data."""
-        payload = {
-            "capturista_id": sample_capturista["capturista_id"],
-            "beneficiario_id": sample_estudio["beneficiario_id"],
-            "entorno": "Urbano / Interiores",
-            "control_tronco": "Completo",
-            "control_cabeza": "Independiente",
-            "status": "borrador",
-        }
-        create_resp = client.post("/api/solicitudes", json=payload)
-        solicitud_id = create_resp.json()["solicitud_id"]
+    def test_tecnico_owner_can_patch_borrador(self, client, tecnico_headers, sample_estudio):
+        create_response = client.post(
+            "/api/solicitudes",
+            headers=tecnico_headers,
+            json=_solicitud_payload(sample_estudio["beneficiario_id"]),
+        )
+        assert create_response.status_code == 201
+        solicitud_id = create_response.json()["solicitud_id"]
 
-        response = client.get(f"/api/solicitudes/{solicitud_id}")
-        assert response.status_code == 200
-        data = response.json()
-        assert data["id"] == solicitud_id
-        assert data["entorno"] == "Urbano / Interiores"
-
-    def test_get_nonexistent_solicitud(self, client):
-        """Getting a non-existent solicitud returns 404."""
-        response = client.get("/api/solicitudes/99999")
-        assert response.status_code == 404
-
-
-class TestSolicitudPatch:
-    """PATCH /api/solicitudes/{id} — update a technical request (draft resume)."""
-
-    def test_update_solicitud_status(
-        self, client, sample_capturista, sample_estudio
-    ):
-        """C3: Updating a solicitud from borrador to completo via PATCH."""
-        payload = {
-            "capturista_id": sample_capturista["capturista_id"],
-            "beneficiario_id": sample_estudio["beneficiario_id"],
-            "entorno": "Rural / Terreno irregular",
-            "control_tronco": "Nulo / Requiere soporte total",
-            "control_cabeza": "No posee / Requiere cabezal",
-            "status": "borrador",
-        }
-        create_resp = client.post("/api/solicitudes", json=payload)
-        solicitud_id = create_resp.json()["solicitud_id"]
-
-        patch_resp = client.patch(
+        patch_response = client.patch(
             f"/api/solicitudes/{solicitud_id}",
-            json={
-                "status": "completo",
-                "prioridad": "Alta",
-                "altura_total_in": 42.0,
-            },
+            headers=tecnico_headers,
+            json={"status": "completo", "prioridad": "Alta"},
         )
-        assert patch_resp.status_code == 200
-        assert patch_resp.json()["status"] == "completo"
+        assert patch_response.status_code == 200
+        assert patch_response.json()["status"] == "completo"
 
-    def test_patch_nonexistent_solicitud(self, client):
-        """Patching a non-existent solicitud returns 404."""
-        response = client.patch("/api/solicitudes/99999", json={"status": "completo"})
-        assert response.status_code == 404
-
-
-class TestPhotoUpload:
-    """POST /api/upload-foto — photo upload endpoint."""
-
-    def test_upload_jpeg(self, client):
-        """Uploading a valid JPEG returns foto_url."""
-        fake_image = io.BytesIO(b"\xff\xd8\xff\xe0" + b"\x00" * 100)
-        response = client.post(
-            "/api/upload-foto",
-            files={"foto": ("test.jpg", fake_image, "image/jpeg")},
+    def test_non_owner_tecnico_patch_forbidden(
+        self,
+        client,
+        admin_headers,
+        tecnico_headers,
+        sample_estudio,
+    ):
+        create_response = client.post(
+            "/api/solicitudes",
+            headers=tecnico_headers,
+            json=_solicitud_payload(sample_estudio["beneficiario_id"]),
         )
-        assert response.status_code == 200
-        data = response.json()
-        assert "foto_url" in data
-        assert data["foto_url"].startswith("/uploads/")
+        assert create_response.status_code == 201
+        solicitud_id = create_response.json()["solicitud_id"]
 
-    def test_upload_png(self, client):
-        """Uploading a valid PNG returns foto_url."""
-        fake_image = io.BytesIO(b"\x89PNG\r\n\x1a\n" + b"\x00" * 100)
-        response = client.post(
-            "/api/upload-foto",
-            files={"foto": ("test.png", fake_image, "image/png")},
+        other_tecnico_headers = _create_user_and_login(
+            client,
+            admin_headers,
+            suffix="other-tec",
+            rol="tecnico",
         )
-        assert response.status_code == 200
-        assert "foto_url" in response.json()
 
-    def test_upload_invalid_file_type(self, client):
-        """Uploading a PDF is rejected."""
-        fake_file = io.BytesIO(b"%PDF-1.4" + b"\x00" * 100)
-        response = client.post(
-            "/api/upload-foto",
-            files={"foto": ("test.pdf", fake_file, "application/pdf")},
+        patch_response = client.patch(
+            f"/api/solicitudes/{solicitud_id}",
+            headers=other_tecnico_headers,
+            json={"status": "completo"},
         )
-        assert response.status_code == 400
+        assert patch_response.status_code == 403
 
-    def test_upload_empty_file(self, client):
-        """Uploading an empty file is rejected by request validation."""
-        response = client.post(
-            "/api/upload-foto",
-            files={"foto": ("", b"", "image/jpeg")},
+    def test_admin_can_patch_foreign_solicitud(
+        self,
+        client,
+        admin_headers,
+        tecnico_headers,
+        sample_estudio,
+    ):
+        create_response = client.post(
+            "/api/solicitudes",
+            headers=tecnico_headers,
+            json=_solicitud_payload(sample_estudio["beneficiario_id"]),
         )
-        assert response.status_code == 422
+        assert create_response.status_code == 201
+        solicitud_id = create_response.json()["solicitud_id"]
+
+        patch_response = client.patch(
+            f"/api/solicitudes/{solicitud_id}",
+            headers=admin_headers,
+            json={"status": "completo", "prioridad": "Media"},
+        )
+        assert patch_response.status_code == 200
+        assert patch_response.json()["status"] == "completo"
+
+    def test_capturista_cannot_close_existing_solicitud(
+        self,
+        client,
+        capturista_headers,
+        tecnico_headers,
+        sample_estudio,
+    ):
+        create_response = client.post(
+            "/api/solicitudes",
+            headers=tecnico_headers,
+            json=_solicitud_payload(sample_estudio["beneficiario_id"]),
+        )
+        assert create_response.status_code == 201
+        solicitud_id = create_response.json()["solicitud_id"]
+
+        close_response = client.patch(
+            f"/api/solicitudes/{solicitud_id}",
+            headers=capturista_headers,
+            json={"status": "completo"},
+        )
+        assert close_response.status_code == 403

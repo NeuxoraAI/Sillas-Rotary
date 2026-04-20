@@ -19,7 +19,7 @@
 [![Python](https://img.shields.io/badge/Python-3.12-3776ab?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![Tailwind](https://img.shields.io/badge/Tailwind_CSS-CDN-38bdf8?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
-[![SQLite](https://img.shields.io/badge/SQLite-Dev-003b57?style=for-the-badge&logo=sqlite&logoColor=white)](https://sqlite.org)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Supabase-336791?style=for-the-badge&logo=postgresql&logoColor=white)](https://supabase.com)
 
 </div>
 
@@ -60,7 +60,7 @@ Una app web que funciona en cualquier teléfono o tablet, sin instalación, sin 
 
 | Módulo | Datos capturados |
 |---|---|
-| **Acceso** | Nombre del capturista (trazabilidad de quién registró cada caso) |
+| **Acceso** | Email + contraseña → JWT (roles: admin, capturista, tecnico) |
 | **Estudio socioeconómico** | Datos del beneficiario, domicilio, tutores, ingresos familiares, historial |
 | **Solicitud técnica** | Entorno de uso, capacidad postural, 5 medidas corporales en pulgadas, fotografía clínica, prioridad |
 
@@ -82,18 +82,20 @@ Sillas-Rotary/
 │       ├── guia_clinica.png        # Diagrama de referencia — toma de medidas
 │       └── iconografia_silla.png   # Ícono de silla de ruedas
 │
-├── backend/                        # API REST — FastAPI + SQLite
-│   ├── main.py                     # Punto de entrada: CORS, rutas, static files
-│   ├── database.py                 # Context manager de conexión SQLite
+├── backend/                        # API REST — FastAPI + Supabase/PostgreSQL
+│   ├── main.py                     # Punto de entrada: CORS, rutas, static files, security headers
+│   ├── database.py                 # Conexión PostgreSQL + test guardrails
 │   ├── init_db.py                  # DDL: crea tablas e índices al iniciar
+│   ├── migrations/                 # Migraciones SQL incrementales
 │   ├── requirements.txt            # Dependencias Python
 │   ├── start.sh                    # Script de arranque (crea venv + levanta servidor)
 │   ├── .env.example                # Plantilla de variables de entorno
-│   ├── uploads/                    # Imágenes subidas (UUID, excluido del repo)
 │   └── routers/
-│       ├── auth.py                 # POST /api/login
+│       ├── auth.py                 # POST /api/auth/login (JWT HS256)
 │       ├── socioeconomico.py       # Estudio socioeconómico (crear, actualizar, obtener)
-│       └── tecnica.py              # Solicitud técnica + upload de foto
+│       ├── tecnica.py              # Solicitud técnica + upload de foto + signed URL
+│       ├── usuarios.py             # CRUD de usuarios (admin)
+│       └── regiones.py             # CRUD de países y regiones (admin)
 │
 ├── PRD.md                          # Product Requirements Document original
 ├── .gitignore
@@ -134,7 +136,7 @@ El script hace todo automáticamente:
 ```
 → Crea el entorno virtual con Python 3.12
 → Instala las dependencias de requirements.txt
-→ Inicializa la base de datos SQLite (tablas + índices)
+→ Inicializa la base de datos (tablas + índices via init_db.py)
 → Levanta el servidor en http://localhost:8000
 ```
 
@@ -145,8 +147,7 @@ curl http://localhost:8000/
 # {"status":"ok","sistema":"Sillas Rotary API"}
 ```
 
-La documentación interactiva de la API estará disponible en:
-**`http://localhost:8000/docs`**
+> **Nota:** La documentación interactiva de la API (`/docs`, `/redoc`) se desactiva automáticamente en producción (`ENV=production`).
 
 ### 3. Abrir el frontend
 
@@ -162,7 +163,10 @@ uvicorn[standard]==0.30.6
 python-multipart==0.0.9
 aiofiles==23.2.1
 pydantic==2.7.4
-sqlite-web          # Para inspección visual de la base de datos
+psycopg2-binary        # PostgreSQL driver
+supabase               # Supabase client (storage, auth)
+python-jose[cryptography]  # JWT
+passlib[bcrypt]        # Password hashing
 ```
 
 ---
@@ -173,36 +177,37 @@ sqlite-web          # Para inspección visual de la base de datos
 ┌──────────────────────────────────────────────────────┐
 │                    login.html                        │
 │                                                      │
-│  El capturista ingresa su nombre                     │
-│  POST /api/login → sesión en localStorage            │
-│  Si ya existe sesión → salta directo al paso 2       │
+│  El usuario ingresa email + contraseña               │
+│  POST /api/auth/login → JWT en localStorage          │
+│  Si ya hay sesión → redirige según rol               │
+│    admin     → admin-usuarios.html                   │
+│    capturista→ seleccion-region → socioeconomico     │
+│    tecnico   → seleccion-region → tecnica            │
 └─────────────────────┬────────────────────────────────┘
-                      │  ✓ sesión activa
-                      ▼
+                       │  ✓ sesión activa (JWT)
+                       ▼
 ┌──────────────────────────────────────────────────────┐
 │               socioeconomico.html                    │
 │                                                      │
 │  Datos del beneficiario + 1 o 2 tutores              │
-│  POST /api/estudios → beneficiario_id en localStorage│
+│  POST /api/estudios → Authorization: Bearer <token>  │
 │  Permite guardar borrador o estudio completo         │
-│                                                      │
-│  [Cambiar capturista] → limpia sesión → login        │
 └─────────────────────┬────────────────────────────────┘
-                      │  ✓ estudio guardado
-                      ▼
+                       │  ✓ estudio guardado
+                       ▼
 ┌──────────────────────────────────────────────────────┐
 │                  tecnica.html                        │
 │                                                      │
-│  Entorno, capacidad postural, 5 medidas, foto        │
+│  Entorno, capacidad postural, medidas, foto          │
 │  POST /api/upload-foto (opcional)                    │
 │  POST /api/solicitudes                               │
 │                                                      │
 │  Al guardar completo → limpia beneficiario_id        │
 └─────────────────────┬────────────────────────────────┘
-                      │  ✓ solicitud guardada
-                      ▼
-             socioeconomico.html
-          (mismo capturista, nuevo beneficiario)
+                       │  ✓ solicitud guardada
+                       ▼
+              socioeconomico.html
+           (mismo capturista, nuevo beneficiario)
 ```
 
 ---
@@ -211,10 +216,10 @@ sqlite-web          # Para inspección visual de la base de datos
 
 ### Módulo 1 — Acceso (`login.html`)
 
-- El capturista ingresa solo su nombre (sin contraseña)
-- El backend registra o recupera al capturista en la tabla `capturistas`
-- La sesión se guarda en `localStorage` con `capturista_id` y nombre
-- Si hay sesión activa, el nombre se pre-llena automáticamente
+- El usuario ingresa email y contraseña (JWT HS256, 8h expiración)
+- El backend valida contra la tabla `usuarios` y retorna un token JWT
+- La sesión se guarda en `localStorage` con `{token, nombre, rol, usuario_id}`
+- El rol determina el flujo siguiente: admin → admin panel, capturista → socioeconomico, tecnico → tecnica
 
 ### Módulo 2 — Estudio Socioeconómico (`socioeconomico.html`)
 
@@ -243,25 +248,46 @@ Soporta **guardar borrador** (status `borrador`) para continuar después, y **gu
 
 ## API — Endpoints
 
-| Método | Ruta | Descripción |
-|---|---|---|
-| `GET` | `/` | Health check |
-| `POST` | `/api/login` | Registrar o recuperar capturista por nombre |
-| `POST` | `/api/estudios` | Crear estudio socioeconómico completo |
-| `PATCH` | `/api/estudios/{id}` | Actualizar campos del estudio |
-| `GET` | `/api/estudios/{id}` | Obtener estudio con beneficiario y tutores |
-| `POST` | `/api/upload-foto` | Subir imagen (JPG/PNG ≤ 10 MB) → retorna `foto_url` |
-| `POST` | `/api/solicitudes` | Crear solicitud técnica |
-| `PATCH` | `/api/solicitudes/{id}` | Actualizar solicitud técnica |
-| `GET` | `/api/solicitudes/{id}` | Obtener solicitud técnica por ID |
+Todos los endpoints (excepto `/api/auth/login` y `/api/health`) requieren `Authorization: Bearer <token>`.
+
+| Método | Ruta | Rol requerido | Descripción |
+|---|---|---|---|
+| `GET` | `/` | — | Health check |
+| `GET` | `/api/health` | — | Health check detallado |
+| `POST` | `/api/auth/login` | — | Autenticación JWT (email + password) |
+| `GET` | `/api/auth/me` | auth | Obtener usuario actual |
+| `POST` | `/api/estudios` | capturista, admin | Crear estudio socioeconómico completo |
+| `PATCH` | `/api/estudios/{id}` | owner, admin | Actualizar campos del estudio |
+| `GET` | `/api/estudios/{id}` | owner, admin | Obtener estudio con beneficiario y tutores |
+| `POST` | `/api/upload-foto` | tecnico, admin | Subir imagen (JPG/PNG ≤ 10 MB) → retorna `foto_path` |
+| `POST` | `/api/solicitudes` | tecnico, admin | Crear solicitud técnica |
+| `PATCH` | `/api/solicitudes/{id}` | owner, admin | Actualizar solicitud técnica |
+| `GET` | `/api/solicitudes/{id}` | owner, admin | Obtener solicitud técnica por ID |
+| `GET` | `/api/solicitudes/{id}/foto` | owner, admin | Obtener signed URL para foto técnica |
+| `POST` | `/api/usuarios` | admin | Crear usuario del sistema |
+| `GET` | `/api/usuarios` | admin | Listar usuarios |
+| `DELETE` | `/api/usuarios/{id}` | admin | Desactivar usuario (soft delete) |
+| `POST` | `/api/paises` | admin | Crear país |
+| `GET` | `/api/paises` | auth | Listar países |
+| `POST` | `/api/regiones` | admin | Crear región |
+| `GET` | `/api/regiones` | auth | Listar regiones |
 
 ### Ejemplo — Crear estudio socioeconómico
 
 ```bash
+# 1. Obtener token JWT
+TOKEN=$(curl -s -X POST http://localhost:8000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"capturista@test.mx","password":"password123"}' \
+  | jq -r '.access_token')
+
+# 2. Crear estudio con autenticación
 curl -X POST http://localhost:8000/api/estudios \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
   -d '{
-    "capturista_id": 1,
+    "region_id": 1,
+    "sede": "León sede Forum",
     "beneficiario": {
       "nombre": "Ana García López",
       "fecha_nacimiento": "1990-05-15",
@@ -283,7 +309,6 @@ curl -X POST http://localhost:8000/api/estudios \
       "tuvo_silla_previa": false,
       "elaboro_estudio": "Capturista Ejemplo",
       "fecha_estudio": "2026-03-26",
-      "sede": "León",
       "status": "completo"
     }
   }'
@@ -293,15 +318,25 @@ curl -X POST http://localhost:8000/api/estudios \
 
 ## Base de datos
 
-SQLite en desarrollo (`backend/sillas.db`, excluido del repo). Para producción se recomienda migrar a **Supabase** (ver `.env.example`).
+PostgreSQL vía Supabase (producción). En desarrollo se requiere `DB_HOST`, `DB_PASSWORD` y demás variables de entorno.
 
 ```
-capturistas
-├── id  ·  nombre  ·  fecha_registro
+usuarios
+├── id  ·  nombre  ·  email  ·  password_hash  ·  rol  ·  activo
 
-beneficiarios
+paises
+├── id  ·  nombre  ·  codigo  ·  activo
+
+regiones  ──→  paises
+├── id  ·  pais_id  ·  nombre  ·  codigo  ·  activo
+
+region_counters
+├── pais_codigo  ·  region_codigo  ·  anio  ·  ultimo_numero
+
+beneficiarios  ──→  regiones
 ├── id  ·  nombre  ·  fecha_nacimiento  ·  diagnostico
-└── calle  ·  colonia  ·  ciudad  ·  telefonos
+└── calle  ·  colonia  ·  ciudad  ·  telefonos  ·  email
+    folio  ·  region_id  ·  sede
 
 tutores  ──→  beneficiarios
 ├── id  ·  beneficiario_id  ·  numero_tutor (1 o 2)
@@ -309,31 +344,21 @@ tutores  ──→  beneficiarios
     vivienda  ·  fuente_empleo  ·  ingreso_mensual
     tiene_imss  ·  tiene_infonavit
 
-estudios_socioeconomicos  ──→  beneficiarios + capturistas
-├── id  ·  beneficiario_id  ·  capturista_id
+estudios_socioeconomicos  ──→  beneficiarios + usuarios
+├── id  ·  beneficiario_id  ·  usuario_id
 └── sede  ·  fecha_estudio  ·  otras_fuentes_ingreso
     tuvo_silla_previa  ·  status (borrador | completo)
 
-solicitudes_tecnicas  ──→  beneficiarios + capturistas
-├── id  ·  beneficiario_id  ·  capturista_id
+solicitudes_tecnicas  ──→  beneficiarios + usuarios
+├── id  ·  beneficiario_id  ·  usuario_id
 └── entorno  ·  control_tronco  ·  control_cabeza
     altura_total_in  ·  peso_kg  ·  5 medidas en pulgadas
-    foto_url  ·  prioridad (Alta | Media)  ·  status
+    foto_url  ·  foto_path  ·  prioridad (Alta | Media)  ·  status
 ```
 
----
-
-## Ver los datos registrados
-
-`sqlite-web` provee una UI web para navegar tablas, filtrar, ejecutar SQL y exportar:
-
-```bash
-cd backend
-source venv/bin/activate
-sqlite_web sillas.db --port 8002 --no-browser
-```
-
-Abrir **`http://localhost:8002/`** en el navegador.
+> **Nota:** Los campos `capturista_id` en `estudios_socioeconomicos` y `solicitudes_tecnicas`
+> permanecen en la base de datos real por compatibilidad temporal, pero el código v2 usa
+> exclusivamente `usuario_id`. Serán eliminados en una migración futura.
 
 ---
 
@@ -341,22 +366,28 @@ Abrir **`http://localhost:8002/`** en el navegador.
 
 | Aspecto | Implementación |
 |---|---|
+| Autenticación | JWT HS256, 8h expiración, `python-jose` + `passlib[bcrypt]` |
+| Autorización | RBAC server-side (`require_roles`) en todos los endpoints protegidos |
 | Upload de imágenes | Validación doble: MIME type + extensión (solo `.jpg` / `.png`) |
 | Tamaño de archivos | Límite de 10 MB por imagen rechazado en backend |
-| Nombres de archivos | UUID aleatorio — no se expone el nombre original |
-| Campos numéricos | Validación Pydantic + constraints en SQLite (edad, medidas, ingresos) |
-| Integridad referencial | Foreign keys activas con `PRAGMA foreign_keys = ON` |
+| Almacenamiento | Supabase Storage bucket privado, signed URLs temporales |
+| Campos numéricos | Validación Pydantic + constraints en PostgreSQL (edad, medidas, ingresos) |
+| Integridad referencial | Foreign keys activas en PostgreSQL |
 | CORS | Configurado en `main.py` — restringir origins en producción |
+| Headers de seguridad | X-Frame-Options, X-Content-Type-Options, Cache-Control |
+| Docs en producción | `/docs`, `/redoc`, `/openapi.json` desactivados cuando `ENV=production` |
 
 ---
 
-## Roadmap a producción
+## Roadmap
 
-- [ ] Migrar SQLite → Supabase (configurar `.env` con credenciales)
-- [ ] Migrar `uploads/` → Supabase Storage bucket
-- [ ] Restringir `allow_origins` en `main.py` al dominio del frontend
-- [ ] Agregar JWT con expiración para reemplazar `localStorage` simple
-- [ ] Servir el frontend desde HTTPS
+- [x] Migrar SQLite → Supabase (PostgreSQL)
+- [x] Migrar `uploads/` → Supabase Storage bucket
+- [x] Implementar JWT con expiración para reemplazar login por nombre
+- [x] RBAC server-side (`require_roles`) en todos los endpoints
+- [x] Security headers y cache policy en producción
+- [x] Bucket privado con signed URLs para fotos técnicas
+- [ ] Eliminar columnas `capturista_id` legacy de la base de datos
 - [ ] Verificar Python 3.12 en el entorno de despliegue
 
 ---

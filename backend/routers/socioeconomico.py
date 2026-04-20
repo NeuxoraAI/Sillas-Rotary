@@ -3,7 +3,7 @@ Estudio socioeconómico router (v2).
 
 Changes from v1:
 - Uses Depends(get_db) instead of context manager
-- Uses require_auth (JWT) — capturista_id replaced by usuario.usuario_id
+- Uses require_auth (JWT) — identity via usuario.usuario_id (v2)
 - region_id + sede at top level of EstudioCreateRequest (moved from EstudioIn)
 - Calls generate_folio() to assign structured folio to each beneficiario
 - Returns folio in EstudioCreateResponse
@@ -15,7 +15,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, field_validator
 
 from database import get_db, _DBAdapter
-from routers.auth import CurrentUser, require_auth
+from routers.auth import CurrentUser, assert_resource_owner, require_roles
 from routers.regiones import generate_folio
 
 router = APIRouter()
@@ -127,7 +127,7 @@ class EstudioUpdateResponse(BaseModel):
 def crear_estudio(
     body: EstudioCreateRequest,
     db: Annotated[_DBAdapter, Depends(get_db)],
-    usuario: Annotated[CurrentUser, Depends(require_auth)],
+    usuario: Annotated[CurrentUser, Depends(require_roles("capturista", "admin"))],
 ) -> EstudioCreateResponse:
     """Create a complete estudio socioeconómico with beneficiario, tutores, and study data."""
     _validar_tutores(body.tutores)
@@ -186,7 +186,7 @@ def crear_estudio(
             ),
         )
 
-    # 4. INSERT estudio (now uses usuario_id instead of capturista_id)
+    # 4. INSERT estudio (usuario_id from JWT claims)
     estudio = body.estudio
     estudio_id = db.execute(
         """
@@ -223,7 +223,7 @@ def crear_estudio(
 def obtener_estudio(
     id: int,
     db: Annotated[_DBAdapter, Depends(get_db)],
-    usuario: Annotated[CurrentUser, Depends(require_auth)],
+    usuario: Annotated[CurrentUser, Depends(require_roles("capturista", "admin"))],
 ) -> dict:
     """Retrieve a full estudio by ID. Only the owner or an admin may read it."""
     estudio_row = db.execute(
@@ -233,8 +233,7 @@ def obtener_estudio(
     if estudio_row is None:
         raise HTTPException(status_code=404, detail="Estudio no encontrado")
 
-    if usuario.rol != "admin" and estudio_row["usuario_id"] != usuario.usuario_id:
-        raise HTTPException(status_code=403, detail="No tiene acceso a este estudio")
+    assert_resource_owner(estudio_row["usuario_id"], usuario)
 
     beneficiario_row = db.execute(
         "SELECT * FROM beneficiarios WHERE id = %s",
@@ -258,7 +257,7 @@ def actualizar_estudio(
     id: int,
     body: EstudioUpdateRequest,
     db: Annotated[_DBAdapter, Depends(get_db)],
-    usuario: Annotated[CurrentUser, Depends(require_auth)],
+    usuario: Annotated[CurrentUser, Depends(require_roles("capturista", "admin"))],
 ) -> EstudioUpdateResponse:
     """Partial update of an estudio. Only the owner or an admin may update it."""
     existing = db.execute(
@@ -268,8 +267,7 @@ def actualizar_estudio(
     if existing is None:
         raise HTTPException(status_code=404, detail="Estudio no encontrado")
 
-    if usuario.rol != "admin" and existing["usuario_id"] != usuario.usuario_id:
-        raise HTTPException(status_code=403, detail="No tiene acceso a este estudio")
+    assert_resource_owner(existing["usuario_id"], usuario)
 
     fields = body.model_dump(exclude_none=True)
     if not fields:

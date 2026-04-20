@@ -5,13 +5,12 @@ from supabase import create_client
 
 
 DDL = [
-    """
-    CREATE TABLE IF NOT EXISTS capturistas (
-        id              SERIAL PRIMARY KEY,
-        nombre          TEXT    NOT NULL CHECK(length(nombre) >= 2) UNIQUE,
-        fecha_registro  DATE    NOT NULL DEFAULT CURRENT_DATE
-    )
-    """,
+    # -----------------------------------------------------------------------
+    # LEGACY v1 — REMOVED: capturistas table replaced by `usuarios` (v2)
+    # The column `capturista_id` in estudios_socioeconomicos and
+    # solicitudes_tecnicas is retained in the live DB for backward
+    # compatibility but is no longer created by this script.
+    # -----------------------------------------------------------------------
     """
     CREATE TABLE IF NOT EXISTS beneficiarios (
         id                SERIAL PRIMARY KEY,
@@ -48,7 +47,9 @@ DDL = [
     CREATE TABLE IF NOT EXISTS estudios_socioeconomicos (
         id                      SERIAL PRIMARY KEY,
         beneficiario_id         INTEGER NOT NULL REFERENCES beneficiarios(id) ON DELETE RESTRICT,
-        capturista_id           INTEGER NOT NULL REFERENCES capturistas(id) ON DELETE RESTRICT,
+        -- DEPRECATED v1: capturista_id column retained in live DB for backward
+        -- compatibility.  New code uses usuario_id (managed by Supabase migrations).
+        -- capturista_id       INTEGER REFERENCES capturistas(id) ON DELETE RESTRICT,
         otras_fuentes_ingreso   TEXT,
         monto_otras_fuentes     REAL,
         tuvo_silla_previa       INTEGER CHECK(tuvo_silla_previa IN (0, 1)),
@@ -65,7 +66,9 @@ DDL = [
     CREATE TABLE IF NOT EXISTS solicitudes_tecnicas (
         id                          SERIAL PRIMARY KEY,
         beneficiario_id             INTEGER NOT NULL REFERENCES beneficiarios(id) ON DELETE RESTRICT,
-        capturista_id               INTEGER NOT NULL REFERENCES capturistas(id) ON DELETE RESTRICT,
+        -- DEPRECATED v1: capturista_id column retained in live DB for backward
+        -- compatibility.  New code uses usuario_id (managed by Supabase migrations).
+        -- capturista_id           INTEGER REFERENCES capturistas(id) ON DELETE RESTRICT,
         entorno                     TEXT    NOT NULL,
         control_tronco              TEXT    NOT NULL,
         control_cabeza              TEXT    NOT NULL,
@@ -78,6 +81,7 @@ DDL = [
         medida_rodilla_talon        REAL    CHECK(medida_rodilla_talon IS NULL OR medida_rodilla_talon > 0),
         medida_ancho_cadera         REAL    CHECK(medida_ancho_cadera IS NULL OR medida_ancho_cadera > 0),
         foto_url                    TEXT,
+        foto_path                   TEXT,
         entidad_solicitante         TEXT,
         prioridad                   TEXT    CHECK(prioridad IS NULL OR prioridad IN ('Alta', 'Media')),
         justificacion               TEXT,
@@ -88,9 +92,11 @@ DDL = [
     """,
     "CREATE INDEX IF NOT EXISTS idx_tutores_beneficiario ON tutores(beneficiario_id)",
     "CREATE INDEX IF NOT EXISTS idx_estudios_beneficiario ON estudios_socioeconomicos(beneficiario_id)",
-    "CREATE INDEX IF NOT EXISTS idx_estudios_capturista ON estudios_socioeconomicos(capturista_id)",
+    # DEPRECATED v1: legacy index on capturista_id — retained in live DB, not created by init_db.py
+    # "CREATE INDEX IF NOT EXISTS idx_estudios_capturista ON estudios_socioeconomicos(capturista_id)",
     "CREATE INDEX IF NOT EXISTS idx_solicitudes_beneficiario ON solicitudes_tecnicas(beneficiario_id)",
-    "CREATE INDEX IF NOT EXISTS idx_solicitudes_capturista ON solicitudes_tecnicas(capturista_id)",
+    # DEPRECATED v1: legacy index on capturista_id — retained in live DB, not created by init_db.py
+    # "CREATE INDEX IF NOT EXISTS idx_solicitudes_capturista ON solicitudes_tecnicas(capturista_id)",
 ]
 
 
@@ -119,11 +125,25 @@ def _init_storage() -> None:
         os.environ["SUPABASE_URL"],
         os.environ["SUPABASE_SERVICE_KEY"],
     )
+    bucket_name = "fotos-tecnica"
+    secure_options = {
+        "public": False,
+        "allowed_mime_types": ["image/jpeg", "image/png"],
+        "file_size_limit": 10 * 1024 * 1024,
+    }
+
     try:
-        client.storage.create_bucket("fotos-tecnica", options={"public": True})
-        print("Storage bucket 'fotos-tecnica' created.")
+        bucket = client.storage.get_bucket(bucket_name)
+        if not isinstance(bucket, dict) or bucket.get("public") is not False:
+            client.storage.update_bucket(bucket_name, options=secure_options)
+            print("Storage bucket 'fotos-tecnica' hardened to private mode.")
+        else:
+            # Aseguramos límites aunque ya exista privado.
+            client.storage.update_bucket(bucket_name, options=secure_options)
+            print("Storage bucket 'fotos-tecnica' already private — security options refreshed.")
     except Exception:
-        print("Storage bucket 'fotos-tecnica' already exists — skipping.")
+        client.storage.create_bucket(bucket_name, options=secure_options)
+        print("Storage bucket 'fotos-tecnica' created in private mode.")
 
 
 if __name__ == "__main__":
