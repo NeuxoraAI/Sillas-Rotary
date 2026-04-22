@@ -64,6 +64,24 @@ class TestLogin:
 
         assert res.status_code == 401
 
+    def test_login_with_invalid_stored_hash_returns_401_not_500(self, client, _test_db_conn, admin_user):
+        """Corrupt password_hash in DB must not crash login with 500."""
+        import psycopg2.extras
+        with _test_db_conn.cursor() as cur:
+            cur.execute(
+                "UPDATE usuarios SET password_hash = %s WHERE id = %s",
+                ("test123", admin_user["id"]),
+            )
+        _test_db_conn.commit()
+
+        res = client.post("/api/auth/login", json={
+            "email": "admin@test.mx",
+            "password": "adminpass123",
+        })
+
+        assert res.status_code == 401
+        assert "Credenciales inválidas" in res.json()["detail"]
+
     def test_login_capturista_returns_capturista_rol(self, client, capturista_user):
         """Capturista login returns correct rol."""
         res = client.post("/api/auth/login", json={

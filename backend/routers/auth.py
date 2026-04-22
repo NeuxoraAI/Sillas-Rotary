@@ -17,6 +17,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
+from passlib.exc import UnknownHashError
 from pydantic import BaseModel, EmailStr
 
 from database import get_db, _DBAdapter
@@ -77,7 +78,10 @@ def _create_jwt(usuario_id: int, rol: str) -> str:
 
 
 def _verify_password(plain: str, hashed: str) -> bool:
-    return _pwd_context.verify(plain, hashed)
+    try:
+        return _pwd_context.verify(plain, hashed)
+    except UnknownHashError:
+        return False
 
 
 def _hash_password(plain: str) -> str:
