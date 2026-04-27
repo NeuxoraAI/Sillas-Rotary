@@ -239,6 +239,63 @@
 </form>
 </main>
 <script data-purpose="form-logic">
+    const MONETARY_FIELD_IDS = [
+        'tutor1_ingreso_mensual',
+        'tutor2_ingreso_mensual',
+        'monto_otras_fuentes',
+    ];
+
+    function sanitizeMoneyInput(raw) {
+        if (raw == null) return '';
+        const cleaned = String(raw).replace(/,/g, '').replace(/[^\d.]/g, '');
+        const firstDotIndex = cleaned.indexOf('.');
+
+        if (firstDotIndex === -1) {
+            return cleaned;
+        }
+
+        const integerPart = cleaned.slice(0, firstDotIndex);
+        const decimalPart = cleaned.slice(firstDotIndex + 1).replace(/\./g, '');
+        return `${integerPart}.${decimalPart}`;
+    }
+
+    function formatMoneyDisplay(raw) {
+        const sanitized = sanitizeMoneyInput(raw);
+        if (!sanitized) return '';
+
+        const [integerPart, decimalPart] = sanitized.split('.');
+        const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+        if (decimalPart != null) {
+            return `${formattedInteger}.${decimalPart}`;
+        }
+
+        return formattedInteger;
+    }
+
+    function toMoneyNumberOrNull(raw) {
+        const sanitized = sanitizeMoneyInput(raw);
+        if (!sanitized || sanitized === '.') {
+            return null;
+        }
+
+        const numberValue = Number(sanitized);
+        return Number.isFinite(numberValue) ? numberValue : null;
+    }
+
+    function setupMonetaryFieldFormatting() {
+        MONETARY_FIELD_IDS.forEach((fieldName) => {
+            const input = document.querySelector(`[name="${fieldName}"]`);
+            if (!input) return;
+
+            input.addEventListener('input', () => {
+                input.value = formatMoneyDisplay(input.value);
+            });
+
+            input.value = formatMoneyDisplay(input.value);
+        });
+    }
+
     // Auth guard + Draft Resume
     (async function () {
         const session = JSON.parse(localStorage.getItem('session') || 'null');
@@ -295,7 +352,12 @@
                             setVal(`tutor${num}_vivienda`, t.vivienda);
                             setVal(`tutor${num}_fuente_empleo`, t.fuente_empleo);
                             setVal(`tutor${num}_antiguedad`, t.antiguedad);
-                            setVal(`tutor${num}_ingreso_mensual`, t.ingreso_mensual);
+                            setVal(
+                                `tutor${num}_ingreso_mensual`,
+                                t.ingreso_mensual != null
+                                    ? formatMoneyDisplay(String(t.ingreso_mensual))
+                                    : t.ingreso_mensual,
+                            );
                             setChecked(`tutor${num}_imss`, t.tiene_imss);
                             setChecked(`tutor${num}_infonavit`, t.tiene_infonavit);
                         });
@@ -307,7 +369,12 @@
                         if (el && val != null) el.value = val;
                     };
                     setVal('otras_fuentes_ingreso', data.otras_fuentes_ingreso);
-                    setVal('monto_otras_fuentes', data.monto_otras_fuentes);
+                    setVal(
+                        'monto_otras_fuentes',
+                        data.monto_otras_fuentes != null
+                            ? formatMoneyDisplay(String(data.monto_otras_fuentes))
+                            : data.monto_otras_fuentes,
+                    );
                     setVal('silla_previa', data.tuvo_silla_previa === 1 ? 'Sí' : 'No');
                     setVal('como_obtuvo_silla', data.como_obtuvo_silla);
                     setVal('elaboro_estudio', data.elaboro_estudio);
@@ -347,7 +414,6 @@
         const get = (name) => fd.get(name) || '';
 
         const toIntOrNull = (v) => { const n = parseInt(v, 10); return isNaN(n) ? null : n; };
-        const toFloatOrNull = (v) => { const n = parseFloat(v); return isNaN(n) ? null : n; };
 
         const tutores = [];
         tutores.push({
@@ -360,7 +426,7 @@
             vivienda: get('tutor1_vivienda'),
             fuente_empleo: get('tutor1_fuente_empleo'),
             antiguedad: get('tutor1_antiguedad'),
-            ingreso_mensual: toFloatOrNull(get('tutor1_ingreso_mensual')),
+            ingreso_mensual: toMoneyNumberOrNull(get('tutor1_ingreso_mensual')),
             tiene_imss: f.querySelector('[name="tutor1_imss"]').checked,
             tiene_infonavit: f.querySelector('[name="tutor1_infonavit"]').checked,
         });
@@ -377,7 +443,7 @@
                 vivienda: get('tutor2_vivienda'),
                 fuente_empleo: get('tutor2_fuente_empleo'),
                 antiguedad: get('tutor2_antiguedad'),
-                ingreso_mensual: toFloatOrNull(get('tutor2_ingreso_mensual')),
+                ingreso_mensual: toMoneyNumberOrNull(get('tutor2_ingreso_mensual')),
                 tiene_imss: f.querySelector('[name="tutor2_imss"]').checked,
                 tiene_infonavit: f.querySelector('[name="tutor2_infonavit"]').checked,
             });
@@ -398,7 +464,7 @@
             tutores,
             estudio: {
                 otras_fuentes_ingreso: get('otras_fuentes_ingreso'),
-                monto_otras_fuentes: toFloatOrNull(get('monto_otras_fuentes')),
+                monto_otras_fuentes: toMoneyNumberOrNull(get('monto_otras_fuentes')),
                 tuvo_silla_previa: get('silla_previa') === 'Sí',
                 como_obtuvo_silla: get('como_obtuvo_silla'),
                 elaboro_estudio: get('elaboro_estudio'),
@@ -430,11 +496,9 @@
                 const fd = new FormData(f);
                 const get = (name) => fd.get(name) || '';
 
-                const toFloatOrNull = (v) => { const n = parseFloat(v); return isNaN(n) ? null : n; };
-
                 const patchPayload = {
                     otras_fuentes_ingreso: get('otras_fuentes_ingreso'),
-                    monto_otras_fuentes: toFloatOrNull(get('monto_otras_fuentes')),
+                    monto_otras_fuentes: toMoneyNumberOrNull(get('monto_otras_fuentes')),
                     tuvo_silla_previa: get('silla_previa') === 'Sí' ? 1 : 0,
                     como_obtuvo_silla: get('como_obtuvo_silla'),
                     elaboro_estudio: get('elaboro_estudio'),
@@ -510,6 +574,8 @@
     }
 
     // Guardar Borrador button
+    setupMonetaryFieldFormatting();
+
     document.querySelector('button[type="button"]').addEventListener('click', () => {
         submitEstudio('borrador');
     });

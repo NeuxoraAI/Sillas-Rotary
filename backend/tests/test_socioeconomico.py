@@ -125,3 +125,87 @@ class TestSocioeconomicoRbac:
         get_response = client.get(f"/api/estudios/{estudio_id}", headers=admin_headers)
         assert get_response.status_code == 200
         assert get_response.json()["id"] == estudio_id
+
+
+class TestSocioeconomicoMonetaryContract:
+    def test_post_persists_clean_numeric_monetary_fields(self, client, capturista_headers, region_lon):
+        payload = _estudio_payload(region_lon["id"])
+        payload["tutores"][0]["ingreso_mensual"] = 12500.0
+        payload["tutores"].append(
+            {
+                "numero_tutor": 2,
+                "nombre": "Tutor Secundario",
+                "ingreso_mensual": 8400.5,
+                "tiene_imss": False,
+                "tiene_infonavit": False,
+            }
+        )
+        payload["estudio"]["monto_otras_fuentes"] = 2500.75
+
+        create_response = client.post("/api/estudios", headers=capturista_headers, json=payload)
+        assert create_response.status_code == 201
+        estudio_id = create_response.json()["estudio_id"]
+
+        get_response = client.get(f"/api/estudios/{estudio_id}", headers=capturista_headers)
+        assert get_response.status_code == 200
+        data = get_response.json()
+
+        tutor_by_num = {t["numero_tutor"]: t for t in data["tutores"]}
+        assert tutor_by_num[1]["ingreso_mensual"] == 12500.0
+        assert tutor_by_num[2]["ingreso_mensual"] == 8400.5
+        assert data["monto_otras_fuentes"] == 2500.75
+
+    def test_patch_uses_same_numeric_contract_for_monto_otras_fuentes(
+        self,
+        client,
+        capturista_headers,
+        region_lon,
+    ):
+        payload = _estudio_payload(region_lon["id"])
+        payload["estudio"]["monto_otras_fuentes"] = 1000.0
+
+        create_response = client.post("/api/estudios", headers=capturista_headers, json=payload)
+        assert create_response.status_code == 201
+        estudio_id = create_response.json()["estudio_id"]
+
+        patch_response = client.patch(
+            f"/api/estudios/{estudio_id}",
+            headers=capturista_headers,
+            json={"monto_otras_fuentes": 3499.25, "status": "borrador"},
+        )
+        assert patch_response.status_code == 200
+
+        get_response = client.get(f"/api/estudios/{estudio_id}", headers=capturista_headers)
+        assert get_response.status_code == 200
+        assert get_response.json()["monto_otras_fuentes"] == 3499.25
+
+    def test_post_and_patch_allow_null_for_empty_or_invalidated_monetary_inputs(
+        self,
+        client,
+        capturista_headers,
+        region_lon,
+    ):
+        payload = _estudio_payload(region_lon["id"])
+        payload["tutores"][0]["ingreso_mensual"] = None
+        payload["estudio"]["monto_otras_fuentes"] = None
+
+        create_response = client.post("/api/estudios", headers=capturista_headers, json=payload)
+        assert create_response.status_code == 201
+        estudio_id = create_response.json()["estudio_id"]
+
+        get_response = client.get(f"/api/estudios/{estudio_id}", headers=capturista_headers)
+        assert get_response.status_code == 200
+        data = get_response.json()
+        assert data["tutores"][0]["ingreso_mensual"] is None
+        assert data["monto_otras_fuentes"] is None
+
+        patch_response = client.patch(
+            f"/api/estudios/{estudio_id}",
+            headers=capturista_headers,
+            json={"monto_otras_fuentes": None, "status": "borrador"},
+        )
+        assert patch_response.status_code == 200
+
+        get_after_patch = client.get(f"/api/estudios/{estudio_id}", headers=capturista_headers)
+        assert get_after_patch.status_code == 200
+        assert get_after_patch.json()["monto_otras_fuentes"] is None
