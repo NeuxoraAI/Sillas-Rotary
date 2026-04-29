@@ -420,9 +420,10 @@
             para validar las necesidades de soporte de la silla de ruedas.
           </p>
           <div
-            class="mt-1 flex justify-center px-6 pt-8 pb-8 border-2 border-slate-300 border-dashed rounded-lg bg-white hover:border-primary transition-colors cursor-pointer group"
+            id="photo-upload-dropzone"
+            class="relative mt-1 flex min-h-56 justify-center px-6 py-8 border-2 border-slate-300 border-dashed rounded-lg bg-white hover:border-primary transition-colors cursor-pointer group"
           >
-            <div class="space-y-2 text-center">
+            <div id="photo-upload-placeholder" class="space-y-2 text-center">
               <svg
                 aria-hidden="true"
                 class="mx-auto h-14 w-14 text-slate-400 group-hover:text-primary transition-colors"
@@ -459,6 +460,24 @@
                 PNG, JPG hasta 10MB
               </p>
             </div>
+            <div
+              id="photo-preview-container"
+              class="hidden w-full flex items-center justify-center pointer-events-none"
+            >
+              <img
+                id="photo-preview"
+                alt="Vista previa de la fotografía del paciente"
+                class="max-h-[18rem] w-auto max-w-full rounded-xl object-contain shadow-sm mx-auto"
+              />
+            </div>
+          </div>
+          <div id="photo-replace-action" class="hidden mt-3 text-center">
+            <label
+              class="inline-flex cursor-pointer items-center rounded-lg bg-primary px-4 py-2 font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 focus-within:outline-none"
+              for="file-upload"
+            >
+              <span>Cambiar imagen</span>
+            </label>
           </div>
         </section>
         <!-- END: Seccion Multimedia -->
@@ -637,6 +656,10 @@
                 localStorage.setItem("beneficiario_id", data.beneficiario_id);
               }
 
+              if (data.foto_url) {
+                setPhotoPreview(data.foto_url);
+              }
+
               // We've restored the draft, continue with the form
               return;
             } else if (res.status === 404) {
@@ -659,6 +682,57 @@
         const n = parseFloat(v);
         return isNaN(n) ? null : n;
       };
+
+      let currentPreviewUrl = null;
+
+      function setPhotoPreview(src) {
+        const container = document.getElementById("photo-preview-container");
+        const preview = document.getElementById("photo-preview");
+        const placeholder = document.getElementById("photo-upload-placeholder");
+        const replaceAction = document.getElementById("photo-replace-action");
+        if (!container || !preview) return;
+
+        if (!src) {
+          if (currentPreviewUrl && currentPreviewUrl.startsWith("blob:")) {
+            URL.revokeObjectURL(currentPreviewUrl);
+          }
+          currentPreviewUrl = null;
+          preview.removeAttribute("src");
+          container.classList.add("hidden");
+          placeholder?.classList.remove("hidden");
+          replaceAction?.classList.add("hidden");
+          return;
+        }
+
+        if (
+          currentPreviewUrl &&
+          currentPreviewUrl.startsWith("blob:") &&
+          currentPreviewUrl !== src
+        ) {
+          URL.revokeObjectURL(currentPreviewUrl);
+        }
+
+        currentPreviewUrl = src;
+        preview.src = src;
+        container.classList.remove("hidden");
+        placeholder?.classList.add("hidden");
+        replaceAction?.classList.remove("hidden");
+      }
+
+      function setupPhotoPreview() {
+        const fileInput = document.getElementById("file-upload");
+        if (!fileInput) return;
+
+        fileInput.addEventListener("change", () => {
+          const file = fileInput.files && fileInput.files[0];
+          if (!file) {
+            setPhotoPreview(null);
+            return;
+          }
+
+          setPhotoPreview(URL.createObjectURL(file));
+        });
+      }
 
       async function uploadFoto(fileInput) {
         if (!fileInput || !fileInput.files || fileInput.files.length === 0)
@@ -806,6 +880,8 @@
         }
       }
 
+      setupPhotoPreview();
+
       // Guardar Borrador button
       document
         .querySelector('button[type="button"]')
@@ -822,4 +898,3 @@
     <!-- END: Script for Interactivity -->
   </body>
 </html>
-
