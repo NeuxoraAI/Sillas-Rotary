@@ -5,6 +5,10 @@ from fastapi.responses import JSONResponse
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
+from env_bootstrap import load_root_env_if_needed
+
+load_root_env_if_needed(__file__)
+
 from routers import auth, socioeconomico, tecnica, usuarios, regiones
 
 # Serve the frontend — path is resolved relative to this file so it works
