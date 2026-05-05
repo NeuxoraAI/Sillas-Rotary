@@ -319,6 +319,7 @@
 
     // Route by role: tecnico goes to technical exam, capturista to socioeconomic
     if (session.rol === 'tecnico') {
+      localStorage.removeItem('beneficiario_id');
       window.location.href = 'tecnica.html';
     } else {
       window.location.href = 'socioeconomico.html';

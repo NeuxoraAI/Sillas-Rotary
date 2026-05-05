@@ -90,11 +90,42 @@ DDL = [
         updated_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
     """,
+    """
+    CREATE TABLE IF NOT EXISTS procesos_tecnicos (
+        id                            SERIAL PRIMARY KEY,
+        beneficiario_id               INTEGER NOT NULL REFERENCES beneficiarios(id) ON DELETE RESTRICT,
+        estado                        TEXT NOT NULL DEFAULT 'sin_iniciar'
+                                      CHECK(estado IN ('sin_iniciar', 'en_proceso', 'finalizado', 'revision_pendiente')),
+        responsable_actual_usuario_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
+        tecnico_inicio_usuario_id     INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
+        fecha_inicio                  TIMESTAMPTZ,
+        fecha_ultimo_movimiento       TIMESTAMPTZ,
+        revision_pendiente            BOOLEAN NOT NULL DEFAULT FALSE,
+        pdf_snapshot_json             JSONB,
+        created_at                    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at                    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE(beneficiario_id)
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS procesos_tecnicos_participantes (
+        id                 SERIAL PRIMARY KEY,
+        proceso_tecnico_id INTEGER NOT NULL REFERENCES procesos_tecnicos(id) ON DELETE CASCADE,
+        usuario_id         INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE RESTRICT,
+        accion             TEXT NOT NULL CHECK(accion IN ('inicio', 'continuacion', 'finalizacion', 'revision')),
+        created_at         TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+    """,
     "CREATE INDEX IF NOT EXISTS idx_tutores_beneficiario ON tutores(beneficiario_id)",
     "CREATE INDEX IF NOT EXISTS idx_estudios_beneficiario ON estudios_socioeconomicos(beneficiario_id)",
     # DEPRECATED v1: legacy index on capturista_id — retained in live DB, not created by init_db.py
     # "CREATE INDEX IF NOT EXISTS idx_estudios_capturista ON estudios_socioeconomicos(capturista_id)",
     "CREATE INDEX IF NOT EXISTS idx_solicitudes_beneficiario ON solicitudes_tecnicas(beneficiario_id)",
+    "CREATE INDEX IF NOT EXISTS idx_procesos_tecnicos_beneficiario ON procesos_tecnicos(beneficiario_id)",
+    "CREATE INDEX IF NOT EXISTS idx_procesos_tecnicos_estado ON procesos_tecnicos(estado)",
+    "CREATE INDEX IF NOT EXISTS idx_procesos_participantes_proceso ON procesos_tecnicos_participantes(proceso_tecnico_id)",
+    "CREATE INDEX IF NOT EXISTS idx_procesos_participantes_usuario ON procesos_tecnicos_participantes(usuario_id)",
+    "CREATE INDEX IF NOT EXISTS idx_procesos_participantes_created_at ON procesos_tecnicos_participantes(created_at)",
     # DEPRECATED v1: legacy index on capturista_id — retained in live DB, not created by init_db.py
     # "CREATE INDEX IF NOT EXISTS idx_solicitudes_capturista ON solicitudes_tecnicas(capturista_id)",
 ]

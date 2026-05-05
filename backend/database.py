@@ -14,6 +14,13 @@ def _looks_like_test_value(value: str | None) -> bool:
     return "test" in lowered
 
 
+def _is_unsafe_test_schema(value: str | None) -> bool:
+    if value is None:
+        return False
+    normalized = value.strip().lower()
+    return normalized == "public" or "," in normalized
+
+
 def assert_test_database_target(
     *,
     db_name: str | None,
@@ -36,6 +43,11 @@ def assert_test_database_target(
             return
         raise RuntimeError(
             "Unsafe test database target refused: TEST_DATABASE_URL does not look test-scoped."
+        )
+
+    if _is_unsafe_test_schema(test_schema):
+        raise RuntimeError(
+            "Unsafe test database target refused: TEST_DB_SCHEMA cannot be public or include multiple schemas."
         )
 
     if _looks_like_test_value(test_schema):
@@ -70,7 +82,7 @@ def build_test_conn_kwargs() -> dict:
 
     options = os.environ.get("TEST_DB_OPTIONS")
     if test_schema:
-        schema_option = f"-c search_path={test_schema},public"
+        schema_option = f"-c search_path={test_schema}"
         options = f"{options} {schema_option}".strip() if options else schema_option
 
     if options:

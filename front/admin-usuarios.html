@@ -131,6 +131,27 @@
       </div>
     </div>
 
+    <div id="tecnica-revisiones-card" class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+        <h2 class="text-base font-semibold text-slate-800">Revisiones técnicas pendientes</h2>
+        <span id="count-revisiones" class="text-xs font-bold text-amber-700 bg-amber-100 rounded-full px-2.5 py-0.5">0</span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="bg-slate-50/60 text-left border-b border-slate-100">
+              <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Beneficiario</th>
+              <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Folio</th>
+              <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Estado</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-revisiones" class="divide-y divide-slate-100">
+            <tr><td colspan="3" class="px-6 py-4 text-slate-400">Cargando revisiones…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     <!-- Create user card -->
     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
       <div class="px-6 py-4 border-b border-slate-100 flex items-center gap-2">
@@ -255,6 +276,25 @@
   document.getElementById('btn-logout').addEventListener('click', _logout);
   document.getElementById('btn-logout-mobile').addEventListener('click', _logout);
   document.getElementById('btn-refresh').addEventListener('click', loadUsuarios);
+
+  async function loadRevisionesPendientes() {
+    const tbody = document.getElementById('tabla-revisiones');
+    const countEl = document.getElementById('count-revisiones');
+    try {
+      const res = await fetch('/api/admin/tecnica/revisiones-pendientes', {
+        headers: { 'Authorization': 'Bearer ' + session.token, 'Accept': 'application/json' },
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      const items = data.items || [];
+      countEl.textContent = String(items.length);
+      tbody.innerHTML = items.length
+        ? items.map((it) => `<tr><td class="px-6 py-3">${_esc(it.nombre)}</td><td class="px-6 py-3">${_esc(it.folio)}</td><td class="px-6 py-3">${_esc(it.estado)}</td></tr>`).join('')
+        : '<tr><td colspan="3" class="px-6 py-4 text-slate-400">Sin revisiones pendientes.</td></tr>';
+    } catch (_) {
+      tbody.innerHTML = '<tr><td colspan="3" class="px-6 py-4 text-red-500">No se pudieron cargar revisiones pendientes.</td></tr>';
+    }
+  }
 
   // ── Load users table ────────────────────────────────────────────────────────
   async function loadUsuarios() {
@@ -420,6 +460,7 @@
 
   // Load on init
   loadUsuarios();
+  loadRevisionesPendientes();
 </script>
 </body>
 </html>

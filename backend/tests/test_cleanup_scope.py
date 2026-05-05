@@ -9,11 +9,19 @@ Verifies that:
 import sys
 from pathlib import Path
 
+import pytest
+
 # Add backend/ to path so we can import conftest
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 # Import from conftest — these will NOT exist until we implement them
-from conftest import _TABLES_ORDER, _track
+from conftest import (
+    _TABLES_ORDER,
+    _qualified_table_names,
+    _requires_db_connection,
+    _resolve_test_schema,
+    _track,
+)
 
 
 class TestTablesOrder:
@@ -95,3 +103,28 @@ class TestTrackHelper:
         _track("paises", 10, tracker)
         assert tracker["regiones"] == []
         assert tracker["usuarios"] == []
+
+
+class TestDbRequirementDetection:
+    def test_requires_db_when_client_fixture_present(self) -> None:
+        assert _requires_db_connection(["client"]) is True
+
+    def test_requires_db_when_db_fixture_present(self) -> None:
+        assert _requires_db_connection(["_test_db_conn"]) is True
+
+    def test_does_not_require_db_for_pure_unit_tests(self) -> None:
+        assert _requires_db_connection(["monkeypatch", "tmp_path"]) is False
+
+
+class TestSchemaQualification:
+    def test_resolve_test_schema_rejects_public(self, monkeypatch) -> None:
+        monkeypatch.setenv("TEST_DB_SCHEMA", "public")
+        with pytest.raises(RuntimeError, match="public"):
+            _resolve_test_schema()
+
+    def test_qualified_table_names_when_schema_enabled(self, monkeypatch) -> None:
+        monkeypatch.setenv("TEST_DB_SCHEMA", "test_suite")
+        qualified = _qualified_table_names()
+
+        assert qualified[0] == "test_suite.historial_estados"
+        assert qualified[-1] == "test_suite.usuarios"

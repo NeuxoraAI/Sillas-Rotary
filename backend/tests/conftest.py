@@ -88,7 +88,7 @@ def _test_db_conn():
     # This prevents UniqueViolation errors when fixtures try to insert
     # the same emails/keys that were left behind.
     with conn.cursor() as cur:
-        tables = ", ".join(_TABLES_ORDER)
+        tables = ", ".join(_qualified_table_names())
         cur.execute(f"TRUNCATE TABLE {tables} RESTART IDENTITY CASCADE")
     conn.commit()
 
@@ -140,6 +140,25 @@ _TABLES_ORDER = [
 ]
 
 
+def _resolve_test_schema() -> str | None:
+    """Return configured TEST_DB_SCHEMA with safety validation."""
+    schema = os.environ.get("TEST_DB_SCHEMA")
+    if not schema:
+        return None
+    normalized = schema.strip().lower()
+    if normalized == "public" or "," in normalized:
+        raise RuntimeError("Unsafe TEST_DB_SCHEMA value: 'public' or multiple schemas are not allowed")
+    return schema.strip()
+
+
+def _qualified_table_names() -> list[str]:
+    """Return cleanup table names, schema-qualified when TEST_DB_SCHEMA is set."""
+    schema = _resolve_test_schema()
+    if not schema:
+        return list(_TABLES_ORDER)
+    return [f"{schema}.{table}" for table in _TABLES_ORDER]
+
+
 def _track(table: str, id_value: int | dict, tracker: dict[str, list]) -> None:
     """Register an ID (or composite key dict) for later cleanup."""
     tracker.setdefault(table, []).append(id_value)
@@ -148,38 +167,48 @@ def _track(table: str, id_value: int | dict, tracker: dict[str, list]) -> None:
 def _scoped_cleanup(conn, tracker: dict[str, list]) -> None:
     """Delete only the rows we seeded, in FK-safe order."""
     with conn.cursor() as cur:
+        qualified_by_name = dict(zip(_TABLES_ORDER, _qualified_table_names(), strict=True))
         for table in _TABLES_ORDER:
             ids = tracker.get(table, [])
             if not ids:
                 continue
+            table_ref = qualified_by_name[table]
             if isinstance(ids[0], dict):
                 # Composite key table (e.g. region_counters)
                 for key in ids:
                     conditions = " AND ".join(f"{k} = %s" for k in key)
                     values = tuple(key.values())
-                    cur.execute(f"DELETE FROM {table} WHERE {conditions}", values)
+                    cur.execute(f"DELETE FROM {table_ref} WHERE {conditions}", values)
             else:
                 # Simple integer PK
                 placeholders = ", ".join("%s" for _ in ids)
-                cur.execute(f"DELETE FROM {table} WHERE id IN ({placeholders})", tuple(ids))
+                cur.execute(f"DELETE FROM {table_ref} WHERE id IN ({placeholders})", tuple(ids))
     conn.commit()
 
 
+def _requires_db_connection(fixturenames: list[str]) -> bool:
+    """Return True only for tests that actually use DB-backed fixtures."""
+    db_fixtures = {"client", "_test_db_conn", "override_db"}
+    return any(name in db_fixtures for name in fixturenames)
+
+
 @pytest.fixture(autouse=True)
-def clean_db(request, _test_db_conn):
+def clean_db(request):
     """Clean DB state before each test that uses the database.
 
     Uses TRUNCATE at session start to clear any residual data,
     then relies on per-test TRUNCATE for isolation between tests.
     This is simpler and more reliable than tracking individual IDs.
     """
-    if "client" not in request.fixturenames:
+    if not _requires_db_connection(list(request.fixturenames)):
         yield
         return
 
+    _test_db_conn = request.getfixturevalue("_test_db_conn")
+
     # Truncate all tables before each test for reliable isolation
     with _test_db_conn.cursor() as cur:
-        tables = ", ".join(_TABLES_ORDER)
+        tables = ", ".join(_qualified_table_names())
         cur.execute(f"TRUNCATE TABLE {tables} RESTART IDENTITY CASCADE")
     _test_db_conn.commit()
     yield
