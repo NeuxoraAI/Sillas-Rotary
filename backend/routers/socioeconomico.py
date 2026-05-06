@@ -9,11 +9,16 @@ Changes from v1:
 - Returns folio in EstudioCreateResponse
 """
 
-from typing import Annotated, Optional
+import os
 import re
+import uuid
+from typing import Annotated, Optional
+from urllib.parse import urlparse, unquote
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, field_validator
+from supabase import create_client
 
 from database import get_db, _DBAdapter
 from routers.auth import CurrentUser, assert_resource_owner, require_roles
@@ -21,6 +26,62 @@ from routers.regiones import generate_folio
 
 router = APIRouter()
 ALLOWED_ESTADO_CIVIL = {"Casado", "Soltero", "Viudo"}
+_DOCUMENT_ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png", "application/pdf"}
+_DOCUMENT_ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".pdf"}
+_DOCUMENT_MAX_SIZE_BYTES = 10 * 1024 * 1024
+_DOCUMENT_BUCKET = "documentos-estudio"
+_DOCUMENT_STORAGE_URL_PREFIX = f"storage://{_DOCUMENT_BUCKET}/"
+_DOCUMENT_TYPES = {"credencial", "comprobante_domicilio"}
+_DOCUMENT_SIGNED_URL_TTL_SECONDS = 60
+
+
+def _storage():
+    return create_client(
+        os.environ["SUPABASE_URL"],
+        os.environ["SUPABASE_SERVICE_KEY"],
+    ).storage.from_(_DOCUMENT_BUCKET)
+
+
+def extract_document_path(raw_value: Optional[str]) -> Optional[str]:
+    if raw_value is None:
+        return None
+
+    value = raw_value.strip()
+    if not value:
+        return None
+
+    if value.startswith(_DOCUMENT_STORAGE_URL_PREFIX):
+        path = value[len(_DOCUMENT_STORAGE_URL_PREFIX):]
+        return path or None
+
+    parsed = urlparse(value)
+    if parsed.scheme in {"http", "https"}:
+        marker = f"/{_DOCUMENT_BUCKET}/"
+        if marker not in parsed.path:
+            return None
+        return unquote(parsed.path.split(marker, 1)[1]) or None
+
+    return None
+
+
+def _derive_document_url(document_path: Optional[str]) -> Optional[str]:
+    if document_path is None:
+        return None
+    return f"{_DOCUMENT_STORAGE_URL_PREFIX}{document_path}"
+
+
+def _resolve_document_refs(*, document_path: Optional[str], document_url: Optional[str]) -> tuple[Optional[str], Optional[str]]:
+    canonical_path = extract_document_path(document_path) or extract_document_path(document_url)
+    derived_url = _derive_document_url(canonical_path)
+    return canonical_path, derived_url
+
+
+def _signed_url_from_response(payload: object) -> Optional[str]:
+    if isinstance(payload, str):
+        return payload
+    if isinstance(payload, dict):
+        return payload.get("signedURL") or payload.get("signedUrl") or payload.get("url")
+    return None
 
 
 # ---------------------------------------------------------------------------
@@ -85,6 +146,10 @@ class EstudioIn(BaseModel):
     elaboro_estudio: str
     fecha_estudio: str
     status: str = "borrador"
+    credencial_path: Optional[str] = None
+    credencial_url: Optional[str] = None
+    comprobante_domicilio_path: Optional[str] = None
+    comprobante_domicilio_url: Optional[str] = None
 
     @field_validator("status")
     @classmethod
@@ -124,6 +189,10 @@ class EstudioUpdateRequest(BaseModel):
     fecha_estudio: Optional[str] = None
     status: Optional[str] = None
     tutores: Optional[list[TutorIn]] = None
+    credencial_path: Optional[str] = None
+    credencial_url: Optional[str] = None
+    comprobante_domicilio_path: Optional[str] = None
+    comprobante_domicilio_url: Optional[str] = None
 
     @field_validator("status")
     @classmethod
@@ -143,6 +212,64 @@ class EstudioUpdateResponse(BaseModel):
 # Endpoints
 # ---------------------------------------------------------------------------
 
+@router.post("/upload-documento")
+async def upload_documento_estudio(
+    tipo: str = Form(...),
+    archivo: UploadFile = File(...),
+    _usuario: Annotated[CurrentUser, Depends(require_roles("capturista", "admin"))] = None,
+) -> dict:
+    if tipo not in _DOCUMENT_TYPES:
+        raise HTTPException(status_code=422, detail="Tipo de documento no permitido")
+
+    if archivo.content_type not in _DOCUMENT_ALLOWED_CONTENT_TYPES:
+        raise HTTPException(status_code=400, detail="Tipo de archivo no permitido")
+
+    _, ext = os.path.splitext(archivo.filename or "")
+    if ext.lower() not in _DOCUMENT_ALLOWED_EXTENSIONS:
+        raise HTTPException(status_code=400, detail="Tipo de archivo no permitido")
+
+    data = await archivo.read()
+    if len(data) > _DOCUMENT_MAX_SIZE_BYTES:
+        raise HTTPException(status_code=400, detail="El archivo excede 10MB")
+
+    filename = f"{tipo}/{uuid.uuid4()}{ext.lower()}"
+
+    try:
+        _storage().upload(
+            path=filename,
+            file=data,
+            file_options={"content-type": archivo.content_type},
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail="Error al subir el documento") from exc
+
+    return {
+        "tipo": tipo,
+        "documento_path": filename,
+        "documento_url": _derive_document_url(filename),
+    }
+
+
+@router.get("/documentos")
+def ver_documento_estudio(
+    path: str = Query(...),
+    _usuario: Annotated[CurrentUser, Depends(require_roles("capturista", "admin"))] = None,
+):
+    document_path = extract_document_path(path) or path.strip()
+    if not document_path:
+        raise HTTPException(status_code=400, detail="Documento inválido")
+
+    try:
+        signed_raw = _storage().create_signed_url(document_path, _DOCUMENT_SIGNED_URL_TTL_SECONDS)
+    except Exception as exc:
+        raise HTTPException(status_code=404, detail="Documento no disponible") from exc
+
+    signed_url = _signed_url_from_response(signed_raw)
+    if not signed_url:
+        raise HTTPException(status_code=500, detail="No se pudo generar URL firmada")
+
+    return RedirectResponse(url=signed_url, status_code=307)
+
 @router.post("/estudios", status_code=201, response_model=EstudioCreateResponse)
 def crear_estudio(
     body: EstudioCreateRequest,
@@ -151,6 +278,14 @@ def crear_estudio(
 ) -> EstudioCreateResponse:
     """Create a complete estudio socioeconómico with beneficiario, tutores, and study data."""
     _validar_tutores(body.tutores)
+    credencial_path, credencial_url = _resolve_document_refs(
+        document_path=body.estudio.credencial_path,
+        document_url=body.estudio.credencial_url,
+    )
+    comprobante_path, comprobante_url = _resolve_document_refs(
+        document_path=body.estudio.comprobante_domicilio_path,
+        document_url=body.estudio.comprobante_domicilio_url,
+    )
 
     # 1. Generate structured folio (atomic counter per region/year)
     folio = generate_folio(db, body.region_id)
@@ -189,8 +324,10 @@ def crear_estudio(
         INSERT INTO estudios_socioeconomicos
             (beneficiario_id, usuario_id, otras_fuentes_ingreso,
              monto_otras_fuentes, tuvo_silla_previa, como_obtuvo_silla,
-             elaboro_estudio, fecha_estudio, sede, status)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+             elaboro_estudio, fecha_estudio, sede, status,
+             credencial_path, credencial_url,
+             comprobante_domicilio_path, comprobante_domicilio_url)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         RETURNING id
         """,
         (
@@ -204,6 +341,10 @@ def crear_estudio(
             estudio.fecha_estudio,
             body.sede,
             estudio.status,
+            credencial_path,
+            credencial_url,
+            comprobante_path,
+            comprobante_url,
         ),
     ).fetchone()["id"]
 
@@ -271,6 +412,25 @@ def actualizar_estudio(
         _insertar_tutores(db, existing["beneficiario_id"], body.tutores)
 
     fields = body.model_dump(exclude_none=True, exclude={"tutores"})
+
+    credencial_path, credencial_url = _resolve_document_refs(
+        document_path=fields.pop("credencial_path", None),
+        document_url=fields.get("credencial_url"),
+    )
+    if credencial_path is not None:
+        fields["credencial_path"] = credencial_path
+    if credencial_url is not None:
+        fields["credencial_url"] = credencial_url
+
+    comprobante_path, comprobante_url = _resolve_document_refs(
+        document_path=fields.pop("comprobante_domicilio_path", None),
+        document_url=fields.get("comprobante_domicilio_url"),
+    )
+    if comprobante_path is not None:
+        fields["comprobante_domicilio_path"] = comprobante_path
+    if comprobante_url is not None:
+        fields["comprobante_domicilio_url"] = comprobante_url
+
     if not fields:
         row = db.execute(
             "SELECT id, status, updated_at FROM estudios_socioeconomicos WHERE id = %s",

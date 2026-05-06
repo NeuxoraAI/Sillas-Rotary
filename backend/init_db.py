@@ -57,6 +57,10 @@ DDL = [
         elaboro_estudio         TEXT    NOT NULL,
         fecha_estudio           TEXT    NOT NULL,
         sede                    TEXT    NOT NULL,
+        credencial_path         TEXT,
+        credencial_url          TEXT,
+        comprobante_domicilio_path TEXT,
+        comprobante_domicilio_url  TEXT,
         status                  TEXT    NOT NULL DEFAULT 'borrador' CHECK(status IN ('borrador', 'completo')),
         created_at              TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         updated_at              TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -156,10 +160,22 @@ def _init_storage() -> None:
         os.environ["SUPABASE_URL"],
         os.environ["SUPABASE_SERVICE_KEY"],
     )
-    bucket_name = "fotos-tecnica"
+    _ensure_private_bucket(
+        client,
+        bucket_name="fotos-tecnica",
+        allowed_mime_types=["image/jpeg", "image/png"],
+    )
+    _ensure_private_bucket(
+        client,
+        bucket_name="documentos-estudio",
+        allowed_mime_types=["image/jpeg", "image/png", "application/pdf"],
+    )
+
+
+def _ensure_private_bucket(client, *, bucket_name: str, allowed_mime_types: list[str]) -> None:
     secure_options = {
         "public": False,
-        "allowed_mime_types": ["image/jpeg", "image/png"],
+        "allowed_mime_types": allowed_mime_types,
         "file_size_limit": 10 * 1024 * 1024,
     }
 
@@ -167,14 +183,13 @@ def _init_storage() -> None:
         bucket = client.storage.get_bucket(bucket_name)
         if not isinstance(bucket, dict) or bucket.get("public") is not False:
             client.storage.update_bucket(bucket_name, options=secure_options)
-            print("Storage bucket 'fotos-tecnica' hardened to private mode.")
+            print(f"Storage bucket '{bucket_name}' hardened to private mode.")
         else:
-            # Aseguramos límites aunque ya exista privado.
             client.storage.update_bucket(bucket_name, options=secure_options)
-            print("Storage bucket 'fotos-tecnica' already private — security options refreshed.")
+            print(f"Storage bucket '{bucket_name}' already private — security options refreshed.")
     except Exception:
         client.storage.create_bucket(bucket_name, options=secure_options)
-        print("Storage bucket 'fotos-tecnica' created in private mode.")
+        print(f"Storage bucket '{bucket_name}' created in private mode.")
 
 
 if __name__ == "__main__":
