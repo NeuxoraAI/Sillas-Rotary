@@ -437,7 +437,6 @@ class TestSocioeconomicoMonetaryContract:
         assert get_after_patch.status_code == 200
         assert get_after_patch.json()["monto_otras_fuentes"] is None
 
-
 class TestNivelEstudiosCatalog:
     """RF-02: nivel_estudios must use closed 8-code catalog."""
 
@@ -545,3 +544,55 @@ class TestComoObtuvoSillaCatalog:
         estudio_id = response.json()["estudio_id"]
         get_response = client.get(f"/api/estudios/{estudio_id}", headers=capturista_headers)
         assert get_response.json()["como_obtuvo_silla"] is None
+
+
+class TestSocioeconomicoDocumentContracts:
+    def test_post_estudio_persists_document_refs(self, client, capturista_headers, region_lon):
+        payload = _estudio_payload(region_lon["id"])
+        payload["estudio"].update(
+            {
+                "credencial_path": "credencial/doc-1.pdf",
+                "credencial_url": "storage://documentos-estudio/credencial/doc-1.pdf",
+                "comprobante_domicilio_path": "comprobante_domicilio/doc-2.png",
+                "comprobante_domicilio_url": "storage://documentos-estudio/comprobante_domicilio/doc-2.png",
+            }
+        )
+
+        create_response = client.post("/api/estudios", headers=capturista_headers, json=payload)
+        assert create_response.status_code == 201
+        estudio_id = create_response.json()["estudio_id"]
+
+        get_response = client.get(f"/api/estudios/{estudio_id}", headers=capturista_headers)
+        assert get_response.status_code == 200
+        data = get_response.json()
+        assert data["credencial_path"] == "credencial/doc-1.pdf"
+        assert data["credencial_url"] == "storage://documentos-estudio/credencial/doc-1.pdf"
+        assert data["comprobante_domicilio_path"] == "comprobante_domicilio/doc-2.png"
+        assert data["comprobante_domicilio_url"] == "storage://documentos-estudio/comprobante_domicilio/doc-2.png"
+
+    def test_patch_estudio_updates_document_refs(self, client, capturista_headers, region_lon):
+        create_response = client.post(
+            "/api/estudios",
+            headers=capturista_headers,
+            json=_estudio_payload(region_lon["id"]),
+        )
+        assert create_response.status_code == 201
+        estudio_id = create_response.json()["estudio_id"]
+
+        patch_response = client.patch(
+            f"/api/estudios/{estudio_id}",
+            headers=capturista_headers,
+            json={
+                "credencial_url": "storage://documentos-estudio/credencial/nueva-credencial.pdf",
+                "comprobante_domicilio_url": "storage://documentos-estudio/comprobante_domicilio/nuevo-comprobante.jpg",
+            },
+        )
+        assert patch_response.status_code == 200
+
+        get_response = client.get(f"/api/estudios/{estudio_id}", headers=capturista_headers)
+        assert get_response.status_code == 200
+        data = get_response.json()
+        assert data["credencial_path"] == "credencial/nueva-credencial.pdf"
+        assert data["credencial_url"] == "storage://documentos-estudio/credencial/nueva-credencial.pdf"
+        assert data["comprobante_domicilio_path"] == "comprobante_domicilio/nuevo-comprobante.jpg"
+        assert data["comprobante_domicilio_url"] == "storage://documentos-estudio/comprobante_domicilio/nuevo-comprobante.jpg"

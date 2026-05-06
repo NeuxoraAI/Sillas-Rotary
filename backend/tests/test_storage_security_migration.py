@@ -16,12 +16,25 @@ def test_incremental_migration_adds_foto_path_and_backfill() -> None:
     assert "foto_path is null" in content
 
 
+def test_incremental_migration_adds_document_refs_to_estudios() -> None:
+    migration_file = (
+        Path(__file__).resolve().parents[1]
+        / "migrations"
+        / "0004_add_documento_refs_to_estudios_socioeconomicos.sql"
+    )
+    content = migration_file.read_text(encoding="utf-8").lower()
+
+    assert "alter table public.estudios_socioeconomicos" in content
+    assert "credencial_path" in content
+    assert "comprobante_domicilio_path" in content
+
+
 def test_init_storage_hardens_existing_bucket_to_private(monkeypatch) -> None:
     calls: list[tuple[str, dict]] = []
 
     class _FakeStorage:
         def get_bucket(self, name: str):
-            assert name == "fotos-tecnica"
+            assert name in {"fotos-tecnica", "documentos-estudio"}
             return {"name": name, "public": True}
 
         def update_bucket(self, name: str, options: dict):
@@ -40,11 +53,12 @@ def test_init_storage_hardens_existing_bucket_to_private(monkeypatch) -> None:
     init_db._init_storage()
 
     assert calls
-    assert calls[0][0] == "fotos-tecnica"
-    assert calls[0][1]["public"] is False
-    assert "image/jpeg" in calls[0][1]["allowed_mime_types"]
-    assert "image/png" in calls[0][1]["allowed_mime_types"]
-    assert calls[0][1]["file_size_limit"] == 10 * 1024 * 1024
+    by_bucket = {name: options for name, options in calls}
+    assert by_bucket["fotos-tecnica"]["public"] is False
+    assert "image/jpeg" in by_bucket["fotos-tecnica"]["allowed_mime_types"]
+    assert "image/png" in by_bucket["fotos-tecnica"]["allowed_mime_types"]
+    assert by_bucket["fotos-tecnica"]["file_size_limit"] == 10 * 1024 * 1024
+    assert "application/pdf" in by_bucket["documentos-estudio"]["allowed_mime_types"]
 
 
 def test_init_storage_creates_private_bucket_when_missing(monkeypatch) -> None:
@@ -70,5 +84,7 @@ def test_init_storage_creates_private_bucket_when_missing(monkeypatch) -> None:
     init_db._init_storage()
 
     assert created
-    assert created[0][0] == "fotos-tecnica"
-    assert created[0][1]["public"] is False
+    by_bucket = {name: options for name, options in created}
+    assert by_bucket["fotos-tecnica"]["public"] is False
+    assert by_bucket["documentos-estudio"]["public"] is False
+    assert "application/pdf" in by_bucket["documentos-estudio"]["allowed_mime_types"]

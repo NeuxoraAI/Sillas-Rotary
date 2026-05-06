@@ -685,6 +685,86 @@
               <label class="block text-sm font-semibold text-slate-700">Ciudad del registro</label>
               <input class="w-full border-slate-300 bg-slate-100" name="ciudad_registro" type="text" readonly />
             </div>
+            <div class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-4">
+                <label class="block text-sm font-semibold text-slate-700" for="credencial-file"
+                  >Subir Credencial</label
+                >
+                <input
+                  id="credencial-file"
+                  name="credencial_file"
+                  class="w-full border-slate-300 text-sm file:mr-4 file:rounded-md file:border-0 file:bg-primary file:px-4 file:py-2 file:font-semibold file:text-white hover:file:bg-ug-lightBlue"
+                  type="file"
+                  accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf"
+                />
+                <label class="block text-sm font-semibold text-slate-700 mt-4"
+                  >Tomar foto de Credencial</label
+                >
+                <button
+                  type="button"
+                  data-camera-target="credencial"
+                  class="inline-flex cursor-pointer items-center rounded-md bg-slate-700 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+                  >Tomar foto</button
+                >
+                <p class="text-xs text-slate-500">Acepta JPG, PNG o PDF. Máximo 10MB.</p>
+                <p id="credencial-status" class="text-xs text-slate-500"></p>
+                <button
+                  type="button"
+                  id="credencial-preview-card"
+                  class="hidden mt-2 w-full overflow-hidden rounded-lg border border-slate-200 bg-white text-left hover:border-primary/40"
+                >
+                  <div
+                    id="credencial-preview-media"
+                    class="flex h-36 items-center justify-center bg-slate-100"
+                  ></div>
+                  <div class="border-t border-slate-200 px-3 py-2">
+                    <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Vista previa
+                    </p>
+                    <p id="credencial-preview-name" class="truncate text-sm text-slate-700"></p>
+                  </div>
+                </button>
+              </div>
+              <div class="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-4">
+                <label class="block text-sm font-semibold text-slate-700" for="comprobante-domicilio-file"
+                  >Subir Comprobante de domicilio</label
+                >
+                <input
+                  id="comprobante-domicilio-file"
+                  name="comprobante_domicilio_file"
+                  class="w-full border-slate-300 text-sm file:mr-4 file:rounded-md file:border-0 file:bg-primary file:px-4 file:py-2 file:font-semibold file:text-white hover:file:bg-ug-lightBlue"
+                  type="file"
+                  accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf"
+                />
+                <label class="block text-sm font-semibold text-slate-700 mt-4"
+                  >Tomar foto de Comprobante de domicilio</label
+                >
+                <button
+                  type="button"
+                  data-camera-target="comprobante_domicilio"
+                  class="inline-flex cursor-pointer items-center rounded-md bg-slate-700 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+                  >Tomar foto</button
+                >
+                <p class="text-xs text-slate-500">Acepta JPG, PNG o PDF. Máximo 10MB.</p>
+                <p id="comprobante-domicilio-status" class="text-xs text-slate-500"></p>
+                <button
+                  type="button"
+                  id="comprobante_domicilio-preview-card"
+                  class="hidden mt-2 w-full overflow-hidden rounded-lg border border-slate-200 bg-white text-left hover:border-primary/40"
+                >
+                  <div
+                    id="comprobante_domicilio-preview-media"
+                    class="flex h-36 items-center justify-center bg-slate-100"
+                  ></div>
+                  <div class="border-t border-slate-200 px-3 py-2">
+                    <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Vista previa
+                    </p>
+                    <p id="comprobante_domicilio-preview-name" class="truncate text-sm text-slate-700"></p>
+                  </div>
+                </button>
+              </div>
+            </div>
           </div>
         </section>
         <!-- Footer Actions -->
@@ -738,6 +818,98 @@
         </footer>
       </form>
     </main>
+    <div
+      id="camera-modal"
+      class="hidden fixed inset-0 z-50 bg-slate-900/80 px-4 py-6"
+    >
+      <div class="mx-auto flex h-full max-w-3xl items-center justify-center">
+        <div class="w-full rounded-xl bg-white p-4 shadow-2xl">
+          <div class="flex items-start justify-between gap-4 border-b border-slate-200 pb-3">
+            <div>
+              <h3 id="camera-modal-title" class="text-lg font-bold text-slate-900">
+                Capturar documento
+              </h3>
+              <p class="text-sm text-slate-600">
+                Acomodá el documento frente a la webcam y tomá la foto.
+              </p>
+            </div>
+            <button
+              id="camera-close"
+              type="button"
+              class="rounded-md border border-slate-300 px-3 py-1 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              Cerrar
+            </button>
+          </div>
+          <div class="mt-4 space-y-4">
+            <div id="camera-device-group" class="hidden space-y-2">
+              <label
+                for="camera-device-select"
+                class="block text-sm font-semibold text-slate-700"
+                >Seleccionar cámara</label
+              >
+              <select
+                id="camera-device-select"
+                class="w-full border-slate-300 text-sm"
+              ></select>
+            </div>
+            <video
+              id="camera-video"
+              class="h-[420px] w-full rounded-lg bg-slate-950 object-contain"
+              autoplay
+              playsinline
+              muted
+            ></video>
+            <canvas id="camera-canvas" class="hidden"></canvas>
+            <p id="camera-error" class="hidden text-sm text-red-600"></p>
+            <div class="flex flex-col gap-3 sm:flex-row sm:justify-end">
+              <button
+                id="camera-capture"
+                type="button"
+                class="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-ug-lightBlue"
+              >
+                Tomar foto
+              </button>
+              <button
+                id="camera-cancel"
+                type="button"
+                class="rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div
+      id="document-preview-modal"
+      class="hidden fixed inset-0 z-50 bg-slate-950/85 px-4 py-6"
+    >
+      <div class="mx-auto flex h-full max-w-5xl items-center justify-center">
+        <div class="w-full rounded-xl bg-white p-4 shadow-2xl">
+          <div class="flex items-start justify-between gap-4 border-b border-slate-200 pb-3">
+            <div>
+              <h3 id="document-preview-title" class="text-lg font-bold text-slate-900">
+                Vista previa del documento
+              </h3>
+              <p id="document-preview-name" class="text-sm text-slate-600"></p>
+            </div>
+            <button
+              id="document-preview-close"
+              type="button"
+              class="rounded-md border border-slate-300 px-3 py-1 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              Cerrar
+            </button>
+          </div>
+          <div
+            id="document-preview-content"
+            class="mt-4 flex h-[70vh] items-center justify-center overflow-hidden rounded-lg bg-slate-100"
+          ></div>
+        </div>
+      </div>
+    </div>
     <script data-purpose="form-logic">
       const NIVEL_ESTUDIOS_CATALOG = [
         "NINGUNO", "PRIMARIA", "SECUNDARIA", "BACHILLERATO",
@@ -757,6 +929,45 @@
       ];
       const ESTADOS_INEGI = [
         ["01","AGUASCALIENTES"],["02","BAJA CALIFORNIA"],["03","BAJA CALIFORNIA SUR"],["04","CAMPECHE"],["05","COAHUILA"],["06","COLIMA"],["07","CHIAPAS"],["08","CHIHUAHUA"],["09","CIUDAD DE MEXICO"],["10","DURANGO"],["11","GUANAJUATO"],["12","GUERRERO"],["13","HIDALGO"],["14","JALISCO"],["15","ESTADO DE MEXICO"],["16","MICHOACAN"],["17","MORELOS"],["18","NAYARIT"],["19","NUEVO LEON"],["20","OAXACA"],["21","PUEBLA"],["22","QUERETARO"],["23","QUINTANA ROO"],["24","SAN LUIS POTOSI"],["25","SINALOA"],["26","SONORA"],["27","TABASCO"],["28","TAMAULIPAS"],["29","TLAXCALA"],["30","VERACRUZ"],["31","YUCATAN"],["32","ZACATECAS"]
+      ];
+      const uploadedDocumentRefs = {
+        credencial: { path: null, url: null },
+        comprobante_domicilio: { path: null, url: null },
+      };
+      const capturedDocumentFiles = {
+        credencial: null,
+        comprobante_domicilio: null,
+      };
+      const documentPreviewState = {
+        credencial: { objectUrl: null, type: null, name: "", sourceUrl: null },
+        comprobante_domicilio: { objectUrl: null, type: null, name: "", sourceUrl: null },
+      };
+      const cameraState = {
+        key: null,
+        stream: null,
+        selectedDeviceId: null,
+      };
+      const DOCUMENT_INPUTS = [
+        {
+          key: "credencial",
+          tipo: "credencial",
+          inputId: "credencial-file",
+          statusId: "credencial-status",
+          previewCardId: "credencial-preview-card",
+          previewMediaId: "credencial-preview-media",
+          previewNameId: "credencial-preview-name",
+          label: "Credencial",
+        },
+        {
+          key: "comprobante_domicilio",
+          tipo: "comprobante_domicilio",
+          inputId: "comprobante-domicilio-file",
+          statusId: "comprobante-domicilio-status",
+          previewCardId: "comprobante_domicilio-preview-card",
+          previewMediaId: "comprobante_domicilio-preview-media",
+          previewNameId: "comprobante_domicilio-preview-name",
+          label: "Comprobante de domicilio",
+        },
       ];
 
       function sanitizeMoneyInput(raw) {
@@ -868,6 +1079,443 @@
         }
 
         return fallbackMessage;
+      }
+
+      function extractStoredFilename(path) {
+        if (!path) return "";
+        const segments = String(path).split("/");
+        return segments[segments.length - 1] || path;
+      }
+
+      function setDocumentRef(key, path, url) {
+        uploadedDocumentRefs[key] = {
+          path: path || null,
+          url: url || null,
+        };
+      }
+
+      function clearFileInputValue(inputId) {
+        const inputEl = document.getElementById(inputId);
+        if (inputEl) inputEl.value = "";
+      }
+
+      function getPreviewModalElements() {
+        return {
+          modal: document.getElementById("document-preview-modal"),
+          title: document.getElementById("document-preview-title"),
+          name: document.getElementById("document-preview-name"),
+          content: document.getElementById("document-preview-content"),
+        };
+      }
+
+      function revokePreviewUrl(key) {
+        const state = documentPreviewState[key];
+        if (state?.objectUrl) {
+          URL.revokeObjectURL(state.objectUrl);
+          state.objectUrl = null;
+        }
+      }
+
+      function setPreviewFromFile(key, file) {
+        revokePreviewUrl(key);
+        documentPreviewState[key] = {
+          objectUrl: URL.createObjectURL(file),
+          type: file.type || "application/octet-stream",
+          name: file.name || "Documento",
+          sourceUrl: null,
+        };
+      }
+
+      function setPreviewFromStoredPath(key, path) {
+        revokePreviewUrl(key);
+        const extension = String(path || "").split(".").pop()?.toLowerCase() || "";
+        const type = extension === "pdf" ? "application/pdf" : "image/jpeg";
+        documentPreviewState[key] = {
+          objectUrl: null,
+          type,
+          name: extractStoredFilename(path),
+          sourceUrl: path ? `/api/documentos?path=${encodeURIComponent(path)}` : null,
+        };
+      }
+
+      function clearPreviewState(key) {
+        revokePreviewUrl(key);
+        documentPreviewState[key] = {
+          objectUrl: null,
+          type: null,
+          name: "",
+          sourceUrl: null,
+        };
+      }
+
+      function renderPreviewCard(key) {
+        const config = DOCUMENT_INPUTS.find((item) => item.key === key);
+        const state = documentPreviewState[key];
+        if (!config || !state) return;
+
+        const card = document.getElementById(config.previewCardId);
+        const media = document.getElementById(config.previewMediaId);
+        const name = document.getElementById(config.previewNameId);
+        if (!card || !media || !name) return;
+
+        const previewUrl = state.objectUrl || state.sourceUrl;
+        if (!previewUrl) {
+          card.classList.add("hidden");
+          media.innerHTML = "";
+          name.textContent = "";
+          return;
+        }
+
+        card.classList.remove("hidden");
+        name.textContent = state.name || config.label;
+
+        if (state.type === "application/pdf") {
+          media.innerHTML = `
+            <div class="flex h-full w-full flex-col items-center justify-center gap-2 text-slate-600">
+              <span class="text-3xl">📄</span>
+              <span class="text-xs font-semibold uppercase tracking-wide">PDF</span>
+            </div>
+          `;
+          return;
+        }
+
+        media.innerHTML = `<img src="${previewUrl}" alt="Vista previa de ${config.label}" class="h-full w-full object-cover" />`;
+      }
+
+      function closeDocumentPreviewModal() {
+        const { modal, content, name } = getPreviewModalElements();
+        if (content) content.innerHTML = "";
+        if (name) name.textContent = "";
+        if (modal) modal.classList.add("hidden");
+      }
+
+      function openDocumentPreviewModal(key) {
+        const config = DOCUMENT_INPUTS.find((item) => item.key === key);
+        const state = documentPreviewState[key];
+        const { modal, title, name, content } = getPreviewModalElements();
+        if (!config || !state || !modal || !title || !name || !content) return;
+
+        const previewUrl = state.objectUrl || state.sourceUrl;
+        if (!previewUrl) return;
+
+        title.textContent = `Vista previa de ${config.label}`;
+        name.textContent = state.name || config.label;
+
+        if (state.type === "application/pdf") {
+          content.innerHTML = `<iframe src="${previewUrl}" class="h-full w-full rounded-lg bg-white" title="Vista previa de ${config.label}"></iframe>`;
+        } else {
+          content.innerHTML = `<img src="${previewUrl}" alt="Vista previa ampliada de ${config.label}" class="max-h-full max-w-full object-contain" />`;
+        }
+
+        modal.classList.remove("hidden");
+      }
+
+      function getCameraElements() {
+        return {
+          modal: document.getElementById("camera-modal"),
+          title: document.getElementById("camera-modal-title"),
+          deviceGroup: document.getElementById("camera-device-group"),
+          deviceSelect: document.getElementById("camera-device-select"),
+          video: document.getElementById("camera-video"),
+          canvas: document.getElementById("camera-canvas"),
+          error: document.getElementById("camera-error"),
+        };
+      }
+
+      function stopCameraStream() {
+        if (cameraState.stream) {
+          cameraState.stream.getTracks().forEach((track) => track.stop());
+          cameraState.stream = null;
+        }
+
+        const { video } = getCameraElements();
+        if (video) video.srcObject = null;
+      }
+
+      async function listVideoDevices() {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        return devices.filter((device) => device.kind === "videoinput");
+      }
+
+      function renderCameraDeviceOptions(devices) {
+        const { deviceGroup, deviceSelect } = getCameraElements();
+        if (!deviceGroup || !deviceSelect) return;
+
+        if (!devices.length) {
+          deviceGroup.classList.add("hidden");
+          deviceSelect.innerHTML = "";
+          return;
+        }
+
+        deviceGroup.classList.toggle("hidden", devices.length <= 1);
+        deviceSelect.innerHTML = devices
+          .map((device, index) => {
+            const selected = device.deviceId === cameraState.selectedDeviceId;
+            const label = device.label || `Cámara ${index + 1}`;
+            return `<option value="${device.deviceId}" ${selected ? "selected" : ""}>${label}</option>`;
+          })
+          .join("");
+      }
+
+      async function refreshCameraDeviceOptions() {
+        const devices = await listVideoDevices();
+        if (!cameraState.selectedDeviceId && devices[0]) {
+          cameraState.selectedDeviceId = devices[0].deviceId;
+        }
+        renderCameraDeviceOptions(devices);
+      }
+
+      async function startCameraStream() {
+        const { video } = getCameraElements();
+        if (!video) return;
+
+        stopCameraStream();
+
+        const constraints = cameraState.selectedDeviceId
+          ? {
+              video: { deviceId: { exact: cameraState.selectedDeviceId } },
+              audio: false,
+            }
+          : {
+              video: true,
+              audio: false,
+            };
+
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        cameraState.stream = stream;
+        const [videoTrack] = stream.getVideoTracks();
+        const activeDeviceId = videoTrack?.getSettings?.().deviceId;
+        if (activeDeviceId) {
+          cameraState.selectedDeviceId = activeDeviceId;
+        }
+
+        video.srcObject = stream;
+        await video.play();
+        await refreshCameraDeviceOptions();
+      }
+
+      function closeCameraModal() {
+        stopCameraStream();
+        cameraState.key = null;
+        const { modal, error, deviceGroup, deviceSelect } = getCameraElements();
+        if (error) {
+          error.textContent = "";
+          error.classList.add("hidden");
+        }
+        if (deviceGroup) deviceGroup.classList.add("hidden");
+        if (deviceSelect) deviceSelect.innerHTML = "";
+        if (modal) modal.classList.add("hidden");
+      }
+
+      async function openCameraModal(key) {
+        const config = DOCUMENT_INPUTS.find((item) => item.key === key);
+        if (!config) return;
+
+        const { modal, title, video, error } = getCameraElements();
+        if (!modal || !title || !video || !error) return;
+
+        if (!navigator.mediaDevices?.getUserMedia) {
+          throw new Error("Este navegador no permite acceder a la webcam desde esta pantalla.");
+        }
+
+        stopCameraStream();
+        cameraState.key = key;
+        title.textContent = `Tomar foto de ${config.label}`;
+        error.textContent = "";
+        error.classList.add("hidden");
+        modal.classList.remove("hidden");
+
+        try {
+          await startCameraStream();
+        } catch (_err) {
+          closeCameraModal();
+          throw new Error("No se pudo acceder a la webcam. Revisá los permisos de cámara en Edge.");
+        }
+      }
+
+      function capturePhotoFromWebcam() {
+        const key = cameraState.key;
+        const config = DOCUMENT_INPUTS.find((item) => item.key === key);
+        const { video, canvas } = getCameraElements();
+        if (!key || !config || !video || !canvas) return;
+
+        const width = video.videoWidth || 1280;
+        const height = video.videoHeight || 720;
+        canvas.width = width;
+        canvas.height = height;
+
+        const context = canvas.getContext("2d");
+        if (!context) {
+          throw new Error("No se pudo procesar la foto capturada.");
+        }
+
+        context.drawImage(video, 0, 0, width, height);
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) return;
+
+            capturedDocumentFiles[key] = new File(
+              [blob],
+              `${config.tipo}-${Date.now()}.jpg`,
+              { type: "image/jpeg" },
+            );
+            setPreviewFromFile(key, capturedDocumentFiles[key]);
+            clearFileInputValue(config.inputId);
+            renderDocumentStatus(key);
+            renderPreviewCard(key);
+            closeCameraModal();
+          },
+          "image/jpeg",
+          0.92,
+        );
+      }
+
+      function renderDocumentStatus(key) {
+        const config = DOCUMENT_INPUTS.find((item) => item.key === key);
+        if (!config) return;
+
+        const statusEl = document.getElementById(config.statusId);
+        const inputEl = document.getElementById(config.inputId);
+        if (!statusEl || !inputEl) return;
+
+        if (inputEl.files?.[0]) {
+          statusEl.textContent = `${config.label} seleccionada: ${inputEl.files[0].name}`;
+          return;
+        }
+
+        if (capturedDocumentFiles[key]) {
+          statusEl.textContent = `${config.label} capturada: ${capturedDocumentFiles[key].name}`;
+          return;
+        }
+
+        const storedPath = uploadedDocumentRefs[key]?.path;
+        statusEl.textContent = storedPath
+          ? `${config.label} cargada: ${extractStoredFilename(storedPath)}`
+          : "";
+      }
+
+      function setupDocumentInputs() {
+        DOCUMENT_INPUTS.forEach((config) => {
+          const inputEl = document.getElementById(config.inputId);
+          if (!inputEl) return;
+          inputEl.addEventListener("change", () => {
+            capturedDocumentFiles[config.key] = null;
+            if (inputEl.files?.[0]) {
+              setPreviewFromFile(config.key, inputEl.files[0]);
+            } else {
+              clearPreviewState(config.key);
+            }
+            renderDocumentStatus(config.key);
+            renderPreviewCard(config.key);
+          });
+          renderDocumentStatus(config.key);
+          renderPreviewCard(config.key);
+
+          const previewCard = document.getElementById(config.previewCardId);
+          if (previewCard) {
+            previewCard.addEventListener("click", () =>
+              openDocumentPreviewModal(config.key),
+            );
+          }
+        });
+
+        document.querySelectorAll("[data-camera-target]").forEach((button) => {
+          button.addEventListener("click", async () => {
+            try {
+              await openCameraModal(button.dataset.cameraTarget);
+            } catch (err) {
+              const errorEl = document.getElementById("error-msg");
+              errorEl.textContent =
+                err instanceof Error ? err.message : "No se pudo abrir la webcam.";
+              errorEl.classList.remove("hidden");
+            }
+          });
+        });
+
+        document
+          .getElementById("camera-close")
+          .addEventListener("click", closeCameraModal);
+        document
+          .getElementById("camera-cancel")
+          .addEventListener("click", closeCameraModal);
+        document
+          .getElementById("camera-capture")
+          .addEventListener("click", capturePhotoFromWebcam);
+        document
+          .getElementById("camera-device-select")
+          .addEventListener("change", async (event) => {
+            cameraState.selectedDeviceId = event.target.value || null;
+            try {
+              await startCameraStream();
+            } catch (_err) {
+              const errorEl = document.getElementById("error-msg");
+              errorEl.textContent = "No se pudo cambiar a la cámara seleccionada.";
+              errorEl.classList.remove("hidden");
+            }
+          });
+        document.getElementById("camera-modal").addEventListener("click", (event) => {
+          if (event.target?.id === "camera-modal") closeCameraModal();
+        });
+
+        document
+          .getElementById("document-preview-close")
+          .addEventListener("click", closeDocumentPreviewModal);
+        document
+          .getElementById("document-preview-modal")
+          .addEventListener("click", (event) => {
+            if (event.target?.id === "document-preview-modal") {
+              closeDocumentPreviewModal();
+            }
+          });
+      }
+
+      async function uploadSupportingDocuments(token) {
+        const nextRefs = {
+          credencial: { ...uploadedDocumentRefs.credencial },
+          comprobante_domicilio: { ...uploadedDocumentRefs.comprobante_domicilio },
+        };
+
+        for (const config of DOCUMENT_INPUTS) {
+          const inputEl = document.getElementById(config.inputId);
+          const file = capturedDocumentFiles[config.key] || inputEl?.files?.[0];
+          if (!file) continue;
+
+          const formData = new FormData();
+          formData.append("tipo", config.tipo);
+          formData.append("archivo", file);
+
+          const response = await fetch("/api/upload-documento", {
+            method: "POST",
+            headers: {
+              Authorization: "Bearer " + token,
+            },
+            body: formData,
+          });
+
+          if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            throw new Error(
+              formatBackendErrorMessage(
+                errData,
+                `No se pudo subir ${config.label.toLowerCase()}.`,
+              ),
+            );
+          }
+
+          const data = await response.json();
+          nextRefs[config.key] = {
+            path: data.documento_path || null,
+            url: data.documento_url || null,
+          };
+          setPreviewFromStoredPath(config.key, data.documento_path);
+          capturedDocumentFiles[config.key] = null;
+          clearFileInputValue(config.inputId);
+          setDocumentRef(config.key, data.documento_path, data.documento_url);
+          renderDocumentStatus(config.key);
+          renderPreviewCard(config.key);
+        }
+
+        return nextRefs;
       }
 
       function setupTelefonoSanitization() {
@@ -1133,6 +1781,30 @@
               setVal("fecha_estudio", data.fecha_estudio);
               setVal("sede", data.sede);
               setVal("ciudad_registro", data.ciudad_registro || regionCtx.region_nombre);
+              setDocumentRef(
+                "credencial",
+                data.credencial_path,
+                data.credencial_url,
+              );
+              if (data.credencial_path) {
+                setPreviewFromStoredPath("credencial", data.credencial_path);
+              }
+              setDocumentRef(
+                "comprobante_domicilio",
+                data.comprobante_domicilio_path,
+                data.comprobante_domicilio_url,
+              );
+              if (data.comprobante_domicilio_path) {
+                setPreviewFromStoredPath(
+                  "comprobante_domicilio",
+                  data.comprobante_domicilio_path,
+                );
+              }
+              renderDocumentStatus("credencial");
+              renderDocumentStatus("comprobante_domicilio");
+              renderPreviewCard("credencial");
+              renderPreviewCard("comprobante_domicilio");
+              setVal("ciudad_registro", data.ciudad_registro || regionCtx.region_nombre);
 
               // Also store beneficiario_id from the draft
               if (data.beneficiario_id) {
@@ -1162,7 +1834,7 @@
           }
         });
 
-      function getFormData(status) {
+      function getFormData(status, documentRefs) {
         const regionCtx = JSON.parse(
           localStorage.getItem("region_ctx") || "null",
         );
@@ -1251,6 +1923,12 @@
             como_obtuvo_silla: get("como_obtuvo_silla"),
             elaboro_estudio: null,
             fecha_estudio: get("fecha_estudio"),
+            credencial_path: documentRefs?.credencial?.path || null,
+            credencial_url: documentRefs?.credencial?.url || null,
+            comprobante_domicilio_path:
+              documentRefs?.comprobante_domicilio?.path || null,
+            comprobante_domicilio_url:
+              documentRefs?.comprobante_domicilio?.url || null,
             status,
           },
         };
@@ -1282,10 +1960,11 @@
 
         try {
           let res, data;
+          const documentRefs = await uploadSupportingDocuments(session.token);
 
           if (estudioId) {
             // PATCH existing draft - update estudio fields + tutores (for resumed edits)
-            const payload = getFormData(status);
+            const payload = getFormData(status, documentRefs);
             const patchPayload = {
               ...payload.estudio,
               tutores: payload.tutores,
@@ -1322,7 +2001,7 @@
             }
           } else {
             // POST new estudio
-            const payload = getFormData(status);
+            const payload = getFormData(status, documentRefs);
 
             res = await fetch("/api/estudios", {
               method: "POST",
@@ -1364,7 +2043,10 @@
             }
           }
         } catch (err) {
-          errorEl.textContent = "No se pudo conectar con el servidor.";
+          errorEl.textContent =
+            err instanceof Error
+              ? err.message
+              : "No se pudo conectar con el servidor.";
           errorEl.classList.remove("hidden");
         }
       }
@@ -1372,6 +2054,10 @@
       // Guardar Borrador button
       setupMonetaryFieldFormatting();
       setupTelefonoSanitization();
+      setupEstadosCatalog();
+      setupTutorConditionalFields();
+      setupSillaPreviaConditionalField();
+      setupDocumentInputs();
       setupEstadosCatalog();
       setupTutorConditionalFields();
       setupSillaPreviaConditionalField();
