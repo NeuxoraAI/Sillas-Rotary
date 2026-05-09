@@ -6,7 +6,6 @@ from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from pydantic import BaseModel, field_validator
-from supabase import create_client
 
 from database import get_db, _DBAdapter
 from routers.auth import CurrentUser, assert_resource_owner, require_roles
@@ -39,19 +38,53 @@ def _build_list_where_clause(
     sede: Optional[str],
     estado: Optional[str],
     revision_pendiente: Optional[bool],
+    pais_id: Optional[int] = None,
+    region_id: Optional[int] = None,
+    ciudad: Optional[str] = None,
+    peso_kg_min: Optional[float] = None,
+    peso_kg_max: Optional[float] = None,
+    altura_in_min: Optional[float] = None,
+    altura_in_max: Optional[float] = None,
+    tiene_foto: Optional[bool] = None,
 ) -> tuple[str, list]:
     clauses: list[str] = ["1=1"]
     params: list = []
 
+    # ── Range validation ──────────────────────────────────────────────────
+    if peso_kg_min is not None and peso_kg_max is not None and peso_kg_min > peso_kg_max:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "type": "invalid_filter",
+                "message": "peso_kg_min no puede ser mayor que peso_kg_max",
+            },
+        )
+    if altura_in_min is not None and altura_in_max is not None and altura_in_min > altura_in_max:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "type": "invalid_filter",
+                "message": "altura_in_min no puede ser mayor que altura_in_max",
+            },
+        )
+
+    # ── Free-text search (expanded) ───────────────────────────────────────
     if q and q.strip():
         term = f"%{q.strip()}%"
-        clauses.append("(b.nombre ILIKE %s OR b.folio ILIKE %s)")
-        params.extend([term, term])
+        clauses.append(
+            "(b.nombre ILIKE %s OR b.folio ILIKE %s OR "
+            "b.ciudad ILIKE %s OR "
+            "r.nombre ILIKE %s OR "
+            "p.nombre ILIKE %s)"
+        )
+        params.extend([term, term, term, term, term])
 
+    # ── Sede ──────────────────────────────────────────────────────────────
     if sede and sede.strip():
         clauses.append("COALESCE(e.sede, '') = %s")
         params.append(sede.strip())
 
+    # ── Estado ────────────────────────────────────────────────────────────
     if estado and estado.strip():
         if estado not in _PROCESS_STATES:
             raise HTTPException(
@@ -61,9 +94,48 @@ def _build_list_where_clause(
         clauses.append("COALESCE(pt.estado, 'sin_iniciar') = %s")
         params.append(estado)
 
+    # ── Revision pendiente ───────────────────────────────────────────────
     if revision_pendiente is not None:
         clauses.append("COALESCE(pt.revision_pendiente, FALSE) = %s")
         params.append(revision_pendiente)
+
+    # ── Pais (via region) ─────────────────────────────────────────────────
+    if pais_id is not None:
+        clauses.append("r.pais_id = %s")
+        params.append(pais_id)
+
+    # ── Region ────────────────────────────────────────────────────────────
+    if region_id is not None:
+        clauses.append("b.region_id = %s")
+        params.append(region_id)
+
+    # ── Ciudad ────────────────────────────────────────────────────────────
+    if ciudad and ciudad.strip():
+        term = f"%{ciudad.strip()}%"
+        clauses.append("b.ciudad ILIKE %s")
+        params.append(term)
+
+    # ── Peso range ────────────────────────────────────────────────────────
+    if peso_kg_min is not None:
+        clauses.append("st.peso_kg >= %s")
+        params.append(peso_kg_min)
+    if peso_kg_max is not None:
+        clauses.append("st.peso_kg <= %s")
+        params.append(peso_kg_max)
+
+    # ── Altura range ─────────────────────────────────────────────────────
+    if altura_in_min is not None:
+        clauses.append("st.altura_total_in >= %s")
+        params.append(altura_in_min)
+    if altura_in_max is not None:
+        clauses.append("st.altura_total_in <= %s")
+        params.append(altura_in_max)
+
+    # ── Tiene foto ───────────────────────────────────────────────────────
+    if tiene_foto is True:
+        clauses.append("st.foto_url IS NOT NULL")
+    elif tiene_foto is False:
+        clauses.append("st.foto_url IS NULL")
 
     return " AND ".join(clauses), params
 
@@ -95,7 +167,18 @@ def _load_proceso(db: _DBAdapter, proceso_id: int) -> dict:
 
 def _build_snapshot(db: _DBAdapter, beneficiario_id: int) -> dict:
     beneficiario = _row_to_dict(
-        db.execute("SELECT * FROM beneficiarios WHERE id = %s", (beneficiario_id,)).fetchone()
+        db.execute(
+            """
+            SELECT b.*,
+                   COALESCE(p.nombre, '') AS pais_nombre,
+                   COALESCE(r.nombre, '') AS region_nombre
+            FROM beneficiarios b
+            LEFT JOIN regiones r ON r.id = b.region_id
+            LEFT JOIN paises p ON p.id = r.pais_id
+            WHERE b.id = %s
+            """,
+            (beneficiario_id,),
+        ).fetchone()
     )
     if beneficiario is None:
         raise HTTPException(status_code=404, detail="Beneficiario no encontrado")
@@ -227,6 +310,7 @@ def _classify_db_error(exc: Exception) -> HTTPException:
 
 
 def _storage():
+    from supabase import create_client
     return create_client(
         os.environ["SUPABASE_URL"],
         os.environ["SUPABASE_SERVICE_KEY"],
@@ -517,32 +601,84 @@ def listar_beneficiarios_tecnica(
     sede: Optional[str] = None,
     estado: Optional[str] = None,
     revision_pendiente: Optional[bool] = None,
+    pais_id: Optional[int] = None,
+    region_id: Optional[int] = None,
+    ciudad: Optional[str] = None,
+    peso_kg_min: Optional[float] = None,
+    peso_kg_max: Optional[float] = None,
+    altura_in_min: Optional[float] = None,
+    altura_in_max: Optional[float] = None,
+    tiene_foto: Optional[bool] = None,
+    page: int = 1,
+    per_page: int = 20,
 ) -> dict:
+    if page < 1:
+        raise HTTPException(
+            status_code=422,
+            detail={"type": "invalid_filter", "message": "page debe ser >= 1"},
+        )
+    if per_page < 1:
+        raise HTTPException(
+            status_code=422,
+            detail={"type": "invalid_filter", "message": "per_page debe ser >= 1"},
+        )
+
     where_clause, params = _build_list_where_clause(
         q=q,
         sede=sede,
         estado=estado,
         revision_pendiente=revision_pendiente,
+        pais_id=pais_id,
+        region_id=region_id,
+        ciudad=ciudad,
+        peso_kg_min=peso_kg_min,
+        peso_kg_max=peso_kg_max,
+        altura_in_min=altura_in_min,
+        altura_in_max=altura_in_max,
+        tiene_foto=tiene_foto,
     )
+
+    offset = (page - 1) * per_page
+
     rows = db.execute(
         f"""
         SELECT
             b.id AS beneficiario_id,
             b.nombre,
             b.folio,
+            b.ciudad,
+            COALESCE(p.nombre, '') AS pais_nombre,
+            COALESCE(r.nombre, '') AS region_nombre,
             COALESCE(e.sede, '') AS sede,
             COALESCE(pt.estado, 'sin_iniciar') AS estado,
             COALESCE(pt.revision_pendiente, FALSE) AS revision_pendiente,
-            pt.id AS proceso_id
+            pt.id AS proceso_id,
+            st.peso_kg,
+            st.altura_total_in,
+            st.unidad_captura,
+            st.foto_url,
+            COUNT(*) OVER() AS total_count
         FROM beneficiarios b
         LEFT JOIN estudios_socioeconomicos e ON e.beneficiario_id = b.id
         LEFT JOIN procesos_tecnicos pt ON pt.beneficiario_id = b.id
+        LEFT JOIN solicitudes_tecnicas st ON st.beneficiario_id = b.id
+        LEFT JOIN regiones r ON r.id = b.region_id
+        LEFT JOIN paises p ON p.id = r.pais_id
         WHERE {where_clause}
         ORDER BY b.nombre ASC
+        LIMIT %s OFFSET %s
         """,
-        tuple(params),
+        tuple(params) + (per_page, offset),
     ).fetchall()
-    return {"items": rows, "total": len(rows)}
+
+    total = rows[0]["total_count"] if rows else 0
+
+    return {
+        "items": rows,
+        "total": total,
+        "page": page,
+        "per_page": per_page,
+    }
 
 
 @router.get("/tecnica/beneficiarios/{beneficiario_id}")
