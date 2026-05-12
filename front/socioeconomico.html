@@ -132,7 +132,7 @@
                 type="text"
                 minlength="2"
                 maxlength="60"
-                pattern="^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ ]+$"
+                pattern="^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ. ]+$"
                 required
               />
             </div>
@@ -145,7 +145,7 @@
                 type="text"
                 minlength="2"
                 maxlength="40"
-                pattern="^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ ]+$"
+                pattern="^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ. ]+$"
                 required
               />
             </div>
@@ -158,7 +158,7 @@
                 type="text"
                 minlength="2"
                 maxlength="40"
-                pattern="^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ ]+$"
+                pattern="^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ. ]+$"
                 required
               />
             </div>
@@ -201,11 +201,11 @@
             </div>
             <div class="space-y-2">
               <label class="block text-sm font-semibold text-slate-700">Número exterior</label>
-              <input class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary" name="num_ext" type="text" pattern="[A-Za-z0-9\-\/ ]{1,10}" maxlength="10" required />
+              <input class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary" name="num_ext" type="text" pattern="[A-Za-z0-9\-\/]{1,10}" maxlength="10" required />
             </div>
             <div class="space-y-2">
               <label class="block text-sm font-semibold text-slate-700">Número interior</label>
-              <input class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary" name="num_int" type="text" pattern="[A-Za-z0-9\-\/ ]{0,10}" maxlength="10" />
+              <input class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary" name="num_int" type="text" pattern="[A-Za-z0-9\-\/]{0,10}" maxlength="10" />
             </div>
             <div class="space-y-2">
               <label class="block text-sm font-semibold text-slate-700"
@@ -231,9 +231,9 @@
             <div class="space-y-2 md:col-span-2">
               <label class="block text-sm font-semibold text-slate-700">Sexo</label>
               <div class="flex gap-6">
-                <label><input type="radio" name="sexo" value="M" required /> M</label>
-                <label><input type="radio" name="sexo" value="F" required /> F</label>
-                <label><input type="radio" name="sexo" value="NE" required /> NE</label>
+                <label><input type="radio" name="sexo" value="M" required /> Masculino</label>
+                <label><input type="radio" name="sexo" value="F" required /> Femenino</label>
+                <label><input type="radio" name="sexo" value="NE" required /> No especificado</label>
               </div>
             </div>
             <div class="space-y-2">
@@ -250,7 +250,6 @@
                 pattern="[0-9]{10}"
                 autocomplete="off"
               />
-              <p class="text-xs text-slate-500">10 dígitos, sin espacios ni símbolos</p>
             </div>
           </div>
         </section>
@@ -285,17 +284,46 @@
                 Tutor 1
               </h3>
               <div class="space-y-3">
-                <div>
-                  <label class="text-xs font-bold text-slate-500 uppercase"
-                    >Nombre</label
-                  ><input
-                    class="w-full mt-1 border-slate-300"
-                    name="tutor1_nombre"
-                    type="text"
-                    minlength="3"
-                    maxlength="120"
-                    required
-                  />
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label class="text-xs font-bold text-slate-500 uppercase"
+                      >Nombre(s)</label
+                    ><input
+                      class="w-full mt-1 border-slate-300"
+                      name="tutor1_nombres"
+                      type="text"
+                      minlength="2"
+                      maxlength="60"
+                      pattern="^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ. ]+$"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label class="text-xs font-bold text-slate-500 uppercase"
+                      >Apellido Paterno</label
+                    ><input
+                      class="w-full mt-1 border-slate-300"
+                      name="tutor1_apellido_paterno"
+                      type="text"
+                      minlength="2"
+                      maxlength="40"
+                      pattern="^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ. ]+$"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label class="text-xs font-bold text-slate-500 uppercase"
+                      >Apellido Materno</label
+                    ><input
+                      class="w-full mt-1 border-slate-300"
+                      name="tutor1_apellido_materno"
+                      type="text"
+                      minlength="2"
+                      maxlength="40"
+                      pattern="^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ. ]+$"
+                      required
+                    />
+                  </div>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                   <div>
@@ -305,8 +333,8 @@
                       class="w-full mt-1 border-slate-300"
                       name="tutor1_edad"
                       type="number"
-                      min="18"
-                      max="100"
+                      min="0"
+                      max="99"
                     />
                   </div>
                   <div>
@@ -354,7 +382,7 @@
                       name="tutor1_num_hijos"
                       type="number"
                       min="0"
-                      max="30"
+                      max="20"
                     />
                   </div>
                 </div>
@@ -430,9 +458,6 @@
                     <label class="inline-flex items-center gap-1">
                       <input type="radio" name="tutor1_imss" value="NO" class="text-primary" /> No
                     </label>
-                    <label class="inline-flex items-center gap-1">
-                      <input type="radio" name="tutor1_imss" value="NO_APLICA" class="text-primary" /> No aplica
-                    </label>
                   </div>
                 </fieldset>
                 <fieldset class="mt-3">
@@ -443,9 +468,6 @@
                     </label>
                     <label class="inline-flex items-center gap-1">
                       <input type="radio" name="tutor1_infonavit" value="NO" class="text-primary" /> No
-                    </label>
-                    <label class="inline-flex items-center gap-1">
-                      <input type="radio" name="tutor1_infonavit" value="NO_APLICA" class="text-primary" /> No aplica
                     </label>
                   </div>
                 </fieldset>
@@ -461,16 +483,43 @@
                 Tutor 2
               </h3>
               <div class="space-y-3">
-                <div>
-                  <label class="text-xs font-bold text-slate-500 uppercase"
-                    >Nombre</label
-                  ><input
-                    class="w-full mt-1 border-slate-300"
-                    name="tutor2_nombre"
-                    type="text"
-                    minlength="3"
-                    maxlength="120"
-                  />
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label class="text-xs font-bold text-slate-500 uppercase"
+                      >Nombre(s)</label
+                    ><input
+                      class="w-full mt-1 border-slate-300"
+                      name="tutor2_nombres"
+                      type="text"
+                      minlength="2"
+                      maxlength="60"
+                      pattern="^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ. ]+$"
+                    />
+                  </div>
+                  <div>
+                    <label class="text-xs font-bold text-slate-500 uppercase"
+                      >Apellido Paterno</label
+                    ><input
+                      class="w-full mt-1 border-slate-300"
+                      name="tutor2_apellido_paterno"
+                      type="text"
+                      minlength="2"
+                      maxlength="40"
+                      pattern="^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ. ]+$"
+                    />
+                  </div>
+                  <div>
+                    <label class="text-xs font-bold text-slate-500 uppercase"
+                      >Apellido Materno</label
+                    ><input
+                      class="w-full mt-1 border-slate-300"
+                      name="tutor2_apellido_materno"
+                      type="text"
+                      minlength="2"
+                      maxlength="40"
+                      pattern="^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ. ]+$"
+                    />
+                  </div>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                   <div>
@@ -480,8 +529,8 @@
                       class="w-full mt-1 border-slate-300"
                       name="tutor2_edad"
                       type="number"
-                      min="18"
-                      max="100"
+                      min="0"
+                      max="99"
                     />
                   </div>
                   <div>
@@ -529,7 +578,7 @@
                       name="tutor2_num_hijos"
                       type="number"
                       min="0"
-                      max="30"
+                      max="20"
                     />
                   </div>
                 </div>
@@ -605,9 +654,6 @@
                     <label class="inline-flex items-center gap-1">
                       <input type="radio" name="tutor2_imss" value="NO" class="text-primary" /> No
                     </label>
-                    <label class="inline-flex items-center gap-1">
-                      <input type="radio" name="tutor2_imss" value="NO_APLICA" class="text-primary" /> No aplica
-                    </label>
                   </div>
                 </fieldset>
                 <fieldset class="mt-3">
@@ -618,9 +664,6 @@
                     </label>
                     <label class="inline-flex items-center gap-1">
                       <input type="radio" name="tutor2_infonavit" value="NO" class="text-primary" /> No
-                    </label>
-                    <label class="inline-flex items-center gap-1">
-                      <input type="radio" name="tutor2_infonavit" value="NO_APLICA" class="text-primary" /> No aplica
                     </label>
                   </div>
                 </fieldset>
@@ -754,6 +797,8 @@
       const MONETARY_FIELD_IDS = [
         "tutor1_ingreso_mensual",
         "tutor2_ingreso_mensual",
+        "tutor1_monto_otras_fuentes",
+        "tutor2_monto_otras_fuentes",
       ];
       const ESTADOS_INEGI = [
         ["01","AGUASCALIENTES"],["02","BAJA CALIFORNIA"],["03","BAJA CALIFORNIA SUR"],["04","CAMPECHE"],["05","COAHUILA"],["06","COLIMA"],["07","CHIAPAS"],["08","CHIHUAHUA"],["09","CIUDAD DE MEXICO"],["10","DURANGO"],["11","GUANAJUATO"],["12","GUERRERO"],["13","HIDALGO"],["14","JALISCO"],["15","ESTADO DE MEXICO"],["16","MICHOACAN"],["17","MORELOS"],["18","NAYARIT"],["19","NUEVO LEON"],["20","OAXACA"],["21","PUEBLA"],["22","QUERETARO"],["23","QUINTANA ROO"],["24","SAN LUIS POTOSI"],["25","SINALOA"],["26","SONORA"],["27","TABASCO"],["28","TAMAULIPAS"],["29","TLAXCALA"],["30","VERACRUZ"],["31","YUCATAN"],["32","ZACATECAS"]
@@ -803,13 +848,17 @@
       }
 
       // Integer-only variants for ingreso_mensual (RF-03)
-      function sanitizeIntegerInput(raw) {
+      function sanitizeIntegerInput(raw, maxDigits = null) {
         if (raw == null) return "";
-        return String(raw).replace(/,/g, "").replace(/\D/g, "");
+        let cleaned = String(raw).replace(/,/g, "").replace(/\D/g, "");
+        if (maxDigits != null && cleaned.length > maxDigits) {
+          cleaned = cleaned.slice(0, maxDigits);
+        }
+        return cleaned;
       }
 
-      function formatIntegerDisplay(raw) {
-        const sanitized = sanitizeIntegerInput(raw);
+      function formatIntegerDisplay(raw, maxDigits = null) {
+        const sanitized = sanitizeIntegerInput(raw, maxDigits);
         if (!sanitized) return "";
         return sanitized.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
       }
@@ -882,15 +931,24 @@
       }
 
       function setupMonetaryFieldFormatting() {
+        const MAX_MONETARY_VALUE = 999999999999;
+
         MONETARY_FIELD_IDS.forEach((fieldName) => {
           const input = document.querySelector(`[name="${fieldName}"]`);
           if (!input) return;
 
           input.addEventListener("input", () => {
-            input.value = formatIntegerDisplay(input.value);
+            let sanitized = sanitizeIntegerInput(input.value, 12);
+            if (sanitized) {
+              const num = parseInt(sanitized, 10);
+              if (num > MAX_MONETARY_VALUE) {
+                sanitized = String(MAX_MONETARY_VALUE);
+              }
+            }
+            input.value = sanitized ? sanitized.replace(/\B(?=(\d{3})+(?!\d))/g, ",") : "";
           });
 
-          input.value = formatIntegerDisplay(input.value);
+          input.value = formatIntegerDisplay(input.value, 12);
         });
       }
 
@@ -903,6 +961,107 @@
           opt.value = code;
           opt.textContent = `${name} (${code})`;
           sel.appendChild(opt);
+        });
+      }
+
+      function setupNameFieldValidation() {
+        const names = [
+          "nombres", "apellido_paterno", "apellido_materno",
+          "tutor1_nombres", "tutor1_apellido_paterno", "tutor1_apellido_materno",
+          "tutor2_nombres", "tutor2_apellido_paterno", "tutor2_apellido_materno",
+        ];
+        names.forEach((name) => {
+          const input = document.querySelector(`[name="${name}"]`);
+          if (!input) return;
+          input.addEventListener("input", () => {
+            input.value = input.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s.]/g, "");
+          });
+        });
+      }
+
+      function setupDiagnosticoValidation() {
+        const input = document.querySelector('[name="diagnostico"]');
+        if (!input) return;
+        input.addEventListener("input", () => {
+          input.value = input.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ0-9\s\-().\/,]/g, "");
+        });
+      }
+
+      function setupCalleValidation() {
+        const input = document.querySelector('[name="calle"]');
+        if (!input) return;
+        input.addEventListener("input", () => {
+          input.value = input.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ0-9\s.\-]/g, "");
+        });
+      }
+
+      function setupColoniaValidation() {
+        const input = document.querySelector('[name="colonia"]');
+        if (!input) return;
+        input.addEventListener("input", () => {
+          input.value = input.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ0-9\s.\-]/g, "");
+        });
+      }
+
+      function setupNumeroDomicilioValidation() {
+        ["num_ext", "num_int"].forEach((name) => {
+          const input = document.querySelector(`[name="${name}"]`);
+          if (!input) return;
+          input.addEventListener("input", () => {
+            input.value = input.value.replace(/[^a-zA-Z0-9\-/]/g, "");
+          });
+        });
+      }
+
+      function setupTutorTextValidation() {
+        const fields = [
+          "tutor1_fuente_empleo",
+          "tutor2_fuente_empleo",
+          "tutor1_otras_fuentes_ingreso",
+          "tutor2_otras_fuentes_ingreso",
+        ];
+        fields.forEach((name) => {
+          const input = document.querySelector(`[name="${name}"]`);
+          if (!input) return;
+          input.addEventListener("input", () => {
+            input.value = input.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ0-9\s\-().\/,]/g, "");
+          });
+        });
+      }
+
+      function setupIntegerFieldLimits() {
+        const limits = [
+          { name: "tutor1_edad", max: 99, maxDigits: 2 },
+          { name: "tutor2_edad", max: 99, maxDigits: 2 },
+          { name: "tutor1_num_hijos", max: 20, maxDigits: 2 },
+          { name: "tutor2_num_hijos", max: 20, maxDigits: 2 },
+          { name: "tutor1_antiguedad_anios", max: 50, maxDigits: 2 },
+          { name: "tutor2_antiguedad_anios", max: 50, maxDigits: 2 },
+          { name: "tutor1_antiguedad_meses_extra", max: 11, maxDigits: 2 },
+          { name: "tutor2_antiguedad_meses_extra", max: 11, maxDigits: 2 },
+        ];
+
+        limits.forEach(({ name, max, maxDigits }) => {
+          const input = document.querySelector(`[name="${name}"]`);
+          if (!input) return;
+
+          input.addEventListener("keydown", (e) => {
+            if (e.key === ".") {
+              e.preventDefault();
+            }
+          });
+
+          input.addEventListener("input", () => {
+            let val = input.value.replace(/\D/g, "");
+            if (val.length > maxDigits) {
+              val = val.slice(0, maxDigits);
+            }
+            if (val !== "") {
+              const num = parseInt(val, 10);
+              if (num > max) val = String(max);
+            }
+            input.value = val;
+          });
         });
       }
 
@@ -928,16 +1087,25 @@
               ingreso.disabled = checked;
               if (checked) ingreso.value = "0";
             }
+            if (antiguedadAnios) {
+              antiguedadAnios.disabled = checked || !!antiguedadNoAplica?.checked;
+              if (checked) antiguedadAnios.value = "";
+            }
+            if (antiguedadMeses) {
+              antiguedadMeses.disabled = checked || !!antiguedadNoAplica?.checked;
+              if (checked) antiguedadMeses.value = "";
+            }
           };
 
           const applyAntiguedad = () => {
             const checked = !!antiguedadNoAplica?.checked;
+            const sinEmpleoChecked = !!sinEmpleo?.checked;
             if (antiguedadAnios) {
-              antiguedadAnios.disabled = checked;
+              antiguedadAnios.disabled = checked || sinEmpleoChecked;
               if (checked) antiguedadAnios.value = "";
             }
             if (antiguedadMeses) {
-              antiguedadMeses.disabled = checked;
+              antiguedadMeses.disabled = checked || sinEmpleoChecked;
               if (checked) antiguedadMeses.value = "";
             }
           };
@@ -1077,19 +1245,41 @@
                   };
                   const setTriestado = (name, raw) => {
                     let value;
-                    if (raw === "SI" || raw === "NO" || raw === "NO_APLICA") {
+                    if (raw === "SI" || raw === "NO") {
                       value = raw;
                     } else if (raw === true || raw === 1) {
                       value = "SI";
                     } else if (raw === false || raw === 0) {
                       value = "NO";
                     } else {
-                      value = "NO_APLICA";
+                      // Legacy NO_APLICA or unknown -> default to NO
+                      value = "NO";
                     }
                     const radio = document.querySelector(`[name="${name}"][value="${value}"]`);
                     if (radio) radio.checked = true;
                   };
-                  setVal(`tutor${num}_nombre`, t.nombre);
+                  // Structured name: direct populate or legacy fallback from composed nombre
+                  if (t.nombres != null && t.nombres !== "") {
+                    setVal(`tutor${num}_nombres`, t.nombres);
+                    setVal(`tutor${num}_apellido_paterno`, t.apellido_paterno || "");
+                    setVal(`tutor${num}_apellido_materno`, t.apellido_materno || "");
+                  } else if (t.nombre) {
+                    const parts = (t.nombre || "").trim().split(/\s+/).filter(Boolean);
+                    if (parts.length === 0) {
+                      setVal(`tutor${num}_nombres`, "");
+                      setVal(`tutor${num}_apellido_paterno`, "");
+                      setVal(`tutor${num}_apellido_materno`, "");
+                    } else if (parts.length === 1) {
+                      setVal(`tutor${num}_nombres`, parts[0]);
+                    } else if (parts.length === 2) {
+                      setVal(`tutor${num}_nombres`, parts[0]);
+                      setVal(`tutor${num}_apellido_paterno`, parts[1]);
+                    } else {
+                      setVal(`tutor${num}_apellido_materno`, parts.pop());
+                      setVal(`tutor${num}_apellido_paterno`, parts.pop());
+                      setVal(`tutor${num}_nombres`, parts.join(" "));
+                    }
+                  }
                   setVal(`tutor${num}_edad`, t.edad);
                   setCatalogSelectValue(`tutor${num}_nivel_estudios`, t.nivel_estudios, NIVEL_ESTUDIOS_CATALOG);
                   setEstadoCivilCatalogValue(
@@ -1181,45 +1371,53 @@
         };
 
         const tutores = [];
+        const tutor1SinEmpleo = f.querySelector('[name="tutor1_sin_empleo"]').checked;
         tutores.push({
           numero_tutor: 1,
-          nombre: get("tutor1_nombre"),
+          nombres: get("tutor1_nombres"),
+          apellido_paterno: get("tutor1_apellido_paterno"),
+          apellido_materno: get("tutor1_apellido_materno"),
           edad: toIntOrNull(get("tutor1_edad")),
           nivel_estudios: get("tutor1_nivel_estudios"),
           estado_civil: get("tutor1_estado_civil"),
           num_hijos: toIntOrNull(get("tutor1_num_hijos")) || 0,
           vivienda: get("tutor1_vivienda"),
           fuente_empleo: get("tutor1_fuente_empleo"),
-          antiguedad_anios: toIntOrNull(get("tutor1_antiguedad_anios")) || 0,
-          antiguedad_meses_extra: toIntOrNull(get("tutor1_antiguedad_meses_extra")) || 0,
-          antiguedad_aplica: !f.querySelector('[name="tutor1_antiguedad_no_aplica"]').checked,
+          antiguedad_anios: tutor1SinEmpleo ? null : (toIntOrNull(get("tutor1_antiguedad_anios")) || 0),
+          antiguedad_meses_extra: tutor1SinEmpleo ? null : (toIntOrNull(get("tutor1_antiguedad_meses_extra")) || 0),
+          antiguedad_aplica: tutor1SinEmpleo ? false : !f.querySelector('[name="tutor1_antiguedad_no_aplica"]').checked,
           ingreso_mensual: toIntegerOrNull(get("tutor1_ingreso_mensual")),
-          sin_empleo: f.querySelector('[name="tutor1_sin_empleo"]').checked,
+          sin_empleo: tutor1SinEmpleo,
           otras_fuentes_aplica: f.querySelector('[name="tutor1_otras_fuentes_aplica"]').checked,
           otras_fuentes_ingreso: get("tutor1_otras_fuentes_ingreso"),
-          monto_otras_fuentes: toMoneyNumberOrNull(get("tutor1_monto_otras_fuentes")),
+          monto_otras_fuentes: toIntegerOrNull(get("tutor1_monto_otras_fuentes")),
           imss_estatus: getRadio("tutor1_imss"),
           infonavit_estatus: getRadio("tutor1_infonavit"),
         });
-        const tutor2Nombre = get("tutor2_nombre").trim();
-        if (tutor2Nombre) {
+        const tutor2Nombres = get("tutor2_nombres").trim();
+        const tutor2ApPaterno = get("tutor2_apellido_paterno").trim();
+        const tutor2ApMaterno = get("tutor2_apellido_materno").trim();
+        if (tutor2Nombres || tutor2ApPaterno || tutor2ApMaterno) {
+          const tutor2SinEmpleo = f.querySelector('[name="tutor2_sin_empleo"]').checked;
           tutores.push({
             numero_tutor: 2,
-            nombre: tutor2Nombre,
+            nombres: tutor2Nombres,
+            apellido_paterno: tutor2ApPaterno,
+            apellido_materno: tutor2ApMaterno,
             edad: toIntOrNull(get("tutor2_edad")),
             nivel_estudios: get("tutor2_nivel_estudios"),
             estado_civil: get("tutor2_estado_civil"),
             num_hijos: toIntOrNull(get("tutor2_num_hijos")) || 0,
             vivienda: get("tutor2_vivienda"),
             fuente_empleo: get("tutor2_fuente_empleo"),
-            antiguedad_anios: toIntOrNull(get("tutor2_antiguedad_anios")) || 0,
-            antiguedad_meses_extra: toIntOrNull(get("tutor2_antiguedad_meses_extra")) || 0,
-            antiguedad_aplica: !f.querySelector('[name="tutor2_antiguedad_no_aplica"]').checked,
+            antiguedad_anios: tutor2SinEmpleo ? null : (toIntOrNull(get("tutor2_antiguedad_anios")) || 0),
+            antiguedad_meses_extra: tutor2SinEmpleo ? null : (toIntOrNull(get("tutor2_antiguedad_meses_extra")) || 0),
+            antiguedad_aplica: tutor2SinEmpleo ? false : !f.querySelector('[name="tutor2_antiguedad_no_aplica"]').checked,
             ingreso_mensual: toIntegerOrNull(get("tutor2_ingreso_mensual")),
-            sin_empleo: f.querySelector('[name="tutor2_sin_empleo"]').checked,
+            sin_empleo: tutor2SinEmpleo,
             otras_fuentes_aplica: f.querySelector('[name="tutor2_otras_fuentes_aplica"]').checked,
             otras_fuentes_ingreso: get("tutor2_otras_fuentes_ingreso"),
-            monto_otras_fuentes: toMoneyNumberOrNull(get("tutor2_monto_otras_fuentes")),
+            monto_otras_fuentes: toIntegerOrNull(get("tutor2_monto_otras_fuentes")),
             imss_estatus: getRadio("tutor2_imss"),
             infonavit_estatus: getRadio("tutor2_infonavit"),
           });
@@ -1370,6 +1568,13 @@
       }
 
       // Guardar Borrador button
+      setupNameFieldValidation();
+      setupDiagnosticoValidation();
+      setupCalleValidation();
+      setupColoniaValidation();
+      setupNumeroDomicilioValidation();
+      setupTutorTextValidation();
+      setupIntegerFieldLimits();
       setupMonetaryFieldFormatting();
       setupTelefonoSanitization();
       setupEstadosCatalog();
