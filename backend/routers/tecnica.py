@@ -1,14 +1,16 @@
 import os
 import uuid
+from decimal import Decimal
 from urllib.parse import urlparse, unquote
 from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, ValidationInfo
 from supabase import create_client
 
 from database import get_db, _DBAdapter
 from routers.auth import CurrentUser, assert_resource_owner, require_roles
+from validators import validate_observaciones_posturales, validate_medida_tecnica
 
 router = APIRouter()
 
@@ -109,13 +111,13 @@ class SolicitudCreateRequest(BaseModel):
     control_cabeza: str
     observaciones_posturales: Optional[str] = None
     unidad_medida: str = "in"
-    altura_total_in: Optional[float] = None
-    peso_kg: Optional[float] = None
-    medida_cabeza_asiento: Optional[float] = None
-    medida_hombro_asiento: Optional[float] = None
-    medida_prof_asiento: Optional[float] = None
-    medida_rodilla_talon: Optional[float] = None
-    medida_ancho_cadera: Optional[float] = None
+    altura_total_in: Optional[Decimal] = None
+    peso_kg: Optional[Decimal] = None
+    medida_cabeza_asiento: Optional[Decimal] = None
+    medida_hombro_asiento: Optional[Decimal] = None
+    medida_prof_asiento: Optional[Decimal] = None
+    medida_rodilla_talon: Optional[Decimal] = None
+    medida_ancho_cadera: Optional[Decimal] = None
     foto_path: Optional[str] = None
     foto_url: Optional[str] = None
     entidad_solicitante: Optional[str] = None
@@ -125,12 +127,19 @@ class SolicitudCreateRequest(BaseModel):
 
     @field_validator("altura_total_in", "peso_kg", "medida_cabeza_asiento",
                      "medida_hombro_asiento", "medida_prof_asiento",
-                     "medida_rodilla_talon", "medida_ancho_cadera")
+                     "medida_rodilla_talon", "medida_ancho_cadera", mode="before")
     @classmethod
-    def medida_positiva(cls, v: Optional[float]) -> Optional[float]:
-        if v is not None and (v < 0 or v > 999.999):
-            raise ValueError("La medida debe estar entre 0 y 999.999")
-        return v
+    def validate_medida_field(cls, v, info: ValidationInfo) -> Optional[Decimal]:
+        if v is None or (isinstance(v, str) and v.strip() == ""):
+            return None
+        return validate_medida_tecnica(str(v), info.field_name)
+
+    @field_validator("observaciones_posturales", mode="before")
+    @classmethod
+    def validate_obs_field(cls, v) -> Optional[str]:
+        if v is None:
+            return None
+        return validate_observaciones_posturales(str(v))
 
     @field_validator("unidad_medida")
     @classmethod
@@ -166,13 +175,13 @@ class SolicitudUpdateRequest(BaseModel):
     control_cabeza: Optional[str] = None
     observaciones_posturales: Optional[str] = None
     unidad_medida: Optional[str] = None
-    altura_total_in: Optional[float] = None
-    peso_kg: Optional[float] = None
-    medida_cabeza_asiento: Optional[float] = None
-    medida_hombro_asiento: Optional[float] = None
-    medida_prof_asiento: Optional[float] = None
-    medida_rodilla_talon: Optional[float] = None
-    medida_ancho_cadera: Optional[float] = None
+    altura_total_in: Optional[Decimal] = None
+    peso_kg: Optional[Decimal] = None
+    medida_cabeza_asiento: Optional[Decimal] = None
+    medida_hombro_asiento: Optional[Decimal] = None
+    medida_prof_asiento: Optional[Decimal] = None
+    medida_rodilla_talon: Optional[Decimal] = None
+    medida_ancho_cadera: Optional[Decimal] = None
     foto_path: Optional[str] = None
     foto_url: Optional[str] = None
     entidad_solicitante: Optional[str] = None
@@ -180,20 +189,27 @@ class SolicitudUpdateRequest(BaseModel):
     justificacion: Optional[str] = None
     status: Optional[str] = None
 
+    @field_validator("altura_total_in", "peso_kg", "medida_cabeza_asiento",
+                     "medida_hombro_asiento", "medida_prof_asiento",
+                     "medida_rodilla_talon", "medida_ancho_cadera", mode="before")
+    @classmethod
+    def validate_medida_field(cls, v, info: ValidationInfo) -> Optional[Decimal]:
+        if v is None or (isinstance(v, str) and v.strip() == ""):
+            return None
+        return validate_medida_tecnica(str(v), info.field_name)
+
+    @field_validator("observaciones_posturales", mode="before")
+    @classmethod
+    def validate_obs_field(cls, v) -> Optional[str]:
+        if v is None:
+            return None
+        return validate_observaciones_posturales(str(v))
+
     @field_validator("status")
     @classmethod
     def status_valido(cls, v: Optional[str]) -> Optional[str]:
         if v is not None and v not in ("borrador", "completo"):
             raise ValueError("status debe ser 'borrador' o 'completo'")
-        return v
-
-    @field_validator("altura_total_in", "peso_kg", "medida_cabeza_asiento",
-                     "medida_hombro_asiento", "medida_prof_asiento",
-                     "medida_rodilla_talon", "medida_ancho_cadera")
-    @classmethod
-    def medida_positiva(cls, v: Optional[float]) -> Optional[float]:
-        if v is not None and (v < 0 or v > 999.999):
-            raise ValueError("La medida debe estar entre 0 y 999.999")
         return v
 
     @field_validator("unidad_medida")
@@ -502,11 +518,13 @@ def actualizar_solicitud(
     )
 
 
-def _to_inches(v: Optional[float], unidad: str) -> Optional[float]:
+def _to_inches(v: Optional[Decimal], unidad: str) -> Optional[Decimal]:
     if v is None:
         return None
     if unidad == "cm":
-        return round(v / 2.54, 3)
+        # cm to inches: divide by 2.54, round to 3 decimal places
+        inches = v / Decimal("2.54")
+        return inches.quantize(Decimal("0.001"))
     return v
 
 
