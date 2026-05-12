@@ -22,7 +22,7 @@ from utils.text import normalize_text
 
 router = APIRouter()
 ESTADO_CIVIL_CATALOG = {"SOLTERO", "CASADO", "VIUDO", "DIVORCIADO", "UNION_LIBRE"}
-TRIESTADO_CATALOG = frozenset({"SI", "NO", "NO_APLICA"})
+TRIESTADO_CATALOG = frozenset({"SI", "NO"})
 VIVIENDA_CATALOG = {"PROPIA", "RENTADA", "PRESTADA", "FAMILIAR", "INFORMAL", "OTRA"}
 NIVEL_ESTUDIOS_CATALOG = frozenset({"NINGUNO", "PRIMARIA", "SECUNDARIA", "BACHILLERATO", "LICENCIATURA", "MAESTRIA", "DOCTORADO", "TECNICO"})
 COMO_OBTUVO_SILLA_CATALOG = frozenset({"COMPRA", "DONACION"})
@@ -96,7 +96,7 @@ class BeneficiarioIn(BaseModel):
     def validar_nombres(cls, v: str) -> str:
         if len(v) < 2 or len(v) > 60:
             raise ValueError("nombres debe tener entre 2 y 60 caracteres")
-        if not re.fullmatch(r"^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ ]+$", v):
+        if not re.fullmatch(r"^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ. ]+$", v):
             raise ValueError("nombres contiene caracteres no permitidos")
         return v
 
@@ -105,7 +105,7 @@ class BeneficiarioIn(BaseModel):
     def validar_apellido_paterno(cls, v: str) -> str:
         if len(v) < 2 or len(v) > 40:
             raise ValueError("apellido_paterno debe tener entre 2 y 40 caracteres")
-        if not re.fullmatch(r"^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ ]+$", v):
+        if not re.fullmatch(r"^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ. ]+$", v):
             raise ValueError("apellido_paterno contiene caracteres no permitidos")
         return v
 
@@ -114,7 +114,7 @@ class BeneficiarioIn(BaseModel):
     def validar_apellido_materno(cls, v: str) -> str:
         if len(v) < 2 or len(v) > 40:
             raise ValueError("apellido_materno debe tener entre 2 y 40 caracteres")
-        if not re.fullmatch(r"^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ ]+$", v):
+        if not re.fullmatch(r"^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ. ]+$", v):
             raise ValueError("apellido_materno contiene caracteres no permitidos")
         return v
 
@@ -123,13 +123,26 @@ class BeneficiarioIn(BaseModel):
     def diagnostico_valido(cls, v: str) -> str:
         if len(v) < 3 or len(v) > 160:
             raise ValueError("diagnostico debe tener entre 3 y 160 caracteres")
+        if not re.fullmatch(r"^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9\s\-().\/,]+$", v):
+            raise ValueError("diagnostico contiene caracteres no permitidos")
         return v
 
-    @field_validator("calle", "colonia")
+    @field_validator("calle")
     @classmethod
-    def direccion_texto_valido(cls, v: str) -> str:
+    def calle_valida(cls, v: str) -> str:
+        if len(v) < 3 or len(v) > 120:
+            raise ValueError("calle debe tener entre 3 y 120 caracteres")
+        if not re.fullmatch(r"^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9.\- ]+$", v):
+            raise ValueError("calle contiene caracteres no permitidos")
+        return v
+
+    @field_validator("colonia")
+    @classmethod
+    def colonia_valida(cls, v: str) -> str:
         if len(v) < 2 or len(v) > 120:
-            raise ValueError("campo de dirección debe tener entre 2 y 120 caracteres")
+            raise ValueError("colonia debe tener entre 2 y 120 caracteres")
+        if not re.fullmatch(r"^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9.\- ]+$", v):
+            raise ValueError("colonia contiene caracteres no permitidos")
         return v
 
     @field_validator("ciudad")
@@ -169,7 +182,9 @@ class BeneficiarioIn(BaseModel):
 
 class TutorIn(BaseModel):
     numero_tutor: int
-    nombre: str
+    nombres: str
+    apellido_paterno: str
+    apellido_materno: str
     edad: Optional[int] = None
     nivel_estudios: Optional[str] = None
     estado_civil: Optional[str] = None
@@ -217,14 +232,64 @@ class TutorIn(BaseModel):
     @field_validator("edad")
     @classmethod
     def edad_valida(cls, v: Optional[int]) -> Optional[int]:
-        if v is not None and v < 18:
-            raise ValueError("edad del tutor debe ser mínimo 18")
+        if v is not None and v < 0:
+            raise ValueError("edad del tutor no puede ser negativa")
         return v
 
-    @field_validator("nombre", "nivel_estudios", "fuente_empleo", "otras_fuentes_ingreso", mode="before")
+    @field_validator("nombres", "apellido_paterno", "apellido_materno",
+                      "nivel_estudios", "fuente_empleo", "otras_fuentes_ingreso", mode="before")
     @classmethod
     def normalizar_textos_tutor(cls, v: Optional[str]) -> Optional[str]:
         return normalize_text(v)
+
+    @field_validator("nombres")
+    @classmethod
+    def validar_nombres_tutor(cls, v: str) -> str:
+        if len(v) < 2 or len(v) > 60:
+            raise ValueError("nombres del tutor debe tener entre 2 y 60 caracteres")
+        if not re.fullmatch(r"^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ. ]+$", v):
+            raise ValueError("nombres del tutor contiene caracteres no permitidos")
+        return v
+
+    @field_validator("apellido_paterno")
+    @classmethod
+    def validar_apellido_paterno_tutor(cls, v: str) -> str:
+        if len(v) < 2 or len(v) > 40:
+            raise ValueError("apellido_paterno del tutor debe tener entre 2 y 40 caracteres")
+        if not re.fullmatch(r"^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ. ]+$", v):
+            raise ValueError("apellido_paterno del tutor contiene caracteres no permitidos")
+        return v
+
+    @field_validator("apellido_materno")
+    @classmethod
+    def validar_apellido_materno_tutor(cls, v: str) -> str:
+        if len(v) < 2 or len(v) > 40:
+            raise ValueError("apellido_materno del tutor debe tener entre 2 y 40 caracteres")
+        if not re.fullmatch(r"^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ. ]+$", v):
+            raise ValueError("apellido_materno del tutor contiene caracteres no permitidos")
+        return v
+
+    @field_validator("fuente_empleo")
+    @classmethod
+    def fuente_empleo_valida(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return None
+        if len(v) > 80:
+            raise ValueError("fuente_empleo debe tener máximo 80 caracteres")
+        if not re.fullmatch(r"^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9\s\-().\/,]+$", v):
+            raise ValueError("fuente_empleo contiene caracteres no permitidos")
+        return v
+
+    @field_validator("otras_fuentes_ingreso")
+    @classmethod
+    def otras_fuentes_ingreso_valida(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return None
+        if len(v) > 100:
+            raise ValueError("otras_fuentes_ingreso debe tener máximo 100 caracteres")
+        if not re.fullmatch(r"^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9\s\-().\/,]+$", v):
+            raise ValueError("otras_fuentes_ingreso contiene caracteres no permitidos")
+        return v
 
     @field_validator("nivel_estudios")
     @classmethod
@@ -263,7 +328,7 @@ class TutorIn(BaseModel):
             return None
         vv = normalize_text(v)
         if vv not in TRIESTADO_CATALOG:
-            raise ValueError("el estatus debe ser SI, NO o NO_APLICA")
+            raise ValueError("el estatus debe ser SI o NO")
         return vv
 
     @model_validator(mode="before")
@@ -574,6 +639,7 @@ def _validar_tutores(tutores: list[TutorIn]) -> None:
 
 def _insertar_tutores(db: _DBAdapter, beneficiario_id: int, tutores: list[TutorIn]) -> None:
     for tutor in tutores:
+        nombre_compuesto = f"{tutor.nombres} {tutor.apellido_paterno} {tutor.apellido_materno}".strip()
         db.execute(
             """
             INSERT INTO tutores
@@ -587,7 +653,7 @@ def _insertar_tutores(db: _DBAdapter, beneficiario_id: int, tutores: list[TutorI
             (
                 beneficiario_id,
                 tutor.numero_tutor,
-                tutor.nombre,
+                nombre_compuesto,
                 tutor.edad,
                 tutor.nivel_estudios or None,
                 tutor.estado_civil,
@@ -620,17 +686,17 @@ def _resolve_como_obtuvo_silla(tuvo_silla_previa: bool, como_obtuvo_silla: Optio
 
 
 def _mapear_a_db(valor: Optional[str]) -> Optional[int]:
-    """Map triestado string to DB integer: SI→1, NO→0, NO_APLICA→NULL, None→NULL."""
+    """Map boolean-like string to DB integer: SI→1, NO→0, None→NULL."""
     if valor is None:
         return None
-    mapping: dict[str, Optional[int]] = {"SI": 1, "NO": 0, "NO_APLICA": None}
+    mapping: dict[str, Optional[int]] = {"SI": 1, "NO": 0}
     return mapping.get(valor)
 
 
 def _mapear_de_db(valor: Optional[int]) -> str:
-    """Map DB integer to triestado string: 1→SI, 0→NO, NULL→NO_APLICA."""
+    """Map DB integer to string: 1→SI, 0→NO, NULL→NO."""
     if valor is None:
-        return "NO_APLICA"
+        return "NO"
     return "SI" if valor == 1 else "NO"
 
 
