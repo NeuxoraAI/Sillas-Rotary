@@ -300,10 +300,9 @@
                     class="flex-grow rounded-l-lg border-slate-300 focus:border-primary focus:ring-primary"
                      name="altura_total_in"
                      placeholder="0.0"
-                     type="number"
-                     min="0"
-                     max="120"
-                     step="0.1"
+                     type="text"
+                     inputmode="decimal"
+                     pattern="[0-9]+(\.[0-9]{1,3})?"
                    />
                   <span
                     class="bg-slate-200 border border-l-0 border-slate-300 px-4 py-2 rounded-r-lg text-slate-600 text-sm font-semibold"
@@ -320,10 +319,9 @@
                     class="flex-grow rounded-l-lg border-slate-300 focus:border-primary focus:ring-primary"
                      name="peso_kg"
                      placeholder="0.0"
-                     type="number"
-                     min="0"
-                     max="300"
-                     step="0.1"
+                     type="text"
+                     inputmode="decimal"
+                     pattern="[0-9]+(\.[0-9]{1,3})?"
                    />
                   <span
                     class="bg-slate-200 border border-l-0 border-slate-300 px-4 py-2 rounded-r-lg text-slate-600 text-sm font-semibold"
@@ -340,10 +338,9 @@
                     class="flex-grow rounded-l-lg border-slate-300 focus:border-primary focus:ring-primary"
                      name="medida_cabeza_asiento"
                      placeholder="0.0"
-                     type="number"
-                     min="0"
-                     max="60"
-                     step="0.1"
+                     type="text"
+                     inputmode="decimal"
+                     pattern="[0-9]+(\.[0-9]{1,3})?"
                    />
                   <span
                     class="bg-slate-200 border border-l-0 border-slate-300 px-4 py-2 rounded-r-lg text-slate-600 text-sm font-semibold"
@@ -360,10 +357,9 @@
                     class="flex-grow rounded-l-lg border-slate-300 focus:border-primary focus:ring-primary"
                      name="medida_hombro_asiento"
                      placeholder="0.0"
-                     type="number"
-                     min="0"
-                     max="60"
-                     step="0.1"
+                     type="text"
+                     inputmode="decimal"
+                     pattern="[0-9]+(\.[0-9]{1,3})?"
                    />
                   <span
                     class="bg-slate-200 border border-l-0 border-slate-300 px-4 py-2 rounded-r-lg text-slate-600 text-sm font-semibold"
@@ -380,10 +376,9 @@
                     class="flex-grow rounded-l-lg border-slate-300 focus:border-primary focus:ring-primary"
                      name="medida_prof_asiento"
                      placeholder="0.0"
-                     type="number"
-                     min="0"
-                     max="60"
-                     step="0.1"
+                     type="text"
+                     inputmode="decimal"
+                     pattern="[0-9]+(\.[0-9]{1,3})?"
                    />
                   <span
                     class="bg-slate-200 border border-l-0 border-slate-300 px-4 py-2 rounded-r-lg text-slate-600 text-sm font-semibold"
@@ -400,10 +395,9 @@
                     class="flex-grow rounded-l-lg border-slate-300 focus:border-primary focus:ring-primary"
                      name="medida_rodilla_talon"
                      placeholder="0.0"
-                     type="number"
-                     min="0"
-                     max="60"
-                     step="0.1"
+                     type="text"
+                     inputmode="decimal"
+                     pattern="[0-9]+(\.[0-9]{1,3})?"
                    />
                   <span
                     class="bg-slate-200 border border-l-0 border-slate-300 px-4 py-2 rounded-r-lg text-slate-600 text-sm font-semibold"
@@ -420,10 +414,9 @@
                     class="flex-grow rounded-l-lg border-slate-300 focus:border-primary focus:ring-primary"
                      name="medida_ancho_cadera"
                      placeholder="0.0"
-                     type="number"
-                     min="0"
-                     max="40"
-                     step="0.1"
+                     type="text"
+                     inputmode="decimal"
+                     pattern="[0-9]+(\.[0-9]{1,3})?"
                    />
                   <span
                     class="bg-slate-200 border border-l-0 border-slate-300 px-4 py-2 rounded-r-lg text-slate-600 text-sm font-semibold"
@@ -651,6 +644,18 @@
                 if (el && val != null) el.value = val;
               };
 
+              // Helper: convert DB value (inches) back to display unit
+              const toDisplay = (dbVal, fieldName) => {
+                if (dbVal == null || dbVal === "") return null;
+                const num = parseFloat(dbVal);
+                if (isNaN(num)) return null;
+                if (data.unidad_captura === "cm") {
+                  // DB stores inches → convert back to cm for display
+                  return (num * 2.54).toFixed(3);
+                }
+                return num.toFixed(3);
+              };
+
               // Set select fields
               setVal("entorno", data.entorno);
               setVal("control_tronco", data.control_tronco);
@@ -659,14 +664,14 @@
               // Set textarea
               setVal("observaciones_posturales", data.observaciones_posturales);
 
-              // Set numeric fields
-              setVal("altura_total_in", data.altura_total_in);
-              setVal("peso_kg", data.peso_kg);
-              setVal("medida_cabeza_asiento", data.medida_cabeza_asiento);
-              setVal("medida_hombro_asiento", data.medida_hombro_asiento);
-              setVal("medida_prof_asiento", data.medida_prof_asiento);
-              setVal("medida_rodilla_talon", data.medida_rodilla_talon);
-              setVal("medida_ancho_cadera", data.medida_ancho_cadera);
+              // Set numeric fields with unit-aware conversion
+              setVal("altura_total_in", toDisplay(data.altura_total_in, "altura_total_in"));
+              setVal("peso_kg", data.peso_kg);  // peso is always kg
+              setVal("medida_cabeza_asiento", toDisplay(data.medida_cabeza_asiento, "medida_cabeza_asiento"));
+              setVal("medida_hombro_asiento", toDisplay(data.medida_hombro_asiento, "medida_hombro_asiento"));
+              setVal("medida_prof_asiento", toDisplay(data.medida_prof_asiento, "medida_prof_asiento"));
+              setVal("medida_rodilla_talon", toDisplay(data.medida_rodilla_talon, "medida_rodilla_talon"));
+              setVal("medida_ancho_cadera", toDisplay(data.medida_ancho_cadera, "medida_ancho_cadera"));
               setVal("unidad_medida", data.unidad_captura || "in");
 
               // Set text fields
@@ -708,9 +713,181 @@
         }
       })();
 
-      const toFloatOrNull = (v) => {
-        const n = parseFloat(v);
-        return isNaN(n) ? null : n;
+      // -- Observaciones whitelist (RF-01) ---------------------------------------
+      const _OBS_ALLOWED_RE = /^[a-zA-ZáéíóúÁÉÍÓÚäëïöüÄËÏÖÜñÑ0-9 ()\/\-.,:;]*$/;
+
+      function _filterObsText(text) {
+        // Strip characters not in the whitelist
+        return Array.from(text)
+          .filter((ch) => _OBS_ALLOWED_RE.test(ch))
+          .join("");
+      }
+
+      // -- Medida input validation (RF-02, RF-03) -------------------------------
+      const _MEASURE_NAME_RE = /^[0-9]+(\.[0-9]{0,3})?$/; // valid partial input
+      const _MEASURE_FINAL_RE = /^[0-9]+(\.[0-9]{1,3})?$/;  // valid final value
+
+      function _validateMeasureForInput(input, pendingValue) {
+        // Allow empty
+        if (!pendingValue) return { valid: true, value: "" };
+
+        // Allow intermediate typing states (e.g., "12." while typing decimal)
+        if (!_MEASURE_NAME_RE.test(pendingValue)) {
+          return { valid: false, value: input.value };
+        }
+
+        // Check integer digits (max 4)
+        const parts = pendingValue.split(".");
+        const intPart = parts[0].replace(/^0+/, "") || "0";
+        if (intPart.length > 4) {
+          return { valid: false, value: input.value };
+        }
+
+        return { valid: true, value: pendingValue };
+      }
+
+      // -- Setup observaciones textarea validation -------------------------------
+      function _setupObsValidation() {
+        const textarea = document.querySelector('[name="observaciones_posturales"]');
+        if (!textarea) return;
+
+        // beforeinput: block non-whitelist characters silently
+        textarea.addEventListener("beforeinput", (e) => {
+          if (e.data && !_OBS_ALLOWED_RE.test(e.data)) {
+            e.preventDefault();
+          }
+        });
+
+        // paste: filter pasted text
+        textarea.addEventListener("paste", (e) => {
+          const pasted = (e.clipboardData || window.clipboardData).getData("text");
+          const filtered = _filterObsText(pasted);
+          if (filtered !== pasted) {
+            e.preventDefault();
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const before = textarea.value.slice(0, start);
+            const after = textarea.value.slice(end);
+            textarea.value = before + filtered + after;
+            textarea.selectionStart = textarea.selectionEnd = start + filtered.length;
+          }
+        });
+
+        // input: catch IME/autofill bypasses
+        textarea.addEventListener("input", () => {
+          const filtered = _filterObsText(textarea.value);
+          if (filtered !== textarea.value) {
+            const cursor = textarea.selectionStart;
+            textarea.value = filtered;
+            textarea.selectionStart = textarea.selectionEnd = Math.min(cursor, filtered.length);
+          }
+        });
+      }
+
+      // -- Setup medida input validation on a single input -----------------------
+      function _setupMedidaValidation(inputEl) {
+        // beforeinput: block invalid characters at entry point
+        inputEl.addEventListener("beforeinput", (e) => {
+          if (!e.data) return; // deletions, compositions without data
+
+          const current = inputEl.value;
+          const start = inputEl.selectionStart;
+          const end = inputEl.selectionEnd;
+          const pending = current.slice(0, start) + e.data + current.slice(end);
+
+          // Block non-digit, non-dot
+          if (!/^[0-9.]$/.test(e.data)) {
+            e.preventDefault();
+            return;
+          }
+
+          // Block second dot
+          if (e.data === "." && current.includes(".") && !current.slice(start, end).includes(".")) {
+            e.preventDefault();
+            return;
+          }
+
+          // Validate the pending value
+          const result = _validateMeasureForInput(inputEl, pending);
+          if (!result.valid) {
+            e.preventDefault();
+          }
+        });
+
+        // paste: validate pasted value
+        inputEl.addEventListener("paste", (e) => {
+          const pasted = (e.clipboardData || window.clipboardData).getData("text").trim();
+          if (!_MEASURE_FINAL_RE.test(pasted)) {
+            e.preventDefault();
+            return;
+          }
+          // Check integer digits
+          const parts = pasted.split(".");
+          const intPart = parts[0].replace(/^0+/, "") || "0";
+          if (intPart.length > 4) {
+            e.preventDefault();
+            return;
+          }
+          // Paste is valid — let it through
+        });
+
+        // input: catch autofill/IME bypasses
+        inputEl.addEventListener("input", () => {
+          const val = inputEl.value;
+          if (!val) return;
+
+          // Remove any non-digit/non-dot characters
+          const cleaned = val.replace(/[^0-9.]/g, "");
+          if (cleaned !== val) {
+            inputEl.value = cleaned;
+            return;
+          }
+
+          // Enforce single dot
+          const dotCount = (cleaned.match(/\./g) || []).length;
+          if (dotCount > 1) {
+            inputEl.value = cleaned.replace(/\./g, (m, i, str) =>
+              i === str.indexOf(".") ? "." : ""
+            );
+            return;
+          }
+
+          // Enforce 4 integer digits max
+          const parts = cleaned.split(".");
+          const intPart = parts[0].replace(/^0+/, "") || "0";
+          if (intPart.length > 4) {
+            inputEl.value = intPart.slice(0, 4) + (parts.length > 1 ? "." + parts[1] : "");
+            return;
+          }
+
+          // Enforce 3 decimal digits max
+          if (parts.length > 1 && parts[1].length > 3) {
+            inputEl.value = parts[0] + "." + parts[1].slice(0, 3);
+          }
+        });
+      }
+
+      // -- Setup all medida validations ------------------------------------------
+      function _setupAllMedidaValidations() {
+        const medidaNames = [
+          "altura_total_in",
+          "peso_kg",
+          "medida_cabeza_asiento",
+          "medida_hombro_asiento",
+          "medida_prof_asiento",
+          "medida_rodilla_talon",
+          "medida_ancho_cadera",
+        ];
+        medidaNames.forEach((name) => {
+          const el = document.querySelector(`[name="${name}"]`);
+          if (el) _setupMedidaValidation(el);
+        });
+      }
+
+      // Helper: send raw string or null for medida fields (not parseFloat)
+      const toStrOrNull = (v) => {
+        const s = (v || "").trim();
+        return s === "" ? null : s;
       };
 
       let currentPreviewUrl = null;
@@ -821,13 +998,13 @@
           control_tronco: get("control_tronco"),
           control_cabeza: get("control_cabeza"),
           observaciones_posturales: get("observaciones_posturales"),
-          altura_total_in: toFloatOrNull(get("altura_total_in")),
-          peso_kg: toFloatOrNull(get("peso_kg")),
-          medida_cabeza_asiento: toFloatOrNull(get("medida_cabeza_asiento")),
-          medida_hombro_asiento: toFloatOrNull(get("medida_hombro_asiento")),
-          medida_prof_asiento: toFloatOrNull(get("medida_prof_asiento")),
-          medida_rodilla_talon: toFloatOrNull(get("medida_rodilla_talon")),
-          medida_ancho_cadera: toFloatOrNull(get("medida_ancho_cadera")),
+          altura_total_in: toStrOrNull(get("altura_total_in")),
+          peso_kg: toStrOrNull(get("peso_kg")),
+          medida_cabeza_asiento: toStrOrNull(get("medida_cabeza_asiento")),
+          medida_hombro_asiento: toStrOrNull(get("medida_hombro_asiento")),
+          medida_prof_asiento: toStrOrNull(get("medida_prof_asiento")),
+          medida_rodilla_talon: toStrOrNull(get("medida_rodilla_talon")),
+          medida_ancho_cadera: toStrOrNull(get("medida_ancho_cadera")),
           unidad_medida: get("unidad_medida") || "in",
           foto_url,
           entidad_solicitante: get("entidad_solicitante"),
@@ -929,6 +1106,8 @@
 
       setupPhotoPreview();
       setupUnidadMedidaLabels();
+      _setupObsValidation();
+      _setupAllMedidaValidations();
 
       // Guardar Borrador button
       document
