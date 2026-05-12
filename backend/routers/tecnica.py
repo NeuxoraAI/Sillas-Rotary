@@ -32,6 +32,59 @@ def _row_to_dict(row: object) -> Optional[dict]:
     return dict(row)
 
 
+def _resolve_storage_url(raw_url: Optional[str], bucket: str) -> Optional[str]:
+    """Resolve a storage:// reference or bare path into a browser-accessible URL."""
+    if not raw_url:
+        return None
+
+    # Already a public URL — pass through
+    if raw_url.startswith(("http://", "https://")):
+        return raw_url
+
+    # Extract path from storage://bucket/path
+    path: Optional[str] = None
+    prefix = f"storage://{bucket}/"
+    if raw_url.startswith(prefix):
+        path = raw_url[len(prefix):].strip("/")
+    else:
+        # Generic storage:// with bucket marker
+        marker = f"/{bucket}/"
+        if marker in raw_url:
+            path = raw_url.split(marker, 1)[1].strip("/")
+        else:
+            # Bare path (legacy fallback)
+            path = raw_url.strip("/")
+
+    if not path:
+        return None
+
+    try:
+        from supabase import create_client
+        storage = create_client(
+            os.environ["SUPABASE_URL"],
+            os.environ["SUPABASE_SERVICE_KEY"],
+        ).storage.from_(bucket)
+        signed_raw = storage.create_signed_url(path, 300)
+        signed = _signed_url_from_response(signed_raw)
+        if signed:
+            return signed
+    except Exception:
+        pass
+
+    # Fallback to public URL
+    try:
+        from supabase import create_client
+        storage = create_client(
+            os.environ["SUPABASE_URL"],
+            os.environ["SUPABASE_SERVICE_KEY"],
+        ).storage.from_(bucket)
+        return storage.get_public_url(path)
+    except Exception:
+        pass
+
+    return None
+
+
 def _build_list_where_clause(
     *,
     q: Optional[str],
@@ -197,6 +250,16 @@ def _build_snapshot(db: _DBAdapter, beneficiario_id: int) -> dict:
             (beneficiario_id,),
         ).fetchone()
     )
+    if estudio:
+        if estudio.get("credencial_url"):
+            estudio["credencial_url_resolved"] = _resolve_storage_url(
+                estudio["credencial_url"], "documentos-estudio"
+            )
+        if estudio.get("comprobante_domicilio_url"):
+            estudio["comprobante_domicilio_url_resolved"] = _resolve_storage_url(
+                estudio["comprobante_domicilio_url"], "documentos-estudio"
+            )
+
     solicitud = _row_to_dict(
         db.execute(
             """
@@ -208,6 +271,10 @@ def _build_snapshot(db: _DBAdapter, beneficiario_id: int) -> dict:
             (beneficiario_id,),
         ).fetchone()
     )
+    if solicitud and solicitud.get("foto_url"):
+        solicitud["foto_url_resolved"] = _resolve_storage_url(
+            solicitud["foto_url"], "fotos-tecnica"
+        )
     proceso = _row_to_dict(
         db.execute(
             "SELECT * FROM procesos_tecnicos WHERE beneficiario_id = %s",
@@ -646,6 +713,7 @@ def listar_beneficiarios_tecnica(
             b.id AS beneficiario_id,
             b.nombre,
             b.folio,
+            b.telefonos,
             b.ciudad,
             COALESCE(p.nombre, '') AS pais_nombre,
             COALESCE(r.nombre, '') AS region_nombre,
