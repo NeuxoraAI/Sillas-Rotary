@@ -1,10 +1,12 @@
+import io
 import os
 import uuid
 from urllib.parse import urlparse, unquote
-from datetime import datetime, timezone
+from datetime import datetime, timezone, date
 from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, field_validator
 
 from database import get_db, _DBAdapter
@@ -747,6 +749,223 @@ def listar_beneficiarios_tecnica(
         "page": page,
         "per_page": per_page,
     }
+
+
+def _calcular_edad(fecha_nacimiento_str: Optional[str]) -> Optional[int]:
+    """Calcular edad en años a partir de fecha_nacimiento (texto)."""
+    if not fecha_nacimiento_str:
+        return None
+    for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%m/%d/%Y", "%d-%m-%Y"):
+        try:
+            born = datetime.strptime(fecha_nacimiento_str.strip(), fmt).date()
+            today = date.today()
+            return today.year - born.year - ((today.month, today.day) < (born.month, born.day))
+        except ValueError:
+            continue
+    return None
+
+
+@router.get("/tecnica/beneficiarios/export")
+def exportar_beneficiarios_tecnica(
+    db: Annotated[_DBAdapter, Depends(get_db)],
+    _usuario: Annotated[CurrentUser, Depends(require_roles("tecnico", "admin"))],
+    q: Optional[str] = None,
+    sede: Optional[str] = None,
+    estado: Optional[str] = None,
+    revision_pendiente: Optional[bool] = None,
+    pais_id: Optional[int] = None,
+    region_id: Optional[int] = None,
+    ciudad: Optional[str] = None,
+    peso_kg_min: Optional[float] = None,
+    peso_kg_max: Optional[float] = None,
+    altura_in_min: Optional[float] = None,
+    altura_in_max: Optional[float] = None,
+    tiene_foto: Optional[bool] = None,
+    ids: Optional[str] = None,
+) -> StreamingResponse:
+    where_clause, params = _build_list_where_clause(
+        q=q,
+        sede=sede,
+        estado=estado,
+        revision_pendiente=revision_pendiente,
+        pais_id=pais_id,
+        region_id=region_id,
+        ciudad=ciudad,
+        peso_kg_min=peso_kg_min,
+        peso_kg_max=peso_kg_max,
+        altura_in_min=altura_in_min,
+        altura_in_max=altura_in_max,
+        tiene_foto=tiene_foto,
+    )
+
+    ids_list: list[int] = []
+    if ids:
+        try:
+            ids_list = [int(x.strip()) for x in ids.split(",") if x.strip()]
+        except ValueError:
+            raise HTTPException(
+                status_code=422,
+                detail={"type": "invalid_filter", "message": "ids debe ser una lista de enteros separados por coma"},
+            )
+    if ids_list:
+        where_clause += " AND b.id = ANY(%s)"
+        params.append(tuple(ids_list))
+
+    rows = db.execute(
+        f"""
+        SELECT
+            b.id AS beneficiario_id,
+            b.folio,
+            b.nombre,
+            b.email,
+            b.calle,
+            b.num_ext,
+            b.colonia,
+            b.ciudad,
+            b.estado_nombre,
+            b.telefonos,
+            b.diagnostico,
+            b.fecha_nacimiento,
+            st.peso_kg,
+            st.altura_total_in,
+            st.unidad_captura,
+            st.observaciones_posturales,
+            st.justificacion,
+            st.entidad_solicitante,
+            t.nombre AS tutor_nombre
+        FROM beneficiarios b
+        LEFT JOIN estudios_socioeconomicos e ON e.beneficiario_id = b.id
+        LEFT JOIN procesos_tecnicos pt ON pt.beneficiario_id = b.id
+        LEFT JOIN solicitudes_tecnicas st ON st.beneficiario_id = b.id
+        LEFT JOIN regiones r ON r.id = b.region_id
+        LEFT JOIN paises p ON p.id = r.pais_id
+        LEFT JOIN LATERAL (
+            SELECT nombre FROM tutores WHERE beneficiario_id = b.id ORDER BY numero_tutor LIMIT 1
+        ) t ON true
+        WHERE {where_clause}
+        ORDER BY b.nombre ASC
+        """,
+        tuple(params),
+    ).fetchall()
+
+    from openpyxl import Workbook
+    from openpyxl.styles import Alignment, Font, PatternFill
+    from openpyxl.worksheet.table import Table, TableStyleInfo
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "MASTER"
+
+    headers = [
+        "# EXPEDIENTE",
+        "Nombre de Niño(a) Adolescente",
+        "Correo electrónico ",
+        "Dirección (calle, numero)",
+        "Colonia o comunidad",
+        "Municipio (ciudad) y Estado",
+        "Número de teléfono Fijo",
+        "No. de teléfono adicional",
+        "Padecimiento",
+        "Fecha de nacimiento",
+        "EDAD",
+        "PESO (kg)",
+        "ESTATURA (cm)",
+        "Nombre de Padre o tutor",
+        "Club o A sociación",
+        "QUIEN CANALIZA",
+        "OBSERVACIONES ",
+    ]
+
+    # Fila 1 vacía (plantilla original tiene fila 1 vacía)
+    ws.append([])
+    # Fila 2: headers
+    ws.append(headers)
+
+    header_fill = PatternFill(fill_type="solid", fgColor="1F4E78")
+    header_font = Font(color="FFFFFF", bold=True)
+    for cell in ws[2]:
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+
+    for row in rows:
+        direccion = (row["calle"] or "") + (f' {row["num_ext"]}' if row.get("num_ext") else "")
+        municipio_estado = (row["ciudad"] or "") + (f', {row["estado_nombre"]}' if row.get("estado_nombre") else "")
+
+        altura_cm = None
+        if row.get("altura_total_in") is not None:
+            if row.get("unidad_captura") == "cm":
+                altura_cm = row["altura_total_in"]
+            else:
+                altura_cm = round(row["altura_total_in"] * 2.54, 1)
+
+        edad = _calcular_edad(row.get("fecha_nacimiento"))
+
+        ws.append([
+            row.get("folio") or row.get("beneficiario_id"),
+            row.get("nombre") or "",
+            row.get("email") or "Sin correo",
+            direccion,
+            row.get("colonia") or "",
+            municipio_estado,
+            row.get("telefonos") or "",
+            "",  # teléfono adicional — no hay campo separado
+            row.get("diagnostico") or "",
+            row.get("fecha_nacimiento") or "",
+            edad,
+            row.get("peso_kg"),
+            altura_cm,
+            row.get("tutor_nombre") or "",
+            row.get("entidad_solicitante") or "",  # Club o Asociación — mapeamos a entidad solicitante
+            "",  # QUIEN CANALIZA — no hay campo
+            row.get("observaciones_posturales") or "",
+        ])
+
+    ws.freeze_panes = "A3"
+
+    column_widths = {
+        "A": 18,
+        "B": 34,
+        "C": 24,
+        "D": 28,
+        "E": 24,
+        "F": 28,
+        "G": 20,
+        "H": 20,
+        "I": 24,
+        "J": 18,
+        "K": 10,
+        "L": 12,
+        "M": 14,
+        "N": 28,
+        "O": 24,
+        "P": 22,
+        "Q": 34,
+    }
+    for col, width in column_widths.items():
+        ws.column_dimensions[col].width = width
+
+    if ws.max_row >= 2:
+        table = Table(displayName="BeneficiariosTecnica", ref=f"A2:Q{ws.max_row}")
+        style = TableStyleInfo(
+            name="TableStyleMedium9",
+            showFirstColumn=False,
+            showLastColumn=False,
+            showRowStripes=True,
+            showColumnStripes=False,
+        )
+        table.tableStyleInfo = style
+        ws.add_table(table)
+
+    buffer = io.BytesIO()
+    wb.save(buffer)
+    buffer.seek(0)
+
+    filename = f"BASE_DE_DATOS_EXPORT_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    return StreamingResponse(
+        buffer,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @router.get("/tecnica/beneficiarios/{beneficiario_id}")

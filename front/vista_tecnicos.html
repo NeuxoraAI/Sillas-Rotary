@@ -373,6 +373,13 @@
               Limpiar filtros
             </button>
             <button
+              id="btn-export-excel"
+              class="text-xs font-bold text-white bg-green-600 hover:bg-green-700 px-4 py-1.5 rounded-lg transition-colors flex items-center gap-1"
+            >
+              <span class="material-symbols-outlined text-sm">download</span>
+              Exportar Excel
+            </button>
+            <button
               id="btn-apply-filters"
               class="text-xs font-bold text-white bg-ug-blue hover:bg-ug-blue/90 px-4 py-1.5 rounded-lg transition-colors"
             >
@@ -448,6 +455,35 @@
         >
           Limpiar filtros
         </button>
+      </div>
+
+      <!-- Selection toolbar -->
+      <div
+        id="selection-toolbar"
+        class="hidden flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4 pb-4 border-b border-slate-200"
+      >
+        <div class="flex items-center gap-3">
+          <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider"
+            >Seleccionados: <span id="selection-count" class="text-ug-blue font-bold">0</span></span
+          >
+          <button
+            id="btn-export-selected"
+            class="text-xs font-bold text-white bg-green-600 hover:bg-green-700 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <span class="material-symbols-outlined text-sm">download</span>
+            Exportar seleccionados
+          </button>
+          <button
+            id="btn-clear-selection"
+            class="text-xs font-semibold text-slate-500 hover:text-red-600 transition-colors px-2 py-1.5 rounded-lg hover:bg-red-50"
+          >
+            Limpiar selección
+          </button>
+        </div>
+        <div class="flex items-center gap-2 text-[11px] text-slate-400">
+          <span class="w-3 h-3 rounded-full bg-green-500 block"></span>
+          <span>Ya exportado</span>
+        </div>
       </div>
 
       <!-- Beneficiary list -->
@@ -663,6 +699,10 @@
         loading: false,
         paisesCache: [],
         regionesCache: {},
+        selectedIds: new Set(),
+        exportedIds: new Set(
+          JSON.parse(localStorage.getItem("tec_exported_ids") || "[]"),
+        ),
       };
 
       // DOM refs
@@ -703,6 +743,10 @@
       const btnCloseModal = $("btn-close-modal");
       const toastContainer = $("toast-container");
       const filterCount = $("filter-count");
+      const selectionToolbar = $("selection-toolbar");
+      const selectionCount = $("selection-count");
+      const btnExportSelected = $("btn-export-selected");
+      const btnClearSelection = $("btn-clear-selection");
 
       let currentDetail = null; // { beneficiario_id, proceso_id, estado }
 
@@ -840,6 +884,95 @@
         loadBeneficiarios();
       });
 
+      // ── Export helpers ──
+      async function doExportExcel(idsArray, btnEl) {
+        const originalHtml = btnEl.innerHTML;
+        btnEl.disabled = true;
+        btnEl.classList.add("opacity-60", "cursor-not-allowed");
+
+        try {
+          const filters = readFilters();
+          const params = new URLSearchParams();
+          Object.entries(filters).forEach(function ([key, val]) {
+            if (val !== undefined && val !== null && val !== "") {
+              params.set(key, String(val));
+            }
+          });
+          if (idsArray && idsArray.length > 0) {
+            params.set("ids", idsArray.join(","));
+          }
+
+          btnEl.innerHTML = '<span class="material-symbols-outlined text-sm animate-spin">progress_activity</span> Exportando...';
+
+          const res = await _authFetch(
+            "/api/tecnica/beneficiarios/export?" + params.toString(),
+          );
+
+          if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            throw new Error(errData.detail || "No se pudo exportar el Excel");
+          }
+
+          const blob = await res.blob();
+          const downloadUrl = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          const disposition = res.headers.get("Content-Disposition") || "";
+          const match = disposition.match(/filename="([^"]+)"/);
+
+          link.href = downloadUrl;
+          link.download = match ? match[1] : "beneficiarios.xlsx";
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          URL.revokeObjectURL(downloadUrl);
+
+          // Mark exported IDs
+          if (idsArray && idsArray.length > 0) {
+            idsArray.forEach(function (id) {
+              state.exportedIds.add(id);
+            });
+          } else {
+            state.items.forEach(function (item) {
+              state.exportedIds.add(item.beneficiario_id);
+            });
+          }
+          localStorage.setItem(
+            "tec_exported_ids",
+            JSON.stringify(Array.from(state.exportedIds)),
+          );
+          renderList();
+
+          showToast("Excel exportado correctamente", "success");
+        } catch (err) {
+          showToast(err.message || "No se pudo exportar el Excel", "error");
+        } finally {
+          btnEl.disabled = false;
+          btnEl.classList.remove("opacity-60", "cursor-not-allowed");
+          btnEl.innerHTML = originalHtml;
+        }
+      }
+
+      // Export Excel (filter-panel button — exports ALL filtered)
+      $("btn-export-excel").addEventListener("click", async function () {
+        await doExportExcel([], this);
+      });
+
+      // Export selected (toolbar button — exports only selected)
+      btnExportSelected.addEventListener("click", async function () {
+        const ids = Array.from(state.selectedIds);
+        if (ids.length === 0) return;
+        await doExportExcel(ids, this);
+        state.selectedIds.clear();
+        _updateSelectionUI();
+      });
+
+      // Clear selection
+      btnClearSelection.addEventListener("click", function () {
+        state.selectedIds.clear();
+        renderList();
+        _updateSelectionUI();
+      });
+
       // Filter count badge
       function updateFilterCount() {
         let count = 0;
@@ -966,12 +1099,29 @@
       // RENDER LIST
       // ═══════════════════════════════════════════════════════════════════════════
 
+      function _updateSelectionUI() {
+        const count = state.selectedIds.size;
+        selectionCount.textContent = String(count);
+        btnExportSelected.disabled = count === 0;
+        if (count > 0) {
+          selectionToolbar.classList.remove("hidden");
+        } else {
+          selectionToolbar.classList.add("hidden");
+        }
+      }
+
       function renderList() {
         listContainer.innerHTML = "";
         state.items.forEach(function (item) {
+          const isExported = state.exportedIds.has(item.beneficiario_id);
+          const isSelected = state.selectedIds.has(item.beneficiario_id);
+
           const card = document.createElement("div");
           card.className =
-            "bg-white rounded-2xl border border-slate-200 p-4 hover:shadow-md transition-shadow cursor-pointer";
+            "bg-white rounded-2xl border p-4 hover:shadow-md transition-shadow cursor-pointer " +
+            (isExported
+              ? "border-green-400 bg-green-50/30"
+              : "border-slate-200");
 
           const estadoClass = "badge-" + (item.estado || "sin_iniciar");
           const initials = _getInitials(item.nombre);
@@ -994,8 +1144,16 @@
             avatarHtml = `<span class="text-white text-xs font-semibold uppercase">${initials}</span>`;
           }
 
+          const exportedBadge = isExported
+            ? '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-500 text-white shrink-0">Exportado</span>'
+            : "";
+
           card.innerHTML = `
         <div class="flex items-center gap-3">
+          <label class="flex items-center cursor-pointer shrink-0" onclick="event.stopPropagation()">
+            <input type="checkbox" class="w-5 h-5 rounded border-slate-300 text-green-600 focus:ring-green-500 cursor-pointer selection-checkbox"
+              data-id="${item.beneficiario_id}" ${isSelected ? "checked" : ""} />
+          </label>
           <div class="w-10 h-10 shrink-0 rounded-full bg-ug-blue flex items-center justify-center overflow-hidden">
             ${avatarHtml}
           </div>
@@ -1004,12 +1162,26 @@
             <p class="text-xs font-mono text-slate-400">${folio}</p>
             <p class="text-xs text-slate-500 truncate">${pais} · ${ciudad} · ${telefono}</p>
           </div>
-          <span class="text-[11px] font-bold px-2.5 py-1 rounded-full shrink-0 self-center ${estadoClass}">${_formatEstado(item.estado)}</span>
+          <div class="flex items-center gap-2 shrink-0 self-center">
+            ${exportedBadge}
+            <span class="text-[11px] font-bold px-2.5 py-1 rounded-full ${estadoClass}">${_formatEstado(item.estado)}</span>
+          </div>
         </div>
       `;
 
-          card.addEventListener("click", function () {
+          card.addEventListener("click", function (e) {
+            if (e.target.closest(".selection-checkbox")) return;
             openDetail(item.beneficiario_id);
+          });
+
+          const checkbox = card.querySelector(".selection-checkbox");
+          checkbox.addEventListener("change", function () {
+            if (this.checked) {
+              state.selectedIds.add(item.beneficiario_id);
+            } else {
+              state.selectedIds.delete(item.beneficiario_id);
+            }
+            _updateSelectionUI();
           });
 
           listContainer.appendChild(card);
