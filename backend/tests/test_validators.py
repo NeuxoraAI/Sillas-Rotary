@@ -190,3 +190,128 @@ class TestValidateMedidaTecnica:
 
         with pytest.raises(ValueError, match="altura_total_in"):
             validate_medida_tecnica(".5", "altura_total_in")
+
+
+class TestValidateEntidadSolicitante:
+    """Tests for the entidad_solicitante whitelist validator."""
+
+    def test_pasa_texto_valido_basico(self):
+        """Valid text with letters, numbers, spaces, and allowed punctuation passes."""
+        from validators import validate_entidad_solicitante
+
+        result = validate_entidad_solicitante("Hospital Civil")
+        assert result == "Hospital Civil"
+
+    def test_pasa_con_tildes_y_enie(self):
+        """Spanish accented characters and ñ are in the whitelist."""
+        from validators import validate_entidad_solicitante
+
+        result = validate_entidad_solicitante("Clínica Médica")
+        assert result == "Clínica Médica"
+
+    def test_pasa_con_numeros_y_simbolos_permitidos(self):
+        """Numbers and allowed symbols () / - . , pass through."""
+        from validators import validate_entidad_solicitante
+
+        result = validate_entidad_solicitante("DIF (Sede 1-A)")
+        assert result == "DIF (Sede 1-A)"
+
+    def test_rechaza_caracteres_no_permitidos(self):
+        """Characters outside the whitelist (@, #, $, <, >, etc.) raise ValueError."""
+        from validators import validate_entidad_solicitante
+
+        with pytest.raises(ValueError, match="entidad_solicitante"):
+            validate_entidad_solicitante("email@dominio.com")
+
+        with pytest.raises(ValueError, match="entidad_solicitante"):
+            validate_entidad_solicitante("precio: $100")
+
+        with pytest.raises(ValueError, match="entidad_solicitante"):
+            validate_entidad_solicitante("<script>alert(1)</script>")
+
+    def test_rechaza_excede_maxlength(self):
+        """Text longer than 12 characters raises ValueError."""
+        from validators import validate_entidad_solicitante
+
+        with pytest.raises(ValueError, match="entidad_solicitante"):
+            validate_entidad_solicitante("Hospital Civil de León")
+
+    def test_pasa_exactamente_12_chars(self):
+        """Text of exactly 12 characters passes validation."""
+        from validators import validate_entidad_solicitante
+
+        text = "a" * 12
+        result = validate_entidad_solicitante(text)
+        assert len(result) == 12
+
+    def test_pasa_string_vacio(self):
+        """Empty string passes (will be treated as None/optional by Pydantic)."""
+        from validators import validate_entidad_solicitante
+
+        result = validate_entidad_solicitante("")
+        assert result == ""
+
+
+class TestValidateJustificacion:
+    """Tests for the justificacion whitelist validator."""
+
+    def test_pasa_texto_valido_basico(self):
+        """Valid text with letters, numbers, spaces, and allowed punctuation passes."""
+        from validators import validate_justificacion
+
+        result = validate_justificacion("Paciente requiere silla urgente.")
+        assert result == "Paciente requiere silla urgente."
+
+    def test_pasa_con_tildes_y_enie(self):
+        """Spanish accented characters and ñ are in the whitelist."""
+        from validators import validate_justificacion
+
+        result = validate_justificacion("Áéíóú ñÑ üÜ - diagnóstico: cifosis.")
+        assert result == "Áéíóú ñÑ üÜ - diagnóstico: cifosis."
+
+    def test_pasa_con_numeros_y_simbolos_permitidos(self):
+        """Numbers and allowed symbols () / - . , : ; pass through."""
+        from validators import validate_justificacion
+
+        result = validate_justificacion(
+            "Paciente 2 (3/4): mide 1.50 m, peso: 45; angulo 30."
+        )
+        assert "Paciente 2" in result
+        assert "1.50" in result
+        assert "45" in result
+
+    def test_rechaza_caracteres_no_permitidos(self):
+        """Characters outside the whitelist (@, #, $, <, >, etc.) raise ValueError."""
+        from validators import validate_justificacion
+
+        with pytest.raises(ValueError, match="justificacion"):
+            validate_justificacion("email@dominio.com")
+
+        with pytest.raises(ValueError, match="justificacion"):
+            validate_justificacion("precio: $100")
+
+        with pytest.raises(ValueError, match="justificacion"):
+            validate_justificacion("<script>alert(1)</script>")
+
+    def test_rechaza_excede_maxlength(self):
+        """Text longer than 500 characters raises ValueError."""
+        from validators import validate_justificacion
+
+        long_text = "x" * 501
+        with pytest.raises(ValueError, match="justificacion"):
+            validate_justificacion(long_text)
+
+    def test_pasa_exactamente_500_chars(self):
+        """Text of exactly 500 characters passes validation."""
+        from validators import validate_justificacion
+
+        text = "a" * 500
+        result = validate_justificacion(text)
+        assert len(result) == 500
+
+    def test_pasa_string_vacio(self):
+        """Empty string passes (will be treated as None/optional by Pydantic)."""
+        from validators import validate_justificacion
+
+        result = validate_justificacion("")
+        assert result == ""

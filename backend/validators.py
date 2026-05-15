@@ -46,6 +46,69 @@ def validate_observaciones_posturales(value: str) -> str:
 
 
 # ---------------------------------------------------------------------------
+# entidad_solicitante — whitelist validator (max 64 chars)
+# ---------------------------------------------------------------------------
+
+_ENTIDAD_WHITELIST_RE = re.compile(
+    r"^[a-zA-ZáéíóúÁÉÍÓÚäëïöüÄËÏÖÜñÑ0-9 ()\/\-.,]*$"
+)
+_ENTIDAD_MAX_LENGTH = 64
+
+
+def validate_entidad_solicitante(value: str) -> str:
+    """Validate and return the entidad_solicitante string.
+
+    Rules:
+    - Only characters in the whitelist regex are allowed
+    - Maximum 64 characters
+
+    Returns the value unchanged on success.
+    Raises ValueError with field name on failure.
+    """
+    if len(value) > _ENTIDAD_MAX_LENGTH:
+        raise ValueError(
+            f"entidad_solicitante: máximo {_ENTIDAD_MAX_LENGTH} caracteres permitidos"
+        )
+
+    if not _ENTIDAD_WHITELIST_RE.match(value):
+        raise ValueError(
+            "entidad_solicitante: contiene caracteres no permitidos"
+        )
+
+    return value
+
+
+# ---------------------------------------------------------------------------
+# justificacion — whitelist validator (same rules as observaciones_posturales)
+# ---------------------------------------------------------------------------
+
+_JUST_MAX_LENGTH = 500
+
+
+def validate_justificacion(value: str) -> str:
+    """Validate and return the justificacion string.
+
+    Rules:
+    - Only characters in the whitelist regex are allowed (same as observaciones_posturales)
+    - Maximum 500 characters
+
+    Returns the value unchanged on success.
+    Raises ValueError with field name on failure.
+    """
+    if len(value) > _JUST_MAX_LENGTH:
+        raise ValueError(
+            f"justificacion: máximo {_JUST_MAX_LENGTH} caracteres permitidos"
+        )
+
+    if not _OBS_WHITELIST_RE.match(value):
+        raise ValueError(
+            "justificacion: contiene caracteres no permitidos"
+        )
+
+    return value
+
+
+# ---------------------------------------------------------------------------
 # medida técnica — digit+dots validator → Decimal normalizer
 # ---------------------------------------------------------------------------
 
