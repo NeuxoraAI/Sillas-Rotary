@@ -1,0 +1,678 @@
+<!doctype html>
+
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Gestión de Donación | ecosistema VIDA UG</title>
+    <!-- BEGIN: Tailwind CSS & Plugins -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;600;700&amp;display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: "#003366", // UG Dark Blue
+              secondary: "#eab308", // Yellow for highlight
+              ug: {
+                blue: "#003366",
+                lightBlue: "#0056b3",
+                gray: "#f8fafc",
+              },
+            },
+            fontFamily: {
+              sans: ['"Public Sans"', "sans-serif"],
+            },
+            borderRadius: {
+              custom: "0.5rem",
+            },
+          },
+        },
+      };
+    </script>
+    <!-- END: Tailwind CSS & Plugins -->
+    <!-- BEGIN: Custom Styling -->
+    <style data-purpose="layout-customizations">
+      body {
+        font-family: "Public Sans", sans-serif;
+      }
+      input,
+      select,
+      textarea {
+        border-radius: 0.5rem !important;
+      }
+      button {
+        border-radius: 0.5rem !important;
+      }
+      .section-divider {
+        border-top: 2px solid #e2e8f0;
+        margin-top: 3rem;
+        padding-top: 3rem;
+      }
+    </style>
+    <style data-purpose="typography">
+      h1,
+      h2,
+      h3 {
+        color: #0f172a;
+        font-weight: 700;
+      }
+    </style>
+    <!-- END: Custom Styling -->
+  </head>
+  <body class="bg-slate-100 min-h-screen py-10 px-4 flex flex-col items-center">
+    <main
+      class="max-w-5xl w-full bg-white shadow-2xl rounded-lg overflow-hidden border border-slate-200"
+    >
+      <!-- BEGIN: Branding Header -->
+      <div
+        class="bg-slate-50 px-8 py-3 border-b border-slate-200 flex justify-between items-center"
+      >
+        <div class="flex items-center gap-2">
+          <span class="text-primary font-bold text-xl tracking-tighter"
+            >UG <span class="text-slate-400 font-light mx-1">|</span>
+            <span class="text-primary/80 font-medium"
+              >ecosistema VIDA UG</span
+            ></span
+          >
+        </div>
+        <div class="flex items-center gap-4">
+          <span
+            class="text-[10px] uppercase tracking-widest text-slate-500 font-semibold"
+            >Sistema Integral de Gestión</span
+          >
+        </div>
+      </div>
+      <!-- END: Branding Header -->
+      <!-- BEGIN: Local Menu -->
+      <div
+        class="bg-primary px-8 py-2 flex items-center gap-6"
+        data-purpose="local-menu"
+      >
+        <span
+          class="text-white text-sm font-bold uppercase tracking-wider border-b-2 border-secondary pb-1"
+          >Gestión</span
+        >
+      </div>
+      <!-- END: Local Menu -->
+      <form class="p-8 space-y-12">
+        <!-- BEGIN: Header -->
+        <header class="bg-slate-800 text-white p-6 -mx-8 -mt-8 mb-8">
+          <h1 class="text-2xl font-bold uppercase tracking-wider text-white">
+            GESTIÓN DE DONACIÓN
+          </h1>
+        </header>
+        <!-- END: Header -->
+        <!-- Sección A — Información del Estudio -->
+        <section data-purpose="estudio-info">
+          <h2
+            class="text-xl font-bold mb-6 text-primary flex items-center gap-2 border-b-2 border-primary/10 pb-2"
+          >
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewbox="0 0 24 24"
+            >
+              <path
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+              ></path>
+            </svg>
+            Información del Estudio
+          </h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-2">
+              <label class="block text-sm font-semibold text-slate-700"
+                >¿El paciente ha tenido silla previamente?</label
+              >
+              <select class="w-full border-slate-300" name="silla_previa">
+                <option>No</option>
+                <option>Sí</option>
+              </select>
+            </div>
+            <div class="space-y-2">
+              <label class="block text-sm font-semibold text-slate-700"
+                >¿Cómo la obtuvo?</label
+              >
+              <select
+                class="w-full border-slate-300"
+                name="como_obtuvo_silla"
+                disabled
+              >
+                <option value="">Selecciona una opción</option>
+                <option value="COMPRA">Compra</option>
+                <option value="DONACION">Donación</option>
+              </select>
+            </div>
+            <div class="space-y-2">
+              <label class="block text-sm font-semibold text-slate-700"
+                >Elaboró el estudio</label
+              >
+              <input class="w-full border-slate-300 bg-slate-100" name="elaboro_estudio" type="text" readonly />
+            </div>
+            <div class="space-y-2">
+              <label class="block text-sm font-semibold text-slate-700"
+                >Fecha del estudio</label
+              >
+              <input
+                class="w-full border-slate-300"
+                name="fecha_estudio"
+                type="date"
+              />
+            </div>
+            <div class="md:col-span-2 space-y-2">
+              <label class="block text-sm font-semibold text-slate-700"
+                >Sede</label
+              >
+              <input class="w-full border-slate-300 bg-slate-100" name="sede" type="text" readonly />
+            </div>
+            <div class="md:col-span-2 space-y-2">
+              <label class="block text-sm font-semibold text-slate-700">Ciudad del registro</label>
+              <input class="w-full border-slate-300 bg-slate-100" name="ciudad_registro" type="text" readonly />
+            </div>
+          </div>
+        </section>
+        <!-- END: Sección A -->
+        <!-- Sección B — Información de la Solicitud -->
+        <section data-purpose="solicitud-info">
+          <h2
+            class="text-xl font-bold mb-6 text-primary flex items-center gap-2 border-b-2 border-primary/10 pb-2"
+          >
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewbox="0 0 24 24"
+            >
+              <path
+                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+              ></path>
+            </svg>
+            Información de la Solicitud
+          </h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-2">
+              <label class="block text-sm font-semibold text-slate-700"
+                >Entidad Solicitante</label
+              >
+              <input
+                class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary"
+                name="entidad_solicitante"
+                placeholder="Nombre de la institución o particular"
+                type="text"
+                maxlength="64"
+              />
+            </div>
+            <div class="space-y-2">
+              <label class="block text-sm font-semibold text-slate-700"
+                >Prioridad</label
+              >
+              <div class="flex items-center gap-6 mt-2">
+                <label class="inline-flex items-center">
+                  <input
+                    class="text-primary focus:ring-primary h-4 w-4"
+                    name="prioridad"
+                    type="radio"
+                    value="Alta"
+                  />
+                  <span class="ml-2 text-sm font-medium text-slate-700"
+                    >Alta</span
+                  >
+                </label>
+                <label class="inline-flex items-center">
+                  <input
+                    class="text-primary focus:ring-primary h-4 w-4"
+                    name="prioridad"
+                    type="radio"
+                    value="Media"
+                  />
+                  <span class="ml-2 text-sm font-medium text-slate-700"
+                    >Media</span
+                  >
+                </label>
+              </div>
+            </div>
+            <div class="md:col-span-2 space-y-2">
+              <label class="block text-sm font-semibold text-slate-700"
+                >Justificación para Sillas de Ruedas</label
+              >
+              <textarea
+                class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary"
+                name="justificacion"
+                placeholder="Información adicional relevante sobre la necesidad de esta silla específica..."
+                rows="3"
+                maxlength="500"
+              ></textarea>
+            </div>
+          </div>
+        </section>
+        <!-- END: Sección B -->
+        <!-- BEGIN: Footer Actions -->
+        <footer class="pt-10 border-t border-slate-200">
+          <div
+            class="flex flex-col md:flex-row md:items-center justify-between gap-6"
+          >
+            <div class="flex items-center gap-4">
+              <div class="bg-blue-50 p-3 rounded-full">
+                <span class="text-primary font-black">UG</span>
+              </div>
+              <div>
+                <p
+                  class="text-xs font-bold text-slate-400 tracking-widest uppercase"
+                >
+                  Estatus de Gestión
+                </p>
+                <p class="text-sm font-semibold text-slate-700">
+                  Datos de gestión de donación
+                </p>
+              </div>
+            </div>
+            <div class="flex flex-col sm:flex-row gap-4">
+              <button
+                class="px-6 py-3 border border-slate-300 text-slate-700 font-bold hover:bg-slate-50 transition-all uppercase text-sm tracking-wide"
+                id="btn-anterior"
+                type="button"
+              >
+                Anterior
+              </button>
+              <button
+                class="px-6 py-3 border border-slate-300 text-slate-700 font-bold hover:bg-slate-50 transition-all uppercase text-sm tracking-wide"
+                id="btn-borrador"
+                type="button"
+              >
+                Guardar Borrador
+              </button>
+              <button
+                class="px-10 py-3 bg-secondary text-slate-900 font-bold shadow-lg hover:bg-yellow-500 transition-all uppercase text-sm tracking-wide active:scale-95"
+                id="btn-guardar"
+                type="submit"
+              >
+                Guardar datos de gestión
+              </button>
+            </div>
+          </div>
+          <p id="error-msg" class="hidden text-red-500 text-sm mt-2"></p>
+          <!-- UG Footer Branding -->
+          <div
+            class="mt-12 pt-6 border-t border-slate-100 flex flex-col items-center gap-2"
+          >
+            <span
+              class="text-[11px] font-bold text-slate-400 tracking-[0.2em] uppercase text-center"
+              >DESARROLLADO POR C-MED</span
+            >
+            <span class="text-[10px] text-slate-300 font-medium uppercase"
+              >Plataforma de Control Técnica v2.0 - ecosistema VIDA UG</span
+            >
+          </div>
+        </footer>
+        <!-- END: Footer Actions -->
+      </form>
+    </main>
+    <script data-purpose="form-logic">
+      const COMO_OBTUVO_SILLA_CATALOG = ["COMPRA", "DONACION"];
+
+      function setCatalogSelectValue(name, val, catalog) {
+        const el = document.querySelector(`[name="${name}"]`);
+        if (!el || val == null) return;
+        el.value = catalog.includes(val) ? val : "";
+      }
+
+      // -- Validación preventiva para entidad_solicitante -----------------
+      const _ENTIDAD_ALLOWED_RE = /^[a-zA-ZáéíóúÁÉÍÓÚäëïöüÄËÏÖÜñÑ0-9 ()\/\-.,]*$/;
+
+      function _filterEntidadText(text) {
+        return Array.from(text)
+          .filter((ch) => _ENTIDAD_ALLOWED_RE.test(ch))
+          .join("");
+      }
+
+      function _setupEntidadValidation() {
+        const input = document.querySelector('[name="entidad_solicitante"]');
+        if (!input) return;
+
+        // beforeinput: block non-whitelist characters silently
+        input.addEventListener("beforeinput", (e) => {
+          if (e.data && !_ENTIDAD_ALLOWED_RE.test(e.data)) {
+            e.preventDefault();
+          }
+        });
+
+        // paste: filter pasted text
+        input.addEventListener("paste", (e) => {
+          const pasted = (e.clipboardData || window.clipboardData).getData("text");
+          const filtered = _filterEntidadText(pasted);
+          if (filtered !== pasted) {
+            e.preventDefault();
+            const start = input.selectionStart;
+            const end = input.selectionEnd;
+            const before = input.value.slice(0, start);
+            const after = input.value.slice(end);
+            input.value = before + filtered + after;
+            input.selectionStart = input.selectionEnd = start + filtered.length;
+          }
+        });
+
+        // input: catch IME/autofill bypasses
+        input.addEventListener("input", () => {
+          const filtered = _filterEntidadText(input.value);
+          if (filtered !== input.value) {
+            const cursor = input.selectionStart;
+            input.value = filtered;
+            input.selectionStart = input.selectionEnd = Math.min(cursor, filtered.length);
+          }
+        });
+      }
+
+      // -- Validación preventiva para justificacion (misma que observaciones_posturales)
+      const _JUST_ALLOWED_RE = /^[a-zA-ZáéíóúÁÉÍÓÚäëïöüÄËÏÖÜñÑ0-9 ()\/\-.,:;]*$/;
+
+      function _filterJustText(text) {
+        return Array.from(text)
+          .filter((ch) => _JUST_ALLOWED_RE.test(ch))
+          .join("");
+      }
+
+      function _setupJustificacionValidation() {
+        const textarea = document.querySelector('[name="justificacion"]');
+        if (!textarea) return;
+
+        // beforeinput: block non-whitelist characters silently
+        textarea.addEventListener("beforeinput", (e) => {
+          if (e.data && !_JUST_ALLOWED_RE.test(e.data)) {
+            e.preventDefault();
+          }
+        });
+
+        // paste: filter pasted text
+        textarea.addEventListener("paste", (e) => {
+          const pasted = (e.clipboardData || window.clipboardData).getData("text");
+          const filtered = _filterJustText(pasted);
+          if (filtered !== pasted) {
+            e.preventDefault();
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const before = textarea.value.slice(0, start);
+            const after = textarea.value.slice(end);
+            textarea.value = before + filtered + after;
+            textarea.selectionStart = textarea.selectionEnd = start + filtered.length;
+          }
+        });
+
+        // input: catch IME/autofill bypasses
+        textarea.addEventListener("input", () => {
+          const filtered = _filterJustText(textarea.value);
+          if (filtered !== textarea.value) {
+            const cursor = textarea.selectionStart;
+            textarea.value = filtered;
+            textarea.selectionStart = textarea.selectionEnd = Math.min(cursor, filtered.length);
+          }
+        });
+      }
+
+      // -- setupSillaPreviaConditionalField ---------------------------------
+      function setupSillaPreviaConditionalField() {
+        const sillaPrevia = document.querySelector('[name="silla_previa"]');
+        const comoObtuvo = document.querySelector('[name="como_obtuvo_silla"]');
+        if (!sillaPrevia || !comoObtuvo) return;
+
+        const apply = () => {
+          const hasPreviousChair = sillaPrevia.value === "Sí";
+          comoObtuvo.disabled = !hasPreviousChair;
+          comoObtuvo.required = hasPreviousChair;
+          if (!hasPreviousChair) {
+            comoObtuvo.selectedIndex = 0;
+          }
+        };
+
+        sillaPrevia.addEventListener("change", apply);
+        apply();
+      }
+
+      // -- submitGestion ----------------------------------------------------
+      async function submitGestion(status) {
+        const errorEl = document.getElementById("error-msg");
+        errorEl.classList.add("hidden");
+        errorEl.textContent = "";
+
+        const session = JSON.parse(localStorage.getItem("session") || "null");
+        if (!session?.token) {
+          window.location.href = "login.html";
+          return;
+        }
+
+        const estudioId = localStorage.getItem("estudio_id");
+        const solicitudId = localStorage.getItem("solicitud_id");
+
+        if (!estudioId || !solicitudId) {
+          errorEl.textContent =
+            "No se encontró el estudio o la solicitud. Complete los pasos anteriores.";
+          errorEl.classList.remove("hidden");
+          return;
+        }
+
+        const f = document.querySelector("form");
+        const fd = new FormData(f);
+        const get = (name) => fd.get(name) || "";
+
+        // Payload estudio: 6 campos
+        const fechaEstudio = get("fecha_estudio").trim();
+        const estudioPayload = {
+          tuvo_silla_previa: get("silla_previa") === "Sí",
+          como_obtuvo_silla: get("como_obtuvo_silla") || null,
+          fecha_estudio: fechaEstudio || null,
+          status,
+        };
+
+        // Payload solicitud: 3 campos
+        const solicitudPayload = {
+          entidad_solicitante: get("entidad_solicitante") || null,
+          prioridad: get("prioridad") || null,
+          justificacion: get("justificacion") || null,
+          status,
+        };
+
+        // Helper: format backend error (handles both FastAPI string detail and Pydantic array detail)
+        function formatBackendError(errData, fallback) {
+          if (!errData) return fallback;
+          if (typeof errData.detail === "string" && errData.detail.trim()) {
+            return errData.detail;
+          }
+          if (Array.isArray(errData.detail) && errData.detail.length > 0) {
+            return errData.detail.map((e) => e.msg || JSON.stringify(e)).join("; ");
+          }
+          return fallback;
+        }
+
+        // Frontend validation before sending
+        if (status === "completo") {
+          const missing = [];
+          if (!fechaEstudio) missing.push("Fecha del estudio");
+          if (estudioPayload.tuvo_silla_previa && !estudioPayload.como_obtuvo_silla) {
+            missing.push("¿Cómo la obtuvo?");
+          }
+          if (missing.length > 0) {
+            errorEl.textContent = "Complete los campos obligatorios: " + missing.join(", ");
+            errorEl.classList.remove("hidden");
+            return;
+          }
+        }
+
+        try {
+          const [estudioRes, solicitudRes] = await Promise.all([
+            fetch(`/api/estudios/${estudioId}`, {
+              method: "PATCH",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: "Bearer " + session.token,
+              },
+              body: JSON.stringify(estudioPayload),
+            }),
+            fetch(`/api/solicitudes/${solicitudId}`, {
+              method: "PATCH",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: "Bearer " + session.token,
+              },
+              body: JSON.stringify(solicitudPayload),
+            }),
+          ]);
+
+          let estudioErr = null;
+          let solicitudErr = null;
+
+          if (!estudioRes.ok) {
+            const errData = await estudioRes.json().catch(() => ({}));
+            estudioErr = formatBackendError(errData, "Error al actualizar el estudio.");
+          }
+
+          if (!solicitudRes.ok) {
+            const errData = await solicitudRes.json().catch(() => ({}));
+            solicitudErr = formatBackendError(errData, "Error al actualizar la solicitud.");
+          }
+
+          if (estudioErr || solicitudErr) {
+            errorEl.textContent = [estudioErr, solicitudErr].filter(Boolean).join(" | ");
+            errorEl.classList.remove("hidden");
+            return;
+          }
+
+          // Ambos exitosos
+          if (status === "completo") {
+            localStorage.removeItem("estudio_id");
+            localStorage.removeItem("solicitud_id");
+            localStorage.removeItem("beneficiario_id");
+            window.location.href = "socioeconomico.html";
+          } else {
+            alert("Borrador guardado correctamente.");
+          }
+        } catch (err) {
+          errorEl.textContent = "No se pudo conectar con el servidor.";
+          errorEl.classList.remove("hidden");
+        }
+      }
+
+      // -- Auth guard + Prefill + Draft Resume ------------------------------
+      (async function () {
+        const session = JSON.parse(localStorage.getItem("session") || "null");
+        const regionCtx = JSON.parse(
+          localStorage.getItem("region_ctx") || "null",
+        );
+        if (!session?.token || !regionCtx?.region_id) {
+          window.location.href = "login.html";
+          return;
+        }
+
+        // Prefill de campos readonly
+        const elaboroEl = document.querySelector('[name="elaboro_estudio"]');
+        if (elaboroEl) elaboroEl.value = session.nombre || "";
+        const sedeEl = document.querySelector('[name="sede"]');
+        if (sedeEl) sedeEl.value = regionCtx.sede || "";
+        const ciudadRegEl = document.querySelector('[name="ciudad_registro"]');
+        if (ciudadRegEl) ciudadRegEl.value = regionCtx.region_nombre || "";
+
+        // Draft Resume: Estudio
+        const estudioId = localStorage.getItem("estudio_id");
+        if (estudioId) {
+          try {
+            const res = await fetch(`/api/estudios/${estudioId}`, {
+              headers: {
+                Accept: "application/json",
+                Authorization: "Bearer " + session.token,
+              },
+            });
+
+            if (res.ok) {
+              const data = await res.json();
+
+              const setVal = (name, val) => {
+                const el = document.querySelector(`[name="${name}"]`);
+                if (el && val != null) el.value = val;
+              };
+
+              setVal(
+                "silla_previa",
+                data.tuvo_silla_previa === 1 ? "Sí" : "No",
+              );
+              setCatalogSelectValue("como_obtuvo_silla", data.como_obtuvo_silla, COMO_OBTUVO_SILLA_CATALOG);
+              document.querySelector('[name="silla_previa"]')?.dispatchEvent(new Event("change"));
+              setVal("fecha_estudio", data.fecha_estudio);
+              setVal("sede", data.sede || regionCtx.sede);
+              setVal("ciudad_registro", data.ciudad_registro || regionCtx.region_nombre);
+            } else if (res.status === 404) {
+              localStorage.removeItem("estudio_id");
+            }
+          } catch (err) {
+            console.error("Error loading estudio draft:", err);
+          }
+        }
+
+        // Draft Resume: Solicitud
+        const solicitudId = localStorage.getItem("solicitud_id");
+        if (solicitudId) {
+          try {
+            const res = await fetch(`/api/solicitudes/${solicitudId}`, {
+              headers: {
+                Accept: "application/json",
+                Authorization: "Bearer " + session.token,
+              },
+            });
+
+            if (res.ok) {
+              const data = await res.json();
+
+              const setVal = (name, val) => {
+                const el = document.querySelector(`[name="${name}"]`);
+                if (el && val != null) el.value = val;
+              };
+
+              setVal("entidad_solicitante", data.entidad_solicitante);
+              setVal("justificacion", data.justificacion);
+
+              if (data.prioridad) {
+                const prioridadRadio = document.querySelector(
+                  `[name="prioridad"][value="${data.prioridad}"]`,
+                );
+                if (prioridadRadio) prioridadRadio.checked = true;
+              }
+            } else if (res.status === 404) {
+              localStorage.removeItem("solicitud_id");
+            }
+          } catch (err) {
+            console.error("Error loading solicitud draft:", err);
+          }
+        }
+      })();
+
+      // -- Event Listeners --------------------------------------------------
+      setupSillaPreviaConditionalField();
+      _setupEntidadValidation();
+      _setupJustificacionValidation();
+
+      // Anterior → tecnica.html
+      document.getElementById("btn-anterior").addEventListener("click", () => {
+        window.location.href = "tecnica.html";
+      });
+
+      // Guardar Borrador
+      document.getElementById("btn-borrador").addEventListener("click", () => {
+        submitGestion("borrador");
+      });
+
+      // Guardar datos de gestión (submit)
+      document.querySelector("form").addEventListener("submit", (e) => {
+        e.preventDefault();
+        submitGestion("completo");
+      });
+    </script>
+  </body>
+</html>
