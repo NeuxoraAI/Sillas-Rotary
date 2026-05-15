@@ -671,65 +671,7 @@
             </div>
           </div>
         </section>
-        <!-- Otros y Cierre -->
-        <section data-purpose="socioeconomic-closing">
-          <h2
-            class="text-xl font-bold mb-6 text-primary border-b-2 border-primary/10 pb-2"
-          >
-            Otros y Cierre
-          </h2>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="space-y-2">
-              <label class="block text-sm font-semibold text-slate-700"
-                >¿El paciente ha tenido silla previamente?</label
-              >
-              <select class="w-full border-slate-300" name="silla_previa">
-                <option>No</option>
-                <option>Sí</option>
-              </select>
-            </div>
-            <div class="space-y-2">
-              <label class="block text-sm font-semibold text-slate-700"
-                >¿Cómo la obtuvo?</label
-              >
-              <select
-                class="w-full border-slate-300"
-                name="como_obtuvo_silla"
-                disabled
-              >
-                <option value="">Selecciona una opción</option>
-                <option value="COMPRA">Compra</option>
-                <option value="DONACION">Donación</option>
-              </select>
-            </div>
-            <div class="space-y-2">
-              <label class="block text-sm font-semibold text-slate-700"
-                >Elaboró el estudio</label
-              >
-              <input class="w-full border-slate-300 bg-slate-100" name="elaboro_estudio" type="text" readonly />
-            </div>
-            <div class="space-y-2">
-              <label class="block text-sm font-semibold text-slate-700"
-                >Fecha del estudio</label
-              >
-              <input
-                class="w-full border-slate-300"
-                name="fecha_estudio"
-                type="date"
-              />
-            </div>
-            <div class="md:col-span-2 space-y-2">
-              <label class="block text-sm font-semibold text-slate-700"
-                >Sede</label
-              >
-              <input class="w-full border-slate-300 bg-slate-100" name="sede" type="text" readonly />
-            </div>
-            <div class="md:col-span-2 space-y-2">
-              <label class="block text-sm font-semibold text-slate-700">Ciudad del registro</label>
-              <input class="w-full border-slate-300 bg-slate-100" name="ciudad_registro" type="text" readonly />
-            </div>
-          </div>
-        </section>
+        <!-- Otros y Cierre movidos a gestion.html -->
         <!-- Footer Actions -->
         <footer class="pt-10 border-t border-slate-200">
           <div
@@ -1131,23 +1073,7 @@
         });
       }
 
-      function setupSillaPreviaConditionalField() {
-        const sillaPrevia = document.querySelector('[name="silla_previa"]');
-        const comoObtuvo = document.querySelector('[name="como_obtuvo_silla"]');
-        if (!sillaPrevia || !comoObtuvo) return;
 
-        const apply = () => {
-          const hasPreviousChair = sillaPrevia.value === "Sí";
-          comoObtuvo.disabled = !hasPreviousChair;
-          comoObtuvo.required = hasPreviousChair;
-          if (!hasPreviousChair) {
-            comoObtuvo.selectedIndex = 0;
-          }
-        };
-
-        sillaPrevia.addEventListener("change", apply);
-        apply();
-      }
 
       // Auth guard + Draft Resume
       (async function () {
@@ -1160,12 +1086,7 @@
           return;
         }
 
-        const elaboroEl = document.querySelector('[name="elaboro_estudio"]');
-        if (elaboroEl) elaboroEl.value = session.nombre || "";
-        const sedeEl = document.querySelector('[name="sede"]');
-        if (sedeEl) sedeEl.value = regionCtx.sede || "";
-        const ciudadRegEl = document.querySelector('[name="ciudad_registro"]');
-        if (ciudadRegEl) ciudadRegEl.value = regionCtx.region_nombre || "";
+
 
         // Draft Resume: Check if we have an estudio_id to restore
         const estudioId = localStorage.getItem("estudio_id");
@@ -1308,21 +1229,7 @@
                 setupTutorConditionalFields();
               }
 
-              // Pre-fill estudio closing fields
-              const setVal = (name, val) => {
-                const el = document.querySelector(`[name="${name}"]`);
-                if (el && val != null) el.value = val;
-              };
-              setVal(
-                "silla_previa",
-                data.tuvo_silla_previa === 1 ? "Sí" : "No",
-              );
-              setCatalogSelectValue("como_obtuvo_silla", data.como_obtuvo_silla, COMO_OBTUVO_SILLA_CATALOG);
-              document.querySelector('[name="silla_previa"]')?.dispatchEvent(new Event("change"));
-              setVal("elaboro_estudio", session.nombre);
-              setVal("fecha_estudio", data.fecha_estudio);
-              setVal("sede", data.sede);
-              setVal("ciudad_registro", data.ciudad_registro || regionCtx.region_nombre);
+              // Pre-fill estudio closing fields moved to gestion.html
 
               // Also store beneficiario_id from the draft
               if (data.beneficiario_id) {
@@ -1445,10 +1352,10 @@
           },
           tutores,
           estudio: {
-            tuvo_silla_previa: get("silla_previa") === "Sí",
-            como_obtuvo_silla: get("como_obtuvo_silla"),
+            tuvo_silla_previa: false,
+            como_obtuvo_silla: null,
             elaboro_estudio: null,
-            fecha_estudio: get("fecha_estudio"),
+            fecha_estudio: new Date().toISOString().split("T")[0],
             status,
           },
         };
@@ -1510,10 +1417,9 @@
 
             data = await res.json();
 
-            // After successful PATCH with status 'completo', clear estudio_id (not resumable)
-            // but keep beneficiario_id for tecnica.html
+            // After successful PATCH with status 'completo', keep estudio_id
+            // for gestion.html to close the full flow; keep beneficiario_id for tecnica.html
             if (status === "completo") {
-              localStorage.removeItem("estudio_id");
               window.location.href = "tecnica.html";
             } else {
               alert("Borrador guardado correctamente.");
@@ -1552,9 +1458,8 @@
             }
 
             if (status === "completo") {
-              // Estudio completed — clear estudio_id (not resumable)
-              // but keep beneficiario_id for tecnica.html
-              localStorage.removeItem("estudio_id");
+              // Estudio completed — keep estudio_id for gestion.html
+              // keep beneficiario_id for tecnica.html
               window.location.href = "tecnica.html";
             } else {
               // Borrador saved — keep both IDs for later resumption
@@ -1579,7 +1484,6 @@
       setupTelefonoSanitization();
       setupEstadosCatalog();
       setupTutorConditionalFields();
-      setupSillaPreviaConditionalField();
 
       document
         .querySelector('button[type="button"]')
