@@ -574,6 +574,7 @@ def actualizar_estudio(
     fields = body.model_dump(exclude_none=True, exclude={"tutores", "elaboro_estudio", "ciudad_registro"})
     fields["elaboro_estudio"] = usuario.nombre
     if "tuvo_silla_previa" in fields:
+        fields["tuvo_silla_previa"] = int(fields["tuvo_silla_previa"])
         fields["como_obtuvo_silla"] = _resolve_como_obtuvo_silla(fields["tuvo_silla_previa"], fields.get("como_obtuvo_silla"))
     if not fields:
         row = db.execute(
