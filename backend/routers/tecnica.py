@@ -10,7 +10,12 @@ from supabase import create_client
 
 from database import get_db, _DBAdapter
 from routers.auth import CurrentUser, assert_resource_owner, require_roles
-from validators import validate_observaciones_posturales, validate_medida_tecnica
+from validators import (
+    validate_observaciones_posturales,
+    validate_medida_tecnica,
+    validate_entidad_solicitante,
+    validate_justificacion,
+)
 
 router = APIRouter()
 
@@ -141,6 +146,20 @@ class SolicitudCreateRequest(BaseModel):
             return None
         return validate_observaciones_posturales(str(v))
 
+    @field_validator("entidad_solicitante", mode="before")
+    @classmethod
+    def validate_entidad_solicitante_field(cls, v) -> Optional[str]:
+        if v is None:
+            return None
+        return validate_entidad_solicitante(str(v))
+
+    @field_validator("justificacion", mode="before")
+    @classmethod
+    def validate_justificacion_field(cls, v) -> Optional[str]:
+        if v is None:
+            return None
+        return validate_justificacion(str(v))
+
     @field_validator("unidad_medida")
     @classmethod
     def unidad_valida(cls, v: str) -> str:
@@ -204,6 +223,20 @@ class SolicitudUpdateRequest(BaseModel):
         if v is None:
             return None
         return validate_observaciones_posturales(str(v))
+
+    @field_validator("entidad_solicitante", mode="before")
+    @classmethod
+    def validate_entidad_solicitante_field(cls, v) -> Optional[str]:
+        if v is None:
+            return None
+        return validate_entidad_solicitante(str(v))
+
+    @field_validator("justificacion", mode="before")
+    @classmethod
+    def validate_justificacion_field(cls, v) -> Optional[str]:
+        if v is None:
+            return None
+        return validate_justificacion(str(v))
 
     @field_validator("status")
     @classmethod
@@ -471,6 +504,9 @@ def actualizar_solicitud(
     fields = body.model_dump(exclude_none=True)
     if fields.get("unidad_medida") in ("cm", "in"):
         fields = _normalize_medidas_patch(fields)
+    # Rename to DB column name
+    if "unidad_medida" in fields:
+        fields["unidad_captura"] = fields.pop("unidad_medida")
 
     resolved_foto_path, resolved_foto_url = _resolve_foto_refs(
         foto_path=fields.pop("foto_path", None),
