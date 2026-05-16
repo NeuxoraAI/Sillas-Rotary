@@ -15,6 +15,12 @@ from validators import (
     validate_medida_tecnica,
     validate_entidad_solicitante,
     validate_justificacion,
+    validate_entorno,
+    validate_control_tronco,
+    validate_control_cabeza,
+    validate_unidad_medida,
+    validate_prioridad,
+    validate_status,
 )
 
 router = APIRouter()
@@ -160,26 +166,35 @@ class SolicitudCreateRequest(BaseModel):
             return None
         return validate_justificacion(str(v))
 
+    @field_validator("entorno")
+    @classmethod
+    def _entorno_valido(cls, v: str) -> str:
+        return validate_entorno(v)
+
+    @field_validator("control_tronco")
+    @classmethod
+    def _control_tronco_valido(cls, v: str) -> str:
+        return validate_control_tronco(v)
+
+    @field_validator("control_cabeza")
+    @classmethod
+    def _control_cabeza_valido(cls, v: str) -> str:
+        return validate_control_cabeza(v)
+
     @field_validator("unidad_medida")
     @classmethod
-    def unidad_valida(cls, v: str) -> str:
-        if v not in ("in", "cm"):
-            raise ValueError("unidad_medida debe ser in o cm")
-        return v
+    def _unidad_valida(cls, v: str) -> str:
+        return validate_unidad_medida(v)
 
     @field_validator("status")
     @classmethod
-    def status_valido(cls, v: str) -> str:
-        if v not in ("borrador", "completo"):
-            raise ValueError("status debe ser 'borrador' o 'completo'")
-        return v
+    def _status_valido(cls, v: str) -> str:
+        return validate_status(v)
 
     @field_validator("prioridad")
     @classmethod
-    def prioridad_valida(cls, v: Optional[str]) -> Optional[str]:
-        if v is not None and v not in ("Alta", "Media"):
-            raise ValueError("prioridad debe ser 'Alta' o 'Media'")
-        return v
+    def _prioridad_valida(cls, v: Optional[str]) -> Optional[str]:
+        return validate_prioridad(v)
 
 
 class SolicitudCreateResponse(BaseModel):
@@ -238,26 +253,45 @@ class SolicitudUpdateRequest(BaseModel):
             return None
         return validate_justificacion(str(v))
 
+    @field_validator("entorno")
+    @classmethod
+    def _entorno_valido(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        return validate_entorno(v)
+
+    @field_validator("control_tronco")
+    @classmethod
+    def _control_tronco_valido(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        return validate_control_tronco(v)
+
+    @field_validator("control_cabeza")
+    @classmethod
+    def _control_cabeza_valido(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        return validate_control_cabeza(v)
+
     @field_validator("status")
     @classmethod
-    def status_valido(cls, v: Optional[str]) -> Optional[str]:
-        if v is not None and v not in ("borrador", "completo"):
-            raise ValueError("status debe ser 'borrador' o 'completo'")
-        return v
+    def _status_valido(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        return validate_status(v)
 
     @field_validator("unidad_medida")
     @classmethod
-    def unidad_valida(cls, v: Optional[str]) -> Optional[str]:
-        if v is not None and v not in ("in", "cm"):
-            raise ValueError("unidad_medida debe ser in o cm")
-        return v
+    def _unidad_valida(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        return validate_unidad_medida(v)
 
     @field_validator("prioridad")
     @classmethod
-    def prioridad_valida(cls, v: Optional[str]) -> Optional[str]:
-        if v is not None and v not in ("Alta", "Media"):
-            raise ValueError("prioridad debe ser 'Alta' o 'Media'")
-        return v
+    def _prioridad_valida(cls, v: Optional[str]) -> Optional[str]:
+        return validate_prioridad(v)
 
 
 class SolicitudUpdateResponse(BaseModel):

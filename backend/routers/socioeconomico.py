@@ -19,25 +19,42 @@ from database import get_db, _DBAdapter
 from routers.auth import CurrentUser, assert_resource_owner, require_roles
 from routers.regiones import generate_folio
 from utils.text import normalize_text
+from validators import (
+    validate_nombre,
+    validate_apellido,
+    validate_diagnostico,
+    validate_calle,
+    validate_colonia,
+    validate_ciudad,
+    validate_numero_domicilio,
+    validate_telefono,
+    validate_estado_codigo,
+    validate_estado_nombre,
+    validate_sexo,
+    validate_catalog,
+    validate_ingreso_mensual,
+    validate_monto_otras_fuentes,
+    validate_num_hijos,
+    validate_edad,
+    validate_antiguedad_anios,
+    validate_antiguedad_meses,
+    validate_numero_tutor,
+    validate_fecha_nacimiento,
+    validate_fecha_estudio,
+    validate_status,
+    validate_fuente_empleo,
+    validate_otras_fuentes_ingreso,
+    ESTADO_CIVIL_CATALOG,
+    TRIESTADO_CATALOG,
+    VIVIENDA_CATALOG,
+    NIVEL_ESTUDIOS_CATALOG,
+    COMO_OBTUVO_SILLA_CATALOG,
+    ESTADOS_INEGI,
+    ESTADOS_INEGI_NOMBRES,
+    NUM_HIJOS_MAX,
+)
 
 router = APIRouter()
-ESTADO_CIVIL_CATALOG = {"SOLTERO", "CASADO", "VIUDO", "DIVORCIADO", "UNION_LIBRE"}
-TRIESTADO_CATALOG = frozenset({"SI", "NO"})
-VIVIENDA_CATALOG = {"PROPIA", "RENTADA", "PRESTADA", "FAMILIAR", "INFORMAL", "OTRA"}
-NIVEL_ESTUDIOS_CATALOG = frozenset({"NINGUNO", "PRIMARIA", "SECUNDARIA", "BACHILLERATO", "LICENCIATURA", "MAESTRIA", "DOCTORADO", "TECNICO"})
-COMO_OBTUVO_SILLA_CATALOG = frozenset({"COMPRA", "DONACION"})
-ESTADOS_INEGI = {
-    "01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32"
-}
-ESTADOS_INEGI_NOMBRES = {
-    "01": "AGUASCALIENTES", "02": "BAJA CALIFORNIA", "03": "BAJA CALIFORNIA SUR", "04": "CAMPECHE",
-    "05": "COAHUILA", "06": "COLIMA", "07": "CHIAPAS", "08": "CHIHUAHUA", "09": "CIUDAD DE MEXICO",
-    "10": "DURANGO", "11": "GUANAJUATO", "12": "GUERRERO", "13": "HIDALGO", "14": "JALISCO",
-    "15": "ESTADO DE MEXICO", "16": "MICHOACAN", "17": "MORELOS", "18": "NAYARIT", "19": "NUEVO LEON",
-    "20": "OAXACA", "21": "PUEBLA", "22": "QUERETARO", "23": "QUINTANA ROO", "24": "SAN LUIS POTOSI",
-    "25": "SINALOA", "26": "SONORA", "27": "TABASCO", "28": "TAMAULIPAS", "29": "TLAXCALA",
-    "30": "VERACRUZ", "31": "YUCATAN", "32": "ZACATECAS",
-}
 
 
 # ---------------------------------------------------------------------------
@@ -61,123 +78,81 @@ class BeneficiarioIn(BaseModel):
     telefonos: str
     email: Optional[str] = None
 
+    @field_validator("fecha_nacimiento")
+    @classmethod
+    def _fecha_nacimiento_valida(cls, v: str) -> str:
+        return validate_fecha_nacimiento(v)
+
     @field_validator("telefonos")
     @classmethod
-    def telefonos_valido(cls, v: str) -> str:
-        telefono = re.sub(r"\D", "", v or "")
-        if not re.fullmatch(r"^[0-9]{10}$", telefono):
-            raise ValueError("El teléfono debe contener exactamente 10 dígitos numéricos")
-        return telefono
+    def _telefonos_valido(cls, v: str) -> str:
+        return validate_telefono(v)
 
     @field_validator("estado_codigo")
     @classmethod
-    def estado_codigo_valido(cls, v: str) -> str:
-        code = normalize_text(v)
-        if code not in ESTADOS_INEGI:
-            raise ValueError("estado_codigo fuera de catálogo INEGI")
-        return code
+    def _estado_codigo_valido(cls, v: str) -> str:
+        return validate_estado_codigo(v)
 
     @field_validator("sexo")
     @classmethod
-    def sexo_valido(cls, v: str) -> str:
-        sexo = normalize_text(v)
-        if sexo not in {"M", "F", "NE"}:
-            raise ValueError("sexo debe ser M, F o NE")
-        return sexo
+    def _sexo_valido(cls, v: str) -> str:
+        return validate_sexo(v)
 
     @field_validator("nombres", "apellido_paterno", "apellido_materno",
                       "diagnostico", "calle", "colonia", "ciudad", mode="before")
     @classmethod
-    def normalizar_textos_principales(cls, v: Optional[str]) -> Optional[str]:
+    def _normalizar_textos_principales(cls, v: Optional[str]) -> Optional[str]:
         return normalize_text(v)
 
     @field_validator("nombres")
     @classmethod
-    def validar_nombres(cls, v: str) -> str:
-        if len(v) < 2 or len(v) > 60:
-            raise ValueError("nombres debe tener entre 2 y 60 caracteres")
-        if not re.fullmatch(r"^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ. ]+$", v):
-            raise ValueError("nombres contiene caracteres no permitidos")
-        return v
+    def _validar_nombres(cls, v: str) -> str:
+        return validate_nombre(v)
 
     @field_validator("apellido_paterno")
     @classmethod
-    def validar_apellido_paterno(cls, v: str) -> str:
-        if len(v) < 2 or len(v) > 40:
-            raise ValueError("apellido_paterno debe tener entre 2 y 40 caracteres")
-        if not re.fullmatch(r"^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ. ]+$", v):
-            raise ValueError("apellido_paterno contiene caracteres no permitidos")
-        return v
+    def _validar_apellido_paterno(cls, v: str) -> str:
+        return validate_apellido(v, "apellido_paterno")
 
     @field_validator("apellido_materno")
     @classmethod
-    def validar_apellido_materno(cls, v: str) -> str:
-        if len(v) < 2 or len(v) > 40:
-            raise ValueError("apellido_materno debe tener entre 2 y 40 caracteres")
-        if not re.fullmatch(r"^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ. ]+$", v):
-            raise ValueError("apellido_materno contiene caracteres no permitidos")
-        return v
+    def _validar_apellido_materno(cls, v: str) -> str:
+        return validate_apellido(v, "apellido_materno")
 
     @field_validator("diagnostico")
     @classmethod
-    def diagnostico_valido(cls, v: str) -> str:
-        if len(v) < 3 or len(v) > 160:
-            raise ValueError("diagnostico debe tener entre 3 y 160 caracteres")
-        if not re.fullmatch(r"^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9\s\-().\/,]+$", v):
-            raise ValueError("diagnostico contiene caracteres no permitidos")
-        return v
+    def _diagnostico_valido(cls, v: str) -> str:
+        return validate_diagnostico(v)
 
     @field_validator("calle")
     @classmethod
-    def calle_valida(cls, v: str) -> str:
-        if len(v) < 3 or len(v) > 120:
-            raise ValueError("calle debe tener entre 3 y 120 caracteres")
-        if not re.fullmatch(r"^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9.\- ]+$", v):
-            raise ValueError("calle contiene caracteres no permitidos")
-        return v
+    def _calle_valida(cls, v: str) -> str:
+        return validate_calle(v)
 
     @field_validator("colonia")
     @classmethod
-    def colonia_valida(cls, v: str) -> str:
-        if len(v) < 2 or len(v) > 120:
-            raise ValueError("colonia debe tener entre 2 y 120 caracteres")
-        if not re.fullmatch(r"^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9.\- ]+$", v):
-            raise ValueError("colonia contiene caracteres no permitidos")
-        return v
+    def _colonia_valida(cls, v: str) -> str:
+        return validate_colonia(v)
 
     @field_validator("ciudad")
     @classmethod
-    def ciudad_valida(cls, v: str) -> str:
-        if len(v) < 2 or len(v) > 80:
-            raise ValueError("ciudad debe tener entre 2 y 80 caracteres")
-        return v
+    def _ciudad_valida(cls, v: str) -> str:
+        return validate_ciudad(v)
 
     @field_validator("num_ext", "num_int", mode="before")
     @classmethod
-    def validar_numero_domicilio(cls, v: Optional[str]) -> Optional[str]:
-        value = normalize_text(v)
-        if value is None:
-            return None
-        if not re.fullmatch(r"^[A-Z0-9\-/]+$", value):
-            raise ValueError("solo se permiten letras, números, guion y diagonal")
-        if len(value) > 10:
-            raise ValueError("longitud máxima 10 caracteres")
-        return value
+    def _validar_numero_domicilio(cls, v: Optional[str]) -> Optional[str]:
+        return validate_numero_domicilio(v)
 
     @field_validator("estado_nombre", mode="before")
     @classmethod
-    def normalizar_estado_nombre(cls, v: Optional[str]) -> Optional[str]:
+    def _normalizar_estado_nombre(cls, v: Optional[str]) -> Optional[str]:
         return normalize_text(v)
 
     @field_validator("estado_nombre")
     @classmethod
-    def estado_nombre_consistente(cls, v: Optional[str], info) -> Optional[str]:
-        if not v:
-            return v
-        code = info.data.get("estado_codigo")
-        if code and ESTADOS_INEGI_NOMBRES.get(code) != v:
-            raise ValueError("estado_nombre no corresponde a estado_codigo")
-        return v
+    def _estado_nombre_consistente(cls, v: Optional[str], info) -> Optional[str]:
+        return validate_estado_nombre(v, info.data.get("estado_codigo"))
 
 
 class TutorIn(BaseModel):
@@ -204,132 +179,90 @@ class TutorIn(BaseModel):
 
     @field_validator("numero_tutor")
     @classmethod
-    def numero_tutor_valido(cls, v: int) -> int:
-        if v not in (1, 2):
-            raise ValueError("numero_tutor debe ser 1 o 2")
-        return v
+    def _numero_tutor_valido(cls, v: int) -> int:
+        return validate_numero_tutor(v)
 
     @field_validator("estado_civil")
     @classmethod
-    def estado_civil_valido(cls, v: Optional[str]) -> Optional[str]:
+    def _estado_civil_valido(cls, v: Optional[str]) -> Optional[str]:
         if v in (None, ""):
             return None
         vv = normalize_text(v)
-        if vv not in ESTADO_CIVIL_CATALOG:
-            raise ValueError("estado_civil fuera de catálogo")
-        return vv
+        return validate_catalog(vv, ESTADO_CIVIL_CATALOG, "estado_civil")
 
     @field_validator("vivienda")
     @classmethod
-    def vivienda_valida(cls, v: Optional[str]) -> Optional[str]:
+    def _vivienda_valida(cls, v: Optional[str]) -> Optional[str]:
         if v in (None, ""):
             return None
         vv = normalize_text(v)
-        if vv not in VIVIENDA_CATALOG:
-            raise ValueError("vivienda fuera de catálogo")
-        return vv
+        return validate_catalog(vv, VIVIENDA_CATALOG, "vivienda")
 
     @field_validator("edad")
     @classmethod
-    def edad_valida(cls, v: Optional[int]) -> Optional[int]:
-        if v is not None and v < 0:
-            raise ValueError("edad del tutor no puede ser negativa")
-        return v
+    def _edad_valida(cls, v: Optional[int]) -> Optional[int]:
+        return validate_edad(v)
 
     @field_validator("nombres", "apellido_paterno", "apellido_materno",
                       "nivel_estudios", "fuente_empleo", "otras_fuentes_ingreso", mode="before")
     @classmethod
-    def normalizar_textos_tutor(cls, v: Optional[str]) -> Optional[str]:
+    def _normalizar_textos_tutor(cls, v: Optional[str]) -> Optional[str]:
         return normalize_text(v)
 
     @field_validator("nombres")
     @classmethod
-    def validar_nombres_tutor(cls, v: str) -> str:
-        if len(v) < 2 or len(v) > 60:
-            raise ValueError("nombres del tutor debe tener entre 2 y 60 caracteres")
-        if not re.fullmatch(r"^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ. ]+$", v):
-            raise ValueError("nombres del tutor contiene caracteres no permitidos")
-        return v
+    def _validar_nombres_tutor(cls, v: str) -> str:
+        return validate_nombre(v)
 
     @field_validator("apellido_paterno")
     @classmethod
-    def validar_apellido_paterno_tutor(cls, v: str) -> str:
-        if len(v) < 2 or len(v) > 40:
-            raise ValueError("apellido_paterno del tutor debe tener entre 2 y 40 caracteres")
-        if not re.fullmatch(r"^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ. ]+$", v):
-            raise ValueError("apellido_paterno del tutor contiene caracteres no permitidos")
-        return v
+    def _validar_apellido_paterno_tutor(cls, v: str) -> str:
+        return validate_apellido(v, "apellido_paterno")
 
     @field_validator("apellido_materno")
     @classmethod
-    def validar_apellido_materno_tutor(cls, v: str) -> str:
-        if len(v) < 2 or len(v) > 40:
-            raise ValueError("apellido_materno del tutor debe tener entre 2 y 40 caracteres")
-        if not re.fullmatch(r"^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ. ]+$", v):
-            raise ValueError("apellido_materno del tutor contiene caracteres no permitidos")
-        return v
+    def _validar_apellido_materno_tutor(cls, v: str) -> str:
+        return validate_apellido(v, "apellido_materno")
 
     @field_validator("fuente_empleo")
     @classmethod
-    def fuente_empleo_valida(cls, v: Optional[str]) -> Optional[str]:
-        if v is None:
-            return None
-        if len(v) > 80:
-            raise ValueError("fuente_empleo debe tener máximo 80 caracteres")
-        if not re.fullmatch(r"^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9\s\-().\/,]+$", v):
-            raise ValueError("fuente_empleo contiene caracteres no permitidos")
-        return v
+    def _fuente_empleo_valida(cls, v: Optional[str]) -> Optional[str]:
+        return validate_fuente_empleo(v)
 
     @field_validator("otras_fuentes_ingreso")
     @classmethod
-    def otras_fuentes_ingreso_valida(cls, v: Optional[str]) -> Optional[str]:
-        if v is None:
-            return None
-        if len(v) > 100:
-            raise ValueError("otras_fuentes_ingreso debe tener máximo 100 caracteres")
-        if not re.fullmatch(r"^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9\s\-().\/,]+$", v):
-            raise ValueError("otras_fuentes_ingreso contiene caracteres no permitidos")
-        return v
+    def _otras_fuentes_ingreso_valida(cls, v: Optional[str]) -> Optional[str]:
+        return validate_otras_fuentes_ingreso(v)
 
     @field_validator("nivel_estudios")
     @classmethod
-    def nivel_estudios_valido(cls, v: Optional[str]) -> Optional[str]:
+    def _nivel_estudios_valido(cls, v: Optional[str]) -> Optional[str]:
         if v is None:
             return None
-        if v not in NIVEL_ESTUDIOS_CATALOG:
-            raise ValueError("nivel_estudios fuera de catálogo")
-        return v
+        return validate_catalog(v, NIVEL_ESTUDIOS_CATALOG, "nivel_estudios")
 
     @field_validator("ingreso_mensual")
     @classmethod
-    def ingreso_mensual_valido(cls, v: Optional[int]) -> Optional[int]:
-        if v is not None and (v < 0 or v > 9999999):
-            raise ValueError("monto fuera de rango permitido")
-        return v
+    def _ingreso_mensual_valido(cls, v: Optional[int]) -> Optional[int]:
+        return validate_ingreso_mensual(v)
 
     @field_validator("monto_otras_fuentes")
     @classmethod
-    def monto_otras_fuentes_valido(cls, v: Optional[float]) -> Optional[float]:
-        if v is not None and (v < 0 or v > 999999):
-            raise ValueError("monto fuera de rango permitido")
-        return v
+    def _monto_otras_fuentes_valido(cls, v: Optional[float]) -> Optional[float]:
+        return validate_monto_otras_fuentes(v)
 
     @field_validator("num_hijos")
     @classmethod
-    def num_hijos_valido(cls, v: Optional[int]) -> Optional[int]:
-        if v is not None and (v < 0 or v > 30):
-            raise ValueError("num_hijos debe estar entre 0 y 30")
-        return v
+    def _num_hijos_valido(cls, v: Optional[int]) -> Optional[int]:
+        return validate_num_hijos(v)
 
     @field_validator("imss_estatus", "infonavit_estatus")
     @classmethod
-    def triestado_valido(cls, v: Optional[str]) -> Optional[str]:
+    def _triestado_valido(cls, v: Optional[str]) -> Optional[str]:
         if v is None:
             return None
         vv = normalize_text(v)
-        if vv not in TRIESTADO_CATALOG:
-            raise ValueError("el estatus debe ser SI o NO")
-        return vv
+        return validate_catalog(vv, TRIESTADO_CATALOG, "estatus")
 
     @model_validator(mode="before")
     @classmethod
@@ -347,17 +280,13 @@ class TutorIn(BaseModel):
 
     @field_validator("antiguedad_anios")
     @classmethod
-    def antiguedad_anios_valida(cls, v: Optional[int]) -> Optional[int]:
-        if v is not None and (v < 0 or v > 50):
-            raise ValueError("antiguedad_anios debe estar entre 0 y 50")
-        return v
+    def _antiguedad_anios_valida(cls, v: Optional[int]) -> Optional[int]:
+        return validate_antiguedad_anios(v)
 
     @field_validator("antiguedad_meses_extra")
     @classmethod
-    def antiguedad_meses_valida(cls, v: Optional[int]) -> Optional[int]:
-        if v is not None and (v < 0 or v > 11):
-            raise ValueError("antiguedad_meses_extra debe estar entre 0 y 11")
-        return v
+    def _antiguedad_meses_valida(cls, v: Optional[int]) -> Optional[int]:
+        return validate_antiguedad_meses(v)
 
 
 class EstudioIn(BaseModel):
@@ -370,14 +299,17 @@ class EstudioIn(BaseModel):
 
     @field_validator("status")
     @classmethod
-    def status_valido(cls, v: str) -> str:
-        if v not in ("borrador", "completo"):
-            raise ValueError("status debe ser 'borrador' o 'completo'")
-        return v
+    def _status_valido(cls, v: str) -> str:
+        return validate_status(v)
+
+    @field_validator("fecha_estudio")
+    @classmethod
+    def _fecha_estudio_valida(cls, v: str) -> str:
+        return validate_fecha_estudio(v)
 
     @field_validator("como_obtuvo_silla", "ciudad_registro", mode="before")
     @classmethod
-    def normalizar_textos_estudio(cls, v: Optional[str]) -> Optional[str]:
+    def _normalizar_textos_estudio(cls, v: Optional[str]) -> Optional[str]:
         return normalize_text(v)
 
 
@@ -414,10 +346,17 @@ class EstudioUpdateRequest(BaseModel):
 
     @field_validator("status")
     @classmethod
-    def status_valido(cls, v: Optional[str]) -> Optional[str]:
-        if v is not None and v not in ("borrador", "completo"):
-            raise ValueError("status debe ser 'borrador' o 'completo'")
-        return v
+    def _status_valido(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        return validate_status(v)
+
+    @model_validator(mode="after")
+    def _validar_fecha_estudio_completo(self):
+        if self.status == "completo":
+            if not self.fecha_estudio:
+                raise ValueError("fecha_estudio es obligatorio cuando status es completo")
+        return self
 
 
 class EstudioUpdateResponse(BaseModel):
@@ -636,6 +575,99 @@ def _validar_tutores(tutores: list[TutorIn]) -> None:
     for num in numeros:
         if num not in (1, 2):
             raise HTTPException(status_code=400, detail=f"numero_tutor inválido: {num}")
+
+    # --- Validate Tutor 1 required fields ---
+    tutor1 = next((t for t in tutores if t.numero_tutor == 1), None)
+    if tutor1 is None:
+        return  # defensive: no Tutor 1 in list
+
+    # Static required fields (must not be None or empty string)
+    missing: list[str] = []
+    if tutor1.edad is None:
+        missing.append("edad")
+    if not tutor1.nivel_estudios:
+        missing.append("nivel_estudios")
+    if not tutor1.estado_civil:
+        missing.append("estado_civil")
+    if not tutor1.vivienda:
+        missing.append("vivienda")
+    if not tutor1.imss_estatus:
+        missing.append("imss_estatus")
+    if not tutor1.infonavit_estatus:
+        missing.append("infonavit_estatus")
+
+    if missing:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Campos obligatorios de Tutor 1 faltantes: {', '.join(missing)}",
+        )
+
+    # Conditional required fields
+    missing_cond: list[str] = []
+
+    if not tutor1.sin_empleo:
+        if not tutor1.fuente_empleo:
+            missing_cond.append("fuente_empleo")
+        if tutor1.ingreso_mensual is None:
+            missing_cond.append("ingreso_mensual")
+
+        if tutor1.antiguedad_aplica:
+            if tutor1.antiguedad_anios is None:
+                missing_cond.append("antiguedad_anios")
+
+    if tutor1.otras_fuentes_aplica:
+        if not tutor1.otras_fuentes_ingreso:
+            missing_cond.append("otras_fuentes_ingreso")
+        if tutor1.monto_otras_fuentes is None:
+            missing_cond.append("monto_otras_fuentes")
+
+    if missing_cond:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Campos condicionales de Tutor 1 faltantes: {', '.join(missing_cond)}",
+        )
+
+    # Tutor 2 obligatoriedad (si existe)
+    tutor2 = next((t for t in tutores if t.numero_tutor == 2), None)
+    if tutor2:
+        static_required_t2 = {
+            "edad": tutor2.edad,
+            "nivel_estudios": tutor2.nivel_estudios,
+            "estado_civil": tutor2.estado_civil,
+            "vivienda": tutor2.vivienda,
+            "imss_estatus": tutor2.imss_estatus,
+            "infonavit_estatus": tutor2.infonavit_estatus,
+        }
+        missing_t2 = [k for k, v in static_required_t2.items() if v is None or v == ""]
+        if missing_t2:
+            raise HTTPException(
+                status_code=422,
+                detail=f"Tutor 2: campos obligatorios faltantes: {', '.join(missing_t2)}"
+            )
+
+        conditional_errors_t2 = []
+
+        if not tutor2.sin_empleo:
+            if not tutor2.fuente_empleo or not tutor2.fuente_empleo.strip():
+                conditional_errors_t2.append("fuente_empleo")
+            if tutor2.ingreso_mensual is None:
+                conditional_errors_t2.append("ingreso_mensual")
+
+        if not tutor2.sin_empleo and tutor2.antiguedad_aplica:
+            if tutor2.antiguedad_anios is None:
+                conditional_errors_t2.append("antiguedad_anios")
+
+        if tutor2.otras_fuentes_aplica:
+            if not tutor2.otras_fuentes_ingreso or not tutor2.otras_fuentes_ingreso.strip():
+                conditional_errors_t2.append("otras_fuentes_ingreso")
+            if tutor2.monto_otras_fuentes is None:
+                conditional_errors_t2.append("monto_otras_fuentes")
+
+        if conditional_errors_t2:
+            raise HTTPException(
+                status_code=422,
+                detail=f"Tutor 2: campos condicionales obligatorios faltantes: {', '.join(conditional_errors_t2)}"
+            )
 
 
 def _insertar_tutores(db: _DBAdapter, beneficiario_id: int, tutores: list[TutorIn]) -> None:
