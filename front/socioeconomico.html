@@ -134,7 +134,9 @@
                 maxlength="60"
                 pattern="^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ. ]+$"
                 required
+                aria-describedby="nombres-error"
               />
+              <p class="field-error hidden text-red-600 text-xs mt-1" id="nombres-error" data-error-for="nombres" role="alert"></p>
             </div>
             <!-- Apellido Paterno -->
             <div class="space-y-2">
@@ -147,7 +149,9 @@
                 maxlength="40"
                 pattern="^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ. ]+$"
                 required
+                aria-describedby="apellido_paterno-error"
               />
+              <p class="field-error hidden text-red-600 text-xs mt-1" id="apellido_paterno-error" data-error-for="apellido_paterno" role="alert"></p>
             </div>
             <!-- Apellido Materno -->
             <div class="space-y-2">
@@ -160,7 +164,9 @@
                 maxlength="40"
                 pattern="^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ. ]+$"
                 required
+                aria-describedby="apellido_materno-error"
               />
+              <p class="field-error hidden text-red-600 text-xs mt-1" id="apellido_materno-error" data-error-for="apellido_materno" role="alert"></p>
             </div>
             <div class="space-y-2">
               <label class="block text-sm font-semibold text-slate-700"
@@ -201,11 +207,14 @@
             </div>
             <div class="space-y-2">
               <label class="block text-sm font-semibold text-slate-700">Número exterior</label>
-              <input class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary" name="num_ext" type="text" pattern="[A-Za-z0-9\-\/]{1,10}" maxlength="10" required />
+              <input class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary" name="num_ext" type="text" pattern="[A-Za-z0-9\-\/]{1,10}" maxlength="10" />
             </div>
             <div class="space-y-2">
-              <label class="block text-sm font-semibold text-slate-700">Número interior</label>
-              <input class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary" name="num_int" type="text" pattern="[A-Za-z0-9\-\/]{0,10}" maxlength="10" />
+              <label class="inline-flex items-center gap-2 text-sm font-medium text-slate-700">
+                <input class="text-primary h-4 w-4" name="tiene_num_interior" type="checkbox" />
+                <span>Agregar número interior</span>
+              </label>
+              <input class="w-full border-slate-300 bg-slate-100 text-slate-400 cursor-not-allowed shadow-sm focus:border-primary focus:ring-primary" name="num_int" type="text" pattern="[A-Za-z0-9\-\/]{0,10}" maxlength="10" disabled />
             </div>
             <div class="space-y-2">
               <label class="block text-sm font-semibold text-slate-700"
@@ -249,7 +258,10 @@
                 minlength="10"
                 pattern="[0-9]{10}"
                 autocomplete="off"
+                required
+                aria-describedby="telefonos-error"
               />
+              <p class="field-error hidden text-red-600 text-xs mt-1" id="telefonos-error" data-error-for="telefonos" role="alert"></p>
             </div>
           </div>
         </section>
@@ -335,6 +347,7 @@
                       type="number"
                       min="0"
                       max="99"
+                      required
                     />
                   </div>
                   <div>
@@ -344,6 +357,7 @@
                     <select
                       class="w-full mt-1 border-slate-300"
                       name="tutor1_nivel_estudios"
+                      required
                     >
                       <option value="">Selecciona una opción</option>
                       <option value="NINGUNO">Sin estudios</option>
@@ -365,6 +379,7 @@
                   <select
                       class="w-full mt-1 border-slate-300"
                       name="tutor1_estado_civil"
+                      required
                     >
                       <option value="">Selecciona una opción</option>
                       <option value="SOLTERO">Soltero / Soltera</option>
@@ -383,6 +398,7 @@
                       type="number"
                       min="0"
                       max="20"
+                      required
                     />
                   </div>
                 </div>
@@ -393,6 +409,7 @@
                   <select
                     class="w-full mt-1 border-slate-300"
                     name="tutor1_vivienda"
+                    required
                   >
                     <option value="">Selecciona una opción</option>
                     <option value="PROPIA">Propia</option>
@@ -453,7 +470,7 @@
                   <legend class="text-xs font-bold text-slate-500 uppercase">IMSS</legend>
                   <div class="flex gap-4 mt-1">
                     <label class="inline-flex items-center gap-1">
-                      <input type="radio" name="tutor1_imss" value="SI" class="text-primary" /> Sí
+                      <input type="radio" name="tutor1_imss" value="SI" class="text-primary" required /> Sí
                     </label>
                     <label class="inline-flex items-center gap-1">
                       <input type="radio" name="tutor1_imss" value="NO" class="text-primary" /> No
@@ -464,7 +481,7 @@
                   <legend class="text-xs font-bold text-slate-500 uppercase">INFONAVIT</legend>
                   <div class="flex gap-4 mt-1">
                     <label class="inline-flex items-center gap-1">
-                      <input type="radio" name="tutor1_infonavit" value="SI" class="text-primary" /> Sí
+                      <input type="radio" name="tutor1_infonavit" value="SI" class="text-primary" required /> Sí
                     </label>
                     <label class="inline-flex items-center gap-1">
                       <input type="radio" name="tutor1_infonavit" value="NO" class="text-primary" /> No
@@ -474,14 +491,20 @@
               </div>
             </div>
             <!-- Tutor 2 -->
-            <div
-              class="bg-slate-50 p-6 rounded-lg border border-slate-200 space-y-4"
-            >
-              <h3
-                class="font-bold text-slate-800 border-b border-slate-200 pb-2"
+            <div id="tutor2-section">
+              <div
+                class="bg-slate-50 p-6 rounded-lg border border-slate-200 space-y-4"
               >
-                Tutor 2
+              <h3
+                class="font-bold text-slate-800 border-b border-slate-200 pb-2 flex items-center gap-3"
+              >
+                <span>Tutor 2</span>
+                <label class="inline-flex items-center gap-2 text-sm font-medium text-slate-700">
+                  <input class="text-primary h-4 w-4" name="agregar_tutor2" type="checkbox" />
+                  <span>Agregar</span>
+                </label>
               </h3>
+              <div id="tutor2-content" class="space-y-4 opacity-50 transition-opacity duration-200">
               <div class="space-y-3">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
@@ -669,6 +692,8 @@
                 </fieldset>
               </div>
             </div>
+            </div>
+            </div>
           </div>
         </section>
         <!-- Otros y Cierre movidos a gestion.html -->
@@ -723,6 +748,7 @@
         </footer>
       </form>
     </main>
+    <script src="assets/js/validations.js"></script>
     <script data-purpose="form-logic">
       const NIVEL_ESTUDIOS_CATALOG = [
         "NINGUNO", "PRIMARIA", "SECUNDARIA", "BACHILLERATO",
@@ -746,151 +772,20 @@
         ["01","AGUASCALIENTES"],["02","BAJA CALIFORNIA"],["03","BAJA CALIFORNIA SUR"],["04","CAMPECHE"],["05","COAHUILA"],["06","COLIMA"],["07","CHIAPAS"],["08","CHIHUAHUA"],["09","CIUDAD DE MEXICO"],["10","DURANGO"],["11","GUANAJUATO"],["12","GUERRERO"],["13","HIDALGO"],["14","JALISCO"],["15","ESTADO DE MEXICO"],["16","MICHOACAN"],["17","MORELOS"],["18","NAYARIT"],["19","NUEVO LEON"],["20","OAXACA"],["21","PUEBLA"],["22","QUERETARO"],["23","QUINTANA ROO"],["24","SAN LUIS POTOSI"],["25","SINALOA"],["26","SONORA"],["27","TABASCO"],["28","TAMAULIPAS"],["29","TLAXCALA"],["30","VERACRUZ"],["31","YUCATAN"],["32","ZACATECAS"]
       ];
 
-      function sanitizeMoneyInput(raw) {
-        if (raw == null) return "";
-        const cleaned = String(raw)
-          .replace(/,/g, "")
-          .replace(/[^\d.]/g, "");
-        const firstDotIndex = cleaned.indexOf(".");
-
-        if (firstDotIndex === -1) {
-          return cleaned;
-        }
-
-        const integerPart = cleaned.slice(0, firstDotIndex);
-        const decimalPart = cleaned.slice(firstDotIndex + 1).replace(/\./g, "");
-        return `${integerPart}.${decimalPart}`;
-      }
-
-      function formatMoneyDisplay(raw) {
-        const sanitized = sanitizeMoneyInput(raw);
-        if (!sanitized) return "";
-
-        const [integerPart, decimalPart] = sanitized.split(".");
-        const formattedInteger = integerPart.replace(
-          /\B(?=(\d{3})+(?!\d))/g,
-          ",",
-        );
-
-        if (decimalPart != null) {
-          return `${formattedInteger}.${decimalPart}`;
-        }
-
-        return formattedInteger;
-      }
-
-      function toMoneyNumberOrNull(raw) {
-        const sanitized = sanitizeMoneyInput(raw);
-        if (!sanitized || sanitized === ".") {
-          return null;
-        }
-
-        const numberValue = Number(sanitized);
-        return Number.isFinite(numberValue) ? numberValue : null;
-      }
-
-      // Integer-only variants for ingreso_mensual (RF-03)
-      function sanitizeIntegerInput(raw, maxDigits = null) {
-        if (raw == null) return "";
-        let cleaned = String(raw).replace(/,/g, "").replace(/\D/g, "");
-        if (maxDigits != null && cleaned.length > maxDigits) {
-          cleaned = cleaned.slice(0, maxDigits);
-        }
-        return cleaned;
-      }
-
-      function formatIntegerDisplay(raw, maxDigits = null) {
-        const sanitized = sanitizeIntegerInput(raw, maxDigits);
-        if (!sanitized) return "";
-        return sanitized.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-      }
-
-      function toIntegerOrNull(raw) {
-        const sanitized = sanitizeIntegerInput(raw);
-        if (!sanitized) return null;
-        const numberValue = Number(sanitized);
-        return Number.isFinite(numberValue) ? numberValue : null;
-      }
-
-      function sanitizeTelefono(raw) {
-        return String(raw || "")
-          .replace(/\D/g, "")
-          .slice(0, 10);
-      }
-
-      function telefonoEsValido(raw) {
-        return /^[0-9]{10}$/.test(String(raw || "").trim());
-      }
-
-      function formatBackendErrorMessage(errData, fallbackMessage) {
-        const telefonoMsg =
-          "El teléfono debe contener exactamente 10 dígitos numéricos";
-
-        if (!errData) return fallbackMessage;
-
-        if (typeof errData.detail === "string" && errData.detail.trim()) {
-          return errData.detail;
-        }
-
-        if (Array.isArray(errData.detail)) {
-          const details = errData.detail;
-
-          const telefonoDetail = details.find(
-            (d) =>
-              Array.isArray(d?.loc) &&
-              d.loc.join(".").includes("beneficiario.telefonos"),
-          );
-
-          if (telefonoDetail) {
-            return telefonoDetail.msg || telefonoMsg;
-          }
-
-          const readableMessages = details
-            .map((d) => {
-              const path = Array.isArray(d?.loc) ? d.loc.slice(1).join(".") : "campo";
-              const msg = d?.msg || "valor inválido";
-              return `${path}: ${msg}`;
-            })
-            .filter(Boolean);
-
-          if (readableMessages.length > 0) {
-            return readableMessages.join(" | ");
-          }
-        }
-
-        return fallbackMessage;
-      }
-
       function setupTelefonoSanitization() {
         const telefonoInput = document.querySelector('[name="telefonos"]');
         if (!telefonoInput) return;
-
-        telefonoInput.addEventListener("input", () => {
-          telefonoInput.value = sanitizeTelefono(telefonoInput.value);
-        });
-
-        telefonoInput.value = sanitizeTelefono(telefonoInput.value);
+        SR_Validations.setupTelefonoField(telefonoInput);
       }
 
       function setupMonetaryFieldFormatting() {
-        const MAX_MONETARY_VALUE = 999999999999;
-
         MONETARY_FIELD_IDS.forEach((fieldName) => {
           const input = document.querySelector(`[name="${fieldName}"]`);
           if (!input) return;
-
-          input.addEventListener("input", () => {
-            let sanitized = sanitizeIntegerInput(input.value, 12);
-            if (sanitized) {
-              const num = parseInt(sanitized, 10);
-              if (num > MAX_MONETARY_VALUE) {
-                sanitized = String(MAX_MONETARY_VALUE);
-              }
-            }
-            input.value = sanitized ? sanitized.replace(/\B(?=(\d{3})+(?!\d))/g, ",") : "";
-          });
-
-          input.value = formatIntegerDisplay(input.value, 12);
+          const max = fieldName.includes("ingreso")
+            ? SR_Validations.LIMITS.INGRESO_MENSUAL_MAX
+            : SR_Validations.LIMITS.MONTO_OTRAS_FUENTES_MAX;
+          SR_Validations.setupMoneyField(input, max);
         });
       }
 
@@ -915,43 +810,33 @@
         names.forEach((name) => {
           const input = document.querySelector(`[name="${name}"]`);
           if (!input) return;
-          input.addEventListener("input", () => {
-            input.value = input.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s.]/g, "");
-          });
+          SR_Validations.setupNameField(input);
         });
       }
 
       function setupDiagnosticoValidation() {
         const input = document.querySelector('[name="diagnostico"]');
         if (!input) return;
-        input.addEventListener("input", () => {
-          input.value = input.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ0-9\s\-().\/,]/g, "");
-        });
+        SR_Validations.setupTextField(input, SR_Validations.DIAGNOSTICO_RE);
       }
 
       function setupCalleValidation() {
         const input = document.querySelector('[name="calle"]');
         if (!input) return;
-        input.addEventListener("input", () => {
-          input.value = input.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ0-9\s.\-]/g, "");
-        });
+        SR_Validations.setupTextField(input, SR_Validations.CALLE_RE);
       }
 
       function setupColoniaValidation() {
         const input = document.querySelector('[name="colonia"]');
         if (!input) return;
-        input.addEventListener("input", () => {
-          input.value = input.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ0-9\s.\-]/g, "");
-        });
+        SR_Validations.setupTextField(input, SR_Validations.COLONIA_RE);
       }
 
       function setupNumeroDomicilioValidation() {
         ["num_ext", "num_int"].forEach((name) => {
           const input = document.querySelector(`[name="${name}"]`);
           if (!input) return;
-          input.addEventListener("input", () => {
-            input.value = input.value.replace(/[^a-zA-Z0-9\-/]/g, "");
-          });
+          SR_Validations.setupTextField(input, SR_Validations.NUM_DOMICILIO_RE);
         });
       }
 
@@ -965,46 +850,128 @@
         fields.forEach((name) => {
           const input = document.querySelector(`[name="${name}"]`);
           if (!input) return;
-          input.addEventListener("input", () => {
-            input.value = input.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ0-9\s\-().\/,]/g, "");
-          });
+          SR_Validations.setupTextField(input, SR_Validations.DIAGNOSTICO_RE);
         });
       }
 
       function setupIntegerFieldLimits() {
         const limits = [
-          { name: "tutor1_edad", max: 99, maxDigits: 2 },
-          { name: "tutor2_edad", max: 99, maxDigits: 2 },
-          { name: "tutor1_num_hijos", max: 20, maxDigits: 2 },
-          { name: "tutor2_num_hijos", max: 20, maxDigits: 2 },
-          { name: "tutor1_antiguedad_anios", max: 50, maxDigits: 2 },
-          { name: "tutor2_antiguedad_anios", max: 50, maxDigits: 2 },
-          { name: "tutor1_antiguedad_meses_extra", max: 11, maxDigits: 2 },
-          { name: "tutor2_antiguedad_meses_extra", max: 11, maxDigits: 2 },
+          { name: "tutor1_edad", min: 0, max: 99 },
+          { name: "tutor2_edad", min: 0, max: 99 },
+          { name: "tutor1_num_hijos", min: 0, max: 30 },
+          { name: "tutor2_num_hijos", min: 0, max: 30 },
+          { name: "tutor1_antiguedad_anios", min: 0, max: 50 },
+          { name: "tutor2_antiguedad_anios", min: 0, max: 50 },
+          { name: "tutor1_antiguedad_meses_extra", min: 0, max: 11 },
+          { name: "tutor2_antiguedad_meses_extra", min: 0, max: 11 },
         ];
 
-        limits.forEach(({ name, max, maxDigits }) => {
+        limits.forEach(({ name, min, max }) => {
           const input = document.querySelector(`[name="${name}"]`);
           if (!input) return;
-
-          input.addEventListener("keydown", (e) => {
-            if (e.key === ".") {
-              e.preventDefault();
-            }
-          });
-
-          input.addEventListener("input", () => {
-            let val = input.value.replace(/\D/g, "");
-            if (val.length > maxDigits) {
-              val = val.slice(0, maxDigits);
-            }
-            if (val !== "") {
-              const num = parseInt(val, 10);
-              if (num > max) val = String(max);
-            }
-            input.value = val;
-          });
+          SR_Validations.setupIntegerField(input, min, max);
         });
+      }
+
+      function setupNumInteriorConditional() {
+        const checkbox = document.querySelector('[name="tiene_num_interior"]');
+        const input = document.querySelector('[name="num_int"]');
+        if (!checkbox || !input) return;
+
+        const apply = () => {
+          if (checkbox.checked) {
+            SR_Validations.setFieldDisabled(input, false);
+            input.required = true;
+          } else {
+            SR_Validations.setFieldDisabled(input, true);
+            input.required = false;
+            input.value = "";
+          }
+        };
+
+        checkbox.addEventListener("change", apply);
+        apply();
+      }
+
+      function setupTutor2Toggle() {
+        const checkbox = document.querySelector('[name="agregar_tutor2"]');
+        const section = document.getElementById("tutor2-section");
+        const content = document.getElementById("tutor2-content");
+        if (!checkbox || !section || !content) return;
+
+        const apply = () => {
+          if (checkbox.checked) {
+            content.classList.remove("opacity-50");
+            content.classList.add("opacity-100");
+            // Habilitar todos los campos del contenido
+            content.querySelectorAll("input, select, textarea").forEach(el => {
+              if (el.name !== "agregar_tutor2") {
+                SR_Validations.setFieldDisabled(el, false);
+              }
+            });
+            // Agregar required a campos estáticos
+            const requiredFields = [
+              "tutor2_nombres", "tutor2_apellido_paterno", "tutor2_apellido_materno",
+              "tutor2_edad", "tutor2_nivel_estudios", "tutor2_estado_civil",
+              "tutor2_num_hijos", "tutor2_vivienda"
+            ];
+            requiredFields.forEach(name => {
+              const el = section.querySelector(`[name="${name}"]`);
+              if (el) el.required = true;
+            });
+            const imssRadio = section.querySelector('[name="tutor2_imss"][value="SI"]');
+            const infonavitRadio = section.querySelector('[name="tutor2_infonavit"][value="SI"]');
+            if (imssRadio) imssRadio.required = true;
+            if (infonavitRadio) infonavitRadio.required = true;
+            setupTutorConditionalFields();
+          } else {
+            content.classList.remove("opacity-100");
+            content.classList.add("opacity-50");
+            // Deshabilitar TODOS los campos del contenido
+            content.querySelectorAll("input, select, textarea").forEach(el => {
+              if (el.name !== "agregar_tutor2") {
+                SR_Validations.setFieldDisabled(el, true);
+                el.required = false;
+              }
+            });
+            // Limpiar valores
+            section.querySelectorAll("input[type='text'], input[type='number'], input[type='tel']").forEach(el => {
+              el.value = "";
+            });
+            section.querySelectorAll("select").forEach(el => {
+              el.selectedIndex = 0;
+            });
+            section.querySelectorAll("input[type='radio']").forEach(el => {
+              el.checked = false;
+            });
+            section.querySelectorAll("input[type='checkbox']").forEach(el => {
+              if (el.name !== "agregar_tutor2") el.checked = false;
+            });
+            // Safety net: explicitly disable conditional fields for Tutor 2
+            const t2Fuente = content.querySelector('[name="tutor2_fuente_empleo"]');
+            const t2Ingreso = content.querySelector('[name="tutor2_ingreso_mensual"]');
+            const t2AntigAnios = content.querySelector('[name="tutor2_antiguedad_anios"]');
+            const t2AntigMeses = content.querySelector('[name="tutor2_antiguedad_meses_extra"]');
+            if (t2Fuente) SR_Validations.setFieldDisabled(t2Fuente, true);
+            if (t2Ingreso) SR_Validations.setFieldDisabled(t2Ingreso, true);
+            if (t2AntigAnios) SR_Validations.setFieldDisabled(t2AntigAnios, true);
+            if (t2AntigMeses) SR_Validations.setFieldDisabled(t2AntigMeses, true);
+          }
+        };
+
+        checkbox.addEventListener("change", apply);
+        apply();
+        // Ensure conditional fields are disabled on initial load if checkbox is unchecked
+        if (!checkbox.checked) {
+          const t2Fuente = content.querySelector('[name="tutor2_fuente_empleo"]');
+          const t2Ingreso = content.querySelector('[name="tutor2_ingreso_mensual"]');
+          const t2AntigAnios = content.querySelector('[name="tutor2_antiguedad_anios"]');
+          const t2AntigMeses = content.querySelector('[name="tutor2_antiguedad_meses_extra"]');
+          if (t2Fuente) SR_Validations.setFieldDisabled(t2Fuente, true);
+          if (t2Ingreso) SR_Validations.setFieldDisabled(t2Ingreso, true);
+          if (t2AntigAnios) SR_Validations.setFieldDisabled(t2AntigAnios, true);
+          if (t2AntigMeses) SR_Validations.setFieldDisabled(t2AntigMeses, true);
+        }
       }
 
       function setupTutorConditionalFields() {
@@ -1022,19 +989,19 @@
           const applySinEmpleo = () => {
             const checked = !!sinEmpleo?.checked;
             if (fuente) {
-              fuente.disabled = checked;
+              SR_Validations.setFieldDisabled(fuente, checked);
               if (checked) fuente.value = "";
             }
             if (ingreso) {
-              ingreso.disabled = checked;
+              SR_Validations.setFieldDisabled(ingreso, checked);
               if (checked) ingreso.value = "0";
             }
             if (antiguedadAnios) {
-              antiguedadAnios.disabled = checked || !!antiguedadNoAplica?.checked;
+              SR_Validations.setFieldDisabled(antiguedadAnios, checked || !!antiguedadNoAplica?.checked);
               if (checked) antiguedadAnios.value = "";
             }
             if (antiguedadMeses) {
-              antiguedadMeses.disabled = checked || !!antiguedadNoAplica?.checked;
+              SR_Validations.setFieldDisabled(antiguedadMeses, checked || !!antiguedadNoAplica?.checked);
               if (checked) antiguedadMeses.value = "";
             }
           };
@@ -1043,11 +1010,11 @@
             const checked = !!antiguedadNoAplica?.checked;
             const sinEmpleoChecked = !!sinEmpleo?.checked;
             if (antiguedadAnios) {
-              antiguedadAnios.disabled = checked || sinEmpleoChecked;
+              SR_Validations.setFieldDisabled(antiguedadAnios, checked || sinEmpleoChecked);
               if (checked) antiguedadAnios.value = "";
             }
             if (antiguedadMeses) {
-              antiguedadMeses.disabled = checked || sinEmpleoChecked;
+              SR_Validations.setFieldDisabled(antiguedadMeses, checked || sinEmpleoChecked);
               if (checked) antiguedadMeses.value = "";
             }
           };
@@ -1055,21 +1022,44 @@
           const applyOtras = () => {
             const checked = !!otrasAplica?.checked;
             if (otrasFuente) {
-              otrasFuente.disabled = !checked;
+              SR_Validations.setFieldDisabled(otrasFuente, !checked);
               if (!checked) otrasFuente.value = "";
             }
             if (otrasMonto) {
-              otrasMonto.disabled = !checked;
+              SR_Validations.setFieldDisabled(otrasMonto, !checked);
               if (!checked) otrasMonto.value = "";
             }
           };
 
-          sinEmpleo?.addEventListener("change", applySinEmpleo);
-          antiguedadNoAplica?.addEventListener("change", applyAntiguedad);
-          otrasAplica?.addEventListener("change", applyOtras);
+          const applySinEmpleoRequired = () => {
+            const checked = !!sinEmpleo?.checked;
+            if (fuente) fuente.required = !checked;
+            if (ingreso) ingreso.required = !checked;
+          };
+
+          const applyAntiguedadRequired = () => {
+            const sinEmpleoChecked = !!sinEmpleo?.checked;
+            const naChecked = !!antiguedadNoAplica?.checked;
+            const shouldRequire = !naChecked && !sinEmpleoChecked;
+            if (antiguedadAnios) antiguedadAnios.required = shouldRequire;
+            if (antiguedadMeses) antiguedadMeses.required = shouldRequire;
+          };
+
+          const applyOtrasRequired = () => {
+            const checked = !!otrasAplica?.checked;
+            if (otrasFuente) otrasFuente.required = checked;
+            if (otrasMonto) otrasMonto.required = checked;
+          };
+
+          sinEmpleo?.addEventListener("change", () => { applySinEmpleo(); applySinEmpleoRequired(); });
+          antiguedadNoAplica?.addEventListener("change", () => { applyAntiguedad(); applyAntiguedadRequired(); });
+          otrasAplica?.addEventListener("change", () => { applyOtras(); applyOtrasRequired(); });
           applySinEmpleo();
           applyAntiguedad();
           applyOtras();
+          applySinEmpleoRequired();
+          applyAntiguedadRequired();
+          applyOtrasRequired();
         });
       }
 
@@ -1138,6 +1128,13 @@
                 setVal("colonia", b.colonia);
                 setVal("ciudad", b.ciudad);
                 setVal("num_ext", b.num_ext);
+                if (b.num_int) {
+                  const numIntCheckbox = document.querySelector('[name="tiene_num_interior"]');
+                  if (numIntCheckbox) {
+                    numIntCheckbox.checked = true;
+                    numIntCheckbox.dispatchEvent(new Event("change"));
+                  }
+                }
                 setVal("num_int", b.num_int);
                 setVal("estado_codigo", b.estado_codigo);
                 setVal("telefonos", b.telefonos);
@@ -1215,18 +1212,39 @@
                   setVal(
                     `tutor${num}_ingreso_mensual`,
                     t.ingreso_mensual != null
-                      ? formatIntegerDisplay(String(t.ingreso_mensual))
+                      ? SR_Validations.formatIntegerDisplay(String(t.ingreso_mensual))
                       : t.ingreso_mensual,
                   );
                   setChecked(`tutor${num}_sin_empleo`, t.sin_empleo);
                   setChecked(`tutor${num}_antiguedad_no_aplica`, !(t.antiguedad_aplica == null ? true : t.antiguedad_aplica));
                   setChecked(`tutor${num}_otras_fuentes_aplica`, t.otras_fuentes_aplica);
                   setVal(`tutor${num}_otras_fuentes_ingreso`, t.otras_fuentes_ingreso);
-                  setVal(`tutor${num}_monto_otras_fuentes`, t.monto_otras_fuentes != null ? formatMoneyDisplay(String(t.monto_otras_fuentes)) : t.monto_otras_fuentes);
+                  setVal(`tutor${num}_monto_otras_fuentes`, t.monto_otras_fuentes != null ? SR_Validations.formatMoneyDisplay(String(t.monto_otras_fuentes)) : t.monto_otras_fuentes);
                   setTriestado(`tutor${num}_imss`, t.imss_estatus ?? t.tiene_imss);
                   setTriestado(`tutor${num}_infonavit`, t.infonavit_estatus ?? t.tiene_infonavit);
                 });
+                const tutor2Data = data.tutores.find(t => t.numero_tutor === 2);
+                if (tutor2Data) {
+                  const agregarTutor2Checkbox = document.querySelector('[name="agregar_tutor2"]');
+                  if (agregarTutor2Checkbox) {
+                    agregarTutor2Checkbox.checked = true;
+                    agregarTutor2Checkbox.dispatchEvent(new Event("change"));
+                  }
+                }
                 setupTutorConditionalFields();
+                // Safety net: re-disable Tutor 2 conditional fields if checkbox is not checked.
+                // setupTutorConditionalFields() re-enables them for both tutors, but Tutor 2
+                // fields must stay disabled when the "Agregar segundo tutor" checkbox is off.
+                if (!document.querySelector('[name="agregar_tutor2"]')?.checked) {
+                  const t2Fuente = document.querySelector('[name="tutor2_fuente_empleo"]');
+                  const t2Ingreso = document.querySelector('[name="tutor2_ingreso_mensual"]');
+                  const t2AntigAnios = document.querySelector('[name="tutor2_antiguedad_anios"]');
+                  const t2AntigMeses = document.querySelector('[name="tutor2_antiguedad_meses_extra"]');
+                  if (t2Fuente) SR_Validations.setFieldDisabled(t2Fuente, true);
+                  if (t2Ingreso) SR_Validations.setFieldDisabled(t2Ingreso, true);
+                  if (t2AntigAnios) SR_Validations.setFieldDisabled(t2AntigAnios, true);
+                  if (t2AntigMeses) SR_Validations.setFieldDisabled(t2AntigMeses, true);
+                }
               }
 
               // Pre-fill estudio closing fields moved to gestion.html
@@ -1293,24 +1311,22 @@
           antiguedad_anios: tutor1SinEmpleo ? null : (toIntOrNull(get("tutor1_antiguedad_anios")) || 0),
           antiguedad_meses_extra: tutor1SinEmpleo ? null : (toIntOrNull(get("tutor1_antiguedad_meses_extra")) || 0),
           antiguedad_aplica: tutor1SinEmpleo ? false : !f.querySelector('[name="tutor1_antiguedad_no_aplica"]').checked,
-          ingreso_mensual: toIntegerOrNull(get("tutor1_ingreso_mensual")),
+          ingreso_mensual: SR_Validations.toIntegerOrNull(get("tutor1_ingreso_mensual")),
           sin_empleo: tutor1SinEmpleo,
           otras_fuentes_aplica: f.querySelector('[name="tutor1_otras_fuentes_aplica"]').checked,
           otras_fuentes_ingreso: get("tutor1_otras_fuentes_ingreso"),
-          monto_otras_fuentes: toIntegerOrNull(get("tutor1_monto_otras_fuentes")),
+          monto_otras_fuentes: SR_Validations.toIntegerOrNull(get("tutor1_monto_otras_fuentes")),
           imss_estatus: getRadio("tutor1_imss"),
           infonavit_estatus: getRadio("tutor1_infonavit"),
         });
-        const tutor2Nombres = get("tutor2_nombres").trim();
-        const tutor2ApPaterno = get("tutor2_apellido_paterno").trim();
-        const tutor2ApMaterno = get("tutor2_apellido_materno").trim();
-        if (tutor2Nombres || tutor2ApPaterno || tutor2ApMaterno) {
+        const agregarTutor2 = f.querySelector('[name="agregar_tutor2"]');
+        if (agregarTutor2 && agregarTutor2.checked) {
           const tutor2SinEmpleo = f.querySelector('[name="tutor2_sin_empleo"]').checked;
           tutores.push({
             numero_tutor: 2,
-            nombres: tutor2Nombres,
-            apellido_paterno: tutor2ApPaterno,
-            apellido_materno: tutor2ApMaterno,
+            nombres: get("tutor2_nombres"),
+            apellido_paterno: get("tutor2_apellido_paterno"),
+            apellido_materno: get("tutor2_apellido_materno"),
             edad: toIntOrNull(get("tutor2_edad")),
             nivel_estudios: get("tutor2_nivel_estudios"),
             estado_civil: get("tutor2_estado_civil"),
@@ -1320,11 +1336,11 @@
             antiguedad_anios: tutor2SinEmpleo ? null : (toIntOrNull(get("tutor2_antiguedad_anios")) || 0),
             antiguedad_meses_extra: tutor2SinEmpleo ? null : (toIntOrNull(get("tutor2_antiguedad_meses_extra")) || 0),
             antiguedad_aplica: tutor2SinEmpleo ? false : !f.querySelector('[name="tutor2_antiguedad_no_aplica"]').checked,
-            ingreso_mensual: toIntegerOrNull(get("tutor2_ingreso_mensual")),
+            ingreso_mensual: SR_Validations.toIntegerOrNull(get("tutor2_ingreso_mensual")),
             sin_empleo: tutor2SinEmpleo,
             otras_fuentes_aplica: f.querySelector('[name="tutor2_otras_fuentes_aplica"]').checked,
             otras_fuentes_ingreso: get("tutor2_otras_fuentes_ingreso"),
-            monto_otras_fuentes: toIntegerOrNull(get("tutor2_monto_otras_fuentes")),
+            monto_otras_fuentes: SR_Validations.toIntegerOrNull(get("tutor2_monto_otras_fuentes")),
             imss_estatus: getRadio("tutor2_imss"),
             infonavit_estatus: getRadio("tutor2_infonavit"),
           });
@@ -1342,7 +1358,7 @@
             diagnostico: get("diagnostico"),
             calle: get("calle"),
             num_ext: get("num_ext"),
-            num_int: get("num_int"),
+            num_int: document.querySelector('[name="tiene_num_interior"]')?.checked ? (get("num_int") || null) : null,
             colonia: get("colonia"),
             ciudad: get("ciudad"),
             estado_codigo: get("estado_codigo"),
@@ -1366,14 +1382,176 @@
         errorEl.classList.add("hidden");
         errorEl.textContent = "";
 
+        // Limpiar errores previos
+        const form = document.querySelector("form");
+        SR_Validations.clearAllFieldErrors(form);
+
+        // Validar teléfono
         const telefonoInput = document.querySelector('[name="telefonos"]');
         if (telefonoInput) {
-          telefonoInput.value = sanitizeTelefono(telefonoInput.value);
-          if (!telefonoEsValido(telefonoInput.value)) {
-            errorEl.textContent =
-              "El teléfono debe contener exactamente 10 dígitos numéricos";
+          telefonoInput.value = SR_Validations.sanitizeIntegerInput(telefonoInput.value);
+          if (status === "completo" && !SR_Validations.TELEFONO_RE.test(telefonoInput.value)) {
+            SR_Validations.showFieldError("telefonos", "El teléfono debe contener exactamente 10 dígitos numéricos");
+            errorEl.textContent = "El teléfono debe contener exactamente 10 dígitos numéricos";
             errorEl.classList.remove("hidden");
             return;
+          }
+        }
+
+        // Validar campos obligatorios de Tutor 1
+        if (status === "completo") {
+          const tutor1Missing = [];
+
+          // Campos estáticos obligatorios
+          const tutor1StaticFields = [
+            { id: "tutor1_edad", label: "Edad del Tutor 1" },
+            { id: "tutor1_nivel_estudios", label: "Nivel de estudios del Tutor 1" },
+            { id: "tutor1_estado_civil", label: "Estado civil del Tutor 1" },
+            { id: "tutor1_num_hijos", label: "Número de hijos del Tutor 1" },
+            { id: "tutor1_vivienda", label: "Vivienda del Tutor 1" },
+          ];
+          for (const { id, label } of tutor1StaticFields) {
+            const el = form.querySelector(`[name="${id}"]`);
+            const val = (el?.value || "").trim();
+            if (!val) {
+              SR_Validations.showFieldError(id, `${label} es obligatorio`);
+              tutor1Missing.push(label);
+            }
+          }
+
+          // IMSS e INFONAVIT
+          if (!form.querySelector('[name="tutor1_imss"]:checked')) {
+            SR_Validations.showFieldError("tutor1_imss", "IMSS del Tutor 1 es obligatorio");
+            tutor1Missing.push("IMSS del Tutor 1");
+          }
+          if (!form.querySelector('[name="tutor1_infonavit"]:checked')) {
+            SR_Validations.showFieldError("tutor1_infonavit", "INFONAVIT del Tutor 1 es obligatorio");
+            tutor1Missing.push("INFONAVIT del Tutor 1");
+          }
+
+          // Campos condicionales
+          const tutor1SinEmpleo = form.querySelector('[name="tutor1_sin_empleo"]');
+          if (!tutor1SinEmpleo?.checked) {
+            const fuente = (form.querySelector('[name="tutor1_fuente_empleo"]')?.value || "").trim();
+            if (!fuente) {
+              SR_Validations.showFieldError("tutor1_fuente_empleo", "Fuente de empleo del Tutor 1 es obligatoria");
+              tutor1Missing.push("Fuente de empleo del Tutor 1");
+            }
+            const ingreso = (form.querySelector('[name="tutor1_ingreso_mensual"]')?.value || "").trim();
+            if (!ingreso) {
+              SR_Validations.showFieldError("tutor1_ingreso_mensual", "Ingreso mensual del Tutor 1 es obligatorio");
+              tutor1Missing.push("Ingreso mensual del Tutor 1");
+            }
+          }
+
+          const tutor1AntiguedadNoAplica = form.querySelector('[name="tutor1_antiguedad_no_aplica"]');
+          if (!tutor1AntiguedadNoAplica?.checked && !tutor1SinEmpleo?.checked) {
+            const anios = (form.querySelector('[name="tutor1_antiguedad_anios"]')?.value || "").trim();
+            const meses = (form.querySelector('[name="tutor1_antiguedad_meses_extra"]')?.value || "").trim();
+            if (!anios && !meses) {
+              SR_Validations.showFieldError("tutor1_antiguedad_anios", "Antigüedad del Tutor 1 es obligatoria");
+              tutor1Missing.push("Antigüedad del Tutor 1");
+            }
+          }
+
+          const tutor1OtrasAplica = form.querySelector('[name="tutor1_otras_fuentes_aplica"]');
+          if (tutor1OtrasAplica?.checked) {
+            const otrasFuente = (form.querySelector('[name="tutor1_otras_fuentes_ingreso"]')?.value || "").trim();
+            if (!otrasFuente) {
+              SR_Validations.showFieldError("tutor1_otras_fuentes_ingreso", "Otra fuente de ingreso del Tutor 1 es obligatoria");
+              tutor1Missing.push("Otra fuente de ingreso del Tutor 1");
+            }
+            const otrasMonto = (form.querySelector('[name="tutor1_monto_otras_fuentes"]')?.value || "").trim();
+            if (!otrasMonto) {
+              SR_Validations.showFieldError("tutor1_monto_otras_fuentes", "Monto de otras fuentes del Tutor 1 es obligatorio");
+              tutor1Missing.push("Monto de otras fuentes del Tutor 1");
+            }
+          }
+
+          if (tutor1Missing.length > 0) {
+            errorEl.textContent = "Complete los campos obligatorios del Tutor 1: " + tutor1Missing.join(", ");
+            errorEl.classList.remove("hidden");
+            return;
+          }
+        }
+
+        // Validar campos obligatorios de Tutor 2
+        if (status === "completo") {
+          const agregarTutor2Chk = form.querySelector('[name="agregar_tutor2"]');
+          if (agregarTutor2Chk?.checked) {
+            const tutor2Missing = [];
+
+            // Campos estáticos obligatorios
+            const tutor2StaticFields = [
+              { id: "tutor2_edad", label: "Edad del Tutor 2" },
+              { id: "tutor2_nivel_estudios", label: "Nivel de estudios del Tutor 2" },
+              { id: "tutor2_estado_civil", label: "Estado civil del Tutor 2" },
+              { id: "tutor2_num_hijos", label: "Número de hijos del Tutor 2" },
+              { id: "tutor2_vivienda", label: "Vivienda del Tutor 2" },
+            ];
+            for (const { id, label } of tutor2StaticFields) {
+              const el = form.querySelector(`[name="${id}"]`);
+              const val = (el?.value || "").trim();
+              if (!val) {
+                SR_Validations.showFieldError(id, `${label} es obligatorio`);
+                tutor2Missing.push(label);
+              }
+            }
+
+            // IMSS e INFONAVIT
+            if (!form.querySelector('[name="tutor2_imss"]:checked')) {
+              SR_Validations.showFieldError("tutor2_imss", "IMSS del Tutor 2 es obligatorio");
+              tutor2Missing.push("IMSS del Tutor 2");
+            }
+            if (!form.querySelector('[name="tutor2_infonavit"]:checked')) {
+              SR_Validations.showFieldError("tutor2_infonavit", "INFONAVIT del Tutor 2 es obligatorio");
+              tutor2Missing.push("INFONAVIT del Tutor 2");
+            }
+
+            // Campos condicionales
+            const tutor2SinEmpleo = form.querySelector('[name="tutor2_sin_empleo"]');
+            if (!tutor2SinEmpleo?.checked) {
+              const fuente = (form.querySelector('[name="tutor2_fuente_empleo"]')?.value || "").trim();
+              if (!fuente) {
+                SR_Validations.showFieldError("tutor2_fuente_empleo", "Fuente de empleo del Tutor 2 es obligatoria");
+                tutor2Missing.push("Fuente de empleo del Tutor 2");
+              }
+              const ingreso = (form.querySelector('[name="tutor2_ingreso_mensual"]')?.value || "").trim();
+              if (!ingreso) {
+                SR_Validations.showFieldError("tutor2_ingreso_mensual", "Ingreso mensual del Tutor 2 es obligatorio");
+                tutor2Missing.push("Ingreso mensual del Tutor 2");
+              }
+            }
+
+            const tutor2AntiguedadNoAplica = form.querySelector('[name="tutor2_antiguedad_no_aplica"]');
+            if (!tutor2AntiguedadNoAplica?.checked && !tutor2SinEmpleo?.checked) {
+              const anios = (form.querySelector('[name="tutor2_antiguedad_anios"]')?.value || "").trim();
+              const meses = (form.querySelector('[name="tutor2_antiguedad_meses_extra"]')?.value || "").trim();
+              if (!anios && !meses) {
+                SR_Validations.showFieldError("tutor2_antiguedad_anios", "Antigüedad del Tutor 2 es obligatoria");
+                tutor2Missing.push("Antigüedad del Tutor 2");
+              }
+            }
+
+            const tutor2OtrasAplica = form.querySelector('[name="tutor2_otras_fuentes_aplica"]');
+            if (tutor2OtrasAplica?.checked) {
+              const otrasFuente = (form.querySelector('[name="tutor2_otras_fuentes_ingreso"]')?.value || "").trim();
+              if (!otrasFuente) {
+                SR_Validations.showFieldError("tutor2_otras_fuentes_ingreso", "Otra fuente de ingreso del Tutor 2 es obligatoria");
+                tutor2Missing.push("Otra fuente de ingreso del Tutor 2");
+              }
+              const otrasMonto = (form.querySelector('[name="tutor2_monto_otras_fuentes"]')?.value || "").trim();
+              if (!otrasMonto) {
+                SR_Validations.showFieldError("tutor2_monto_otras_fuentes", "Monto de otras fuentes del Tutor 2 es obligatorio");
+                tutor2Missing.push("Monto de otras fuentes del Tutor 2");
+              }
+            }
+
+            if (tutor2Missing.length > 0) {
+              errorEl.textContent = "Complete los campos obligatorios del Tutor 2: " + tutor2Missing.join(", ");
+              errorEl.classList.remove("hidden");
+              return;
+            }
           }
         }
 
@@ -1407,7 +1585,7 @@
 
             if (!res.ok) {
               const errData = await res.json().catch(() => ({}));
-              errorEl.textContent = formatBackendErrorMessage(
+              errorEl.textContent = SR_Validations.formatBackendError(
                 errData,
                 "Error al actualizar el estudio. Intente de nuevo.",
               );
@@ -1439,7 +1617,7 @@
 
             if (!res.ok) {
               const errData = await res.json().catch(() => ({}));
-              errorEl.textContent = formatBackendErrorMessage(
+              errorEl.textContent = SR_Validations.formatBackendError(
                 errData,
                 "Error al guardar el estudio. Intente de nuevo.",
               );
@@ -1482,8 +1660,10 @@
       setupIntegerFieldLimits();
       setupMonetaryFieldFormatting();
       setupTelefonoSanitization();
+      setupNumInteriorConditional();
       setupEstadosCatalog();
       setupTutorConditionalFields();
+      setupTutor2Toggle();
 
       document
         .querySelector('button[type="button"]')

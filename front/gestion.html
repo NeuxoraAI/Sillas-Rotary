@@ -145,11 +145,13 @@
                 class="w-full border-slate-300"
                 name="como_obtuvo_silla"
                 disabled
+                aria-describedby="como_obtuvo_silla-error"
               >
                 <option value="">Selecciona una opción</option>
                 <option value="COMPRA">Compra</option>
                 <option value="DONACION">Donación</option>
               </select>
+              <p class="field-error hidden text-red-600 text-xs mt-1" id="como_obtuvo_silla-error" data-error-for="como_obtuvo_silla" role="alert"></p>
             </div>
             <div class="space-y-2">
               <label class="block text-sm font-semibold text-slate-700"
@@ -165,7 +167,10 @@
                 class="w-full border-slate-300"
                 name="fecha_estudio"
                 type="date"
+                required
+                aria-describedby="fecha_estudio-error"
               />
+              <p class="field-error hidden text-red-600 text-xs mt-1" id="fecha_estudio-error" data-error-for="fecha_estudio" role="alert"></p>
             </div>
             <div class="md:col-span-2 space-y-2">
               <label class="block text-sm font-semibold text-slate-700"
@@ -318,6 +323,7 @@
         <!-- END: Footer Actions -->
       </form>
     </main>
+    <script src="assets/js/validations.js"></script>
     <script data-purpose="form-logic">
       const COMO_OBTUVO_SILLA_CATALOG = ["COMPRA", "DONACION"];
 
@@ -328,95 +334,25 @@
       }
 
       // -- Validación preventiva para entidad_solicitante -----------------
-      const _ENTIDAD_ALLOWED_RE = /^[a-zA-ZáéíóúÁÉÍÓÚäëïöüÄËÏÖÜñÑ0-9 ()\/\-.,]*$/;
-
-      function _filterEntidadText(text) {
-        return Array.from(text)
-          .filter((ch) => _ENTIDAD_ALLOWED_RE.test(ch))
-          .join("");
-      }
-
       function _setupEntidadValidation() {
         const input = document.querySelector('[name="entidad_solicitante"]');
         if (!input) return;
-
-        // beforeinput: block non-whitelist characters silently
-        input.addEventListener("beforeinput", (e) => {
-          if (e.data && !_ENTIDAD_ALLOWED_RE.test(e.data)) {
-            e.preventDefault();
-          }
-        });
-
-        // paste: filter pasted text
-        input.addEventListener("paste", (e) => {
-          const pasted = (e.clipboardData || window.clipboardData).getData("text");
-          const filtered = _filterEntidadText(pasted);
-          if (filtered !== pasted) {
-            e.preventDefault();
-            const start = input.selectionStart;
-            const end = input.selectionEnd;
-            const before = input.value.slice(0, start);
-            const after = input.value.slice(end);
-            input.value = before + filtered + after;
-            input.selectionStart = input.selectionEnd = start + filtered.length;
-          }
-        });
-
-        // input: catch IME/autofill bypasses
-        input.addEventListener("input", () => {
-          const filtered = _filterEntidadText(input.value);
-          if (filtered !== input.value) {
-            const cursor = input.selectionStart;
-            input.value = filtered;
-            input.selectionStart = input.selectionEnd = Math.min(cursor, filtered.length);
-          }
-        });
+        SR_Validations.setupWhitelistField(
+          input,
+          SR_Validations.ENTIDAD_WHITELIST_RE,
+          SR_Validations.LIMITS.ENTIDAD_MAX
+        );
       }
 
       // -- Validación preventiva para justificacion (misma que observaciones_posturales)
-      const _JUST_ALLOWED_RE = /^[a-zA-ZáéíóúÁÉÍÓÚäëïöüÄËÏÖÜñÑ0-9 ()\/\-.,:;]*$/;
-
-      function _filterJustText(text) {
-        return Array.from(text)
-          .filter((ch) => _JUST_ALLOWED_RE.test(ch))
-          .join("");
-      }
-
       function _setupJustificacionValidation() {
         const textarea = document.querySelector('[name="justificacion"]');
         if (!textarea) return;
-
-        // beforeinput: block non-whitelist characters silently
-        textarea.addEventListener("beforeinput", (e) => {
-          if (e.data && !_JUST_ALLOWED_RE.test(e.data)) {
-            e.preventDefault();
-          }
-        });
-
-        // paste: filter pasted text
-        textarea.addEventListener("paste", (e) => {
-          const pasted = (e.clipboardData || window.clipboardData).getData("text");
-          const filtered = _filterJustText(pasted);
-          if (filtered !== pasted) {
-            e.preventDefault();
-            const start = textarea.selectionStart;
-            const end = textarea.selectionEnd;
-            const before = textarea.value.slice(0, start);
-            const after = textarea.value.slice(end);
-            textarea.value = before + filtered + after;
-            textarea.selectionStart = textarea.selectionEnd = start + filtered.length;
-          }
-        });
-
-        // input: catch IME/autofill bypasses
-        textarea.addEventListener("input", () => {
-          const filtered = _filterJustText(textarea.value);
-          if (filtered !== textarea.value) {
-            const cursor = textarea.selectionStart;
-            textarea.value = filtered;
-            textarea.selectionStart = textarea.selectionEnd = Math.min(cursor, filtered.length);
-          }
-        });
+        SR_Validations.setupWhitelistField(
+          textarea,
+          SR_Validations.OBS_WHITELIST_RE,
+          SR_Validations.LIMITS.JUST_MAX
+        );
       }
 
       // -- setupSillaPreviaConditionalField ---------------------------------
@@ -461,6 +397,8 @@
         }
 
         const f = document.querySelector("form");
+        SR_Validations.clearAllFieldErrors(f);
+
         const fd = new FormData(f);
         const get = (name) => fd.get(name) || "";
 
@@ -481,27 +419,20 @@
           status,
         };
 
-        // Helper: format backend error (handles both FastAPI string detail and Pydantic array detail)
-        function formatBackendError(errData, fallback) {
-          if (!errData) return fallback;
-          if (typeof errData.detail === "string" && errData.detail.trim()) {
-            return errData.detail;
-          }
-          if (Array.isArray(errData.detail) && errData.detail.length > 0) {
-            return errData.detail.map((e) => e.msg || JSON.stringify(e)).join("; ");
-          }
-          return fallback;
-        }
-
         // Frontend validation before sending
         if (status === "completo") {
           const missing = [];
-          if (!fechaEstudio) missing.push("Fecha del estudio");
+          if (!fechaEstudio) {
+            missing.push({ id: "fecha_estudio", label: "Fecha del estudio" });
+          }
           if (estudioPayload.tuvo_silla_previa && !estudioPayload.como_obtuvo_silla) {
-            missing.push("¿Cómo la obtuvo?");
+            missing.push({ id: "como_obtuvo_silla", label: "¿Cómo la obtuvo?" });
           }
           if (missing.length > 0) {
-            errorEl.textContent = "Complete los campos obligatorios: " + missing.join(", ");
+            missing.forEach(({ id, label }) => {
+              SR_Validations.showFieldError(id, `${label} es obligatorio`);
+            });
+            errorEl.textContent = "Complete los campos obligatorios: " + missing.map(m => m.label).join(", ");
             errorEl.classList.remove("hidden");
             return;
           }
@@ -532,12 +463,12 @@
 
           if (!estudioRes.ok) {
             const errData = await estudioRes.json().catch(() => ({}));
-            estudioErr = formatBackendError(errData, "Error al actualizar el estudio.");
+            estudioErr = SR_Validations.formatBackendError(errData, "Error al actualizar el estudio.");
           }
 
           if (!solicitudRes.ok) {
             const errData = await solicitudRes.json().catch(() => ({}));
-            solicitudErr = formatBackendError(errData, "Error al actualizar la solicitud.");
+            solicitudErr = SR_Validations.formatBackendError(errData, "Error al actualizar la solicitud.");
           }
 
           if (estudioErr || solicitudErr) {
