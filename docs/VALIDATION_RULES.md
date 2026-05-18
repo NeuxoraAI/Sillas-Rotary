@@ -140,16 +140,31 @@ Este documento define TODAS las reglas de validación del sistema. Cualquier cam
 
 | Campo | Obligatorio | Nota |
 |---|---|---|
+| `altura_total_in` | Sí | `required` + `field-error` |
+| `peso_kg` | Sí | `required` + `field-error` |
+| `medida_cabeza_asiento` | Sí | `required` + `field-error` |
+| `medida_hombro_asiento` | Sí | `required` + `field-error` |
+| `medida_prof_asiento` | Sí | `required` + `field-error` |
+| `medida_rodilla_talon` | Sí | `required` + `field-error` |
+| `medida_ancho_cadera` | Sí | `required` + `field-error` |
 | `entorno` | Sí | `required` en select |
 | `control_tronco` | Sí | `required` en select |
 | `control_cabeza` | Sí | `required` en select |
+| `observaciones_posturales` | No | Checkbox toggle "Agregar observaciones posturales" |
 
 ### gestion.html (status=completo)
 
 | Campo | Obligatorio | Nota |
 |---|---|---|
+| `silla_previa` | Sí | `required` en select, placeholder "Selecciona una opción" |
+| `como_obtuvo_silla` | Condicional | Solo si `silla_previa = "Sí"` |
 | `fecha_estudio` | Sí | `required` en input |
-| `como_obtuvo_silla` | Condicional | Solo si `tuvo_silla_previa = true` |
+| `elaboro_estudio` | Sí | Pre-llenado (readonly) |
+| `sede` | Sí | Pre-llenado (readonly) |
+| `ciudad_registro` | Sí | Pre-llenado (readonly) |
+| `entidad_solicitante` | Sí | `required` + `field-error` |
+| `prioridad` | Sí | `required` en radio + `field-error` |
+| `justificacion` | No | Checkbox toggle "Agregar justificación" |
 
 ---
 
@@ -164,6 +179,8 @@ Este documento define TODAS las reglas de validación del sistema. Cualquier cam
 | `antiguedad_anios/meses` (Tutor 1 y 2) | `sin_empleo` NO y `antiguedad_no_aplica` NO | Empleado con antigüedad |
 | `otras_fuentes_ingreso` (Tutor 1 y 2) | `otras_fuentes_aplica` SÍ | Con otras fuentes |
 | `monto_otras_fuentes` (Tutor 1 y 2) | `otras_fuentes_aplica` SÍ | Con otras fuentes |
+| `observaciones_posturales` | Checkbox `tiene_observaciones` | Cuando marcado, habilita textarea |
+| `justificacion` | Checkbox `tiene_justificacion` | Cuando marcado, habilita textarea |
 
 ---
 
