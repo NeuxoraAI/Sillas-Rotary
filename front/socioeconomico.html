@@ -95,7 +95,7 @@
         </div>
       </div>
       <!-- END: Branding Header -->
-      <form class="p-8 space-y-12">
+      <form class="p-8 space-y-12" novalidate>
         <!-- PART 1: ESTUDIO SOCIOECONÓMICO -->
         <header class="bg-slate-800 text-white p-6 -mx-8 -mt-8 mb-8">
           <h1 class="text-2xl font-bold uppercase tracking-wider text-white">
@@ -177,7 +177,9 @@
                 name="fecha_nacimiento"
                 type="date"
                 required
+                aria-describedby="fecha_nacimiento-error"
               />
+              <p class="field-error hidden text-red-600 text-xs mt-1" id="fecha_nacimiento-error" data-error-for="fecha_nacimiento" role="alert"></p>
             </div>
             <div class="space-y-2">
               <label class="block text-sm font-semibold text-slate-700"
@@ -190,7 +192,9 @@
                 minlength="3"
                 maxlength="160"
                 required
+                aria-describedby="diagnostico-error"
               />
+              <p class="field-error hidden text-red-600 text-xs mt-1" id="diagnostico-error" data-error-for="diagnostico" role="alert"></p>
             </div>
             <div class="space-y-2">
               <label class="block text-sm font-semibold text-slate-700"
@@ -203,7 +207,9 @@
                 minlength="3"
                 maxlength="120"
                 required
+                aria-describedby="calle-error"
               />
+              <p class="field-error hidden text-red-600 text-xs mt-1" id="calle-error" data-error-for="calle" role="alert"></p>
             </div>
             <div class="space-y-2">
               <label class="block text-sm font-semibold text-slate-700">Número exterior</label>
@@ -227,23 +233,28 @@
                 minlength="2"
                 maxlength="120"
                 required
+                aria-describedby="colonia-error"
               />
+              <p class="field-error hidden text-red-600 text-xs mt-1" id="colonia-error" data-error-for="colonia" role="alert"></p>
             </div>
             <div class="space-y-2">
               <label class="block text-sm font-semibold text-slate-700">Ciudad</label>
-              <input class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary" name="ciudad" type="text" minlength="2" maxlength="80" required />
+              <input class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary" name="ciudad" type="text" minlength="2" maxlength="80" required aria-describedby="ciudad-error" />
+              <p class="field-error hidden text-red-600 text-xs mt-1" id="ciudad-error" data-error-for="ciudad" role="alert"></p>
             </div>
             <div class="space-y-2">
               <label class="block text-sm font-semibold text-slate-700">Estado (INEGI)</label>
-              <select class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary" name="estado_codigo" id="estado_codigo" required></select>
+              <select class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary" name="estado_codigo" id="estado_codigo" required aria-describedby="estado_codigo-error"></select>
+              <p class="field-error hidden text-red-600 text-xs mt-1" id="estado_codigo-error" data-error-for="estado_codigo" role="alert"></p>
             </div>
             <div class="space-y-2 md:col-span-2">
               <label class="block text-sm font-semibold text-slate-700">Sexo</label>
               <div class="flex gap-6">
-                <label><input type="radio" name="sexo" value="M" required /> Masculino</label>
+                <label><input type="radio" name="sexo" value="M" required aria-describedby="sexo-error" /> Masculino</label>
                 <label><input type="radio" name="sexo" value="F" required /> Femenino</label>
                 <label><input type="radio" name="sexo" value="NE" required /> No especificado</label>
               </div>
+              <p class="field-error hidden text-red-600 text-xs mt-1" id="sexo-error" data-error-for="sexo" role="alert"></p>
             </div>
             <div class="space-y-2">
               <label class="block text-sm font-semibold text-slate-700"
@@ -308,7 +319,9 @@
                       maxlength="60"
                       pattern="^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ. ]+$"
                       required
+                      aria-describedby="tutor1_nombres-error"
                     />
+                    <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor1_nombres-error" data-error-for="tutor1_nombres" role="alert"></p>
                   </div>
                   <div>
                     <label class="text-xs font-bold text-slate-500 uppercase"
@@ -321,7 +334,9 @@
                       maxlength="40"
                       pattern="^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ. ]+$"
                       required
+                      aria-describedby="tutor1_apellido_paterno-error"
                     />
+                    <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor1_apellido_paterno-error" data-error-for="tutor1_apellido_paterno" role="alert"></p>
                   </div>
                   <div>
                     <label class="text-xs font-bold text-slate-500 uppercase"
@@ -334,7 +349,9 @@
                       maxlength="40"
                       pattern="^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ. ]+$"
                       required
+                      aria-describedby="tutor1_apellido_materno-error"
                     />
+                    <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor1_apellido_materno-error" data-error-for="tutor1_apellido_materno" role="alert"></p>
                   </div>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
@@ -348,7 +365,9 @@
                       min="0"
                       max="99"
                       required
+                      aria-describedby="tutor1_edad-error"
                     />
+                    <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor1_edad-error" data-error-for="tutor1_edad" role="alert"></p>
                   </div>
                   <div>
                     <label class="text-xs font-bold text-slate-500 uppercase"
@@ -358,6 +377,7 @@
                       class="w-full mt-1 border-slate-300"
                       name="tutor1_nivel_estudios"
                       required
+                      aria-describedby="tutor1_nivel_estudios-error"
                     >
                       <option value="">Selecciona una opción</option>
                       <option value="NINGUNO">Sin estudios</option>
@@ -369,6 +389,7 @@
                       <option value="MAESTRIA">Maestría</option>
                       <option value="DOCTORADO">Doctorado</option>
                     </select>
+                    <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor1_nivel_estudios-error" data-error-for="tutor1_nivel_estudios" role="alert"></p>
                   </div>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
@@ -380,6 +401,7 @@
                       class="w-full mt-1 border-slate-300"
                       name="tutor1_estado_civil"
                       required
+                      aria-describedby="tutor1_estado_civil-error"
                     >
                       <option value="">Selecciona una opción</option>
                       <option value="SOLTERO">Soltero / Soltera</option>
@@ -388,6 +410,7 @@
                       <option value="DIVORCIADO">Divorciado / Divorciada</option>
                       <option value="UNION_LIBRE">Unión libre</option>
                     </select>
+                    <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor1_estado_civil-error" data-error-for="tutor1_estado_civil" role="alert"></p>
                   </div>
                   <div>
                     <label class="text-xs font-bold text-slate-500 uppercase"
@@ -399,7 +422,9 @@
                       min="0"
                       max="20"
                       required
+                      aria-describedby="tutor1_num_hijos-error"
                     />
+                    <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor1_num_hijos-error" data-error-for="tutor1_num_hijos" role="alert"></p>
                   </div>
                 </div>
                 <div>
@@ -410,6 +435,7 @@
                     class="w-full mt-1 border-slate-300"
                     name="tutor1_vivienda"
                     required
+                    aria-describedby="tutor1_vivienda-error"
                   >
                     <option value="">Selecciona una opción</option>
                     <option value="PROPIA">Propia</option>
@@ -418,12 +444,9 @@
                     <option value="FAMILIAR">Con familiares</option>
                     <option value="INFORMAL">En albergue / institución</option>
                   </select>
+                  <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor1_vivienda-error" data-error-for="tutor1_vivienda" role="alert"></p>
                 </div>
                 <div>
-                  <label class="inline-flex items-center gap-2 text-sm font-medium text-slate-700 mb-2">
-                    <input class="text-primary h-4 w-4" name="tutor1_sin_empleo" type="checkbox" />
-                    <span>No tiene empleo</span>
-                  </label>
                   <label class="text-xs font-bold text-slate-500 uppercase"
                     >Fuente Empleo</label
                   ><input
@@ -431,13 +454,20 @@
                     name="tutor1_fuente_empleo"
                     type="text"
                     maxlength="80"
+                    aria-describedby="tutor1_fuente_empleo-error"
                   />
+                  <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor1_fuente_empleo-error" data-error-for="tutor1_fuente_empleo" role="alert"></p>
+                  <label class="inline-flex items-center gap-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-lg px-3 py-2 mt-2">
+                    <input class="text-primary h-4 w-4" name="tutor1_sin_empleo" type="checkbox" />
+                    <span>No tiene empleo</span>
+                  </label>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                   <div>
                     <label class="text-xs font-bold text-slate-500 uppercase"
                       >Antigüedad (años)</label
-                    ><input class="w-full mt-1 border-slate-300" name="tutor1_antiguedad_anios" type="number" min="0" max="50" />
+                    ><input class="w-full mt-1 border-slate-300" name="tutor1_antiguedad_anios" type="number" min="0" max="50" aria-describedby="tutor1_antiguedad_anios-error" />
+                    <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor1_antiguedad_anios-error" data-error-for="tutor1_antiguedad_anios" role="alert"></p>
                   </div>
                   <div>
                     <label class="text-xs font-bold text-slate-500 uppercase"
@@ -452,7 +482,8 @@
                 <div>
                   <label class="text-xs font-bold text-slate-500 uppercase"
                     >Ingreso Mensual</label
-                  ><input class="w-full mt-1 border-slate-300" name="tutor1_ingreso_mensual" type="text" />
+                  ><input class="w-full mt-1 border-slate-300" name="tutor1_ingreso_mensual" type="text" aria-describedby="tutor1_ingreso_mensual-error" />
+                  <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor1_ingreso_mensual-error" data-error-for="tutor1_ingreso_mensual" role="alert"></p>
                 </div>
                 <label class="inline-flex items-center gap-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-lg px-3 py-2">
                   <input class="text-primary h-4 w-4" name="tutor1_otras_fuentes_aplica" type="checkbox" />
@@ -460,34 +491,38 @@
                 </label>
                 <div>
                   <label class="text-xs font-bold text-slate-500 uppercase">Otra fuente</label>
-                  <input class="w-full mt-1 border-slate-300" name="tutor1_otras_fuentes_ingreso" type="text" maxlength="100" disabled />
+                  <input class="w-full mt-1 border-slate-300" name="tutor1_otras_fuentes_ingreso" type="text" maxlength="100" disabled aria-describedby="tutor1_otras_fuentes_ingreso-error" />
+                  <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor1_otras_fuentes_ingreso-error" data-error-for="tutor1_otras_fuentes_ingreso" role="alert"></p>
                 </div>
                 <div>
                   <label class="text-xs font-bold text-slate-500 uppercase">Monto adicional</label>
-                  <input class="w-full mt-1 border-slate-300" name="tutor1_monto_otras_fuentes" type="text" disabled />
+                  <input class="w-full mt-1 border-slate-300" name="tutor1_monto_otras_fuentes" type="text" disabled aria-describedby="tutor1_monto_otras_fuentes-error" />
+                  <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor1_monto_otras_fuentes-error" data-error-for="tutor1_monto_otras_fuentes" role="alert"></p>
                 </div>
                 <fieldset class="mt-4">
                   <legend class="text-xs font-bold text-slate-500 uppercase">IMSS</legend>
                   <div class="flex gap-4 mt-1">
                     <label class="inline-flex items-center gap-1">
-                      <input type="radio" name="tutor1_imss" value="SI" class="text-primary" required /> Sí
+                      <input type="radio" name="tutor1_imss" value="SI" class="text-primary" required aria-describedby="tutor1_imss-error" /> Sí
                     </label>
                     <label class="inline-flex items-center gap-1">
                       <input type="radio" name="tutor1_imss" value="NO" class="text-primary" /> No
                     </label>
                   </div>
                 </fieldset>
+                <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor1_imss-error" data-error-for="tutor1_imss" role="alert"></p>
                 <fieldset class="mt-3">
                   <legend class="text-xs font-bold text-slate-500 uppercase">INFONAVIT</legend>
                   <div class="flex gap-4 mt-1">
                     <label class="inline-flex items-center gap-1">
-                      <input type="radio" name="tutor1_infonavit" value="SI" class="text-primary" required /> Sí
+                      <input type="radio" name="tutor1_infonavit" value="SI" class="text-primary" required aria-describedby="tutor1_infonavit-error" /> Sí
                     </label>
                     <label class="inline-flex items-center gap-1">
                       <input type="radio" name="tutor1_infonavit" value="NO" class="text-primary" /> No
                     </label>
                   </div>
                 </fieldset>
+                <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor1_infonavit-error" data-error-for="tutor1_infonavit" role="alert"></p>
               </div>
             </div>
             <!-- Tutor 2 -->
@@ -517,7 +552,9 @@
                       minlength="2"
                       maxlength="60"
                       pattern="^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ. ]+$"
+                      aria-describedby="tutor2_nombres-error"
                     />
+                    <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor2_nombres-error" data-error-for="tutor2_nombres" role="alert"></p>
                   </div>
                   <div>
                     <label class="text-xs font-bold text-slate-500 uppercase"
@@ -529,7 +566,9 @@
                       minlength="2"
                       maxlength="40"
                       pattern="^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ. ]+$"
+                      aria-describedby="tutor2_apellido_paterno-error"
                     />
+                    <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor2_apellido_paterno-error" data-error-for="tutor2_apellido_paterno" role="alert"></p>
                   </div>
                   <div>
                     <label class="text-xs font-bold text-slate-500 uppercase"
@@ -541,7 +580,9 @@
                       minlength="2"
                       maxlength="40"
                       pattern="^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ. ]+$"
+                      aria-describedby="tutor2_apellido_materno-error"
                     />
+                    <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor2_apellido_materno-error" data-error-for="tutor2_apellido_materno" role="alert"></p>
                   </div>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
@@ -554,7 +595,9 @@
                       type="number"
                       min="0"
                       max="99"
+                      aria-describedby="tutor2_edad-error"
                     />
+                    <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor2_edad-error" data-error-for="tutor2_edad" role="alert"></p>
                   </div>
                   <div>
                     <label class="text-xs font-bold text-slate-500 uppercase"
@@ -563,6 +606,7 @@
                     <select
                       class="w-full mt-1 border-slate-300"
                       name="tutor2_nivel_estudios"
+                      aria-describedby="tutor2_nivel_estudios-error"
                     >
                       <option value="">Selecciona una opción</option>
                       <option value="NINGUNO">Sin estudios</option>
@@ -574,6 +618,7 @@
                       <option value="MAESTRIA">Maestría</option>
                       <option value="DOCTORADO">Doctorado</option>
                     </select>
+                    <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor2_nivel_estudios-error" data-error-for="tutor2_nivel_estudios" role="alert"></p>
                   </div>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
@@ -584,6 +629,7 @@
                     <select
                       class="w-full mt-1 border-slate-300"
                       name="tutor2_estado_civil"
+                      aria-describedby="tutor2_estado_civil-error"
                     >
                       <option value="">Selecciona una opción</option>
                       <option value="SOLTERO">Soltero / Soltera</option>
@@ -592,6 +638,7 @@
                       <option value="DIVORCIADO">Divorciado / Divorciada</option>
                       <option value="UNION_LIBRE">Unión libre</option>
                     </select>
+                    <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor2_estado_civil-error" data-error-for="tutor2_estado_civil" role="alert"></p>
                   </div>
                   <div>
                     <label class="text-xs font-bold text-slate-500 uppercase"
@@ -602,7 +649,9 @@
                       type="number"
                       min="0"
                       max="20"
+                      aria-describedby="tutor2_num_hijos-error"
                     />
+                    <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor2_num_hijos-error" data-error-for="tutor2_num_hijos" role="alert"></p>
                   </div>
                 </div>
                 <div>
@@ -612,6 +661,7 @@
                   <select
                     class="w-full mt-1 border-slate-300"
                     name="tutor2_vivienda"
+                    aria-describedby="tutor2_vivienda-error"
                   >
                     <option value="">Selecciona una opción</option>
                     <option value="PROPIA">Propia</option>
@@ -620,12 +670,9 @@
                     <option value="FAMILIAR">Con familiares</option>
                     <option value="INFORMAL">En albergue / institución</option>
                   </select>
+                  <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor2_vivienda-error" data-error-for="tutor2_vivienda" role="alert"></p>
                 </div>
                 <div>
-                  <label class="inline-flex items-center gap-2 text-sm font-medium text-slate-700 mb-2">
-                    <input class="text-primary h-4 w-4" name="tutor2_sin_empleo" type="checkbox" />
-                    <span>No tiene empleo</span>
-                  </label>
                   <label class="text-xs font-bold text-slate-500 uppercase"
                     >Fuente Empleo</label
                   ><input
@@ -633,13 +680,20 @@
                     name="tutor2_fuente_empleo"
                     type="text"
                     maxlength="80"
+                    aria-describedby="tutor2_fuente_empleo-error"
                   />
+                  <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor2_fuente_empleo-error" data-error-for="tutor2_fuente_empleo" role="alert"></p>
+                  <label class="inline-flex items-center gap-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-lg px-3 py-2 mt-2">
+                    <input class="text-primary h-4 w-4" name="tutor2_sin_empleo" type="checkbox" />
+                    <span>No tiene empleo</span>
+                  </label>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                   <div>
                     <label class="text-xs font-bold text-slate-500 uppercase"
                       >Antigüedad (años)</label
-                    ><input class="w-full mt-1 border-slate-300" name="tutor2_antiguedad_anios" type="number" min="0" max="50" />
+                    ><input class="w-full mt-1 border-slate-300" name="tutor2_antiguedad_anios" type="number" min="0" max="50" aria-describedby="tutor2_antiguedad_anios-error" />
+                    <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor2_antiguedad_anios-error" data-error-for="tutor2_antiguedad_anios" role="alert"></p>
                   </div>
                   <div>
                     <label class="text-xs font-bold text-slate-500 uppercase"
@@ -654,7 +708,8 @@
                 <div>
                   <label class="text-xs font-bold text-slate-500 uppercase"
                     >Ingreso Mensual</label
-                  ><input class="w-full mt-1 border-slate-300" name="tutor2_ingreso_mensual" type="text" />
+                  ><input class="w-full mt-1 border-slate-300" name="tutor2_ingreso_mensual" type="text" aria-describedby="tutor2_ingreso_mensual-error" />
+                  <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor2_ingreso_mensual-error" data-error-for="tutor2_ingreso_mensual" role="alert"></p>
                 </div>
                 <label class="inline-flex items-center gap-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-lg px-3 py-2">
                   <input class="text-primary h-4 w-4" name="tutor2_otras_fuentes_aplica" type="checkbox" />
@@ -662,34 +717,38 @@
                 </label>
                 <div>
                   <label class="text-xs font-bold text-slate-500 uppercase">Otra fuente</label>
-                  <input class="w-full mt-1 border-slate-300" name="tutor2_otras_fuentes_ingreso" type="text" maxlength="100" disabled />
+                  <input class="w-full mt-1 border-slate-300" name="tutor2_otras_fuentes_ingreso" type="text" maxlength="100" disabled aria-describedby="tutor2_otras_fuentes_ingreso-error" />
+                  <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor2_otras_fuentes_ingreso-error" data-error-for="tutor2_otras_fuentes_ingreso" role="alert"></p>
                 </div>
                 <div>
                   <label class="text-xs font-bold text-slate-500 uppercase">Monto adicional</label>
-                  <input class="w-full mt-1 border-slate-300" name="tutor2_monto_otras_fuentes" type="text" disabled />
+                  <input class="w-full mt-1 border-slate-300" name="tutor2_monto_otras_fuentes" type="text" disabled aria-describedby="tutor2_monto_otras_fuentes-error" />
+                  <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor2_monto_otras_fuentes-error" data-error-for="tutor2_monto_otras_fuentes" role="alert"></p>
                 </div>
                 <fieldset class="mt-4">
                   <legend class="text-xs font-bold text-slate-500 uppercase">IMSS</legend>
                   <div class="flex gap-4 mt-1">
                     <label class="inline-flex items-center gap-1">
-                      <input type="radio" name="tutor2_imss" value="SI" class="text-primary" /> Sí
+                      <input type="radio" name="tutor2_imss" value="SI" class="text-primary" aria-describedby="tutor2_imss-error" /> Sí
                     </label>
                     <label class="inline-flex items-center gap-1">
                       <input type="radio" name="tutor2_imss" value="NO" class="text-primary" /> No
                     </label>
                   </div>
                 </fieldset>
+                <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor2_imss-error" data-error-for="tutor2_imss" role="alert"></p>
                 <fieldset class="mt-3">
                   <legend class="text-xs font-bold text-slate-500 uppercase">INFONAVIT</legend>
                   <div class="flex gap-4 mt-1">
                     <label class="inline-flex items-center gap-1">
-                      <input type="radio" name="tutor2_infonavit" value="SI" class="text-primary" /> Sí
+                      <input type="radio" name="tutor2_infonavit" value="SI" class="text-primary" aria-describedby="tutor2_infonavit-error" /> Sí
                     </label>
                     <label class="inline-flex items-center gap-1">
                       <input type="radio" name="tutor2_infonavit" value="NO" class="text-primary" /> No
                     </label>
                   </div>
                 </fieldset>
+                <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor2_infonavit-error" data-error-for="tutor2_infonavit" role="alert"></p>
               </div>
             </div>
             </div>
@@ -1398,6 +1457,44 @@
           }
         }
 
+        // Validar campos obligatorios del beneficiario
+        if (status === "completo") {
+          const beneficiarioRequired = [
+            { id: "nombres", label: "Nombre(s)" },
+            { id: "apellido_paterno", label: "Apellido Paterno" },
+            { id: "apellido_materno", label: "Apellido Materno" },
+            { id: "fecha_nacimiento", label: "Fecha de nacimiento" },
+            { id: "diagnostico", label: "Diagnóstico" },
+            { id: "calle", label: "Calle" },
+            { id: "colonia", label: "Colonia" },
+            { id: "ciudad", label: "Ciudad" },
+            { id: "estado_codigo", label: "Estado" },
+          ];
+          const beneficiarioMissing = SR_Validations.validateRequired(form, beneficiarioRequired, { status });
+          beneficiarioMissing.forEach(({ id, label }) => {
+            SR_Validations.showFieldError(id, `${label} es obligatorio`);
+          });
+
+          // Validate sexo separately (radio group)
+          if (!form.querySelector('[name="sexo"]:checked')) {
+            SR_Validations.showFieldError("sexo", "Sexo es obligatorio");
+            beneficiarioMissing.push({ id: "sexo", label: "Sexo" });
+          }
+
+          // Validate telefono separately (regex)
+          const telefonoInput = form.querySelector('[name="telefonos"]');
+          if (telefonoInput && !SR_Validations.TELEFONO_RE.test(telefonoInput.value.trim())) {
+            SR_Validations.showFieldError("telefonos", "El teléfono debe contener exactamente 10 dígitos numéricos");
+            beneficiarioMissing.push({ id: "telefonos", label: "Teléfonos" });
+          }
+
+          if (beneficiarioMissing.length > 0) {
+            errorEl.textContent = "Complete los campos obligatorios del beneficiario: " + beneficiarioMissing.map(m => m.label).join(", ");
+            errorEl.classList.remove("hidden");
+            return;
+          }
+        }
+
         // Validar campos obligatorios de Tutor 1
         if (status === "completo") {
           const tutor1Missing = [];
@@ -1552,6 +1649,19 @@
               errorEl.classList.remove("hidden");
               return;
             }
+          }
+        }
+
+        // Validar constraints HTML5 (minlength, pattern) replicando validación nativa desactivada por novalidate
+        if (status === "completo") {
+          const constraintErrors = SR_Validations.validateHTML5Constraints(form);
+          if (constraintErrors.length > 0) {
+            constraintErrors.forEach(({ id, message }) => {
+              SR_Validations.showFieldError(id, message);
+            });
+            errorEl.textContent = "Revise los campos con formato incorrecto";
+            errorEl.classList.remove("hidden");
+            return;
           }
         }
 
