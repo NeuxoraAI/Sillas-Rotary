@@ -356,6 +356,17 @@ class EstudioUpdateRequest(BaseModel):
         if self.status == "completo":
             if not self.fecha_estudio:
                 raise ValueError("fecha_estudio es obligatorio cuando status es completo")
+
+            if self.tuvo_silla_previa is None:
+                raise ValueError("tuvo_silla_previa es obligatorio cuando status es completo")
+
+            if self.tuvo_silla_previa is True and (
+                self.como_obtuvo_silla is None or self.como_obtuvo_silla == ""
+            ):
+                raise ValueError(
+                    "como_obtuvo_silla es obligatorio cuando tuvo_silla_previa es verdadero"
+                )
+
         return self
 
 

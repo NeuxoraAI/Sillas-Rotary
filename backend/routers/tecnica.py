@@ -5,7 +5,7 @@ from urllib.parse import urlparse, unquote
 from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
-from pydantic import BaseModel, field_validator, ValidationInfo
+from pydantic import BaseModel, field_validator, model_validator, ValidationInfo
 from supabase import create_client
 
 from database import get_db, _DBAdapter
@@ -196,6 +196,33 @@ class SolicitudCreateRequest(BaseModel):
     def _prioridad_valida(cls, v: Optional[str]) -> Optional[str]:
         return validate_prioridad(v)
 
+    @model_validator(mode="after")
+    def _validar_completo_t1(self):
+        if self.status != "completo":
+            return self
+
+        missing: list[str] = []
+
+        medidas = {
+            "altura_total_in": self.altura_total_in,
+            "peso_kg": self.peso_kg,
+            "medida_cabeza_asiento": self.medida_cabeza_asiento,
+            "medida_hombro_asiento": self.medida_hombro_asiento,
+            "medida_prof_asiento": self.medida_prof_asiento,
+            "medida_rodilla_talon": self.medida_rodilla_talon,
+            "medida_ancho_cadera": self.medida_ancho_cadera,
+        }
+        for field_name, value in medidas.items():
+            if value is None:
+                missing.append(field_name)
+
+        if missing:
+            raise ValueError(
+                f"{', '.join(missing)} es obligatorio cuando status es completo"
+            )
+
+        return self
+
 
 class SolicitudCreateResponse(BaseModel):
     solicitud_id: int
@@ -292,6 +319,33 @@ class SolicitudUpdateRequest(BaseModel):
     @classmethod
     def _prioridad_valida(cls, v: Optional[str]) -> Optional[str]:
         return validate_prioridad(v)
+
+    @model_validator(mode="after")
+    def _validar_completo_t2(self):
+        if self.status != "completo":
+            return self
+
+        missing: list[str] = []
+
+        medidas = {
+            "altura_total_in": self.altura_total_in,
+            "peso_kg": self.peso_kg,
+            "medida_cabeza_asiento": self.medida_cabeza_asiento,
+            "medida_hombro_asiento": self.medida_hombro_asiento,
+            "medida_prof_asiento": self.medida_prof_asiento,
+            "medida_rodilla_talon": self.medida_rodilla_talon,
+            "medida_ancho_cadera": self.medida_ancho_cadera,
+        }
+        for field_name, value in medidas.items():
+            if value is None:
+                missing.append(field_name)
+
+        if missing:
+            raise ValueError(
+                f"{', '.join(missing)} es obligatorio cuando status es completo"
+            )
+
+        return self
 
 
 class SolicitudUpdateResponse(BaseModel):
