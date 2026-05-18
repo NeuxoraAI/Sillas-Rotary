@@ -191,6 +191,7 @@
                 type="text"
                 minlength="3"
                 maxlength="160"
+                pattern="^[A-Za-záéíóúÁÉÍÓÚüÜñÑ0-9\s\-().\/.,]+$"
                 required
                 aria-describedby="diagnostico-error"
               />
@@ -206,6 +207,7 @@
                 type="text"
                 minlength="3"
                 maxlength="120"
+                pattern="^[A-Za-záéíóúÁÉÍÓÚüÜñÑ0-9.\- ]+$"
                 required
                 aria-describedby="calle-error"
               />
@@ -213,14 +215,15 @@
             </div>
             <div class="space-y-2">
               <label class="block text-sm font-semibold text-slate-700">Número exterior</label>
-              <input class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary" name="num_ext" type="text" pattern="[A-Za-z0-9\-\/]{1,10}" maxlength="10" />
+              <input class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary" name="num_ext" type="text" minlength="1" maxlength="10" pattern="[A-Za-z0-9\-\/]{1,10}" required aria-describedby="num_ext-error" />
+              <p class="field-error hidden text-red-600 text-xs mt-1" id="num_ext-error" data-error-for="num_ext" role="alert"></p>
             </div>
             <div class="space-y-2">
               <label class="inline-flex items-center gap-2 text-sm font-medium text-slate-700">
                 <input class="text-primary h-4 w-4" name="tiene_num_interior" type="checkbox" />
                 <span>Agregar número interior</span>
               </label>
-              <input class="w-full border-slate-300 bg-slate-100 text-slate-400 cursor-not-allowed shadow-sm focus:border-primary focus:ring-primary" name="num_int" type="text" pattern="[A-Za-z0-9\-\/]{0,10}" maxlength="10" disabled />
+              <input class="w-full border-slate-300 bg-slate-100 text-slate-400 cursor-not-allowed shadow-sm focus:border-primary focus:ring-primary" name="num_int" type="text" minlength="1" maxlength="10" pattern="[A-Za-z0-9\-\/]{0,10}" disabled />
             </div>
             <div class="space-y-2">
               <label class="block text-sm font-semibold text-slate-700"
@@ -232,6 +235,7 @@
                 type="text"
                 minlength="2"
                 maxlength="120"
+                pattern="^[A-Za-záéíóúÁÉÍÓÚüÜñÑ0-9.\- ]+$"
                 required
                 aria-describedby="colonia-error"
               />
@@ -239,7 +243,7 @@
             </div>
             <div class="space-y-2">
               <label class="block text-sm font-semibold text-slate-700">Ciudad</label>
-              <input class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary" name="ciudad" type="text" minlength="2" maxlength="80" required aria-describedby="ciudad-error" />
+              <input class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary" name="ciudad" type="text" minlength="2" maxlength="80" pattern="^[A-Za-záéíóúÁÉÍÓÚüÜñÑ0-9.\- ]+$" required aria-describedby="ciudad-error" />
               <p class="field-error hidden text-red-600 text-xs mt-1" id="ciudad-error" data-error-for="ciudad" role="alert"></p>
             </div>
             <div class="space-y-2">
@@ -417,10 +421,10 @@
                       >No. Hijos</label
                     ><input
                       class="w-full mt-1 border-slate-300"
-                      name="tutor1_num_hijos"
-                      type="number"
-                      min="0"
-                      max="20"
+                    name="tutor1_num_hijos"
+                    type="number"
+                    min="0"
+                    max="30"
                       required
                       aria-describedby="tutor1_num_hijos-error"
                     />
@@ -453,7 +457,9 @@
                     class="w-full mt-1 border-slate-300"
                     name="tutor1_fuente_empleo"
                     type="text"
+                    minlength="2"
                     maxlength="80"
+                    pattern="^[A-Za-záéíóúÁÉÍÓÚüÜñÑ0-9\s\-().\/.,]+$"
                     aria-describedby="tutor1_fuente_empleo-error"
                   />
                   <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor1_fuente_empleo-error" data-error-for="tutor1_fuente_empleo" role="alert"></p>
@@ -482,7 +488,10 @@
                 <div>
                   <label class="text-xs font-bold text-slate-500 uppercase"
                     >Ingreso Mensual</label
-                  ><input class="w-full mt-1 border-slate-300" name="tutor1_ingreso_mensual" type="text" aria-describedby="tutor1_ingreso_mensual-error" />
+                  ><div class="flex items-center">
+                  <span class="bg-slate-200 border border-r-0 border-slate-300 px-3 py-2 rounded-l-lg text-slate-600 text-sm font-semibold">$</span>
+                  <input class="flex-grow rounded-r-lg border-slate-300" name="tutor1_ingreso_mensual" type="text" aria-describedby="tutor1_ingreso_mensual-error" />
+                </div>
                   <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor1_ingreso_mensual-error" data-error-for="tutor1_ingreso_mensual" role="alert"></p>
                 </div>
                 <label class="inline-flex items-center gap-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-lg px-3 py-2">
@@ -491,12 +500,15 @@
                 </label>
                 <div>
                   <label class="text-xs font-bold text-slate-500 uppercase">Otra fuente</label>
-                  <input class="w-full mt-1 border-slate-300" name="tutor1_otras_fuentes_ingreso" type="text" maxlength="100" disabled aria-describedby="tutor1_otras_fuentes_ingreso-error" />
+                  <input class="w-full mt-1 border-slate-300" name="tutor1_otras_fuentes_ingreso" type="text" minlength="2" maxlength="100" pattern="^[A-Za-záéíóúÁÉÍÓÚüÜñÑ0-9\s\-().\/.,]+$" disabled aria-describedby="tutor1_otras_fuentes_ingreso-error" />
                   <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor1_otras_fuentes_ingreso-error" data-error-for="tutor1_otras_fuentes_ingreso" role="alert"></p>
                 </div>
                 <div>
                   <label class="text-xs font-bold text-slate-500 uppercase">Monto adicional</label>
-                  <input class="w-full mt-1 border-slate-300" name="tutor1_monto_otras_fuentes" type="text" disabled aria-describedby="tutor1_monto_otras_fuentes-error" />
+                  <div class="flex items-center">
+                  <span class="bg-slate-200 border border-r-0 border-slate-300 px-3 py-2 rounded-l-lg text-slate-600 text-sm font-semibold">$</span>
+                  <input class="flex-grow rounded-r-lg border-slate-300" name="tutor1_monto_otras_fuentes" type="text" disabled aria-describedby="tutor1_monto_otras_fuentes-error" />
+                </div>
                   <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor1_monto_otras_fuentes-error" data-error-for="tutor1_monto_otras_fuentes" role="alert"></p>
                 </div>
                 <fieldset class="mt-4">
@@ -645,10 +657,10 @@
                       >No. Hijos</label
                     ><input
                       class="w-full mt-1 border-slate-300"
-                      name="tutor2_num_hijos"
-                      type="number"
-                      min="0"
-                      max="20"
+                    name="tutor2_num_hijos"
+                    type="number"
+                    min="0"
+                    max="30"
                       aria-describedby="tutor2_num_hijos-error"
                     />
                     <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor2_num_hijos-error" data-error-for="tutor2_num_hijos" role="alert"></p>
@@ -679,7 +691,9 @@
                     class="w-full mt-1 border-slate-300"
                     name="tutor2_fuente_empleo"
                     type="text"
+                    minlength="2"
                     maxlength="80"
+                    pattern="^[A-Za-záéíóúÁÉÍÓÚüÜñÑ0-9\s\-().\/.,]+$"
                     aria-describedby="tutor2_fuente_empleo-error"
                   />
                   <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor2_fuente_empleo-error" data-error-for="tutor2_fuente_empleo" role="alert"></p>
@@ -708,7 +722,10 @@
                 <div>
                   <label class="text-xs font-bold text-slate-500 uppercase"
                     >Ingreso Mensual</label
-                  ><input class="w-full mt-1 border-slate-300" name="tutor2_ingreso_mensual" type="text" aria-describedby="tutor2_ingreso_mensual-error" />
+                  ><div class="flex items-center">
+                  <span class="bg-slate-200 border border-r-0 border-slate-300 px-3 py-2 rounded-l-lg text-slate-600 text-sm font-semibold">$</span>
+                  <input class="flex-grow rounded-r-lg border-slate-300" name="tutor2_ingreso_mensual" type="text" aria-describedby="tutor2_ingreso_mensual-error" />
+                </div>
                   <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor2_ingreso_mensual-error" data-error-for="tutor2_ingreso_mensual" role="alert"></p>
                 </div>
                 <label class="inline-flex items-center gap-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-lg px-3 py-2">
@@ -717,12 +734,15 @@
                 </label>
                 <div>
                   <label class="text-xs font-bold text-slate-500 uppercase">Otra fuente</label>
-                  <input class="w-full mt-1 border-slate-300" name="tutor2_otras_fuentes_ingreso" type="text" maxlength="100" disabled aria-describedby="tutor2_otras_fuentes_ingreso-error" />
+                  <input class="w-full mt-1 border-slate-300" name="tutor2_otras_fuentes_ingreso" type="text" minlength="2" maxlength="100" pattern="^[A-Za-záéíóúÁÉÍÓÚüÜñÑ0-9\s\-().\/.,]+$" disabled aria-describedby="tutor2_otras_fuentes_ingreso-error" />
                   <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor2_otras_fuentes_ingreso-error" data-error-for="tutor2_otras_fuentes_ingreso" role="alert"></p>
                 </div>
                 <div>
                   <label class="text-xs font-bold text-slate-500 uppercase">Monto adicional</label>
-                  <input class="w-full mt-1 border-slate-300" name="tutor2_monto_otras_fuentes" type="text" disabled aria-describedby="tutor2_monto_otras_fuentes-error" />
+                  <div class="flex items-center">
+                  <span class="bg-slate-200 border border-r-0 border-slate-300 px-3 py-2 rounded-l-lg text-slate-600 text-sm font-semibold">$</span>
+                  <input class="flex-grow rounded-r-lg border-slate-300" name="tutor2_monto_otras_fuentes" type="text" disabled aria-describedby="tutor2_monto_otras_fuentes-error" />
+                </div>
                   <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor2_monto_otras_fuentes-error" data-error-for="tutor2_monto_otras_fuentes" role="alert"></p>
                 </div>
                 <fieldset class="mt-4">
@@ -1466,6 +1486,7 @@
             { id: "fecha_nacimiento", label: "Fecha de nacimiento" },
             { id: "diagnostico", label: "Diagnóstico" },
             { id: "calle", label: "Calle" },
+            { id: "num_ext", label: "Número exterior" },
             { id: "colonia", label: "Colonia" },
             { id: "ciudad", label: "Ciudad" },
             { id: "estado_codigo", label: "Estado" },
@@ -1660,6 +1681,34 @@
               SR_Validations.showFieldError(id, message);
             });
             errorEl.textContent = "Revise los campos con formato incorrecto";
+            errorEl.classList.remove("hidden");
+            return;
+          }
+        }
+
+        // Validar rango de campos monetarios (0 a 999,999,999)
+        if (status === "completo") {
+          const monetaryFields = [
+            { name: "tutor1_ingreso_mensual", label: "Ingreso mensual del Tutor 1" },
+            { name: "tutor1_monto_otras_fuentes", label: "Monto de otras fuentes del Tutor 1" },
+            { name: "tutor2_ingreso_mensual", label: "Ingreso mensual del Tutor 2" },
+            { name: "tutor2_monto_otras_fuentes", label: "Monto de otras fuentes del Tutor 2" },
+          ];
+          const MAX_MONETARY = SR_Validations.LIMITS.INGRESO_MENSUAL_MAX;
+          const rangeErrors = [];
+          for (const { name, label } of monetaryFields) {
+            const input = form.querySelector(`[name="${name}"]`);
+            if (!input || input.disabled) continue;
+            const raw = input.value.trim();
+            if (!raw) continue;
+            const num = SR_Validations.toIntegerOrNull(raw);
+            if (num !== null && (num < 0 || num > MAX_MONETARY)) {
+              SR_Validations.showFieldError(name, `${label} debe estar entre $0 y $999,999,999`);
+              rangeErrors.push(label);
+            }
+          }
+          if (rangeErrors.length > 0) {
+            errorEl.textContent = "Revise los montos monetarios: " + rangeErrors.join(", ");
             errorEl.classList.remove("hidden");
             return;
           }
