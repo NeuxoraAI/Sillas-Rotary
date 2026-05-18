@@ -159,7 +159,10 @@
               <label class="block text-sm font-semibold text-slate-700"
                 >Elaboró el estudio</label
               >
-              <input class="w-full border-slate-300 bg-slate-100 pointer-events-none cursor-not-allowed" name="elaboro_estudio" type="text" readonly tabindex="-1" />
+              <div class="relative">
+                <input class="w-full border-slate-300 bg-slate-100 cursor-not-allowed opacity-60 pr-10" name="elaboro_estudio" type="text" readonly tabindex="-1" />
+                <svg class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+              </div>
             </div>
             <div class="space-y-2">
               <label class="block text-sm font-semibold text-slate-700"
@@ -178,11 +181,17 @@
               <label class="block text-sm font-semibold text-slate-700"
                 >Sede</label
               >
-              <input class="w-full border-slate-300 bg-slate-100 pointer-events-none cursor-not-allowed" name="sede" type="text" readonly tabindex="-1" />
+              <div class="relative">
+                <input class="w-full border-slate-300 bg-slate-100 cursor-not-allowed opacity-60 pr-10" name="sede" type="text" readonly tabindex="-1" />
+                <svg class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+              </div>
             </div>
             <div class="md:col-span-2 space-y-2">
               <label class="block text-sm font-semibold text-slate-700">Ciudad del registro</label>
-              <input class="w-full border-slate-300 bg-slate-100 pointer-events-none cursor-not-allowed" name="ciudad_registro" type="text" readonly tabindex="-1" />
+              <div class="relative">
+                <input class="w-full border-slate-300 bg-slate-100 cursor-not-allowed opacity-60 pr-10" name="ciudad_registro" type="text" readonly tabindex="-1" />
+                <svg class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+              </div>
             </div>
           </div>
         </section>
@@ -217,7 +226,9 @@
                 name="entidad_solicitante"
                 placeholder="Nombre de la institución o particular"
                 type="text"
+                minlength="2"
                 maxlength="64"
+                pattern="^[a-zA-ZáéíóúÁÉÍÓÚäëïöüÄËÏÖÜñÑ0-9 ()\/\-.,]*$"
                 required
                 aria-describedby="entidad_solicitante-error"
               />
@@ -270,7 +281,9 @@
                 name="justificacion"
                 placeholder="Información adicional relevante sobre la necesidad de esta silla específica..."
                 rows="3"
+                minlength="3"
                 maxlength="500"
+                pattern="^[a-zA-ZáéíóúÁÉÍÓÚäëïöüÄËÏÖÜñÑ0-9 ()\/\-.,:;]*$"
                 disabled
                 aria-describedby="justificacion-error"
               ></textarea>
