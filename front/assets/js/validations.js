@@ -348,6 +348,124 @@
   }
 
   // ─────────────────────────────────────────────────────────────────
+  // Validación de constraints HTML5 (minlength, pattern)
+  // Reemplaza la validación nativa del navegador desactivada por novalidate
+  // ─────────────────────────────────────────────────────────────────
+
+  function validateHTML5Constraints(formEl) {
+    const errors = [];
+    const inputs = formEl.querySelectorAll(
+      'input:not([type="radio"]):not([type="checkbox"]), select, textarea'
+    );
+
+    for (const input of inputs) {
+      const name = input.name;
+      if (!name) continue;
+
+      const value = input.value.trim();
+      if (!value) continue; // Vacíos los maneja validateRequired
+      if (input.disabled || input.readOnly) continue;
+
+      const label = _getFieldLabel(input, name);
+      let fieldHasError = false;
+
+      // maxlength (aplica a text, textarea, etc.)
+      const maxlength = input.getAttribute("maxlength");
+      if (maxlength) {
+        const max = parseInt(maxlength, 10);
+        if (value.length > max) {
+          errors.push({
+            id: name,
+            message: `${label} debe tener máximo ${max} caracteres`,
+          });
+          fieldHasError = true;
+        }
+      }
+
+      // minlength
+      const minlength = input.getAttribute("minlength");
+      if (!fieldHasError && minlength) {
+        const min = parseInt(minlength, 10);
+        if (value.length < min) {
+          errors.push({
+            id: name,
+            message: `${label} debe tener al menos ${min} caracteres`,
+          });
+          fieldHasError = true;
+        }
+      }
+
+      // pattern
+      if (!fieldHasError) {
+        const pattern = input.getAttribute("pattern");
+        if (pattern) {
+          try {
+            const regex = new RegExp(`^(?:${pattern})$`);
+            if (!regex.test(value)) {
+              errors.push({
+                id: name,
+                message: `${label} contiene caracteres o formato no permitido`,
+              });
+              fieldHasError = true;
+            }
+          } catch (e) {
+            console.warn(`Patrón inválido para ${name}:`, pattern);
+          }
+        }
+      }
+
+      // min/max para number inputs
+      if (!fieldHasError && input.type === "number") {
+        const numValue = parseFloat(value);
+        if (!isNaN(numValue)) {
+          const min = input.getAttribute("min");
+          if (min !== null && numValue < parseFloat(min)) {
+            errors.push({
+              id: name,
+              message: `${label} debe ser mayor o igual a ${min}`,
+            });
+            fieldHasError = true;
+          }
+
+          const max = input.getAttribute("max");
+          if (!fieldHasError && max !== null && numValue > parseFloat(max)) {
+            errors.push({
+              id: name,
+              message: `${label} debe ser menor o igual a ${max}`,
+            });
+            fieldHasError = true;
+          }
+        }
+      }
+    }
+
+    return errors;
+  }
+
+  function _getFieldLabel(inputEl, fallbackName) {
+    let label = "";
+    const container = inputEl.closest(".space-y-2, [class*='grid'], div");
+    if (container) {
+      const labelEl = container.querySelector("label");
+      if (labelEl) {
+        label = labelEl.textContent.trim();
+        // Limpiar texto de checkbox si está presente
+        label = label.replace(/Agregar.*/i, "").trim();
+      }
+    }
+
+    if (!label) {
+      label = fallbackName
+        .replace(/_/g, " ")
+        .replace(/tutor1_/g, "Tutor 1 ")
+        .replace(/tutor2_/g, "Tutor 2 ")
+        .replace(/^./, (str) => str.toUpperCase());
+    }
+
+    return label;
+  }
+
+  // ─────────────────────────────────────────────────────────────────
   // Errores visuales inline
   // ─────────────────────────────────────────────────────────────────
 
@@ -525,6 +643,7 @@
     setupIntegerField,
     setupTextField,
     validateRequired,
+    validateHTML5Constraints,
     showFieldError,
     clearFieldError,
     clearAllFieldErrors,
