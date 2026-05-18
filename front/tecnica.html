@@ -239,7 +239,9 @@
               <textarea
                 class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary bg-slate-100 text-slate-400 cursor-not-allowed"
                 name="observaciones_posturales"
+                minlength="3"
                 maxlength="500"
+                pattern="^[a-zA-ZáéíóúÁÉÍÓÚäëïöüÄËÏÖÜñÑ0-9 ()\/\-.,:;]*$"
                 placeholder="Describa brevemente la condición postural actual para ajustar el respaldo..."
                 rows="3"
                 disabled
