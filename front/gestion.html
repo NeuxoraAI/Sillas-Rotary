@@ -99,7 +99,7 @@
         >
       </div>
       <!-- END: Local Menu -->
-      <form class="p-8 space-y-12">
+      <form class="p-8 space-y-12" novalidate>
         <!-- BEGIN: Header -->
         <header class="bg-slate-800 text-white p-6 -mx-8 -mt-8 mb-8">
           <h1 class="text-2xl font-bold uppercase tracking-wider text-white">
@@ -132,17 +132,19 @@
               <label class="block text-sm font-semibold text-slate-700"
                 >¿El paciente ha tenido silla previamente?</label
               >
-              <select class="w-full border-slate-300" name="silla_previa">
-                <option>No</option>
-                <option>Sí</option>
+              <select class="w-full border-slate-300" name="silla_previa" required aria-describedby="silla_previa-error">
+                <option value="">Selecciona una opción</option>
+                <option value="No">No</option>
+                <option value="Sí">Sí</option>
               </select>
+              <p class="field-error hidden text-red-600 text-xs mt-1" id="silla_previa-error" data-error-for="silla_previa" role="alert"></p>
             </div>
             <div class="space-y-2">
               <label class="block text-sm font-semibold text-slate-700"
                 >¿Cómo la obtuvo?</label
               >
               <select
-                class="w-full border-slate-300"
+                class="w-full border-slate-300 bg-slate-100 text-slate-400 cursor-not-allowed"
                 name="como_obtuvo_silla"
                 disabled
                 aria-describedby="como_obtuvo_silla-error"
@@ -157,7 +159,7 @@
               <label class="block text-sm font-semibold text-slate-700"
                 >Elaboró el estudio</label
               >
-              <input class="w-full border-slate-300 bg-slate-100" name="elaboro_estudio" type="text" readonly />
+              <input class="w-full border-slate-300 bg-slate-100 pointer-events-none cursor-not-allowed" name="elaboro_estudio" type="text" readonly tabindex="-1" />
             </div>
             <div class="space-y-2">
               <label class="block text-sm font-semibold text-slate-700"
@@ -176,11 +178,11 @@
               <label class="block text-sm font-semibold text-slate-700"
                 >Sede</label
               >
-              <input class="w-full border-slate-300 bg-slate-100" name="sede" type="text" readonly />
+              <input class="w-full border-slate-300 bg-slate-100 pointer-events-none cursor-not-allowed" name="sede" type="text" readonly tabindex="-1" />
             </div>
             <div class="md:col-span-2 space-y-2">
               <label class="block text-sm font-semibold text-slate-700">Ciudad del registro</label>
-              <input class="w-full border-slate-300 bg-slate-100" name="ciudad_registro" type="text" readonly />
+              <input class="w-full border-slate-300 bg-slate-100 pointer-events-none cursor-not-allowed" name="ciudad_registro" type="text" readonly tabindex="-1" />
             </div>
           </div>
         </section>
@@ -216,7 +218,10 @@
                 placeholder="Nombre de la institución o particular"
                 type="text"
                 maxlength="64"
+                required
+                aria-describedby="entidad_solicitante-error"
               />
+              <p class="field-error hidden text-red-600 text-xs mt-1" id="entidad_solicitante-error" data-error-for="entidad_solicitante" role="alert"></p>
             </div>
             <div class="space-y-2">
               <label class="block text-sm font-semibold text-slate-700"
@@ -229,6 +234,8 @@
                     name="prioridad"
                     type="radio"
                     value="Alta"
+                    required
+                    aria-describedby="prioridad-error"
                   />
                   <span class="ml-2 text-sm font-medium text-slate-700"
                     >Alta</span
@@ -240,24 +247,34 @@
                     name="prioridad"
                     type="radio"
                     value="Media"
+                    required
+                    aria-describedby="prioridad-error"
                   />
                   <span class="ml-2 text-sm font-medium text-slate-700"
                     >Media</span
                   >
                 </label>
               </div>
+              <p class="field-error hidden text-red-600 text-xs mt-1" id="prioridad-error" data-error-for="prioridad" role="alert"></p>
             </div>
             <div class="md:col-span-2 space-y-2">
               <label class="block text-sm font-semibold text-slate-700"
                 >Justificación para Sillas de Ruedas</label
               >
+              <label class="inline-flex items-center gap-2 text-sm font-medium text-slate-700">
+                <input class="text-primary h-4 w-4" name="tiene_justificacion" type="checkbox" />
+                <span>Agregar justificación</span>
+              </label>
               <textarea
-                class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary"
+                class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary bg-slate-100 text-slate-400 cursor-not-allowed"
                 name="justificacion"
                 placeholder="Información adicional relevante sobre la necesidad de esta silla específica..."
                 rows="3"
                 maxlength="500"
+                disabled
+                aria-describedby="justificacion-error"
               ></textarea>
+              <p class="field-error hidden text-red-600 text-xs mt-1" id="justificacion-error" data-error-for="justificacion" role="alert"></p>
             </div>
           </div>
         </section>
@@ -363,14 +380,39 @@
 
         const apply = () => {
           const hasPreviousChair = sillaPrevia.value === "Sí";
-          comoObtuvo.disabled = !hasPreviousChair;
+          SR_Validations.setFieldDisabled(comoObtuvo, !hasPreviousChair);
           comoObtuvo.required = hasPreviousChair;
           if (!hasPreviousChair) {
+            SR_Validations.setFieldDisabled(comoObtuvo, true);
+            comoObtuvo.required = false;
             comoObtuvo.selectedIndex = 0;
+            SR_Validations.clearFieldError("como_obtuvo_silla");
           }
         };
 
         sillaPrevia.addEventListener("change", apply);
+        apply();
+      }
+
+      // -- setupJustificacionConditional ------------------------------------
+      function setupJustificacionConditional() {
+        const checkbox = document.querySelector('[name="tiene_justificacion"]');
+        const textarea = document.querySelector('[name="justificacion"]');
+        if (!checkbox || !textarea) return;
+
+        const apply = () => {
+          if (checkbox.checked) {
+            SR_Validations.setFieldDisabled(textarea, false);
+            textarea.required = true;
+          } else {
+            SR_Validations.setFieldDisabled(textarea, true);
+            textarea.required = false;
+            textarea.value = "";
+            SR_Validations.clearFieldError("justificacion");
+          }
+        };
+
+        checkbox.addEventListener("change", apply);
         apply();
       }
 
@@ -411,28 +453,63 @@
           status,
         };
 
-        // Payload solicitud: 3 campos
+        // Payload solicitud: solo campos de gestión (status ya se guardó en tecnica.html)
         const solicitudPayload = {
           entidad_solicitante: get("entidad_solicitante") || null,
           prioridad: get("prioridad") || null,
           justificacion: get("justificacion") || null,
-          status,
         };
 
         // Frontend validation before sending
         if (status === "completo") {
           const missing = [];
+
+          if (!get("silla_previa")) {
+            missing.push({ id: "silla_previa", label: "¿El paciente ha tenido silla previamente?" });
+          }
+          if (get("silla_previa") === "Sí" && !get("como_obtuvo_silla")) {
+            missing.push({ id: "como_obtuvo_silla", label: "¿Cómo la obtuvo?" });
+          }
           if (!fechaEstudio) {
             missing.push({ id: "fecha_estudio", label: "Fecha del estudio" });
           }
-          if (estudioPayload.tuvo_silla_previa && !estudioPayload.como_obtuvo_silla) {
-            missing.push({ id: "como_obtuvo_silla", label: "¿Cómo la obtuvo?" });
+          if (!get("entidad_solicitante")?.trim()) {
+            missing.push({ id: "entidad_solicitante", label: "Entidad Solicitante" });
           }
+          if (!document.querySelector('[name="prioridad"]:checked')) {
+            missing.push({ id: "prioridad", label: "Prioridad" });
+          }
+
           if (missing.length > 0) {
             missing.forEach(({ id, label }) => {
               SR_Validations.showFieldError(id, `${label} es obligatorio`);
             });
             errorEl.textContent = "Complete los campos obligatorios: " + missing.map(m => m.label).join(", ");
+            errorEl.classList.remove("hidden");
+            return;
+          }
+
+          // Validate justificacion if checkbox is checked
+          const tieneJust = f.querySelector('[name="tiene_justificacion"]');
+          if (tieneJust?.checked) {
+            const justVal = (f.querySelector('[name="justificacion"]')?.value || "").trim();
+            if (!justVal) {
+              SR_Validations.showFieldError("justificacion", "Justificación es obligatorio");
+              errorEl.textContent = "Complete los campos obligatorios";
+              errorEl.classList.remove("hidden");
+              return;
+            }
+          }
+        }
+
+        // Validar constraints HTML5 (minlength, pattern) replicando validación nativa desactivada por novalidate
+        if (status === "completo") {
+          const constraintErrors = SR_Validations.validateHTML5Constraints(f);
+          if (constraintErrors.length > 0) {
+            constraintErrors.forEach(({ id, message }) => {
+              SR_Validations.showFieldError(id, message);
+            });
+            errorEl.textContent = "Revise los campos con formato incorrecto";
             errorEl.classList.remove("hidden");
             return;
           }
@@ -569,6 +646,14 @@
               setVal("entidad_solicitante", data.entidad_solicitante);
               setVal("justificacion", data.justificacion);
 
+              if (data.justificacion && data.justificacion.trim()) {
+                const chk = document.querySelector('[name="tiene_justificacion"]');
+                if (chk) {
+                  chk.checked = true;
+                  chk.dispatchEvent(new Event("change"));
+                }
+              }
+
               if (data.prioridad) {
                 const prioridadRadio = document.querySelector(
                   `[name="prioridad"][value="${data.prioridad}"]`,
@@ -586,6 +671,7 @@
 
       // -- Event Listeners --------------------------------------------------
       setupSillaPreviaConditionalField();
+      setupJustificacionConditional();
       _setupEntidadValidation();
       _setupJustificacionValidation();
 
