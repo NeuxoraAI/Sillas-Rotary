@@ -102,8 +102,8 @@ STATUS_CATALOG = frozenset({"borrador", "completo"})
 SEXO_CATALOG = frozenset({"M", "F", "NE"})
 
 # Monetary limits
-INGRESO_MENSUAL_MAX = 9_999_999
-MONTO_OTRAS_FUENTES_MAX = 999_999
+INGRESO_MENSUAL_MAX = 999_999_999
+MONTO_OTRAS_FUENTES_MAX = 999_999_999
 
 # Integer limits
 NUM_HIJOS_MAX = 30
