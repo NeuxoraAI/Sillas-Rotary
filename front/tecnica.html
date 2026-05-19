@@ -448,65 +448,45 @@
             Por favor, suba una foto del paciente sentado de frente o de perfil
             para validar las necesidades de soporte de la silla de ruedas.
           </p>
-          <div
-            id="photo-upload-dropzone"
-            class="relative mt-1 flex min-h-56 justify-center px-6 py-8 border-2 border-slate-300 border-dashed rounded-lg bg-white hover:border-primary transition-colors cursor-pointer group"
-          >
-            <div id="photo-upload-placeholder" class="space-y-2 text-center">
-              <svg
-                aria-hidden="true"
-                class="mx-auto h-14 w-14 text-slate-400 group-hover:text-primary transition-colors"
-                fill="none"
-                stroke="currentColor"
-                viewbox="0 0 48 48"
-              >
-                <path
-                  d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                ></path>
-              </svg>
-              <div class="flex text-sm text-slate-600 justify-center">
-                <label
-                  class="relative cursor-pointer rounded-md font-bold text-primary hover:underline focus-within:outline-none"
-                  for="file-upload"
-                >
-                  <span>Subir archivo</span>
-                  <input
-                    class="sr-only"
-                    id="file-upload"
-                    name="file-upload"
-                    type="file"
-                    accept="image/jpeg,image/png"
-                  />
-                </label>
-                <p class="pl-1 font-medium">o arrastrar y soltar</p>
+          <div class="space-y-2 rounded-lg border border-slate-200 bg-white p-4">
+            <label class="block text-sm font-semibold text-slate-700" for="file-upload"
+              >Subir fotografía del paciente</label
+            >
+            <input
+              id="file-upload"
+              name="file-upload"
+              class="w-full border-slate-300 text-sm file:mr-4 file:rounded-md file:border-0 file:bg-primary file:px-4 file:py-2 file:font-semibold file:text-white hover:file:bg-ug-lightBlue"
+              type="file"
+              accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+            />
+            <label class="block text-sm font-semibold text-slate-700 mt-4"
+              >Tomar foto del paciente</label
+            >
+            <button
+              type="button"
+              id="photo-camera-trigger"
+              class="inline-flex cursor-pointer items-center rounded-md bg-slate-700 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+            >
+              Tomar foto
+            </button>
+            <p class="text-xs text-slate-500">Acepta JPG o PNG. Máximo 10MB.</p>
+            <p id="photo-status" class="text-xs text-slate-500"></p>
+            <button
+              type="button"
+              id="photo-preview-card"
+              class="hidden mt-2 w-full overflow-hidden rounded-lg border border-slate-200 bg-white text-left hover:border-primary/40"
+            >
+              <div
+                id="photo-preview-media"
+                class="flex h-44 items-center justify-center bg-slate-100"
+              ></div>
+              <div class="border-t border-slate-200 px-3 py-2">
+                <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Vista previa
+                </p>
+                <p id="photo-preview-name" class="truncate text-sm text-slate-700"></p>
               </div>
-              <p
-                class="text-xs text-slate-500 font-medium uppercase tracking-tight"
-              >
-                PNG, JPG hasta 10MB
-              </p>
-            </div>
-            <div
-              id="photo-preview-container"
-              class="hidden w-full flex items-center justify-center pointer-events-none"
-            >
-              <img
-                id="photo-preview"
-                alt="Vista previa de la fotografía del paciente"
-                class="max-h-[18rem] w-auto max-w-full rounded-xl object-contain shadow-sm mx-auto"
-              />
-            </div>
-          </div>
-          <div id="photo-replace-action" class="hidden mt-3 text-center">
-            <label
-              class="inline-flex cursor-pointer items-center rounded-lg bg-primary px-4 py-2 font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 focus-within:outline-none"
-              for="file-upload"
-            >
-              <span>Cambiar imagen</span>
-            </label>
+            </button>
           </div>
         </section>
         <!-- END: Seccion Multimedia -->
@@ -596,6 +576,7 @@
           >
             <div class="flex flex-col sm:flex-row gap-4">
               <button
+                id="btn-guardar-borrador"
                 class="px-6 py-3 border border-slate-300 text-slate-700 font-bold hover:bg-slate-50 transition-all uppercase text-sm tracking-wide"
                 type="button"
               >
@@ -621,6 +602,125 @@
         <!-- END: Footer Actions -->
       </form>
     </main>
+    <div
+      id="camera-modal"
+      class="hidden fixed inset-0 z-50 bg-slate-900/80 px-4 py-6"
+    >
+      <div class="mx-auto flex h-full max-w-3xl items-center justify-center">
+        <div class="w-full rounded-xl bg-white p-4 shadow-2xl">
+          <div class="flex items-start justify-between gap-4 border-b border-slate-200 pb-3">
+            <div>
+              <h3 id="camera-modal-title" class="text-lg font-bold text-slate-900">
+                Capturar fotografía del paciente
+              </h3>
+              <p class="text-sm text-slate-600">
+                Acomodá al paciente frente a la cámara y tomá la foto.
+              </p>
+            </div>
+            <button
+              id="camera-close"
+              type="button"
+              class="rounded-md border border-slate-300 px-3 py-1 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              Cerrar
+            </button>
+          </div>
+          <div class="mt-4 space-y-4">
+            <div id="camera-device-group" class="hidden space-y-2">
+              <label
+                for="camera-device-select"
+                class="block text-sm font-semibold text-slate-700"
+                >Seleccionar cámara</label
+              >
+              <select
+                id="camera-device-select"
+                class="w-full border-slate-300 text-sm"
+              ></select>
+            </div>
+            <video
+              id="camera-video"
+              class="h-[420px] w-full rounded-lg bg-slate-950 object-contain"
+              autoplay
+              playsinline
+              muted
+            ></video>
+            <canvas id="camera-canvas" class="hidden"></canvas>
+            <p id="camera-error" class="hidden text-sm text-red-600"></p>
+            <div class="flex flex-col gap-3 sm:flex-row sm:justify-end">
+              <button
+                id="camera-capture"
+                type="button"
+                class="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-ug-lightBlue"
+              >
+                Tomar foto
+              </button>
+              <button
+                id="camera-cancel"
+                type="button"
+                class="rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div
+      id="document-preview-modal"
+      class="hidden fixed inset-0 z-50 bg-slate-950/85 px-4 py-6"
+    >
+      <div class="mx-auto flex h-full max-w-5xl items-center justify-center">
+        <div class="w-full rounded-xl bg-white p-4 shadow-2xl">
+          <div class="flex items-start justify-between gap-4 border-b border-slate-200 pb-3">
+            <div>
+              <h3 id="document-preview-title" class="text-lg font-bold text-slate-900">
+                Vista previa de la fotografía
+              </h3>
+              <p id="document-preview-name" class="text-sm text-slate-600"></p>
+            </div>
+            <button
+              id="document-preview-close"
+              type="button"
+              class="rounded-md border border-slate-300 px-3 py-1 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              Cerrar
+            </button>
+          </div>
+          <div
+            id="document-preview-content"
+            class="mt-4 flex h-[70vh] items-center justify-center rounded-lg bg-slate-100 p-4"
+          ></div>
+        </div>
+      </div>
+    </div>
+    <div
+      id="success-modal"
+      class="hidden fixed inset-0 z-50 bg-slate-950/70 px-4 py-6"
+    >
+      <div class="mx-auto flex h-full max-w-lg items-center justify-center">
+        <div class="w-full rounded-2xl bg-white p-6 text-center shadow-2xl">
+          <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-700">
+            <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+          </div>
+          <h3 id="success-modal-title" class="mt-4 text-2xl font-bold text-slate-900">
+            Solicitud guardada
+          </h3>
+          <p id="success-modal-description" class="mt-2 text-sm text-slate-600">
+            La solicitud técnica se guardó correctamente.
+          </p>
+          <button
+            id="success-modal-action"
+            type="button"
+            class="mt-6 inline-flex items-center justify-center rounded-md bg-primary px-5 py-3 text-sm font-semibold text-white hover:bg-ug-lightBlue"
+          >
+            Continuar
+          </button>
+        </div>
+      </div>
+    </div>
     <!-- BEGIN: Script for Interactivity -->
     <script data-purpose="form-logic">
       // Auth guard + Draft Resume
@@ -687,7 +787,10 @@
               }
 
               if (data.foto_url) {
-                setPhotoPreview(data.foto_url);
+                uploadedPhotoUrl = data.foto_url;
+                setPhotoPreviewFromStoredUrl(data.foto_url);
+                renderPhotoStatus();
+                renderPhotoPreviewCard();
               }
 
               // We've restored the draft, continue with the form
@@ -713,64 +816,329 @@
         return isNaN(n) ? null : n;
       };
 
-      let currentPreviewUrl = null;
+      let capturedPhotoFile = null;
+      let uploadedPhotoUrl = null;
+      const photoPreviewState = {
+        objectUrl: null,
+        sourceUrl: null,
+        type: null,
+        name: "",
+      };
+      const cameraState = {
+        stream: null,
+        selectedDeviceId: null,
+      };
 
-      function setPhotoPreview(src) {
-        const container = document.getElementById("photo-preview-container");
-        const preview = document.getElementById("photo-preview");
-        const placeholder = document.getElementById("photo-upload-placeholder");
-        const replaceAction = document.getElementById("photo-replace-action");
-        if (!container || !preview) return;
+      function extractStoredFilename(path) {
+        if (!path) return "";
+        const segments = String(path).split("/");
+        return segments[segments.length - 1] || path;
+      }
 
-        if (!src) {
-          if (currentPreviewUrl && currentPreviewUrl.startsWith("blob:")) {
-            URL.revokeObjectURL(currentPreviewUrl);
-          }
-          currentPreviewUrl = null;
-          preview.removeAttribute("src");
-          container.classList.add("hidden");
-          placeholder?.classList.remove("hidden");
-          replaceAction?.classList.add("hidden");
+      function revokePhotoPreviewUrl() {
+        if (photoPreviewState.objectUrl) {
+          URL.revokeObjectURL(photoPreviewState.objectUrl);
+          photoPreviewState.objectUrl = null;
+        }
+      }
+
+      function setPhotoPreviewFromFile(file) {
+        revokePhotoPreviewUrl();
+        photoPreviewState.objectUrl = URL.createObjectURL(file);
+        photoPreviewState.sourceUrl = null;
+        photoPreviewState.type = file.type || "image/jpeg";
+        photoPreviewState.name = file.name || "Fotografía del paciente";
+      }
+
+      function setPhotoPreviewFromStoredUrl(url) {
+        revokePhotoPreviewUrl();
+        photoPreviewState.objectUrl = null;
+        photoPreviewState.sourceUrl = url || null;
+        photoPreviewState.type = "image/jpeg";
+        photoPreviewState.name = extractStoredFilename(url) || "Fotografía del paciente";
+      }
+
+      function clearPhotoPreviewState() {
+        revokePhotoPreviewUrl();
+        photoPreviewState.objectUrl = null;
+        photoPreviewState.sourceUrl = null;
+        photoPreviewState.type = null;
+        photoPreviewState.name = "";
+      }
+
+      function renderPhotoPreviewCard() {
+        const card = document.getElementById("photo-preview-card");
+        const media = document.getElementById("photo-preview-media");
+        const name = document.getElementById("photo-preview-name");
+        if (!card || !media || !name) return;
+
+        const previewUrl = photoPreviewState.objectUrl || photoPreviewState.sourceUrl;
+        if (!previewUrl) {
+          card.classList.add("hidden");
+          media.innerHTML = "";
+          name.textContent = "";
           return;
         }
 
-        if (
-          currentPreviewUrl &&
-          currentPreviewUrl.startsWith("blob:") &&
-          currentPreviewUrl !== src
-        ) {
-          URL.revokeObjectURL(currentPreviewUrl);
-        }
-
-        currentPreviewUrl = src;
-        preview.src = src;
-        container.classList.remove("hidden");
-        placeholder?.classList.add("hidden");
-        replaceAction?.classList.remove("hidden");
+        card.classList.remove("hidden");
+        name.textContent = photoPreviewState.name || "Fotografía del paciente";
+        media.innerHTML = `<img src="${previewUrl}" alt="Vista previa de la fotografía del paciente" class="h-full w-full object-contain" />`;
       }
 
-      function setupPhotoPreview() {
+      function renderPhotoStatus() {
+        const statusEl = document.getElementById("photo-status");
+        const inputEl = document.getElementById("file-upload");
+        if (!statusEl || !inputEl) return;
+
+        if (inputEl.files?.[0]) {
+          statusEl.textContent = `Fotografía seleccionada: ${inputEl.files[0].name}`;
+          return;
+        }
+
+        if (capturedPhotoFile) {
+          statusEl.textContent = `Fotografía capturada: ${capturedPhotoFile.name}`;
+          return;
+        }
+
+        statusEl.textContent = uploadedPhotoUrl
+          ? `Fotografía cargada: ${extractStoredFilename(uploadedPhotoUrl)}`
+          : "";
+      }
+
+      function getPreviewModalElements() {
+        return {
+          modal: document.getElementById("document-preview-modal"),
+          title: document.getElementById("document-preview-title"),
+          name: document.getElementById("document-preview-name"),
+          content: document.getElementById("document-preview-content"),
+        };
+      }
+
+      function closeDocumentPreviewModal() {
+        const { modal, content, name } = getPreviewModalElements();
+        if (content) content.innerHTML = "";
+        if (name) name.textContent = "";
+        if (modal) modal.classList.add("hidden");
+      }
+
+      function openDocumentPreviewModal() {
+        const { modal, title, name, content } = getPreviewModalElements();
+        const previewUrl = photoPreviewState.objectUrl || photoPreviewState.sourceUrl;
+        if (!modal || !title || !name || !content || !previewUrl) return;
+
+        title.textContent = "Vista previa de la fotografía del paciente";
+        name.textContent = photoPreviewState.name || "Fotografía del paciente";
+        content.innerHTML = `<img src="${previewUrl}" alt="Vista previa ampliada de la fotografía del paciente" class="max-h-full max-w-full object-contain" />`;
+        modal.classList.remove("hidden");
+      }
+
+      function getCameraElements() {
+        return {
+          modal: document.getElementById("camera-modal"),
+          deviceGroup: document.getElementById("camera-device-group"),
+          deviceSelect: document.getElementById("camera-device-select"),
+          video: document.getElementById("camera-video"),
+          canvas: document.getElementById("camera-canvas"),
+          error: document.getElementById("camera-error"),
+        };
+      }
+
+      function stopCameraStream() {
+        if (cameraState.stream) {
+          cameraState.stream.getTracks().forEach((track) => track.stop());
+          cameraState.stream = null;
+        }
+        const { video } = getCameraElements();
+        if (video) video.srcObject = null;
+      }
+
+      async function listVideoDevices() {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        return devices.filter((device) => device.kind === "videoinput");
+      }
+
+      function renderCameraDeviceOptions(devices) {
+        const { deviceGroup, deviceSelect } = getCameraElements();
+        if (!deviceGroup || !deviceSelect) return;
+
+        if (!devices.length) {
+          deviceGroup.classList.add("hidden");
+          deviceSelect.innerHTML = "";
+          return;
+        }
+
+        deviceGroup.classList.toggle("hidden", devices.length <= 1);
+        deviceSelect.innerHTML = devices
+          .map((device, index) => {
+            const selected = device.deviceId === cameraState.selectedDeviceId;
+            const label = device.label || `Cámara ${index + 1}`;
+            return `<option value="${device.deviceId}" ${selected ? "selected" : ""}>${label}</option>`;
+          })
+          .join("");
+      }
+
+      async function refreshCameraDeviceOptions() {
+        const devices = await listVideoDevices();
+        if (!cameraState.selectedDeviceId && devices[0]) {
+          cameraState.selectedDeviceId = devices[0].deviceId;
+        }
+        renderCameraDeviceOptions(devices);
+      }
+
+      async function startCameraStream() {
+        const { video } = getCameraElements();
+        if (!video) return;
+
+        stopCameraStream();
+        const constraints = cameraState.selectedDeviceId
+          ? { video: { deviceId: { exact: cameraState.selectedDeviceId } }, audio: false }
+          : { video: true, audio: false };
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        cameraState.stream = stream;
+        const [videoTrack] = stream.getVideoTracks();
+        const activeDeviceId = videoTrack?.getSettings?.().deviceId;
+        if (activeDeviceId) cameraState.selectedDeviceId = activeDeviceId;
+        video.srcObject = stream;
+        await video.play();
+        await refreshCameraDeviceOptions();
+      }
+
+      function closeCameraModal() {
+        stopCameraStream();
+        const { modal, error, deviceGroup, deviceSelect } = getCameraElements();
+        if (error) {
+          error.textContent = "";
+          error.classList.add("hidden");
+        }
+        if (deviceGroup) deviceGroup.classList.add("hidden");
+        if (deviceSelect) deviceSelect.innerHTML = "";
+        if (modal) modal.classList.add("hidden");
+      }
+
+      async function openCameraModal() {
+        const { modal, error } = getCameraElements();
+        if (!modal || !error) return;
+
+        if (!navigator.mediaDevices?.getUserMedia) {
+          throw new Error("Este navegador no permite acceder a la webcam desde esta pantalla.");
+        }
+
+        error.textContent = "";
+        error.classList.add("hidden");
+        modal.classList.remove("hidden");
+
+        try {
+          await startCameraStream();
+        } catch (_err) {
+          closeCameraModal();
+          throw new Error("No se pudo acceder a la webcam. Revisá los permisos de cámara en Edge.");
+        }
+      }
+
+      function capturePhotoFromWebcam() {
+        const { video, canvas } = getCameraElements();
+        if (!video || !canvas) return;
+
+        const width = video.videoWidth || 1280;
+        const height = video.videoHeight || 720;
+        canvas.width = width;
+        canvas.height = height;
+
+        const context = canvas.getContext("2d");
+        if (!context) {
+          throw new Error("No se pudo procesar la foto capturada.");
+        }
+
+        context.drawImage(video, 0, 0, width, height);
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) return;
+            capturedPhotoFile = new File([blob], `foto-paciente-${Date.now()}.jpg`, {
+              type: "image/jpeg",
+            });
+            const inputEl = document.getElementById("file-upload");
+            if (inputEl) inputEl.value = "";
+            setPhotoPreviewFromFile(capturedPhotoFile);
+            renderPhotoStatus();
+            renderPhotoPreviewCard();
+            closeCameraModal();
+          },
+          "image/jpeg",
+          0.92,
+        );
+      }
+
+      function setupPhotoInputs() {
         const fileInput = document.getElementById("file-upload");
-        if (!fileInput) return;
+        const previewCard = document.getElementById("photo-preview-card");
+        const cameraTrigger = document.getElementById("photo-camera-trigger");
 
-        fileInput.addEventListener("change", () => {
-          const file = fileInput.files && fileInput.files[0];
-          if (!file) {
-            setPhotoPreview(null);
-            return;
+        fileInput?.addEventListener("change", () => {
+          capturedPhotoFile = null;
+          const file = fileInput.files?.[0];
+          if (file) {
+            setPhotoPreviewFromFile(file);
+          } else if (uploadedPhotoUrl) {
+            setPhotoPreviewFromStoredUrl(uploadedPhotoUrl);
+          } else {
+            clearPhotoPreviewState();
           }
-
-          setPhotoPreview(URL.createObjectURL(file));
+          renderPhotoStatus();
+          renderPhotoPreviewCard();
         });
+
+        previewCard?.addEventListener("click", openDocumentPreviewModal);
+        cameraTrigger?.addEventListener("click", async () => {
+          try {
+            await openCameraModal();
+          } catch (err) {
+            const errorEl = document.getElementById("error-msg");
+            errorEl.textContent =
+              err instanceof Error ? err.message : "No se pudo abrir la webcam.";
+            errorEl.classList.remove("hidden");
+          }
+        });
+
+        document.getElementById("camera-close").addEventListener("click", closeCameraModal);
+        document.getElementById("camera-cancel").addEventListener("click", closeCameraModal);
+        document.getElementById("camera-capture").addEventListener("click", capturePhotoFromWebcam);
+        document
+          .getElementById("camera-device-select")
+          .addEventListener("change", async (event) => {
+            cameraState.selectedDeviceId = event.target.value || null;
+            try {
+              await startCameraStream();
+            } catch (_err) {
+              const errorEl = document.getElementById("error-msg");
+              errorEl.textContent = "No se pudo cambiar a la cámara seleccionada.";
+              errorEl.classList.remove("hidden");
+            }
+          });
+        document.getElementById("camera-modal").addEventListener("click", (event) => {
+          if (event.target?.id === "camera-modal") closeCameraModal();
+        });
+        document
+          .getElementById("document-preview-close")
+          .addEventListener("click", closeDocumentPreviewModal);
+        document
+          .getElementById("document-preview-modal")
+          .addEventListener("click", (event) => {
+            if (event.target?.id === "document-preview-modal") {
+              closeDocumentPreviewModal();
+            }
+          });
+
+        renderPhotoStatus();
+        renderPhotoPreviewCard();
       }
 
       async function uploadFoto(fileInput) {
-        if (!fileInput || !fileInput.files || fileInput.files.length === 0)
-          return null;
+        const file = capturedPhotoFile || fileInput?.files?.[0];
+        if (!file) return uploadedPhotoUrl || null;
         const session = JSON.parse(localStorage.getItem("session") || "null");
         if (!session?.token) throw new Error("Sesión no válida.");
         const formData = new FormData();
-        formData.append("foto", fileInput.files[0]);
+        formData.append("foto", file);
         const res = await fetch("/api/upload-foto", {
           method: "POST",
           headers: { Authorization: "Bearer " + session.token },
@@ -778,7 +1146,34 @@
         });
         if (!res.ok) throw new Error("Error al subir la foto.");
         const data = await res.json();
-        return data.foto_url;
+        uploadedPhotoUrl = data.foto_url || null;
+        capturedPhotoFile = null;
+        if (fileInput) fileInput.value = "";
+        if (uploadedPhotoUrl) {
+          setPhotoPreviewFromStoredUrl(uploadedPhotoUrl);
+          renderPhotoStatus();
+          renderPhotoPreviewCard();
+        }
+        return uploadedPhotoUrl;
+      }
+
+      function showSuccessModal({ title, description, onContinue }) {
+        const modal = document.getElementById("success-modal");
+        const titleEl = document.getElementById("success-modal-title");
+        const descriptionEl = document.getElementById("success-modal-description");
+        const actionBtn = document.getElementById("success-modal-action");
+        if (!modal || !titleEl || !descriptionEl || !actionBtn) {
+          onContinue?.();
+          return;
+        }
+
+        titleEl.textContent = title;
+        descriptionEl.textContent = description;
+        actionBtn.onclick = () => {
+          modal.classList.add("hidden");
+          onContinue?.();
+        };
+        modal.classList.remove("hidden");
       }
 
       async function submitSolicitud(status) {
@@ -865,7 +1260,13 @@
               localStorage.removeItem("estudio_id");
               localStorage.removeItem("solicitud_id");
               localStorage.removeItem("beneficiario_id");
-              window.location.href = "socioeconomico.html";
+              showSuccessModal({
+                title: "Solicitud guardada",
+                description: "La solicitud técnica se guardó correctamente.",
+                onContinue: () => {
+                  window.location.href = "socioeconomico.html";
+                },
+              });
             } else {
               alert("Borrador guardado correctamente.");
             }
@@ -900,7 +1301,13 @@
               localStorage.removeItem("estudio_id");
               localStorage.removeItem("solicitud_id");
               localStorage.removeItem("beneficiario_id");
-              window.location.href = "socioeconomico.html";
+              showSuccessModal({
+                title: "Solicitud guardada",
+                description: "La solicitud técnica se guardó correctamente.",
+                onContinue: () => {
+                  window.location.href = "socioeconomico.html";
+                },
+              });
             } else {
               alert("Borrador guardado correctamente.");
             }
@@ -927,15 +1334,13 @@
         apply();
       }
 
-      setupPhotoPreview();
+      setupPhotoInputs();
       setupUnidadMedidaLabels();
 
       // Guardar Borrador button
-      document
-        .querySelector('button[type="button"]')
-        .addEventListener("click", () => {
-          submitSolicitud("borrador");
-        });
+      document.getElementById("btn-guardar-borrador").addEventListener("click", () => {
+        submitSolicitud("borrador");
+      });
 
       // Guardar Solicitud (submit)
       document.querySelector("form").addEventListener("submit", (e) => {

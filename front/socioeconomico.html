@@ -220,15 +220,11 @@
                 required
               />
             </div>
-            <div class="space-y-2">
-              <label class="block text-sm font-semibold text-slate-700">Ciudad</label>
-              <input class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary" name="ciudad" type="text" minlength="2" maxlength="80" required />
-            </div>
-            <div class="space-y-2">
+            <div class="space-y-2 ">
               <label class="block text-sm font-semibold text-slate-700">Estado (INEGI)</label>
               <select class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary" name="estado_codigo" id="estado_codigo" required></select>
             </div>
-            <div class="space-y-2 md:col-span-2">
+            <div class="space-y-2 md:order-2">
               <label class="block text-sm font-semibold text-slate-700">Sexo</label>
               <div class="flex gap-6">
                 <label><input type="radio" name="sexo" value="M" required /> M</label>
@@ -236,7 +232,19 @@
                 <label><input type="radio" name="sexo" value="NE" required /> NE</label>
               </div>
             </div>
-            <div class="space-y-2">
+            <div class="space-y-2 ">
+              <label class="block text-sm font-semibold text-slate-700">Ciudad / Municipio</label>
+              <select
+                class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary"
+                name="ciudad"
+                id="ciudad"
+                required
+                disabled
+              >
+                <option value="">Selecciona un estado primero</option>
+              </select>
+            </div>
+            <div class="space-y-2 md:order-1">
               <label class="block text-sm font-semibold text-slate-700"
                 >Teléfonos de contacto</label
               >
@@ -789,6 +797,7 @@
             </div>
             <div class="flex flex-col sm:flex-row gap-4">
               <button
+                id="btn-guardar-borrador-estudio"
                 class="px-6 py-3 border border-slate-300 text-slate-700 font-bold hover:bg-slate-50 transition-all uppercase text-sm tracking-wide"
                 type="button"
               >
@@ -883,6 +892,33 @@
       </div>
     </div>
     <div
+      id="success-modal"
+      class="hidden fixed inset-0 z-50 bg-slate-950/70 px-4 py-6"
+    >
+      <div class="mx-auto flex h-full max-w-lg items-center justify-center">
+        <div class="w-full rounded-2xl bg-white p-6 shadow-2xl text-center">
+          <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-700">
+            <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+          </div>
+          <h3 id="success-modal-title" class="mt-4 text-2xl font-bold text-slate-900">
+            Estudio guardado
+          </h3>
+          <p id="success-modal-description" class="mt-2 text-sm text-slate-600">
+            El estudio socioeconómico se guardó correctamente.
+          </p>
+          <button
+            id="success-modal-action"
+            type="button"
+            class="mt-6 inline-flex items-center justify-center rounded-md bg-primary px-5 py-3 text-sm font-semibold text-white hover:bg-ug-lightBlue"
+          >
+            Continuar
+          </button>
+        </div>
+      </div>
+    </div>
+    <div
       id="document-preview-modal"
       class="hidden fixed inset-0 z-50 bg-slate-950/85 px-4 py-6"
     >
@@ -942,6 +978,8 @@
         credencial: { objectUrl: null, type: null, name: "", sourceUrl: null },
         comprobante_domicilio: { objectUrl: null, type: null, name: "", sourceUrl: null },
       };
+      const LOCAL_DRAFT_STORAGE_KEY = "socioeconomico_form_draft_v1";
+      let municipiosPorEstado = null;
       const cameraState = {
         key: null,
         stream: null,
@@ -1518,6 +1556,166 @@
         return nextRefs;
       }
 
+      function hasPendingSupportingDocuments() {
+        return DOCUMENT_INPUTS.some((config) => {
+          const inputEl = document.getElementById(config.inputId);
+          return Boolean(capturedDocumentFiles[config.key] || inputEl?.files?.[0]);
+        });
+      }
+
+      async function persistDraftRemotely({ sessionToken, estudioId, payload }) {
+        if (estudioId) {
+          const patchPayload = {
+            ...payload.estudio,
+            tutores: payload.tutores,
+          };
+
+          const response = await fetch(`/api/estudios/${estudioId}`, {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: "Bearer " + sessionToken,
+            },
+            body: JSON.stringify(patchPayload),
+          });
+
+          return { response, mode: "patch" };
+        }
+
+        const response = await fetch("/api/estudios", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + sessionToken,
+          },
+          body: JSON.stringify(payload),
+        });
+
+        return { response, mode: "post" };
+      }
+
+      function buildDraftRemoteErrorMessage(errData, fallbackMessage) {
+        const readable = formatBackendErrorMessage(errData, fallbackMessage);
+        return `${readable} Los datos siguen guardados en este dispositivo; vuelve a intentar cuando regrese la conexión.`;
+      }
+
+      function showSuccessModal({ title, description, onContinue }) {
+        const modal = document.getElementById("success-modal");
+        const titleEl = document.getElementById("success-modal-title");
+        const descriptionEl = document.getElementById("success-modal-description");
+        const actionBtn = document.getElementById("success-modal-action");
+        if (!modal || !titleEl || !descriptionEl || !actionBtn) {
+          onContinue?.();
+          return;
+        }
+
+        titleEl.textContent = title;
+        descriptionEl.textContent = description;
+        actionBtn.onclick = () => {
+          modal.classList.add("hidden");
+          onContinue?.();
+        };
+        modal.classList.remove("hidden");
+      }
+
+      function clearLocalFormDraft() {
+        localStorage.removeItem(LOCAL_DRAFT_STORAGE_KEY);
+      }
+
+      function collectLocalFormDraft() {
+        const form = document.querySelector("form");
+        if (!form) return null;
+
+        const values = {};
+        form.querySelectorAll("input, select, textarea").forEach((field) => {
+          if (!field.name || field.disabled || field.type === "file") return;
+
+          if (field.type === "radio") {
+            if (field.checked) values[field.name] = field.value;
+            return;
+          }
+
+          if (field.type === "checkbox") {
+            values[field.name] = field.checked;
+            return;
+          }
+
+          values[field.name] = field.value;
+        });
+
+        return {
+          updatedAt: new Date().toISOString(),
+          values,
+        };
+      }
+
+      function saveLocalFormDraft() {
+        const snapshot = collectLocalFormDraft();
+        if (!snapshot) return;
+        localStorage.setItem(LOCAL_DRAFT_STORAGE_KEY, JSON.stringify(snapshot));
+      }
+
+      async function applyLocalFormDraft(snapshot) {
+        if (!snapshot?.values) return;
+
+        Object.entries(snapshot.values).forEach(([name, value]) => {
+          const fields = document.querySelectorAll(`[name="${name}"]`);
+          if (!fields.length) return;
+
+          const first = fields[0];
+          if (first.type === "radio") {
+            const target = document.querySelector(`[name="${name}"][value="${value}"]`);
+            if (target) target.checked = true;
+            return;
+          }
+
+          if (first.type === "checkbox") {
+            first.checked = Boolean(value);
+            return;
+          }
+
+          first.value = value ?? "";
+        });
+
+        const ciudadEl = document.getElementById("ciudad");
+        const estadoCodigo = snapshot.values.estado_codigo || "";
+        const ciudad = snapshot.values.ciudad || "";
+        if (ciudadEl && ciudad) {
+          ciudadEl.dataset.pendingValue = ciudad;
+        }
+        if (estadoCodigo) {
+          await loadMunicipiosCatalog();
+          renderMunicipiosSelect(estadoCodigo, ciudad);
+        }
+
+        document.querySelector('[name="silla_previa"]')?.dispatchEvent(new Event("change"));
+      }
+
+      function getLocalFormDraft() {
+        try {
+          return JSON.parse(localStorage.getItem(LOCAL_DRAFT_STORAGE_KEY) || "null");
+        } catch (_err) {
+          return null;
+        }
+      }
+
+      function setupLocalDraftAutosave() {
+        const form = document.querySelector("form");
+        if (!form) return;
+
+        let timeoutId = null;
+        const scheduleSave = () => {
+          if (timeoutId) clearTimeout(timeoutId);
+          timeoutId = setTimeout(saveLocalFormDraft, 300);
+        };
+
+        form.querySelectorAll("input, select, textarea").forEach((field) => {
+          if (!field.name || field.type === "file") return;
+          field.addEventListener("input", scheduleSave);
+          field.addEventListener("change", scheduleSave);
+        });
+      }
+
       function setupTelefonoSanitization() {
         const telefonoInput = document.querySelector('[name="telefonos"]');
         if (!telefonoInput) return;
@@ -1552,6 +1750,87 @@
           opt.textContent = `${name} (${code})`;
           sel.appendChild(opt);
         });
+      }
+
+      function normalizeMunicipioValue(value) {
+        return String(value || "")
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/\s+/g, " ")
+          .trim()
+          .toUpperCase();
+      }
+
+      async function loadMunicipiosCatalog() {
+        if (municipiosPorEstado) return municipiosPorEstado;
+        const response = await fetch("/assets/municipios_por_estado.json", {
+          cache: "no-store",
+        });
+        if (!response.ok) {
+          throw new Error("No se pudo cargar el catálogo de municipios.");
+        }
+        municipiosPorEstado = await response.json();
+        return municipiosPorEstado;
+      }
+
+      function renderMunicipiosSelect(estadoCodigo, municipioSeleccionado = "") {
+        const ciudadSelect = document.getElementById("ciudad");
+        if (!ciudadSelect) return;
+
+        if (!estadoCodigo) {
+          ciudadSelect.innerHTML = '<option value="">Selecciona un estado primero</option>';
+          ciudadSelect.disabled = true;
+          return;
+        }
+
+        const municipios = municipiosPorEstado?.[estadoCodigo] || [];
+        ciudadSelect.disabled = false;
+        ciudadSelect.innerHTML = '<option value="">Selecciona un municipio</option>';
+
+        municipios.forEach((municipio) => {
+          const option = document.createElement("option");
+          option.value = municipio;
+          option.textContent = municipio;
+          ciudadSelect.appendChild(option);
+        });
+
+        if (municipioSeleccionado) {
+          const normalizedTarget = normalizeMunicipioValue(municipioSeleccionado);
+          const matchingMunicipio = municipios.find(
+            (municipio) => normalizeMunicipioValue(municipio) === normalizedTarget,
+          );
+
+          if (matchingMunicipio) {
+            ciudadSelect.value = matchingMunicipio;
+            return;
+          }
+
+          const exists = municipios.includes(municipioSeleccionado);
+          if (!exists) {
+            const option = document.createElement("option");
+            option.value = municipioSeleccionado;
+            option.textContent = `${municipioSeleccionado} (registro previo)`;
+            ciudadSelect.appendChild(option);
+          }
+          ciudadSelect.value = municipioSeleccionado;
+        }
+      }
+
+      async function setupMunicipiosCatalog() {
+        await loadMunicipiosCatalog();
+        const estadoSelect = document.getElementById("estado_codigo");
+        const ciudadSelect = document.getElementById("ciudad");
+        if (!estadoSelect || !ciudadSelect) return;
+
+        estadoSelect.addEventListener("change", () => {
+          renderMunicipiosSelect(estadoSelect.value, "");
+        });
+
+        renderMunicipiosSelect(
+          estadoSelect.value,
+          ciudadSelect.dataset.pendingValue || ciudadSelect.value || "",
+        );
+        delete ciudadSelect.dataset.pendingValue;
       }
 
       function setupTutorConditionalFields() {
@@ -1647,6 +1926,8 @@
         const ciudadRegEl = document.querySelector('[name="ciudad_registro"]');
         if (ciudadRegEl) ciudadRegEl.value = regionCtx.region_nombre || "";
 
+        const localDraft = getLocalFormDraft();
+
         // Draft Resume: Check if we have an estudio_id to restore
         const estudioId = localStorage.getItem("estudio_id");
         if (estudioId) {
@@ -1695,10 +1976,15 @@
                 setVal("diagnostico", b.diagnostico);
                 setVal("calle", b.calle);
                 setVal("colonia", b.colonia);
-                setVal("ciudad", b.ciudad);
                 setVal("num_ext", b.num_ext);
                 setVal("num_int", b.num_int);
                 setVal("estado_codigo", b.estado_codigo);
+                const ciudadEl = document.getElementById("ciudad");
+                if (ciudadEl && b.ciudad != null) {
+                  ciudadEl.dataset.pendingValue = b.ciudad;
+                }
+                await loadMunicipiosCatalog();
+                renderMunicipiosSelect(b.estado_codigo, b.ciudad || "");
                 setVal("telefonos", b.telefonos);
                 const sexoEl = document.querySelector(`[name="sexo"][value="${b.sexo || "NE"}"]`);
                 if (sexoEl) sexoEl.checked = true;
@@ -1810,6 +2096,10 @@
               if (data.beneficiario_id) {
                 localStorage.setItem("beneficiario_id", data.beneficiario_id);
               }
+
+              if (localDraft) {
+                await applyLocalFormDraft(localDraft);
+              }
             } else if (res.status === 404) {
               // Draft was deleted, clear the localStorage
               localStorage.removeItem("estudio_id");
@@ -1818,6 +2108,8 @@
             // Network error, show fresh form
             console.error("Error loading draft:", err);
           }
+        } else if (localDraft) {
+          await applyLocalFormDraft(localDraft);
         }
       })();
 
@@ -1830,6 +2122,7 @@
             localStorage.removeItem("region_ctx");
             localStorage.removeItem("beneficiario_id");
             localStorage.removeItem("estudio_id");
+            clearLocalFormDraft();
             window.location.href = "login.html";
           }
         });
@@ -1957,67 +2250,113 @@
         }
 
         const estudioId = localStorage.getItem("estudio_id");
+        const shouldDeferDocuments = status === "borrador";
 
         try {
           let res, data;
-          const documentRefs = await uploadSupportingDocuments(session.token);
+          let documentRefs = {
+            credencial: { ...uploadedDocumentRefs.credencial },
+            comprobante_domicilio: { ...uploadedDocumentRefs.comprobante_domicilio },
+          };
+
+          if (!shouldDeferDocuments) {
+            documentRefs = await uploadSupportingDocuments(session.token);
+          }
 
           if (estudioId) {
-            // PATCH existing draft - update estudio fields + tutores (for resumed edits)
             const payload = getFormData(status, documentRefs);
-            const patchPayload = {
-              ...payload.estudio,
-              tutores: payload.tutores,
-            };
-
-            res = await fetch(`/api/estudios/${estudioId}`, {
-              method: "PATCH",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: "Bearer " + session.token,
-              },
-              body: JSON.stringify(patchPayload),
-            });
+            ({ response: res } = await persistDraftRemotely({
+              sessionToken: session.token,
+              estudioId,
+              payload,
+            }));
 
             if (!res.ok) {
               const errData = await res.json().catch(() => ({}));
-              errorEl.textContent = formatBackendErrorMessage(
-                errData,
-                "Error al actualizar el estudio. Intente de nuevo.",
-              );
+              errorEl.textContent = status === "borrador"
+                ? buildDraftRemoteErrorMessage(
+                    errData,
+                    "No se pudo actualizar el borrador en el servidor.",
+                  )
+                : formatBackendErrorMessage(
+                    errData,
+                    "Error al actualizar el estudio. Intente de nuevo.",
+                  );
               errorEl.classList.remove("hidden");
               return;
             }
 
             data = await res.json();
 
+            if (shouldDeferDocuments && hasPendingSupportingDocuments()) {
+              try {
+                documentRefs = await uploadSupportingDocuments(session.token);
+                const attachmentPayload = getFormData(status, documentRefs);
+                const attachmentResponse = await fetch(`/api/estudios/${estudioId}`, {
+                  method: "PATCH",
+                  headers: {
+                    "Content-Type": "application/json",
+                    Authorization: "Bearer " + session.token,
+                  },
+                  body: JSON.stringify({
+                    ...attachmentPayload.estudio,
+                    tutores: attachmentPayload.tutores,
+                  }),
+                });
+
+                if (!attachmentResponse.ok) {
+                  errorEl.textContent =
+                    "El borrador del estudio sí se guardó, pero no se pudieron vincular los documentos al servidor. Los datos permanecen guardados en este dispositivo.";
+                  errorEl.classList.remove("hidden");
+                }
+              } catch (err) {
+                errorEl.textContent =
+                  err instanceof Error
+                    ? `El borrador del estudio sí se guardó, pero los documentos no se pudieron subir: ${err.message}`
+                    : "El borrador del estudio sí se guardó, pero los documentos no se pudieron subir.";
+                errorEl.classList.remove("hidden");
+              }
+            }
+
             // After successful PATCH with status 'completo', clear estudio_id (not resumable)
             // but keep beneficiario_id for tecnica.html
             if (status === "completo") {
               localStorage.removeItem("estudio_id");
-              window.location.href = "tecnica.html";
+              clearLocalFormDraft();
+              showSuccessModal({
+                title: "Estudio guardado",
+                description: "El estudio socioeconómico se guardó correctamente.",
+                onContinue: () => {
+                  window.location.href = "tecnica.html";
+                },
+              });
             } else {
-              alert("Borrador guardado correctamente.");
+              saveLocalFormDraft();
+              showSuccessModal({
+                title: "Borrador guardado correctamente",
+                description: "La información capturada se guardó como borrador.",
+                onContinue: () => {},
+              });
             }
           } else {
-            // POST new estudio
             const payload = getFormData(status, documentRefs);
-
-            res = await fetch("/api/estudios", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: "Bearer " + session.token,
-              },
-              body: JSON.stringify(payload),
-            });
+            ({ response: res } = await persistDraftRemotely({
+              sessionToken: session.token,
+              estudioId: null,
+              payload,
+            }));
 
             if (!res.ok) {
               const errData = await res.json().catch(() => ({}));
-              errorEl.textContent = formatBackendErrorMessage(
-                errData,
-                "Error al guardar el estudio. Intente de nuevo.",
-              );
+              errorEl.textContent = status === "borrador"
+                ? buildDraftRemoteErrorMessage(
+                    errData,
+                    "No se pudo guardar el borrador en el servidor.",
+                  )
+                : formatBackendErrorMessage(
+                    errData,
+                    "Error al guardar el estudio. Intente de nuevo.",
+                  );
               errorEl.classList.remove("hidden");
               return;
             }
@@ -2032,14 +2371,56 @@
               localStorage.setItem("beneficiario_id", data.beneficiario_id);
             }
 
+            if (shouldDeferDocuments && hasPendingSupportingDocuments() && data.estudio_id) {
+              try {
+                documentRefs = await uploadSupportingDocuments(session.token);
+                const attachmentPayload = getFormData(status, documentRefs);
+                const attachmentResponse = await fetch(`/api/estudios/${data.estudio_id}`, {
+                  method: "PATCH",
+                  headers: {
+                    "Content-Type": "application/json",
+                    Authorization: "Bearer " + session.token,
+                  },
+                  body: JSON.stringify({
+                    ...attachmentPayload.estudio,
+                    tutores: attachmentPayload.tutores,
+                  }),
+                });
+
+                if (!attachmentResponse.ok) {
+                  errorEl.textContent =
+                    "El borrador del estudio sí se guardó, pero no se pudieron vincular los documentos al servidor. Los datos permanecen guardados en este dispositivo.";
+                  errorEl.classList.remove("hidden");
+                }
+              } catch (err) {
+                errorEl.textContent =
+                  err instanceof Error
+                    ? `El borrador del estudio sí se guardó, pero los documentos no se pudieron subir: ${err.message}`
+                    : "El borrador del estudio sí se guardó, pero los documentos no se pudieron subir.";
+                errorEl.classList.remove("hidden");
+              }
+            }
+
             if (status === "completo") {
               // Estudio completed — clear estudio_id (not resumable)
               // but keep beneficiario_id for tecnica.html
               localStorage.removeItem("estudio_id");
-              window.location.href = "tecnica.html";
+              clearLocalFormDraft();
+              showSuccessModal({
+                title: "Estudio guardado",
+                description: "El estudio socioeconómico se guardó correctamente.",
+                onContinue: () => {
+                  window.location.href = "tecnica.html";
+                },
+              });
             } else {
               // Borrador saved — keep both IDs for later resumption
-              alert("Borrador guardado correctamente.");
+              saveLocalFormDraft();
+              showSuccessModal({
+                title: "Borrador guardado correctamente",
+                description: "La información capturada se guardó como borrador.",
+                onContinue: () => {},
+              });
             }
           }
         } catch (err) {
@@ -2058,12 +2439,18 @@
       setupTutorConditionalFields();
       setupSillaPreviaConditionalField();
       setupDocumentInputs();
-      setupEstadosCatalog();
-      setupTutorConditionalFields();
-      setupSillaPreviaConditionalField();
+      setupMunicipiosCatalog().catch((err) => {
+        const errorEl = document.getElementById("error-msg");
+        errorEl.textContent =
+          err instanceof Error
+            ? err.message
+            : "No se pudo cargar el catálogo de municipios.";
+        errorEl.classList.remove("hidden");
+      });
+      setupLocalDraftAutosave();
 
       document
-        .querySelector('button[type="button"]')
+        .getElementById("btn-guardar-borrador-estudio")
         .addEventListener("click", () => {
           submitEstudio("borrador");
         });
