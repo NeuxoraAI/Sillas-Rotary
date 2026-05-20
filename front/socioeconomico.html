@@ -1037,12 +1037,25 @@
         MONETARY_FIELD_IDS.forEach((fieldName) => {
           const input = document.querySelector(`[name="${fieldName}"]`);
           if (!input) return;
+          const max = fieldName.includes("ingreso")
+            ? SR_Validations.LIMITS.INGRESO_MENSUAL_MAX
+            : SR_Validations.LIMITS.MONTO_OTRAS_FUENTES_MAX;
 
+          // Validación de máximo (de eramirezh)
+          SR_Validations.setupMoneyField(input, max);
+
+          // Formateo visual con comas (de beto)
           input.addEventListener("input", () => {
-            input.value = SR_Validations.formatIntegerDisplay(input.value);
+            const raw = input.value.replace(/,/g, "");
+            if (raw) {
+              input.value = SR_Validations.formatIntegerDisplay(raw);
+            }
           });
 
-          input.value = SR_Validations.formatIntegerDisplay(input.value);
+          // Formatear valor inicial si existe
+          if (input.value) {
+            input.value = SR_Validations.formatIntegerDisplay(input.value.replace(/,/g, ""));
+          }
         });
       }
 
