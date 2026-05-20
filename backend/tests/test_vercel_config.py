@@ -43,7 +43,7 @@ def test_vercel_uses_functions_instead_of_legacy_builds() -> None:
     config = _load_vercel_config()
 
     assert "builds" not in config, "Legacy builds disable Project Settings on Vercel"
-    assert config.get("functions", {}).get("api/index.py", {}).get("includeFiles") == "front/**"
+    assert config.get("functions", {}).get("api/**/*.py", {}).get("includeFiles") == "front/**"
 
 
 def test_root_requirements_include_runtime_dependencies() -> None:
