@@ -98,6 +98,7 @@ CONTROL_CABEZA_CATALOG = frozenset({
 })
 PRIORIDAD_CATALOG = frozenset({"Alta", "Media"})
 UNIDAD_MEDIDA_CATALOG = frozenset({"in", "cm"})
+UNIDAD_PESO_CATALOG = frozenset({"kg", "lb"})
 STATUS_CATALOG = frozenset({"borrador", "completo"})
 SEXO_CATALOG = frozenset({"M", "F", "NE"})
 
@@ -242,6 +243,10 @@ def validate_status(value: str) -> str:
 
 def validate_unidad_medida(value: str) -> str:
     return validate_catalog(value, UNIDAD_MEDIDA_CATALOG, "unidad_medida")
+
+
+def validate_unidad_peso(value: str) -> str:
+    return validate_catalog(value, UNIDAD_PESO_CATALOG, "unidad_peso_captura")
 
 
 def validate_prioridad(value: Optional[str]) -> Optional[str]:
