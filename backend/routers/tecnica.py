@@ -22,6 +22,7 @@ from validators import (
     validate_control_tronco,
     validate_control_cabeza,
     validate_unidad_medida,
+    validate_unidad_peso,
     validate_prioridad,
     validate_status,
 )
@@ -414,6 +415,7 @@ class SolicitudCreateRequest(BaseModel):
     unidad_medida: str = "in"
     altura_total_in: Optional[Decimal] = None
     peso_kg: Optional[Decimal] = None
+    unidad_peso_captura: str = "kg"
     medida_cabeza_asiento: Optional[Decimal] = None
     medida_hombro_asiento: Optional[Decimal] = None
     medida_prof_asiento: Optional[Decimal] = None
@@ -476,6 +478,11 @@ class SolicitudCreateRequest(BaseModel):
     def _unidad_valida(cls, v: str) -> str:
         return validate_unidad_medida(v)
 
+    @field_validator("unidad_peso_captura")
+    @classmethod
+    def _unidad_peso_valida(cls, v: str) -> str:
+        return validate_unidad_peso(v)
+
     @field_validator("status")
     @classmethod
     def _status_valido(cls, v: str) -> str:
@@ -536,6 +543,7 @@ class SolicitudUpdateRequest(BaseModel):
     unidad_medida: Optional[str] = None
     altura_total_in: Optional[Decimal] = None
     peso_kg: Optional[Decimal] = None
+    unidad_peso_captura: Optional[str] = None
     medida_cabeza_asiento: Optional[Decimal] = None
     medida_hombro_asiento: Optional[Decimal] = None
     medida_prof_asiento: Optional[Decimal] = None
@@ -612,6 +620,13 @@ class SolicitudUpdateRequest(BaseModel):
         if v is None:
             return v
         return validate_unidad_medida(v)
+
+    @field_validator("unidad_peso_captura")
+    @classmethod
+    def _unidad_peso_valida(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        return validate_unidad_peso(v)
 
     @field_validator("prioridad")
     @classmethod
@@ -1358,9 +1373,9 @@ def crear_solicitud(
                 (beneficiario_id, usuario_id, entorno, control_tronco, control_cabeza, control_de_piernas,
                  observaciones_posturales, altura_total_in, peso_kg,
                  medida_cabeza_asiento, medida_hombro_asiento, medida_prof_asiento,
-                 medida_rodilla_talon, medida_ancho_cadera, unidad_captura, foto_url,
+                 medida_rodilla_talon, medida_ancho_cadera, unidad_captura, unidad_peso_captura, foto_url,
                  entidad_solicitante, prioridad, justificacion, status)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
             """,
             (
@@ -1379,6 +1394,7 @@ def crear_solicitud(
                 body.medida_rodilla_talon,
                 body.medida_ancho_cadera,
                 body.unidad_medida,
+                body.unidad_peso_captura,
                 resolved_foto_url,
                 body.entidad_solicitante,
                 body.prioridad,
@@ -1438,7 +1454,7 @@ def actualizar_solicitud(
     assert_resource_owner(existing["usuario_id"], usuario)
 
     fields = body.model_dump(exclude_none=True)
-    if fields.get("unidad_medida") in ("cm", "in"):
+    if fields.get("unidad_medida") in ("cm", "in") or "unidad_peso_captura" in fields:
         fields = _normalize_medidas_patch(fields)
     # Rename to DB column name
     if "unidad_medida" in fields:
@@ -1500,19 +1516,38 @@ def _to_inches(v: Optional[Decimal], unidad: str) -> Optional[Decimal]:
     return v
 
 
+def _to_kg(v: Optional[Decimal], unidad: str) -> Optional[Decimal]:
+    """Convert a weight value to kilograms (canonical storage unit).
+
+    If the capture unit is 'lb', divide by 2.20462 (1 kg ≈ 2.20462 lb)
+    and quantize to 3 decimal places. Otherwise return unchanged.
+    """
+    if v is None:
+        return None
+    if unidad == "lb":
+        kg = v / Decimal("2.20462")
+        return kg.quantize(Decimal("0.001"))
+    return v  # already kg
+
+
 def _normalize_medidas(body: SolicitudCreateRequest) -> SolicitudCreateRequest:
     data = body.model_dump()
     unidad = data.get("unidad_medida", "in")
+    unidad_peso = data.get("unidad_peso_captura", "kg")
     for key in ("altura_total_in", "medida_cabeza_asiento", "medida_hombro_asiento", "medida_prof_asiento", "medida_rodilla_talon", "medida_ancho_cadera"):
         data[key] = _to_inches(data.get(key), unidad)
+    data["peso_kg"] = _to_kg(data.get("peso_kg"), unidad_peso)
     return SolicitudCreateRequest(**data)
 
 
 def _normalize_medidas_patch(fields: dict) -> dict:
     unidad = fields.get("unidad_medida", "in")
+    unidad_peso = fields.get("unidad_peso_captura", "kg")
     for key in ("altura_total_in", "medida_cabeza_asiento", "medida_hombro_asiento", "medida_prof_asiento", "medida_rodilla_talon", "medida_ancho_cadera"):
         if key in fields:
             fields[key] = _to_inches(fields[key], unidad)
+    if "peso_kg" in fields:
+        fields["peso_kg"] = _to_kg(fields["peso_kg"], unidad_peso)
     return fields
 
 
