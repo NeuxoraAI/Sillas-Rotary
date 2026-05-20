@@ -851,7 +851,7 @@
           <div
             class="flex flex-col md:flex-row md:items-center justify-between gap-6"
           >
-            <div class="flex items-center gap-4">
+            <div class="hidden flex items-center gap-4" aria-hidden="true">
               <div class="bg-blue-50 p-3 rounded-full">
                 <span class="text-primary font-black">UG</span>
               </div>
@@ -868,8 +868,11 @@
             </div>
             <div class="flex flex-col sm:flex-row gap-4">
               <button
-                class="px-6 py-3 border border-slate-300 text-slate-700 font-bold hover:bg-slate-50 transition-all uppercase text-sm tracking-wide"
+                id="btn-guardar-borrador-estudio"
+                class="hidden px-6 py-3 border border-slate-300 text-slate-700 font-bold hover:bg-slate-50 transition-all uppercase text-sm tracking-wide"
                 type="button"
+                disabled
+                aria-hidden="true"
               >
                 Guardar Borrador
               </button>
