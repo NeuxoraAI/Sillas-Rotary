@@ -57,6 +57,21 @@
       button {
         border-radius: 0.5rem !important;
       }
+      @keyframes toastIn {
+        0% { transform: scale(0.8) translateY(-20px); opacity: 0; }
+        60% { transform: scale(1.05) translateY(0); opacity: 1; }
+        100% { transform: scale(1) translateY(0); opacity: 1; }
+      }
+      @keyframes toastOut {
+        0% { transform: scale(1); opacity: 1; }
+        100% { transform: scale(0.9); opacity: 0; }
+      }
+      .success-toast {
+        animation: toastIn 0.4s ease-out forwards;
+      }
+      .success-toast.hiding {
+        animation: toastOut 0.3s ease-in forwards;
+      }
     </style>
     <style data-purpose="typography">
       h1,
@@ -1209,6 +1224,26 @@
         modal.classList.remove("hidden");
       }
 
+      // -- Toast de éxito ---------------------------------------------------
+      function showSuccessToast(message, redirectUrl) {
+        const toast = document.getElementById("success-toast");
+        const msgEl = document.getElementById("success-toast-msg");
+        if (!toast || !msgEl) {
+          if (redirectUrl) setTimeout(() => (window.location.href = redirectUrl), 2000);
+          return;
+        }
+        msgEl.textContent = message;
+        toast.classList.remove("hidden", "hiding");
+        setTimeout(() => {
+          toast.classList.add("hiding");
+          setTimeout(() => {
+            toast.classList.add("hidden");
+            toast.classList.remove("hiding");
+            if (redirectUrl) window.location.href = redirectUrl;
+          }, 300);
+        }, 1800);
+      }
+
       async function submitSolicitud(status) {
         const errorEl = document.getElementById("error-msg");
         errorEl.classList.add("hidden");
@@ -1342,9 +1377,9 @@
 
             if (status === "completo") {
               // Keep estudio_id and solicitud_id for gestion.html to close the full flow
-              window.location.href = "gestion.html";
+              showSuccessToast("Solicitud guardada correctamente", "gestion.html");
             } else {
-              alert("Borrador guardado correctamente.");
+              showSuccessToast("Borrador guardado correctamente", null);
             }
           } else {
             // POST new solicitud
@@ -1376,9 +1411,9 @@
 
             if (status === "completo") {
               // Keep estudio_id and solicitud_id for gestion.html to close the full flow
-              window.location.href = "gestion.html";
+              showSuccessToast("Solicitud guardada correctamente", "gestion.html");
             } else {
-              alert("Borrador guardado correctamente.");
+              showSuccessToast("Borrador guardado correctamente", null);
             }
           }
         } catch (err) {
@@ -1421,5 +1456,20 @@
       });
     </script>
     <!-- END: Script for Interactivity -->
+
+    <!-- Toast de éxito -->
+    <div
+      id="success-toast"
+      class="success-toast fixed top-6 left-1/2 -translate-x-1/2 z-50 hidden flex items-center gap-3 rounded-xl bg-green-500 px-6 py-4 text-white shadow-2xl"
+      role="status"
+      aria-live="polite"
+    >
+      <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/20">
+        <svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+      </div>
+      <span id="success-toast-msg" class="text-sm font-semibold">Guardado correctamente</span>
+    </div>
   </body>
 </html>
