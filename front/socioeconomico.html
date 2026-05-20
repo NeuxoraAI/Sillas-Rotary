@@ -242,8 +242,17 @@
               <p class="field-error hidden text-red-600 text-xs mt-1" id="colonia-error" data-error-for="colonia" role="alert"></p>
             </div>
             <div class="space-y-2">
-              <label class="block text-sm font-semibold text-slate-700">Ciudad</label>
-              <input class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary" name="ciudad" type="text" minlength="2" maxlength="80" pattern="^[A-Za-záéíóúÁÉÍÓÚüÜñÑ0-9.\- ]+$" required aria-describedby="ciudad-error" />
+              <label class="block text-sm font-semibold text-slate-700">Ciudad / Municipio</label>
+              <select
+                class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary"
+                name="ciudad"
+                id="ciudad"
+                required
+                disabled
+                aria-describedby="ciudad-error"
+              >
+                <option value="">Selecciona un estado primero</option>
+              </select>
               <p class="field-error hidden text-red-600 text-xs mt-1" id="ciudad-error" data-error-for="ciudad" role="alert"></p>
             </div>
             <div class="space-y-2">
@@ -880,6 +889,89 @@
         });
       }
 
+      let municipiosPorEstado = null;
+
+      function normalizeMunicipioValue(value) {
+        return String(value || "")
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/\s+/g, " ")
+          .trim()
+          .toUpperCase();
+      }
+
+      async function loadMunicipiosCatalog() {
+        if (municipiosPorEstado) return municipiosPorEstado;
+        const response = await fetch("/assets/municipios_por_estado.json", {
+          cache: "no-store",
+        });
+        if (!response.ok) {
+          throw new Error("No se pudo cargar el catálogo de municipios.");
+        }
+        municipiosPorEstado = await response.json();
+        return municipiosPorEstado;
+      }
+
+      function renderMunicipiosSelect(estadoCodigo, municipioSeleccionado = "") {
+        const ciudadSelect = document.getElementById("ciudad");
+        if (!ciudadSelect) return;
+
+        if (!estadoCodigo) {
+          ciudadSelect.innerHTML = '<option value="">Selecciona un estado primero</option>';
+          ciudadSelect.disabled = true;
+          return;
+        }
+
+        const municipios = municipiosPorEstado?.[estadoCodigo] || [];
+        ciudadSelect.disabled = false;
+        ciudadSelect.innerHTML = '<option value="">Selecciona un municipio</option>';
+
+        municipios.forEach((municipio) => {
+          const option = document.createElement("option");
+          option.value = municipio;
+          option.textContent = municipio;
+          ciudadSelect.appendChild(option);
+        });
+
+        if (municipioSeleccionado) {
+          const normalizedTarget = normalizeMunicipioValue(municipioSeleccionado);
+          const matchingMunicipio = municipios.find(
+            (municipio) => normalizeMunicipioValue(municipio) === normalizedTarget,
+          );
+
+          if (matchingMunicipio) {
+            ciudadSelect.value = matchingMunicipio;
+            return;
+          }
+
+          const exists = municipios.includes(municipioSeleccionado);
+          if (!exists) {
+            const option = document.createElement("option");
+            option.value = municipioSeleccionado;
+            option.textContent = `${municipioSeleccionado} (registro previo)`;
+            ciudadSelect.appendChild(option);
+          }
+          ciudadSelect.value = municipioSeleccionado;
+        }
+      }
+
+      async function setupMunicipiosCatalog() {
+        await loadMunicipiosCatalog();
+        const estadoSelect = document.getElementById("estado_codigo");
+        const ciudadSelect = document.getElementById("ciudad");
+        if (!estadoSelect || !ciudadSelect) return;
+
+        estadoSelect.addEventListener("change", () => {
+          renderMunicipiosSelect(estadoSelect.value, "");
+        });
+
+        renderMunicipiosSelect(
+          estadoSelect.value,
+          ciudadSelect.dataset.pendingValue || ciudadSelect.value || "",
+        );
+        delete ciudadSelect.dataset.pendingValue;
+      }
+
       function setupNameFieldValidation() {
         const names = [
           "nombres", "apellido_paterno", "apellido_materno",
@@ -1205,7 +1297,6 @@
                 setVal("diagnostico", b.diagnostico);
                 setVal("calle", b.calle);
                 setVal("colonia", b.colonia);
-                setVal("ciudad", b.ciudad);
                 setVal("num_ext", b.num_ext);
                 if (b.num_int) {
                   const numIntCheckbox = document.querySelector('[name="tiene_num_interior"]');
@@ -1216,6 +1307,14 @@
                 }
                 setVal("num_int", b.num_int);
                 setVal("estado_codigo", b.estado_codigo);
+                const ciudadEl = document.getElementById("ciudad");
+                if (ciudadEl && b.ciudad != null) {
+                  ciudadEl.dataset.pendingValue = b.ciudad;
+                }
+                if (b.estado_codigo) {
+                  await loadMunicipiosCatalog();
+                  renderMunicipiosSelect(b.estado_codigo, b.ciudad || "");
+                }
                 setVal("telefonos", b.telefonos);
                 const sexoEl = document.querySelector(`[name="sexo"][value="${b.sexo || "NE"}"]`);
                 if (sexoEl) sexoEl.checked = true;
@@ -1821,6 +1920,9 @@
       setupTelefonoSanitization();
       setupNumInteriorConditional();
       setupEstadosCatalog();
+      setupMunicipiosCatalog().catch((err) => {
+        console.error("Error cargando catálogo de municipios:", err);
+      });
       setupTutorConditionalFields();
       setupTutor2Toggle();
 
