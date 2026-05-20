@@ -58,16 +58,26 @@ def test_listar_beneficiarios_returns_indicators():
             "beneficiario_id": 10,
             "nombre": "Ana",
             "folio": "MX-LON-2026-001",
+            "pais_nombre": "México",
+            "region_nombre": "Guanajuato",
+            "ciudad": "León",
             "sede": "León",
+            "peso_kg": None,
+            "altura_total_in": None,
+            "unidad_captura": None,
+            "foto_url": None,
             "estado": "en_proceso",
             "revision_pendiente": False,
             "proceso_id": 33,
+            "total_count": 1,
         }
     ]
     db = _FakeDB([rows])
     out = listar_beneficiarios_tecnica(db=db, _usuario=_tec_user(), q="Ana", sede=None, estado=None, revision_pendiente=None)
     assert out["total"] == 1
     assert out["items"][0]["estado"] == "en_proceso"
+    assert out["items"][0]["pais_nombre"] == "México"
+    assert out["items"][0]["region_nombre"] == "Guanajuato"
 
 
 def test_detalle_consolidado_readonly_permissions():

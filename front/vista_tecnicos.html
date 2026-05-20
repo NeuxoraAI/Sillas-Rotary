@@ -1,0 +1,1680 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Bandeja Técnica | Ecosistema VIDA UG</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block"
+      rel="stylesheet"
+    />
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "ug-blue": "#1e3a8a",
+              "ug-yellow": "#facc15",
+              "ug-yellow-light": "#fef08a",
+              primary: "#ec5b13",
+            },
+            fontFamily: { display: ["Public Sans"] },
+            borderRadius: {
+              DEFAULT: "0.25rem",
+              lg: "0.5rem",
+              xl: "0.75rem",
+              "2xl": "1rem",
+              full: "9999px",
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      body {
+        font-family: "Public Sans", sans-serif;
+      }
+      .material-symbols-outlined {
+        font-family: "Material Symbols Outlined";
+        font-weight: normal;
+        font-style: normal;
+        line-height: 1;
+        letter-spacing: normal;
+        text-transform: none;
+        display: inline-block;
+        white-space: nowrap;
+        word-wrap: normal;
+        direction: ltr;
+        -webkit-font-feature-settings: "liga";
+        -webkit-font-smoothing: antialiased;
+        font-variation-settings:
+          "FILL" 0,
+          "wght" 400,
+          "GRAD" 0,
+          "opsz" 24;
+      }
+
+      /* Loading spinner animation */
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      .animate-spin {
+        animation: spin 1s linear infinite;
+      }
+
+      /* Fade-in for modal */
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: scale(0.95);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+      .animate-fade-in {
+        animation: fadeIn 0.2s ease-out;
+      }
+
+      /* Estado badge colors */
+      .badge-sin_iniciar {
+        background: #f1f5f9;
+        color: #475569;
+      }
+      .badge-en_proceso {
+        background: #dbeafe;
+        color: #1d4ed8;
+      }
+      .badge-finalizado {
+        background: #dcfce7;
+        color: #15803d;
+      }
+      .badge-revision_pendiente {
+        background: #fef3c7;
+        color: #b45309;
+      }
+
+      /* Filter panel transition */
+      .filter-panel {
+        transition:
+          max-height 0.3s ease,
+          opacity 0.2s ease;
+        max-height: 0;
+        opacity: 0;
+        overflow: hidden;
+      }
+      .filter-panel.open {
+        max-height: 800px;
+        opacity: 1;
+        overflow: visible;
+      }
+
+      /* Scrollbar styling */
+      .modal-body::-webkit-scrollbar {
+        width: 4px;
+      }
+      .modal-body::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body class="bg-slate-50 font-display min-h-screen flex flex-col">
+    <!-- ── Header ──────────────────────────────────────────────────────────── -->
+    <header class="w-full bg-ug-blue py-3 px-4 shadow-lg">
+      <div class="max-w-7xl mx-auto flex items-center justify-between gap-3">
+        <!-- Logo + region context -->
+        <div class="flex items-center gap-3 min-w-0">
+          <div
+            class="w-9 h-9 bg-white rounded-xl flex items-center justify-center shadow shrink-0 overflow-hidden"
+          >
+            <img
+              alt="UG"
+              class="w-4/5 h-4/5 object-contain"
+              src="assets/Logo_ug.png"
+            />
+          </div>
+          <div class="min-w-0">
+            <p id="header-region" class="text-white text-xs font-bold truncate">
+              —
+            </p>
+            <p id="header-sede" class="text-white/50 text-[10px] truncate">—</p>
+          </div>
+        </div>
+        <!-- User + logout -->
+        <div class="flex items-center gap-2 shrink-0">
+          <div class="text-right hidden sm:block">
+            <p
+              id="user-nombre"
+              class="text-white text-xs font-semibold leading-none"
+            >
+              —
+            </p>
+            <p
+              id="user-rol"
+              class="text-white/50 text-[9px] uppercase tracking-wider mt-0.5"
+            >
+              —
+            </p>
+          </div>
+          <button
+            id="btn-logout"
+            title="Cerrar sesión"
+            class="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/70 hover:text-white transition-all"
+          >
+            <span class="material-symbols-outlined text-sm">logout</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- ── Search + Filter Bar ─────────────────────────────────────────────── -->
+    <div class="bg-white border-b border-slate-200 sticky top-0 z-30">
+      <div class="max-w-7xl mx-auto px-4 py-3">
+        <!-- Search row -->
+        <div class="flex items-center gap-2">
+          <div class="relative flex-1">
+            <span
+              class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg pointer-events-none"
+              >search</span
+            >
+            <input
+              id="input-search"
+              type="search"
+              autocomplete="off"
+              placeholder="Buscar por nombre, folio, ciudad, región, país…"
+              class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-ug-blue focus:outline-none transition-colors text-sm"
+            />
+          </div>
+          <button
+            id="btn-toggle-filters"
+            title="Filtros"
+            class="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 border-2 border-slate-200 flex items-center justify-center text-slate-500 hover:text-ug-blue transition-all shrink-0"
+          >
+            <span class="material-symbols-outlined text-xl">tune</span>
+          </button>
+        </div>
+
+        <!-- Filter panel (collapsible) -->
+        <div id="filter-panel" class="filter-panel mt-3">
+          <div
+            class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3"
+          >
+            <!-- País -->
+            <div class="space-y-1">
+              <label
+                class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider"
+                >País</label
+              >
+              <select
+                id="filter-pais"
+                class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 focus:border-ug-blue focus:outline-none py-2"
+              >
+                <option value="">Todos</option>
+              </select>
+            </div>
+            <!-- Región -->
+            <div class="space-y-1">
+              <label
+                class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider"
+                >Región</label
+              >
+              <select
+                id="filter-region"
+                class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 focus:border-ug-blue focus:outline-none py-2"
+                disabled
+              >
+                <option value="">Todos</option>
+              </select>
+            </div>
+            <!-- Ciudad -->
+            <div class="space-y-1">
+              <label
+                class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider"
+                >Ciudad</label
+              >
+              <input
+                id="filter-ciudad"
+                type="text"
+                autocomplete="off"
+                placeholder="Ej: León"
+                class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 focus:border-ug-blue focus:outline-none py-2 px-3"
+              />
+            </div>
+            <!-- Sede -->
+            <div class="space-y-1">
+              <label
+                class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider"
+                >Sede</label
+              >
+              <input
+                id="filter-sede"
+                type="text"
+                autocomplete="off"
+                placeholder="Ej: Hospital"
+                class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 focus:border-ug-blue focus:outline-none py-2 px-3"
+              />
+            </div>
+            <!-- Estado -->
+            <div class="space-y-1">
+              <label
+                class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider"
+                >Fase</label
+              >
+              <select
+                id="filter-estado"
+                class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 focus:border-ug-blue focus:outline-none py-2"
+              >
+                <option value="">Todos</option>
+                <option value="sin_iniciar">Sin iniciar</option>
+                <option value="en_proceso">En proceso</option>
+                <option value="finalizado">Finalizado</option>
+                <option value="revision_pendiente">Revisión pendiente</option>
+              </select>
+            </div>
+            <!-- Peso min -->
+            <div class="space-y-1">
+              <label
+                class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider"
+                >Peso mínimo (kg)</label
+              >
+              <input
+                id="filter-peso-min"
+                type="number"
+                min="0"
+                max="300"
+                step="0.1"
+                placeholder="0"
+                class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 focus:border-ug-blue focus:outline-none py-2 px-3"
+              />
+            </div>
+            <!-- Peso max -->
+            <div class="space-y-1">
+              <label
+                class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider"
+                >Peso máximo (kg)</label
+              >
+              <input
+                id="filter-peso-max"
+                type="number"
+                min="0"
+                max="300"
+                step="0.1"
+                placeholder="300"
+                class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 focus:border-ug-blue focus:outline-none py-2 px-3"
+              />
+            </div>
+            <!-- Altura min -->
+            <div class="space-y-1">
+              <label
+                class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider"
+                >Altura mín (in/cm)</label
+              >
+              <input
+                id="filter-altura-min"
+                type="number"
+                min="0"
+                max="120"
+                step="0.1"
+                placeholder="0"
+                class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 focus:border-ug-blue focus:outline-none py-2 px-3"
+              />
+            </div>
+            <!-- Altura max -->
+            <div class="space-y-1">
+              <label
+                class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider"
+                >Altura máx (in/cm)</label
+              >
+              <input
+                id="filter-altura-max"
+                type="number"
+                min="0"
+                max="120"
+                step="0.1"
+                placeholder="120"
+                class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 focus:border-ug-blue focus:outline-none py-2 px-3"
+              />
+            </div>
+            <!-- Tiene foto -->
+            <div class="space-y-1">
+              <label
+                class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider"
+                >Foto</label
+              >
+              <select
+                id="filter-foto"
+                class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 focus:border-ug-blue focus:outline-none py-2"
+              >
+                <option value="">Todos</option>
+                <option value="true">Con foto</option>
+                <option value="false">Sin foto</option>
+              </select>
+            </div>
+          </div>
+          <!-- Filter actions -->
+          <div
+            class="flex items-center justify-end gap-3 mt-3 pt-3 border-t border-slate-100"
+          >
+            <span id="filter-count" class="text-xs text-slate-400"></span>
+            <button
+              id="btn-clear-filters"
+              class="text-xs font-semibold text-slate-500 hover:text-red-600 transition-colors px-3 py-1.5 rounded-lg hover:bg-red-50"
+            >
+              Limpiar filtros
+            </button>
+            <button
+              id="btn-export-excel"
+              class="text-xs font-bold text-white bg-green-600 hover:bg-green-700 px-4 py-1.5 rounded-lg transition-colors flex items-center gap-1"
+            >
+              <span class="material-symbols-outlined text-sm">download</span>
+              Exportar Excel
+            </button>
+            <button
+              id="btn-apply-filters"
+              class="text-xs font-bold text-white bg-ug-blue hover:bg-ug-blue/90 px-4 py-1.5 rounded-lg transition-colors"
+            >
+              Aplicar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Main Content ────────────────────────────────────────────────────── -->
+    <main class="flex-1 max-w-7xl mx-auto w-full px-4 py-6">
+      <!-- Loading state -->
+      <div
+        id="state-loading"
+        class="hidden flex flex-col items-center justify-center py-20"
+      >
+        <div
+          class="w-10 h-10 border-4 border-ug-blue/20 border-t-ug-blue rounded-full animate-spin"
+        ></div>
+        <p class="text-slate-500 text-sm mt-4 font-medium">
+          Cargando beneficiarios…
+        </p>
+      </div>
+
+      <!-- Error state -->
+      <div
+        id="state-error"
+        class="hidden flex flex-col items-center justify-center py-20"
+      >
+        <div
+          class="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mb-4"
+        >
+          <span class="material-symbols-outlined text-red-400 text-3xl"
+            >error_outline</span
+          >
+        </div>
+        <p
+          id="error-message"
+          class="text-slate-700 text-sm font-medium text-center max-w-xs"
+        >
+          Error al cargar los datos.
+        </p>
+        <button
+          id="btn-retry"
+          class="mt-4 px-6 py-2 bg-ug-blue text-white text-sm font-bold rounded-xl hover:bg-ug-blue/90 transition-colors"
+        >
+          Reintentar
+        </button>
+      </div>
+
+      <!-- Empty state -->
+      <div
+        id="state-empty"
+        class="hidden flex flex-col items-center justify-center py-20"
+      >
+        <div
+          class="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mb-4"
+        >
+          <span class="material-symbols-outlined text-slate-400 text-3xl"
+            >person_search</span
+          >
+        </div>
+        <p class="text-slate-700 text-sm font-semibold">
+          No se encontraron beneficiarios
+        </p>
+        <p class="text-slate-400 text-xs mt-1">
+          Intente modificar los filtros o la búsqueda.
+        </p>
+        <button
+          id="btn-empty-clear"
+          class="mt-4 px-6 py-2 bg-slate-200 text-slate-700 text-sm font-bold rounded-xl hover:bg-slate-300 transition-colors"
+        >
+          Limpiar filtros
+        </button>
+      </div>
+
+      <!-- Selection toolbar -->
+      <div
+        id="selection-toolbar"
+        class="hidden flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4 pb-4 border-b border-slate-200"
+      >
+        <div class="flex items-center gap-3">
+          <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider"
+            >Seleccionados: <span id="selection-count" class="text-ug-blue font-bold">0</span></span
+          >
+          <button
+            id="btn-export-selected"
+            class="text-xs font-bold text-white bg-green-600 hover:bg-green-700 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <span class="material-symbols-outlined text-sm">download</span>
+            Exportar seleccionados
+          </button>
+          <button
+            id="btn-clear-selection"
+            class="text-xs font-semibold text-slate-500 hover:text-red-600 transition-colors px-2 py-1.5 rounded-lg hover:bg-red-50"
+          >
+            Limpiar selección
+          </button>
+        </div>
+        <div class="flex items-center gap-2 text-[11px] text-slate-400">
+          <span class="w-3 h-3 rounded-full bg-green-500 block"></span>
+          <span>Ya exportado</span>
+        </div>
+      </div>
+
+      <!-- Beneficiary list -->
+      <div id="list-container" class="space-y-3">
+        <!-- cards rendered by JS -->
+      </div>
+
+      <!-- Pagination -->
+      <div
+        id="pagination"
+        class="hidden flex items-center justify-between mt-6 pt-4 border-t border-slate-200"
+      >
+        <button
+          id="btn-prev"
+          class="flex items-center gap-1 px-4 py-2 text-sm font-semibold text-slate-600 bg-white border-2 border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        >
+          <span class="material-symbols-outlined text-base">chevron_left</span>
+          Anterior
+        </button>
+        <span id="page-indicator" class="text-sm text-slate-500 font-medium"
+          >Página 1 de 1</span
+        >
+        <button
+          id="btn-next"
+          class="flex items-center gap-1 px-4 py-2 text-sm font-semibold text-slate-600 bg-white border-2 border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        >
+          Siguiente
+          <span class="material-symbols-outlined text-base">chevron_right</span>
+        </button>
+      </div>
+    </main>
+
+    <!-- ── Detail Modal ────────────────────────────────────────────────────── -->
+    <div
+      id="modal-overlay"
+      class="hidden fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center p-0 sm:p-4"
+    >
+      <div
+        id="modal-container"
+        class="animate-fade-in bg-white w-full sm:max-w-lg sm:rounded-2xl sm:max-h-[90vh] flex flex-col shadow-2xl sm:mx-auto max-h-[92vh] rounded-t-2xl"
+      >
+        <!-- Modal header -->
+        <div
+          class="flex items-center justify-between px-5 py-4 border-b border-slate-200 shrink-0"
+        >
+          <div class="min-w-0">
+            <h2
+              id="modal-title"
+              class="text-base font-bold text-slate-900 truncate"
+            >
+              —
+            </h2>
+            <p id="modal-folio" class="text-xs text-slate-500 font-medium">—</p>
+          </div>
+          <button
+            id="btn-close-modal"
+            class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-700 transition-all shrink-0 ml-2"
+          >
+            <span class="material-symbols-outlined text-lg">close</span>
+          </button>
+        </div>
+        <!-- Modal body (scrollable) -->
+        <div
+          id="modal-body"
+          class="modal-body flex-1 overflow-y-auto px-5 py-4 space-y-6"
+        >
+          <!-- Loading in modal -->
+          <div
+            id="modal-loading"
+            class="flex items-center justify-center py-12"
+          >
+            <div
+              class="w-8 h-8 border-4 border-ug-blue/20 border-t-ug-blue rounded-full animate-spin"
+            ></div>
+          </div>
+          <!-- Content rendered by JS -->
+          <div id="modal-content" class="hidden space-y-6"></div>
+        </div>
+        <!-- Modal footer (action buttons) -->
+        <div
+          id="modal-footer"
+          class="hidden px-5 py-4 border-t border-slate-200 shrink-0 space-y-2"
+        >
+          <!-- rendered by JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Toast ───────────────────────────────────────────────────────────── -->
+    <div
+      id="toast-container"
+      class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] flex flex-col items-center gap-2 pointer-events-none"
+    ></div>
+
+    <script>
+      // ═══════════════════════════════════════════════════════════════════════════
+      // HELPERS
+      // ═══════════════════════════════════════════════════════════════════════════
+
+      function _getSession() {
+        try {
+          return JSON.parse(localStorage.getItem("session") || "null");
+        } catch (_) {
+          return null;
+        }
+      }
+
+      function _authFetch(url, opts) {
+        opts = opts || {};
+        opts.headers = Object.assign(
+          { Authorization: "Bearer " + _getSession().token },
+          opts.headers || {},
+        );
+        return fetch(url, opts);
+      }
+
+      function _formatRol(rol) {
+        const map = {
+          admin: "Administrador",
+          capturista: "Capturista",
+          tecnico: "Técnico",
+        };
+        return map[rol] || rol || "—";
+      }
+
+      function _formatEstado(estado) {
+        const map = {
+          sin_iniciar: "Sin iniciar",
+          en_proceso: "En proceso",
+          finalizado: "Finalizado",
+          revision_pendiente: "Revisión pendiente",
+        };
+        return map[estado] || estado || "—";
+      }
+
+      function _formatDate(iso) {
+        if (!iso) return "—";
+        try {
+          const d = new Date(iso);
+          return d.toLocaleDateString("es-MX", {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+        } catch (_) {
+          return iso;
+        }
+      }
+
+      function _debounce(fn, ms) {
+        let timer;
+        return function (...args) {
+          clearTimeout(timer);
+          timer = setTimeout(() => fn.apply(this, args), ms);
+        };
+      }
+
+      function _escapeHtml(str) {
+        if (str == null) return "";
+        const d = document.createElement("div");
+        d.textContent = str;
+        return d.innerHTML;
+      }
+
+      function _valOrNa(val) {
+        return val != null && val !== "" ? val : "No capturado";
+      }
+
+      function _valOrNaHtml(val) {
+        return val != null && val !== ""
+          ? _escapeHtml(String(val))
+          : '<span class="text-slate-300 italic">No capturado</span>';
+      }
+
+      function _parseIntSafe(val, fallback) {
+        const n = parseInt(val, 10);
+        return isNaN(n) ? fallback : n;
+      }
+
+      function _parseFloatSafe(val, fallback) {
+        if (val === "" || val == null) return fallback;
+        const n = parseFloat(val);
+        return isNaN(n) ? fallback : n;
+      }
+
+      function _getBoolFilter(val) {
+        if (val === "true") return true;
+        if (val === "false") return false;
+        return undefined;
+      }
+
+      function _getInitials(name) {
+        if (!name) return "??";
+        const parts = name.trim().split(/\s+/);
+        if (parts.length === 1) {
+          return parts[0].substring(0, 2).toUpperCase();
+        }
+        return (parts[0][0] + parts[1][0]).toUpperCase();
+      }
+
+      // ═══════════════════════════════════════════════════════════════════════════
+      // STATE
+      // ═══════════════════════════════════════════════════════════════════════════
+
+      const state = {
+        items: [],
+        total: 0,
+        page: 1,
+        perPage: 20,
+        filterTimeoutId: null,
+        loading: false,
+        paisesCache: [],
+        regionesCache: {},
+        selectedIds: new Set(),
+        exportedIds: new Set(
+          JSON.parse(localStorage.getItem("tec_exported_ids") || "[]"),
+        ),
+      };
+
+      // DOM refs
+      const $ = (id) => document.getElementById(id);
+      const inputSearch = $("input-search");
+      const toggleFilters = $("btn-toggle-filters");
+      const filterPanel = $("filter-panel");
+      const filterPais = $("filter-pais");
+      const filterRegion = $("filter-region");
+      const filterCiudad = $("filter-ciudad");
+      const filterSede = $("filter-sede");
+      const filterEstado = $("filter-estado");
+      const filterPesoMin = $("filter-peso-min");
+      const filterPesoMax = $("filter-peso-max");
+      const filterAlturaMin = $("filter-altura-min");
+      const filterAlturaMax = $("filter-altura-max");
+      const filterFoto = $("filter-foto");
+      const btnClearFilters = $("btn-clear-filters");
+      const btnApplyFilters = $("btn-apply-filters");
+      const listContainer = $("list-container");
+      const stateLoading = $("state-loading");
+      const stateError = $("state-error");
+      const stateEmpty = $("state-empty");
+      const errorMessage = $("error-message");
+      const btnRetry = $("btn-retry");
+      const btnEmptyClear = $("btn-empty-clear");
+      const pagination = $("pagination");
+      const btnPrev = $("btn-prev");
+      const btnNext = $("btn-next");
+      const pageIndicator = $("page-indicator");
+      const modalOverlay = $("modal-overlay");
+      const modalBody = $("modal-body");
+      const modalContent = $("modal-content");
+      const modalLoading = $("modal-loading");
+      const modalFooter = $("modal-footer");
+      const modalTitle = $("modal-title");
+      const modalFolio = $("modal-folio");
+      const btnCloseModal = $("btn-close-modal");
+      const toastContainer = $("toast-container");
+      const filterCount = $("filter-count");
+      const selectionToolbar = $("selection-toolbar");
+      const selectionCount = $("selection-count");
+      const btnExportSelected = $("btn-export-selected");
+      const btnClearSelection = $("btn-clear-selection");
+
+      let currentDetail = null; // { beneficiario_id, proceso_id, estado }
+
+      // ═══════════════════════════════════════════════════════════════════════════
+      // AUTH BOOT
+      // ═══════════════════════════════════════════════════════════════════════════
+
+      (function boot() {
+        const session = _getSession();
+        if (!session?.token) {
+          window.location.replace("login.html");
+          return;
+        }
+
+        $("user-nombre").textContent = session.nombre || "—";
+        $("user-rol").textContent = _formatRol(session.rol);
+
+        // Read region_ctx for header
+        let regionCtx = null;
+        try {
+          regionCtx = JSON.parse(localStorage.getItem("region_ctx") || "null");
+        } catch (_) {}
+        if (regionCtx) {
+          $("header-region").textContent =
+            (regionCtx.pais_nombre || "") +
+            " / " +
+            (regionCtx.region_nombre || "");
+          $("header-sede").textContent = regionCtx.sede || "";
+        } else {
+          $("header-region").textContent = "Sin región seleccionada";
+        }
+
+        // Logout
+        $("btn-logout").addEventListener("click", function () {
+          localStorage.removeItem("session");
+          localStorage.removeItem("region_ctx");
+          window.location.href = "login.html";
+        });
+      })();
+
+      // ═══════════════════════════════════════════════════════════════════════════
+      // FILTER PANEL
+      // ═══════════════════════════════════════════════════════════════════════════
+
+      // Toggle filter panel
+      toggleFilters.addEventListener("click", function () {
+        filterPanel.classList.toggle("open");
+        toggleFilters.classList.toggle("border-ug-blue");
+        toggleFilters.classList.toggle("text-ug-blue");
+      });
+
+      // País → Región cascade
+      filterPais.addEventListener("change", async function () {
+        const paisId = this.value;
+        filterRegion.innerHTML = '<option value="">Todos</option>';
+        filterRegion.disabled = true;
+        if (!paisId) return;
+        await loadRegionesDropdown(paisId);
+      });
+
+      async function loadPaisesDropdown() {
+        try {
+          const res = await _authFetch("/api/paises");
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          const paises = await res.json();
+          state.paisesCache = paises;
+          filterPais.innerHTML = '<option value="">Todos</option>';
+          paises.forEach(function (p) {
+            const opt = document.createElement("option");
+            opt.value = p.pais_id;
+            opt.textContent = p.nombre + " (" + p.codigo + ")";
+            filterPais.appendChild(opt);
+          });
+        } catch (_) {
+          // Non-critical; filter just won't have paises
+        }
+      }
+
+      async function loadRegionesDropdown(paisId) {
+        try {
+          if (state.regionesCache[paisId]) {
+            populateRegionDropdown(state.regionesCache[paisId]);
+            return;
+          }
+          const res = await _authFetch("/api/regiones?pais_id=" + paisId);
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          const regiones = await res.json();
+          state.regionesCache[paisId] = regiones;
+          populateRegionDropdown(regiones);
+        } catch (_) {
+          // Non-critical
+        }
+      }
+
+      function populateRegionDropdown(regiones) {
+        filterRegion.innerHTML = '<option value="">Todos</option>';
+        if (regiones.length === 0) {
+          filterRegion.disabled = true;
+          return;
+        }
+        regiones.forEach(function (r) {
+          const opt = document.createElement("option");
+          opt.value = r.region_id;
+          opt.textContent = r.nombre + " (" + r.codigo + ")";
+          filterRegion.appendChild(opt);
+        });
+        filterRegion.disabled = false;
+      }
+
+      // Clear all filters
+      btnClearFilters.addEventListener("click", clearAllFilters);
+      btnEmptyClear.addEventListener("click", clearAllFilters);
+
+      function clearAllFilters() {
+        inputSearch.value = "";
+        filterPais.value = "";
+        filterRegion.innerHTML = '<option value="">Todos</option>';
+        filterRegion.disabled = true;
+        filterCiudad.value = "";
+        filterSede.value = "";
+        filterEstado.value = "";
+        filterPesoMin.value = "";
+        filterPesoMax.value = "";
+        filterAlturaMin.value = "";
+        filterAlturaMax.value = "";
+        filterFoto.value = "";
+        state.page = 1;
+        updateFilterCount();
+        loadBeneficiarios();
+      }
+
+      // Apply filters
+      btnApplyFilters.addEventListener("click", function () {
+        state.page = 1;
+        loadBeneficiarios();
+      });
+
+      // ── Export helpers ──
+      async function doExportExcel(idsArray, btnEl) {
+        const originalHtml = btnEl.innerHTML;
+        btnEl.disabled = true;
+        btnEl.classList.add("opacity-60", "cursor-not-allowed");
+
+        try {
+          const filters = readFilters();
+          const params = new URLSearchParams();
+          Object.entries(filters).forEach(function ([key, val]) {
+            if (val !== undefined && val !== null && val !== "") {
+              params.set(key, String(val));
+            }
+          });
+          if (idsArray && idsArray.length > 0) {
+            params.set("ids", idsArray.join(","));
+          }
+
+          btnEl.innerHTML = '<span class="material-symbols-outlined text-sm animate-spin">progress_activity</span> Exportando...';
+
+          const res = await _authFetch(
+            "/api/tecnica/beneficiarios/export?" + params.toString(),
+          );
+
+          if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            throw new Error(errData.detail || "No se pudo exportar el Excel");
+          }
+
+          const blob = await res.blob();
+          const downloadUrl = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          const disposition = res.headers.get("Content-Disposition") || "";
+          const match = disposition.match(/filename="([^"]+)"/);
+
+          link.href = downloadUrl;
+          link.download = match ? match[1] : "beneficiarios.xlsx";
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          URL.revokeObjectURL(downloadUrl);
+
+          // Mark exported IDs
+          if (idsArray && idsArray.length > 0) {
+            idsArray.forEach(function (id) {
+              state.exportedIds.add(id);
+            });
+          } else {
+            state.items.forEach(function (item) {
+              state.exportedIds.add(item.beneficiario_id);
+            });
+          }
+          localStorage.setItem(
+            "tec_exported_ids",
+            JSON.stringify(Array.from(state.exportedIds)),
+          );
+          renderList();
+
+          showToast("Excel exportado correctamente", "success");
+        } catch (err) {
+          showToast(err.message || "No se pudo exportar el Excel", "error");
+        } finally {
+          btnEl.disabled = false;
+          btnEl.classList.remove("opacity-60", "cursor-not-allowed");
+          btnEl.innerHTML = originalHtml;
+        }
+      }
+
+      // Export Excel (filter-panel button — exports ALL filtered)
+      $("btn-export-excel").addEventListener("click", async function () {
+        await doExportExcel([], this);
+      });
+
+      // Export selected (toolbar button — exports only selected)
+      btnExportSelected.addEventListener("click", async function () {
+        const ids = Array.from(state.selectedIds);
+        if (ids.length === 0) return;
+        await doExportExcel(ids, this);
+        state.selectedIds.clear();
+        _updateSelectionUI();
+      });
+
+      // Clear selection
+      btnClearSelection.addEventListener("click", function () {
+        state.selectedIds.clear();
+        renderList();
+        _updateSelectionUI();
+      });
+
+      // Filter count badge
+      function updateFilterCount() {
+        let count = 0;
+        if (inputSearch.value.trim()) count++;
+        if (filterPais.value) count++;
+        if (filterRegion.value) count++;
+        if (filterCiudad.value.trim()) count++;
+        if (filterSede.value.trim()) count++;
+        if (filterEstado.value) count++;
+        if (filterPesoMin.value || filterPesoMax.value) count++;
+        if (filterAlturaMin.value || filterAlturaMax.value) count++;
+        if (filterFoto.value) count++;
+        filterCount.textContent =
+          count > 0 ? count + " filtro(s) activo(s)" : "";
+      }
+
+      function readFilters() {
+        updateFilterCount();
+        return {
+          q: inputSearch.value.trim() || undefined,
+          pais_id: filterPais.value
+            ? _parseIntSafe(filterPais.value, undefined)
+            : undefined,
+          region_id: filterRegion.value
+            ? _parseIntSafe(filterRegion.value, undefined)
+            : undefined,
+          ciudad: filterCiudad.value.trim() || undefined,
+          sede: filterSede.value.trim() || undefined,
+          estado: filterEstado.value || undefined,
+          peso_kg_min: _parseFloatSafe(filterPesoMin.value, undefined),
+          peso_kg_max: _parseFloatSafe(filterPesoMax.value, undefined),
+          altura_in_min: _parseFloatSafe(filterAlturaMin.value, undefined),
+          altura_in_max: _parseFloatSafe(filterAlturaMax.value, undefined),
+          tiene_foto: _getBoolFilter(filterFoto.value),
+        };
+      }
+
+      // ═══════════════════════════════════════════════════════════════════════════
+      // SEARCH (debounced)
+      // ═══════════════════════════════════════════════════════════════════════════
+
+      const debouncedSearch = _debounce(function () {
+        state.page = 1;
+        loadBeneficiarios();
+      }, 300);
+
+      inputSearch.addEventListener("input", debouncedSearch);
+
+      // Also debounce other text filters
+      [filterCiudad, filterSede].forEach(function (el) {
+        el.addEventListener(
+          "input",
+          _debounce(function () {
+            state.page = 1;
+            loadBeneficiarios();
+          }, 500),
+        );
+      });
+
+      // Enter key on search
+      inputSearch.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") {
+          state.page = 1;
+          loadBeneficiarios();
+        }
+      });
+
+      // ═══════════════════════════════════════════════════════════════════════════
+      // LOAD BENEFICIARIOS
+      // ═══════════════════════════════════════════════════════════════════════════
+
+      async function loadBeneficiarios() {
+        if (state.loading) return;
+        state.loading = true;
+
+        showLoading();
+        hideAllStatesExcept("loading");
+
+        const filters = readFilters();
+        const params = new URLSearchParams();
+
+        params.set("page", String(state.page));
+        params.set("per_page", String(state.perPage));
+
+        Object.entries(filters).forEach(function ([key, val]) {
+          if (val !== undefined && val !== null && val !== "") {
+            params.set(key, String(val));
+          }
+        });
+
+        try {
+          const res = await _authFetch(
+            "/api/tecnica/beneficiarios?" + params.toString(),
+          );
+          if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            const detail = errData.detail;
+            const msg =
+              typeof detail === "object"
+                ? detail.message || "Error del servidor"
+                : detail || "Error del servidor";
+            throw new Error(msg);
+          }
+          const data = await res.json();
+          state.items = data.items || [];
+          state.total = data.total || 0;
+          state.page = data.page || 1;
+
+          if (state.items.length === 0) {
+            showEmpty();
+          } else {
+            renderList();
+            renderPagination();
+            showList();
+          }
+        } catch (err) {
+          showError(err.message || "Error al cargar los datos.");
+        } finally {
+          state.loading = false;
+        }
+      }
+
+      // ═══════════════════════════════════════════════════════════════════════════
+      // RENDER LIST
+      // ═══════════════════════════════════════════════════════════════════════════
+
+      function _updateSelectionUI() {
+        const count = state.selectedIds.size;
+        selectionCount.textContent = String(count);
+        btnExportSelected.disabled = count === 0;
+        if (count > 0) {
+          selectionToolbar.classList.remove("hidden");
+        } else {
+          selectionToolbar.classList.add("hidden");
+        }
+      }
+
+      function renderList() {
+        listContainer.innerHTML = "";
+        state.items.forEach(function (item) {
+          const isExported = state.exportedIds.has(item.beneficiario_id);
+          const isSelected = state.selectedIds.has(item.beneficiario_id);
+
+          const card = document.createElement("div");
+          card.className =
+            "bg-white rounded-2xl border p-4 hover:shadow-md transition-shadow cursor-pointer " +
+            (isExported
+              ? "border-green-400 bg-green-50/30"
+              : "border-slate-200");
+
+          const estadoClass = "badge-" + (item.estado || "sin_iniciar");
+          const initials = _getInitials(item.nombre);
+          const name = _escapeHtml(item.nombre || "—");
+          const folio = _escapeHtml(item.folio || "—");
+          const pais = _escapeHtml(item.pais_nombre || "—");
+          const ciudad = _escapeHtml(item.ciudad || "—");
+          const telefono =
+            item.telefonos && item.telefonos.trim()
+              ? _escapeHtml(item.telefonos.trim())
+              : "—";
+
+          let avatarHtml;
+          if (item.foto_url) {
+            avatarHtml = `
+            <img src="${_escapeHtml(item.foto_url)}" alt="" class="w-full h-full object-cover rounded-full"
+                 onerror="this.style.display='none';this.parentElement.querySelector('.card-initials').style.display='flex'" />
+            <span class="card-initials hidden text-white text-xs font-semibold uppercase">${initials}</span>`;
+          } else {
+            avatarHtml = `<span class="text-white text-xs font-semibold uppercase">${initials}</span>`;
+          }
+
+          const exportedBadge = isExported
+            ? '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-500 text-white shrink-0">Exportado</span>'
+            : "";
+
+          card.innerHTML = `
+        <div class="flex items-center gap-3">
+          <label class="flex items-center cursor-pointer shrink-0" onclick="event.stopPropagation()">
+            <input type="checkbox" class="w-5 h-5 rounded border-slate-300 text-green-600 focus:ring-green-500 cursor-pointer selection-checkbox"
+              data-id="${item.beneficiario_id}" ${isSelected ? "checked" : ""} />
+          </label>
+          <div class="w-10 h-10 shrink-0 rounded-full bg-ug-blue flex items-center justify-center overflow-hidden">
+            ${avatarHtml}
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="text-sm font-bold text-slate-900 truncate">${name}</p>
+            <p class="text-xs font-mono text-slate-400">${folio}</p>
+            <p class="text-xs text-slate-500 truncate">${pais} · ${ciudad} · ${telefono}</p>
+          </div>
+          <div class="flex items-center gap-2 shrink-0 self-center">
+            ${exportedBadge}
+            <span class="text-[11px] font-bold px-2.5 py-1 rounded-full ${estadoClass}">${_formatEstado(item.estado)}</span>
+          </div>
+        </div>
+      `;
+
+          card.addEventListener("click", function (e) {
+            if (e.target.closest(".selection-checkbox")) return;
+            openDetail(item.beneficiario_id);
+          });
+
+          const checkbox = card.querySelector(".selection-checkbox");
+          checkbox.addEventListener("change", function () {
+            if (this.checked) {
+              state.selectedIds.add(item.beneficiario_id);
+            } else {
+              state.selectedIds.delete(item.beneficiario_id);
+            }
+            _updateSelectionUI();
+          });
+
+          listContainer.appendChild(card);
+        });
+      }
+
+      // ═══════════════════════════════════════════════════════════════════════════
+      // PAGINATION
+      // ═══════════════════════════════════════════════════════════════════════════
+
+      function renderPagination() {
+        const totalPages = Math.max(1, Math.ceil(state.total / state.perPage));
+        pageIndicator.textContent =
+          "Página " + state.page + " de " + totalPages;
+        btnPrev.disabled = state.page <= 1;
+        btnNext.disabled = state.page >= totalPages;
+        pagination.classList.remove("hidden");
+      }
+
+      btnPrev.addEventListener("click", function () {
+        if (state.page > 1) {
+          state.page--;
+          loadBeneficiarios();
+        }
+      });
+
+      btnNext.addEventListener("click", function () {
+        const totalPages = Math.max(1, Math.ceil(state.total / state.perPage));
+        if (state.page < totalPages) {
+          state.page++;
+          loadBeneficiarios();
+        }
+      });
+
+      // ═══════════════════════════════════════════════════════════════════════════
+      // DETAIL MODAL
+      // ═══════════════════════════════════════════════════════════════════════════
+
+      async function openDetail(beneficiarioId) {
+        currentDetail = { beneficiario_id: beneficiarioId };
+
+        // Reset modal
+        modalLoading.classList.remove("hidden");
+        modalContent.classList.add("hidden");
+        modalFooter.classList.add("hidden");
+        modalTitle.textContent = "Cargando…";
+        modalFolio.textContent = "";
+        modalOverlay.classList.remove("hidden");
+        document.body.classList.add("overflow-hidden");
+
+        try {
+          const res = await _authFetch(
+            "/api/tecnica/beneficiarios/" + beneficiarioId,
+          );
+          if (!res.ok) throw new Error("Error al cargar detalle");
+          const data = await res.json();
+
+          renderDetail(data);
+        } catch (err) {
+          modalLoading.classList.add("hidden");
+          modalContent.classList.remove("hidden");
+          modalContent.innerHTML = `
+        <div class="flex flex-col items-center py-10">
+          <span class="material-symbols-outlined text-red-400 text-3xl mb-3">error_outline</span>
+          <p class="text-slate-600 text-sm">No se pudo cargar el detalle.</p>
+          <button onclick="document.getElementById('btn-close-modal').click()" class="mt-4 px-4 py-2 text-sm font-bold bg-ug-blue text-white rounded-xl">
+            Cerrar
+          </button>
+        </div>
+      `;
+        }
+      }
+
+      function renderDetail(data) {
+        modalLoading.classList.add("hidden");
+        modalContent.classList.remove("hidden");
+
+        const ben = data.beneficiario || {};
+        const estudio = data.estudio || {};
+        const solicitud = data.solicitud || {};
+        const proceso = data.proceso_tecnico;
+        const participantes = data.participantes || [];
+        const tutores = data.tutores || [];
+
+        currentDetail.proceso_id = proceso ? proceso.id : null;
+        currentDetail.estado = proceso ? proceso.estado : "sin_iniciar";
+
+        modalTitle.textContent = ben.nombre || "—";
+        modalFolio.textContent = "Folio: " + (ben.folio || "—");
+
+        // Estado badge
+        const estadoActual = proceso ? proceso.estado : "sin_iniciar";
+        const estadoClass = "badge-" + estadoActual;
+
+        let html = "";
+
+        // ── Identificación ──
+        html += `
+      <section>
+        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+          <span class="material-symbols-outlined text-sm">badge</span> Identificación
+        </h4>
+        <div class="bg-slate-50 rounded-xl p-4 space-y-2 text-sm">
+          <div class="grid grid-cols-2 gap-2">
+            <div><span class="text-slate-400">Nombre:</span><br/><span class="font-medium">${_escapeHtml(ben.nombre || "—")}</span></div>
+            <div><span class="text-slate-400">Folio:</span><br/><span class="font-medium">${_escapeHtml(ben.folio || "—")}</span></div>
+            <div><span class="text-slate-400">País:</span><br/><span class="font-medium">${_escapeHtml(ben.pais_nombre || "—")}</span></div>
+            <div><span class="text-slate-400">Región:</span><br/><span class="font-medium">${_escapeHtml(ben.region_nombre || "—")}</span></div>
+            <div><span class="text-slate-400">Ciudad:</span><br/><span class="font-medium">${_escapeHtml(ben.ciudad || "—")}</span></div>
+            <div><span class="text-slate-400">Sede:</span><br/><span class="font-medium">${_escapeHtml((data.estudio && data.estudio.sede) || ben.sede || "—")}</span></div>
+          </div>
+          <div><span class="text-slate-400">Diagnóstico:</span><br/><span class="font-medium">${_valOrNaHtml(ben.diagnostico)}</span></div>
+        </div>
+      </section>
+    `;
+
+        // ── Datos Clínicos ──
+        html += `
+      <section>
+        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+          <span class="material-symbols-outlined text-sm">stethoscope</span> Datos Clínicos
+        </h4>
+        <div class="bg-slate-50 rounded-xl p-4 space-y-2 text-sm">
+          <div class="grid grid-cols-2 gap-2">
+            <div><span class="text-slate-400">Peso:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.peso_kg != null ? solicitud.peso_kg + " kg" : null)}</span></div>
+            <div><span class="text-slate-400">Altura total:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.altura_total_in != null ? solicitud.altura_total_in + " in" : null)}</span></div>
+            <div><span class="text-slate-400">Cabeza-asiento:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.medida_cabeza_asiento != null ? solicitud.medida_cabeza_asiento + " in" : null)}</span></div>
+            <div><span class="text-slate-400">Hombro-asiento:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.medida_hombro_asiento != null ? solicitud.medida_hombro_asiento + " in" : null)}</span></div>
+            <div><span class="text-slate-400">Prof. asiento:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.medida_prof_asiento != null ? solicitud.medida_prof_asiento + " in" : null)}</span></div>
+            <div><span class="text-slate-400">Rodilla-talón:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.medida_rodilla_talon != null ? solicitud.medida_rodilla_talon + " in" : null)}</span></div>
+            <div><span class="text-slate-400">Ancho cadera:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.medida_ancho_cadera != null ? solicitud.medida_ancho_cadera + " in" : null)}</span></div>
+          </div>
+          <div class="mt-2 pt-2 border-t border-slate-200">
+            <div><span class="text-slate-400">Control tronco:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.control_tronco)}</span></div>
+            <div><span class="text-slate-400">Control cabeza:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.control_cabeza)}</span></div>
+            <div><span class="text-slate-400">Observaciones:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.observaciones_posturales)}</span></div>
+          </div>
+        </div>
+      </section>
+    `;
+
+        // ── Fotografía ──
+        html += `
+      <section>
+        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+          <span class="material-symbols-outlined text-sm">photo_camera</span> Fotografía
+        </h4>
+        <div class="bg-slate-50 rounded-xl p-4 flex items-center justify-center min-h-[120px]">
+          ${
+            solicitud.foto_url_resolved
+              ? '<img src="' +
+                _escapeHtml(solicitud.foto_url_resolved) +
+                '" alt="Foto del paciente" class="max-h-64 w-auto max-w-full rounded-lg object-contain shadow-sm" onerror="this.onerror=null;this.parentElement.innerHTML=\'<span class=\\\'text-slate-400 text-sm\\\'>Imagen no disponible</span>\'" />'
+              : '<div class="text-center"><span class="material-symbols-outlined text-slate-300 text-4xl block mb-2">image</span><span class="text-slate-400 text-sm">Sin foto</span></div>'
+          }
+        </div>
+      </section>
+    `;
+
+        // ── Documentos (credencial + comprobante) ──
+        const hasCredencial = estudio && estudio.credencial_url_resolved;
+        const hasComprobante =
+          estudio && estudio.comprobante_domicilio_url_resolved;
+        if (hasCredencial || hasComprobante) {
+          html += `
+        <section>
+          <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+            <span class="material-symbols-outlined text-sm">description</span> Documentos
+          </h4>
+          <div class="bg-slate-50 rounded-xl p-4 space-y-3 text-sm">
+            ${
+              hasCredencial
+                ? `
+              <div>
+                <span class="text-slate-400 text-xs font-semibold block mb-1">Credencial</span>
+                <a href="${_escapeHtml(estudio.credencial_url_resolved)}" target="_blank" rel="noopener" class="inline-flex items-center gap-2 text-ug-blue hover:underline">
+                  <span class="material-symbols-outlined text-sm">open_in_new</span> Ver credencial
+                </a>
+              </div>
+            `
+                : ""
+            }
+            ${
+              hasComprobante
+                ? `
+              <div>
+                <span class="text-slate-400 text-xs font-semibold block mb-1">Comprobante de domicilio</span>
+                <a href="${_escapeHtml(estudio.comprobante_domicilio_url_resolved)}" target="_blank" rel="noopener" class="inline-flex items-center gap-2 text-ug-blue hover:underline">
+                  <span class="material-symbols-outlined text-sm">open_in_new</span> Ver comprobante
+                </a>
+              </div>
+            `
+                : ""
+            }
+          </div>
+        </section>
+      `;
+        }
+
+        // ── Contacto / Tutores ──
+        html += `
+      <section>
+        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+          <span class="material-symbols-outlined text-sm">contacts</span> Contacto
+        </h4>
+        <div class="bg-slate-50 rounded-xl p-4 space-y-2 text-sm">
+          <div><span class="text-slate-400">Teléfonos:</span><br/><span class="font-medium">${_valOrNaHtml(ben.telefonos)}</span></div>
+          <div class="mt-2 pt-2 border-t border-slate-200">
+            <span class="text-slate-400 text-xs font-semibold">Tutores / Referencias</span>
+            ${
+              tutores.length === 0
+                ? '<p class="text-slate-300 italic text-sm mt-1">Sin tutores registrados</p>'
+                : tutores
+                    .map(function (t) {
+                      return (
+                        '<div class="mt-2 text-sm"><span class="font-medium">Tutor ' +
+                        t.numero_tutor +
+                        ":</span> " +
+                        _escapeHtml(t.nombre || "—") +
+                        (t.edad ? " (" + t.edad + " años)" : "") +
+                        (t.telefono ? " · " + _escapeHtml(t.telefono) : "") +
+                        "</div>"
+                      );
+                    })
+                    .join("")
+            }
+          </div>
+        </div>
+      </section>
+    `;
+
+        // ── Estado timeline ──
+        html += `
+      <section>
+        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+          <span class="material-symbols-outlined text-sm">timeline</span> Estado
+        </h4>
+        <div class="bg-slate-50 rounded-xl p-4 text-sm">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="text-xs font-bold px-2.5 py-1 rounded-full ${estadoClass}">${_formatEstado(estadoActual)}</span>
+            ${proceso?.fecha_inicio ? '<span class="text-xs text-slate-400">Iniciado: ' + _formatDate(proceso.fecha_inicio) + "</span>" : ""}
+          </div>
+          ${
+            participantes.length > 0
+              ? `
+            <div class="space-y-2 mt-3 pt-3 border-t border-slate-200">
+              <span class="text-xs font-semibold text-slate-400">Participantes</span>
+              ${participantes
+                .map(function (p) {
+                  return (
+                    '<div class="flex items-center justify-between text-xs"><span class="font-medium text-slate-700">' +
+                    _escapeHtml(p.nombre || "Técnico") +
+                    '</span><span class="text-slate-400">' +
+                    _escapeHtml(p.accion || "—") +
+                    " · " +
+                    _formatDate(p.created_at) +
+                    "</span></div>"
+                  );
+                })
+                .join("")}
+            </div>
+          `
+              : ""
+          }
+        </div>
+      </section>
+    `;
+
+        modalContent.innerHTML = html;
+
+        // ── Footer actions ──
+        renderModalActions(estadoActual, proceso ? proceso.id : null);
+      }
+
+      function renderModalActions(estado, procesoId) {
+        modalFooter.classList.remove("hidden");
+        modalFooter.innerHTML = "";
+
+        const estadoLower = (estado || "sin_iniciar").toLowerCase();
+
+        if (estadoLower === "sin_iniciar") {
+          modalFooter.innerHTML = `
+        <button id="action-iniciar" class="w-full py-3 bg-ug-blue hover:bg-ug-blue/90 active:scale-[0.98] text-white font-bold text-sm rounded-xl transition-all flex items-center justify-center gap-2">
+          <span class="material-symbols-outlined text-lg">play_arrow</span> Iniciar proceso técnico
+        </button>
+      `;
+        } else if (estadoLower === "en_proceso" && procesoId) {
+          modalFooter.innerHTML = `
+        <button id="action-finalizar" class="w-full py-3 bg-green-600 hover:bg-green-700 active:scale-[0.98] text-white font-bold text-sm rounded-xl transition-all flex items-center justify-center gap-2">
+          <span class="material-symbols-outlined text-lg">check_circle</span> Finalizar proceso
+        </button>
+        <p class="text-[11px] text-slate-400 text-center">Después de finalizar no se podrán realizar más cambios.</p>
+      `;
+        } else if (estadoLower === "revision_pendiente" && procesoId) {
+          modalFooter.innerHTML = `
+        <button id="action-continuar" class="w-full py-3 bg-amber-500 hover:bg-amber-600 active:scale-[0.98] text-white font-bold text-sm rounded-xl transition-all flex items-center justify-center gap-2">
+          <span class="material-symbols-outlined text-lg">refresh</span> Reanudar proceso
+        </button>
+      `;
+        } else if (estadoLower === "finalizado") {
+          modalFooter.innerHTML = `
+        <div class="text-center text-sm text-slate-400 py-2">
+          <span class="material-symbols-outlined text-lg align-middle">lock</span>
+          Proceso finalizado
+        </div>
+      `;
+        }
+
+        // Bind action buttons
+        const btnIniciar = $("action-iniciar");
+        const btnFinalizar = $("action-finalizar");
+        const btnContinuar = $("action-continuar");
+
+        if (btnIniciar) {
+          btnIniciar.addEventListener("click", function () {
+            executeAction("iniciar", currentDetail.beneficiario_id, null);
+          });
+        }
+        if (btnFinalizar) {
+          btnFinalizar.addEventListener("click", function () {
+            executeAction("finalizar", null, currentDetail.proceso_id);
+          });
+        }
+        if (btnContinuar) {
+          btnContinuar.addEventListener("click", function () {
+            executeAction("continuar", null, currentDetail.proceso_id);
+          });
+        }
+      }
+
+      // ═══════════════════════════════════════════════════════════════════════════
+      // STATE ACTIONS
+      // ═══════════════════════════════════════════════════════════════════════════
+
+      async function executeAction(action, beneficiarioId, procesoId) {
+        const buttons = modalFooter.querySelectorAll("button");
+        buttons.forEach(function (b) {
+          b.disabled = true;
+          b.classList.add("opacity-60", "cursor-not-allowed");
+        });
+
+        let url;
+        let method = "POST";
+
+        if (action === "iniciar" && beneficiarioId) {
+          url = "/api/tecnica/beneficiarios/" + beneficiarioId + "/iniciar";
+        } else if (action === "finalizar" && procesoId) {
+          url = "/api/tecnica/procesos/" + procesoId + "/finalizar";
+        } else if (action === "continuar" && procesoId) {
+          url = "/api/tecnica/procesos/" + procesoId + "/continuar";
+        } else {
+          showToast("Acción no válida", "error");
+          buttons.forEach(function (b) {
+            b.disabled = false;
+            b.classList.remove("opacity-60", "cursor-not-allowed");
+          });
+          return;
+        }
+
+        try {
+          const res = await _authFetch(url, { method: "POST" });
+          if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            const detail = errData.detail;
+            const msg =
+              typeof detail === "object"
+                ? detail.message || "Error del servidor"
+                : detail || "Error del servidor";
+            throw new Error(msg);
+          }
+
+          showToast("Operación exitosa", "success");
+          closeModal();
+          loadBeneficiarios();
+        } catch (err) {
+          showToast(err.message || "Error al ejecutar la acción", "error");
+          buttons.forEach(function (b) {
+            b.disabled = false;
+            b.classList.remove("opacity-60", "cursor-not-allowed");
+          });
+        }
+      }
+
+      // ═══════════════════════════════════════════════════════════════════════════
+      // TOAST
+      // ═══════════════════════════════════════════════════════════════════════════
+
+      function showToast(message, type) {
+        const colors = {
+          success: "bg-green-600 text-white",
+          error: "bg-red-600 text-white",
+          info: "bg-ug-blue text-white",
+        };
+
+        const icons = {
+          success: "check_circle",
+          error: "error",
+          info: "info",
+        };
+
+        const toast = document.createElement("div");
+        toast.className =
+          "pointer-events-auto flex items-center gap-2 px-5 py-3 rounded-xl shadow-lg text-sm font-medium animate-fade-in " +
+          (colors[type] || colors.info);
+        toast.innerHTML =
+          '<span class="material-symbols-outlined text-lg">' +
+          (icons[type] || icons.info) +
+          "</span> " +
+          _escapeHtml(message);
+        toastContainer.appendChild(toast);
+
+        setTimeout(function () {
+          toast.style.opacity = "0";
+          toast.style.transition = "opacity 0.3s ease";
+          setTimeout(function () {
+            toast.remove();
+          }, 300);
+        }, 3500);
+      }
+
+      // ═══════════════════════════════════════════════════════════════════════════
+      // UI STATE MANAGEMENT
+      // ═══════════════════════════════════════════════════════════════════════════
+
+      function hideAllStatesExcept(keep) {
+        const states = {
+          loading: stateLoading,
+          error: stateError,
+          empty: stateEmpty,
+        };
+        Object.entries(states).forEach(function ([key, el]) {
+          if (key === keep) {
+            el.classList.remove("hidden");
+          } else {
+            el.classList.add("hidden");
+          }
+        });
+        listContainer.classList.add("hidden");
+        pagination.classList.add("hidden");
+      }
+
+      function showLoading() {
+        hideAllStatesExcept("loading");
+      }
+
+      function showError(msg) {
+        errorMessage.textContent = msg || "Error al cargar los datos.";
+        hideAllStatesExcept("error");
+      }
+
+      function showEmpty() {
+        hideAllStatesExcept("empty");
+      }
+
+      function showList() {
+        stateLoading.classList.add("hidden");
+        stateError.classList.add("hidden");
+        stateEmpty.classList.add("hidden");
+        listContainer.classList.remove("hidden");
+        // pagination visibility handled by renderPagination
+      }
+
+      // ═══════════════════════════════════════════════════════════════════════════
+      // MODAL CLOSE
+      // ═══════════════════════════════════════════════════════════════════════════
+
+      function closeModal() {
+        modalOverlay.classList.add("hidden");
+        modalContent.innerHTML = "";
+        modalFooter.classList.add("hidden");
+        modalFooter.innerHTML = "";
+        document.body.classList.remove("overflow-hidden");
+        currentDetail = null;
+      }
+
+      btnCloseModal.addEventListener("click", closeModal);
+      modalOverlay.addEventListener("click", function (e) {
+        if (e.target === modalOverlay) closeModal();
+      });
+
+      // Close on Escape
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") closeModal();
+      });
+
+      // ═══════════════════════════════════════════════════════════════════════════
+      // INIT
+      // ═══════════════════════════════════════════════════════════════════════════
+
+      (async function init() {
+        await loadPaisesDropdown();
+        await loadBeneficiarios();
+      })();
+    </script>
+  </body>
+</html>

@@ -25,6 +25,7 @@ router = APIRouter()
 # Pydantic models
 # ---------------------------------------------------------------------------
 
+
 class PaisCreateRequest(BaseModel):
     nombre: str
     codigo: str
@@ -77,6 +78,7 @@ class RegionResponse(BaseModel):
 # ---------------------------------------------------------------------------
 # Folio generation (exported for use in socioeconomico router)
 # ---------------------------------------------------------------------------
+
 
 def generate_folio(db: _DBAdapter, region_id: int) -> str:
     """
@@ -136,7 +138,10 @@ def generate_folio(db: _DBAdapter, region_id: int) -> str:
 # Países endpoints
 # ---------------------------------------------------------------------------
 
-@router.post("/paises", status_code=status.HTTP_201_CREATED, response_model=PaisResponse)
+
+@router.post(
+    "/paises", status_code=status.HTTP_201_CREATED, response_model=PaisResponse
+)
 def create_pais(
     body: PaisCreateRequest,
     db: Annotated[_DBAdapter, Depends(get_db)],
@@ -178,7 +183,9 @@ def list_paises(
     ).fetchall()
 
     return [
-        PaisResponse(pais_id=r["id"], nombre=r["nombre"], codigo=r["codigo"], activo=r["activo"])
+        PaisResponse(
+            pais_id=r["id"], nombre=r["nombre"], codigo=r["codigo"], activo=r["activo"]
+        )
         for r in rows
     ]
 
@@ -187,7 +194,10 @@ def list_paises(
 # Regiones endpoints
 # ---------------------------------------------------------------------------
 
-@router.post("/regiones", status_code=status.HTTP_201_CREATED, response_model=RegionResponse)
+
+@router.post(
+    "/regiones", status_code=status.HTTP_201_CREATED, response_model=RegionResponse
+)
 def create_region(
     body: RegionCreateRequest,
     db: Annotated[_DBAdapter, Depends(get_db)],

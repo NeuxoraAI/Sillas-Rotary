@@ -1,11 +1,13 @@
+import io
 import os
 import uuid
 from decimal import Decimal
 from urllib.parse import urlparse, unquote
-from datetime import datetime, timezone
+from datetime import datetime, timezone, date
 from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, field_validator, model_validator, ValidationInfo
 from supabase import create_client
 
@@ -46,25 +48,112 @@ def _row_to_dict(row: object) -> Optional[dict]:
     return dict(row)
 
 
+def _resolve_storage_url(raw_url: Optional[str], bucket: str) -> Optional[str]:
+    """Resolve a storage:// reference or bare path into a browser-accessible URL."""
+    if not raw_url:
+        return None
+
+    # Already a public URL — pass through
+    if raw_url.startswith(("http://", "https://")):
+        return raw_url
+
+    # Extract path from storage://bucket/path
+    path: Optional[str] = None
+    prefix = f"storage://{bucket}/"
+    if raw_url.startswith(prefix):
+        path = raw_url[len(prefix):].strip("/")
+    else:
+        # Generic storage:// with bucket marker
+        marker = f"/{bucket}/"
+        if marker in raw_url:
+            path = raw_url.split(marker, 1)[1].strip("/")
+        else:
+            # Bare path (legacy fallback)
+            path = raw_url.strip("/")
+
+    if not path:
+        return None
+
+    try:
+        from supabase import create_client
+        storage = create_client(
+            os.environ["SUPABASE_URL"],
+            os.environ["SUPABASE_SERVICE_KEY"],
+        ).storage.from_(bucket)
+        signed_raw = storage.create_signed_url(path, 300)
+        signed = _signed_url_from_response(signed_raw)
+        if signed:
+            return signed
+    except Exception:
+        pass
+
+    # Fallback to public URL
+    try:
+        from supabase import create_client
+        storage = create_client(
+            os.environ["SUPABASE_URL"],
+            os.environ["SUPABASE_SERVICE_KEY"],
+        ).storage.from_(bucket)
+        return storage.get_public_url(path)
+    except Exception:
+        pass
+
+    return None
+
+
 def _build_list_where_clause(
     *,
     q: Optional[str],
     sede: Optional[str],
     estado: Optional[str],
     revision_pendiente: Optional[bool],
+    pais_id: Optional[int] = None,
+    region_id: Optional[int] = None,
+    ciudad: Optional[str] = None,
+    peso_kg_min: Optional[float] = None,
+    peso_kg_max: Optional[float] = None,
+    altura_in_min: Optional[float] = None,
+    altura_in_max: Optional[float] = None,
+    tiene_foto: Optional[bool] = None,
 ) -> tuple[str, list]:
     clauses: list[str] = ["1=1"]
     params: list = []
 
+    # ── Range validation ──────────────────────────────────────────────────
+    if peso_kg_min is not None and peso_kg_max is not None and peso_kg_min > peso_kg_max:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "type": "invalid_filter",
+                "message": "peso_kg_min no puede ser mayor que peso_kg_max",
+            },
+        )
+    if altura_in_min is not None and altura_in_max is not None and altura_in_min > altura_in_max:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "type": "invalid_filter",
+                "message": "altura_in_min no puede ser mayor que altura_in_max",
+            },
+        )
+
+    # ── Free-text search (expanded) ───────────────────────────────────────
     if q and q.strip():
         term = f"%{q.strip()}%"
-        clauses.append("(b.nombre ILIKE %s OR b.folio ILIKE %s)")
-        params.extend([term, term])
+        clauses.append(
+            "(b.nombre ILIKE %s OR b.folio ILIKE %s OR "
+            "b.ciudad ILIKE %s OR "
+            "r.nombre ILIKE %s OR "
+            "p.nombre ILIKE %s)"
+        )
+        params.extend([term, term, term, term, term])
 
+    # ── Sede ──────────────────────────────────────────────────────────────
     if sede and sede.strip():
         clauses.append("COALESCE(e.sede, '') = %s")
         params.append(sede.strip())
 
+    # ── Estado ────────────────────────────────────────────────────────────
     if estado and estado.strip():
         if estado not in _PROCESS_STATES:
             raise HTTPException(
@@ -74,9 +163,48 @@ def _build_list_where_clause(
         clauses.append("COALESCE(pt.estado, 'sin_iniciar') = %s")
         params.append(estado)
 
+    # ── Revision pendiente ───────────────────────────────────────────────
     if revision_pendiente is not None:
         clauses.append("COALESCE(pt.revision_pendiente, FALSE) = %s")
         params.append(revision_pendiente)
+
+    # ── Pais (via region) ─────────────────────────────────────────────────
+    if pais_id is not None:
+        clauses.append("r.pais_id = %s")
+        params.append(pais_id)
+
+    # ── Region ────────────────────────────────────────────────────────────
+    if region_id is not None:
+        clauses.append("b.region_id = %s")
+        params.append(region_id)
+
+    # ── Ciudad ────────────────────────────────────────────────────────────
+    if ciudad and ciudad.strip():
+        term = f"%{ciudad.strip()}%"
+        clauses.append("b.ciudad ILIKE %s")
+        params.append(term)
+
+    # ── Peso range ────────────────────────────────────────────────────────
+    if peso_kg_min is not None:
+        clauses.append("st.peso_kg >= %s")
+        params.append(peso_kg_min)
+    if peso_kg_max is not None:
+        clauses.append("st.peso_kg <= %s")
+        params.append(peso_kg_max)
+
+    # ── Altura range ─────────────────────────────────────────────────────
+    if altura_in_min is not None:
+        clauses.append("st.altura_total_in >= %s")
+        params.append(altura_in_min)
+    if altura_in_max is not None:
+        clauses.append("st.altura_total_in <= %s")
+        params.append(altura_in_max)
+
+    # ── Tiene foto ───────────────────────────────────────────────────────
+    if tiene_foto is True:
+        clauses.append("st.foto_url IS NOT NULL")
+    elif tiene_foto is False:
+        clauses.append("st.foto_url IS NULL")
 
     return " AND ".join(clauses), params
 
@@ -108,7 +236,18 @@ def _load_proceso(db: _DBAdapter, proceso_id: int) -> dict:
 
 def _build_snapshot(db: _DBAdapter, beneficiario_id: int) -> dict:
     beneficiario = _row_to_dict(
-        db.execute("SELECT * FROM beneficiarios WHERE id = %s", (beneficiario_id,)).fetchone()
+        db.execute(
+            """
+            SELECT b.*,
+                   COALESCE(p.nombre, '') AS pais_nombre,
+                   COALESCE(r.nombre, '') AS region_nombre
+            FROM beneficiarios b
+            LEFT JOIN regiones r ON r.id = b.region_id
+            LEFT JOIN paises p ON p.id = r.pais_id
+            WHERE b.id = %s
+            """,
+            (beneficiario_id,),
+        ).fetchone()
     )
     if beneficiario is None:
         raise HTTPException(status_code=404, detail="Beneficiario no encontrado")
@@ -127,6 +266,16 @@ def _build_snapshot(db: _DBAdapter, beneficiario_id: int) -> dict:
             (beneficiario_id,),
         ).fetchone()
     )
+    if estudio:
+        if estudio.get("credencial_url"):
+            estudio["credencial_url_resolved"] = _resolve_storage_url(
+                estudio["credencial_url"], "documentos-estudio"
+            )
+        if estudio.get("comprobante_domicilio_url"):
+            estudio["comprobante_domicilio_url_resolved"] = _resolve_storage_url(
+                estudio["comprobante_domicilio_url"], "documentos-estudio"
+            )
+
     solicitud = _row_to_dict(
         db.execute(
             """
@@ -138,6 +287,10 @@ def _build_snapshot(db: _DBAdapter, beneficiario_id: int) -> dict:
             (beneficiario_id,),
         ).fetchone()
     )
+    if solicitud and solicitud.get("foto_url"):
+        solicitud["foto_url_resolved"] = _resolve_storage_url(
+            solicitud["foto_url"], "fotos-tecnica"
+        )
     proceso = _row_to_dict(
         db.execute(
             "SELECT * FROM procesos_tecnicos WHERE beneficiario_id = %s",
@@ -240,6 +393,7 @@ def _classify_db_error(exc: Exception) -> HTTPException:
 
 
 def _storage():
+    from supabase import create_client
     return create_client(
         os.environ["SUPABASE_URL"],
         os.environ["SUPABASE_SERVICE_KEY"],
@@ -670,32 +824,302 @@ def listar_beneficiarios_tecnica(
     sede: Optional[str] = None,
     estado: Optional[str] = None,
     revision_pendiente: Optional[bool] = None,
+    pais_id: Optional[int] = None,
+    region_id: Optional[int] = None,
+    ciudad: Optional[str] = None,
+    peso_kg_min: Optional[float] = None,
+    peso_kg_max: Optional[float] = None,
+    altura_in_min: Optional[float] = None,
+    altura_in_max: Optional[float] = None,
+    tiene_foto: Optional[bool] = None,
+    page: int = 1,
+    per_page: int = 20,
 ) -> dict:
+    if page < 1:
+        raise HTTPException(
+            status_code=422,
+            detail={"type": "invalid_filter", "message": "page debe ser >= 1"},
+        )
+    if per_page < 1:
+        raise HTTPException(
+            status_code=422,
+            detail={"type": "invalid_filter", "message": "per_page debe ser >= 1"},
+        )
+
     where_clause, params = _build_list_where_clause(
         q=q,
         sede=sede,
         estado=estado,
         revision_pendiente=revision_pendiente,
+        pais_id=pais_id,
+        region_id=region_id,
+        ciudad=ciudad,
+        peso_kg_min=peso_kg_min,
+        peso_kg_max=peso_kg_max,
+        altura_in_min=altura_in_min,
+        altura_in_max=altura_in_max,
+        tiene_foto=tiene_foto,
     )
+
+    offset = (page - 1) * per_page
+
     rows = db.execute(
         f"""
         SELECT
             b.id AS beneficiario_id,
             b.nombre,
             b.folio,
+            b.telefonos,
+            b.ciudad,
+            COALESCE(p.nombre, '') AS pais_nombre,
+            COALESCE(r.nombre, '') AS region_nombre,
             COALESCE(e.sede, '') AS sede,
             COALESCE(pt.estado, 'sin_iniciar') AS estado,
             COALESCE(pt.revision_pendiente, FALSE) AS revision_pendiente,
-            pt.id AS proceso_id
+            pt.id AS proceso_id,
+            st.peso_kg,
+            st.altura_total_in,
+            st.unidad_captura,
+            st.foto_url,
+            COUNT(*) OVER() AS total_count
         FROM beneficiarios b
         LEFT JOIN estudios_socioeconomicos e ON e.beneficiario_id = b.id
         LEFT JOIN procesos_tecnicos pt ON pt.beneficiario_id = b.id
+        LEFT JOIN solicitudes_tecnicas st ON st.beneficiario_id = b.id
+        LEFT JOIN regiones r ON r.id = b.region_id
+        LEFT JOIN paises p ON p.id = r.pais_id
+        WHERE {where_clause}
+        ORDER BY b.nombre ASC
+        LIMIT %s OFFSET %s
+        """,
+        tuple(params) + (per_page, offset),
+    ).fetchall()
+
+    total = rows[0]["total_count"] if rows else 0
+
+    return {
+        "items": rows,
+        "total": total,
+        "page": page,
+        "per_page": per_page,
+    }
+
+
+def _calcular_edad(fecha_nacimiento_str: Optional[str]) -> Optional[int]:
+    """Calcular edad en años a partir de fecha_nacimiento (texto)."""
+    if not fecha_nacimiento_str:
+        return None
+    for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%m/%d/%Y", "%d-%m-%Y"):
+        try:
+            born = datetime.strptime(fecha_nacimiento_str.strip(), fmt).date()
+            today = date.today()
+            return today.year - born.year - ((today.month, today.day) < (born.month, born.day))
+        except ValueError:
+            continue
+    return None
+
+
+@router.get("/tecnica/beneficiarios/export")
+def exportar_beneficiarios_tecnica(
+    db: Annotated[_DBAdapter, Depends(get_db)],
+    _usuario: Annotated[CurrentUser, Depends(require_roles("tecnico", "admin"))],
+    q: Optional[str] = None,
+    sede: Optional[str] = None,
+    estado: Optional[str] = None,
+    revision_pendiente: Optional[bool] = None,
+    pais_id: Optional[int] = None,
+    region_id: Optional[int] = None,
+    ciudad: Optional[str] = None,
+    peso_kg_min: Optional[float] = None,
+    peso_kg_max: Optional[float] = None,
+    altura_in_min: Optional[float] = None,
+    altura_in_max: Optional[float] = None,
+    tiene_foto: Optional[bool] = None,
+    ids: Optional[str] = None,
+) -> StreamingResponse:
+    where_clause, params = _build_list_where_clause(
+        q=q,
+        sede=sede,
+        estado=estado,
+        revision_pendiente=revision_pendiente,
+        pais_id=pais_id,
+        region_id=region_id,
+        ciudad=ciudad,
+        peso_kg_min=peso_kg_min,
+        peso_kg_max=peso_kg_max,
+        altura_in_min=altura_in_min,
+        altura_in_max=altura_in_max,
+        tiene_foto=tiene_foto,
+    )
+
+    ids_list: list[int] = []
+    if ids:
+        try:
+            ids_list = [int(x.strip()) for x in ids.split(",") if x.strip()]
+        except ValueError:
+            raise HTTPException(
+                status_code=422,
+                detail={"type": "invalid_filter", "message": "ids debe ser una lista de enteros separados por coma"},
+            )
+    if ids_list:
+        where_clause += " AND b.id = ANY(%s)"
+        params.append(tuple(ids_list))
+
+    rows = db.execute(
+        f"""
+        SELECT
+            b.id AS beneficiario_id,
+            b.folio,
+            b.nombre,
+            b.email,
+            b.calle,
+            b.num_ext,
+            b.colonia,
+            b.ciudad,
+            b.estado_nombre,
+            b.telefonos,
+            b.diagnostico,
+            b.fecha_nacimiento,
+            st.peso_kg,
+            st.altura_total_in,
+            st.unidad_captura,
+            st.observaciones_posturales,
+            st.justificacion,
+            st.entidad_solicitante,
+            t.nombre AS tutor_nombre
+        FROM beneficiarios b
+        LEFT JOIN estudios_socioeconomicos e ON e.beneficiario_id = b.id
+        LEFT JOIN procesos_tecnicos pt ON pt.beneficiario_id = b.id
+        LEFT JOIN solicitudes_tecnicas st ON st.beneficiario_id = b.id
+        LEFT JOIN regiones r ON r.id = b.region_id
+        LEFT JOIN paises p ON p.id = r.pais_id
+        LEFT JOIN LATERAL (
+            SELECT nombre FROM tutores WHERE beneficiario_id = b.id ORDER BY numero_tutor LIMIT 1
+        ) t ON true
         WHERE {where_clause}
         ORDER BY b.nombre ASC
         """,
         tuple(params),
     ).fetchall()
-    return {"items": rows, "total": len(rows)}
+
+    from openpyxl import Workbook
+    from openpyxl.styles import Alignment, Font, PatternFill
+    from openpyxl.worksheet.table import Table, TableStyleInfo
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "MASTER"
+
+    headers = [
+        "# EXPEDIENTE",
+        "Nombre de Niño(a) Adolescente",
+        "Correo electrónico ",
+        "Dirección (calle, numero)",
+        "Colonia o comunidad",
+        "Municipio (ciudad) y Estado",
+        "Número de teléfono Fijo",
+        "No. de teléfono adicional",
+        "Padecimiento",
+        "Fecha de nacimiento",
+        "EDAD",
+        "PESO (kg)",
+        "ESTATURA (cm)",
+        "Nombre de Padre o tutor",
+        "Club o A sociación",
+        "QUIEN CANALIZA",
+        "OBSERVACIONES ",
+    ]
+
+    # Fila 1 vacía (plantilla original tiene fila 1 vacía)
+    ws.append([])
+    # Fila 2: headers
+    ws.append(headers)
+
+    header_fill = PatternFill(fill_type="solid", fgColor="1F4E78")
+    header_font = Font(color="FFFFFF", bold=True)
+    for cell in ws[2]:
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+
+    for row in rows:
+        direccion = (row["calle"] or "") + (f' {row["num_ext"]}' if row.get("num_ext") else "")
+        municipio_estado = (row["ciudad"] or "") + (f', {row["estado_nombre"]}' if row.get("estado_nombre") else "")
+
+        altura_cm = None
+        if row.get("altura_total_in") is not None:
+            if row.get("unidad_captura") == "cm":
+                altura_cm = row["altura_total_in"]
+            else:
+                altura_cm = round(row["altura_total_in"] * 2.54, 1)
+
+        edad = _calcular_edad(row.get("fecha_nacimiento"))
+
+        ws.append([
+            row.get("folio") or row.get("beneficiario_id"),
+            row.get("nombre") or "",
+            row.get("email") or "Sin correo",
+            direccion,
+            row.get("colonia") or "",
+            municipio_estado,
+            row.get("telefonos") or "",
+            "",  # teléfono adicional — no hay campo separado
+            row.get("diagnostico") or "",
+            row.get("fecha_nacimiento") or "",
+            edad,
+            row.get("peso_kg"),
+            altura_cm,
+            row.get("tutor_nombre") or "",
+            row.get("entidad_solicitante") or "",  # Club o Asociación — mapeamos a entidad solicitante
+            "",  # QUIEN CANALIZA — no hay campo
+            row.get("observaciones_posturales") or "",
+        ])
+
+    ws.freeze_panes = "A3"
+
+    column_widths = {
+        "A": 18,
+        "B": 34,
+        "C": 24,
+        "D": 28,
+        "E": 24,
+        "F": 28,
+        "G": 20,
+        "H": 20,
+        "I": 24,
+        "J": 18,
+        "K": 10,
+        "L": 12,
+        "M": 14,
+        "N": 28,
+        "O": 24,
+        "P": 22,
+        "Q": 34,
+    }
+    for col, width in column_widths.items():
+        ws.column_dimensions[col].width = width
+
+    if ws.max_row >= 2:
+        table = Table(displayName="BeneficiariosTecnica", ref=f"A2:Q{ws.max_row}")
+        style = TableStyleInfo(
+            name="TableStyleMedium9",
+            showFirstColumn=False,
+            showLastColumn=False,
+            showRowStripes=True,
+            showColumnStripes=False,
+        )
+        table.tableStyleInfo = style
+        ws.add_table(table)
+
+    buffer = io.BytesIO()
+    wb.save(buffer)
+    buffer.seek(0)
+
+    filename = f"BASE_DE_DATOS_EXPORT_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    return StreamingResponse(
+        buffer,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @router.get("/tecnica/beneficiarios/{beneficiario_id}")
