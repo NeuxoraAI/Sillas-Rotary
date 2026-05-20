@@ -417,3 +417,97 @@ class TestValidationErrorFormat:
         errors = exc_info.value.errors()
         first_error = errors[0]
         assert "type" in first_error
+
+
+# ---------------------------------------------------------------------------
+# Weight unit conversion tests (unidades-peso-zoom-imagen)
+# ---------------------------------------------------------------------------
+
+class TestWeightUnitConversion:
+    """Test lb→kg conversion and unidad_peso_captura validation."""
+
+    def test_post_lb_convierte_a_kg(self, client, tecnico_headers, sample_estudio):
+        """POST with unidad_peso_captura=lb converts 220.462 lb → 100.000 kg."""
+        payload = _solicitud_payload(sample_estudio["beneficiario_id"])
+        payload.update({
+            "unidad_peso_captura": "lb",
+            "peso_kg": "220.462",
+        })
+        create_response = client.post("/api/solicitudes", headers=tecnico_headers, json=payload)
+        assert create_response.status_code == 201
+        solicitud_id = create_response.json()["solicitud_id"]
+        get_response = client.get(f"/api/solicitudes/{solicitud_id}", headers=tecnico_headers)
+        assert get_response.status_code == 200
+        body = get_response.json()
+        assert body["unidad_peso_captura"] == "lb"
+        assert body["peso_kg"] == 100.0
+
+    def test_post_kg_no_conversion(self, client, tecnico_headers, sample_estudio):
+        """POST with unidad_peso_captura=kg stores weight unchanged."""
+        payload = _solicitud_payload(sample_estudio["beneficiario_id"])
+        payload.update({
+            "unidad_peso_captura": "kg",
+            "peso_kg": "100.000",
+        })
+        create_response = client.post("/api/solicitudes", headers=tecnico_headers, json=payload)
+        assert create_response.status_code == 201
+        solicitud_id = create_response.json()["solicitud_id"]
+        get_response = client.get(f"/api/solicitudes/{solicitud_id}", headers=tecnico_headers)
+        assert get_response.status_code == 200
+        body = get_response.json()
+        assert body["peso_kg"] == 100.0
+
+    def test_patch_lb_convierte_a_kg(self, client, tecnico_headers, sample_estudio):
+        """PATCH with unidad_peso_captura=lb + peso_kg converts before storing."""
+        payload = _solicitud_payload(sample_estudio["beneficiario_id"])
+        create_response = client.post("/api/solicitudes", headers=tecnico_headers, json=payload)
+        assert create_response.status_code == 201
+        solicitud_id = create_response.json()["solicitud_id"]
+
+        patch_response = client.patch(
+            f"/api/solicitudes/{solicitud_id}",
+            headers=tecnico_headers,
+            json={
+                "unidad_peso_captura": "lb",
+                "peso_kg": "220.462",
+            },
+        )
+        assert patch_response.status_code == 200
+        get_response = client.get(f"/api/solicitudes/{solicitud_id}", headers=tecnico_headers)
+        assert get_response.status_code == 200
+        body = get_response.json()
+        assert body["unidad_peso_captura"] == "lb"
+        assert body["peso_kg"] == 100.0
+
+    def test_rechaza_unidad_peso_invalida(self, client, tecnico_headers, sample_estudio):
+        """POST with invalid unidad_peso_captura returns 422."""
+        payload = _solicitud_payload(sample_estudio["beneficiario_id"])
+        payload["unidad_peso_captura"] = "stone"
+        create_response = client.post("/api/solicitudes", headers=tecnico_headers, json=payload)
+        assert create_response.status_code == 422
+
+    def test_patch_rechaza_unidad_peso_invalida(self, client, tecnico_headers, sample_estudio):
+        """PATCH with invalid unidad_peso_captura returns 422."""
+        payload = _solicitud_payload(sample_estudio["beneficiario_id"])
+        create_response = client.post("/api/solicitudes", headers=tecnico_headers, json=payload)
+        assert create_response.status_code == 201
+        solicitud_id = create_response.json()["solicitud_id"]
+        patch_response = client.patch(
+            f"/api/solicitudes/{solicitud_id}",
+            headers=tecnico_headers,
+            json={"unidad_peso_captura": "oz"},
+        )
+        assert patch_response.status_code == 422
+
+    def test_post_default_unidad_peso(self, client, tecnico_headers, sample_estudio):
+        """POST without unidad_peso_captura defaults to kg."""
+        payload = _solicitud_payload(sample_estudio["beneficiario_id"])
+        payload["peso_kg"] = "75.000"
+        create_response = client.post("/api/solicitudes", headers=tecnico_headers, json=payload)
+        assert create_response.status_code == 201
+        solicitud_id = create_response.json()["solicitud_id"]
+        get_response = client.get(f"/api/solicitudes/{solicitud_id}", headers=tecnico_headers)
+        assert get_response.status_code == 200
+        body = get_response.json()
+        assert body["unidad_peso_captura"] == "kg"
+        assert body["peso_kg"] == 75.0
