@@ -257,6 +257,11 @@
               <p class="field-error hidden text-red-600 text-xs mt-1" id="colonia-error" data-error-for="colonia" role="alert"></p>
             </div>
             <div class="space-y-2">
+              <label class="block text-sm font-semibold text-slate-700">Estado (INEGI)</label>
+              <select class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary" name="estado_codigo" id="estado_codigo" required aria-describedby="estado_codigo-error"></select>
+              <p class="field-error hidden text-red-600 text-xs mt-1" id="estado_codigo-error" data-error-for="estado_codigo" role="alert"></p>
+            </div>
+            <div class="space-y-2">
               <label class="block text-sm font-semibold text-slate-700">Ciudad / Municipio</label>
               <select
                 class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary"
@@ -269,11 +274,6 @@
                 <option value="">Selecciona un estado primero</option>
               </select>
               <p class="field-error hidden text-red-600 text-xs mt-1" id="ciudad-error" data-error-for="ciudad" role="alert"></p>
-            </div>
-            <div class="space-y-2">
-              <label class="block text-sm font-semibold text-slate-700">Estado (INEGI)</label>
-              <select class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary" name="estado_codigo" id="estado_codigo" required aria-describedby="estado_codigo-error"></select>
-              <p class="field-error hidden text-red-600 text-xs mt-1" id="estado_codigo-error" data-error-for="estado_codigo" role="alert"></p>
             </div>
             <div class="space-y-2 md:col-span-2">
               <label class="block text-sm font-semibold text-slate-700">Sexo</label>
@@ -288,18 +288,23 @@
               <label class="block text-sm font-semibold text-slate-700"
                 >Teléfonos de contacto</label
               >
-              <input
-                class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary"
-                name="telefonos"
-                type="tel"
-                inputmode="numeric"
-                maxlength="10"
-                minlength="10"
-                pattern="[0-9]{10}"
-                autocomplete="off"
-                required
-                aria-describedby="telefonos-error"
-              />
+              <div class="flex">
+                <span class="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-slate-300 bg-slate-100 text-slate-600 text-sm">
+                  🇲🇽 +52
+                </span>
+                <input
+                  class="flex-1 rounded-r-lg border-slate-300 shadow-sm focus:border-primary focus:ring-primary"
+                  name="telefonos"
+                  type="tel"
+                  inputmode="numeric"
+                  maxlength="10"
+                  minlength="10"
+                  pattern="[0-9]{10}"
+                  autocomplete="off"
+                  required
+                  aria-describedby="telefonos-error"
+                />
+              </div>
               <p class="field-error hidden text-red-600 text-xs mt-1" id="telefonos-error" data-error-for="telefonos" role="alert"></p>
             </div>
           </div>
