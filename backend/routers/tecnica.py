@@ -242,6 +242,7 @@ class SolicitudCreateRequest(BaseModel):
     entorno: str
     control_tronco: str
     control_cabeza: str
+    control_de_piernas: str
     observaciones_posturales: Optional[str] = None
     unidad_medida: str = "in"
     altura_total_in: Optional[float] = None
@@ -288,6 +289,13 @@ class SolicitudCreateRequest(BaseModel):
             raise ValueError("prioridad debe ser 'Alta' o 'Media'")
         return v
 
+    @field_validator("control_de_piernas")
+    @classmethod
+    def control_de_piernas_valido(cls, v: str) -> str:
+        if v not in ("Parcial", "Nulo"):
+            raise ValueError("control_de_piernas debe ser 'Parcial' o 'Nulo'")
+        return v
+
 
 class SolicitudCreateResponse(BaseModel):
     solicitud_id: int
@@ -299,6 +307,7 @@ class SolicitudUpdateRequest(BaseModel):
     entorno: Optional[str] = None
     control_tronco: Optional[str] = None
     control_cabeza: Optional[str] = None
+    control_de_piernas: Optional[str] = None
     observaciones_posturales: Optional[str] = None
     unidad_medida: Optional[str] = None
     altura_total_in: Optional[float] = None
@@ -343,6 +352,13 @@ class SolicitudUpdateRequest(BaseModel):
     def prioridad_valida(cls, v: Optional[str]) -> Optional[str]:
         if v is not None and v not in ("Alta", "Media"):
             raise ValueError("prioridad debe ser 'Alta' o 'Media'")
+        return v
+
+    @field_validator("control_de_piernas")
+    @classmethod
+    def control_de_piernas_valido(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None and v not in ("Parcial", "Nulo"):
+            raise ValueError("control_de_piernas debe ser 'Parcial' o 'Nulo'")
         return v
 
 
@@ -778,12 +794,12 @@ def crear_solicitud(
         solicitud_id = db.execute(
             """
             INSERT INTO solicitudes_tecnicas
-                (beneficiario_id, usuario_id, entorno, control_tronco, control_cabeza,
+                (beneficiario_id, usuario_id, entorno, control_tronco, control_cabeza, control_de_piernas,
                  observaciones_posturales, altura_total_in, peso_kg,
                  medida_cabeza_asiento, medida_hombro_asiento, medida_prof_asiento,
                  medida_rodilla_talon, medida_ancho_cadera, unidad_captura, foto_url,
                  entidad_solicitante, prioridad, justificacion, status)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
             """,
             (
@@ -792,6 +808,7 @@ def crear_solicitud(
                 body.entorno,
                 body.control_tronco,
                 body.control_cabeza,
+                body.control_de_piernas,
                 body.observaciones_posturales,
                 body.altura_total_in,
                 body.peso_kg,
