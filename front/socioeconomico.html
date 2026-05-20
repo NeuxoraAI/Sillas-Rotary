@@ -1037,10 +1037,12 @@
         MONETARY_FIELD_IDS.forEach((fieldName) => {
           const input = document.querySelector(`[name="${fieldName}"]`);
           if (!input) return;
-          const max = fieldName.includes("ingreso")
-            ? SR_Validations.LIMITS.INGRESO_MENSUAL_MAX
-            : SR_Validations.LIMITS.MONTO_OTRAS_FUENTES_MAX;
-          SR_Validations.setupMoneyField(input, max);
+
+          input.addEventListener("input", () => {
+            input.value = SR_Validations.formatIntegerDisplay(input.value);
+          });
+
+          input.value = SR_Validations.formatIntegerDisplay(input.value);
         });
       }
 
@@ -1057,41 +1059,11 @@
       }
 
       let municipiosPorEstado = null;
-
-      const uploadedDocumentRefs = {
-        credencial: { path: null, url: null },
-        comprobante_domicilio: { path: null, url: null },
+      const cameraState = {
+        key: null,
+        stream: null,
+        selectedDeviceId: null,
       };
-      const capturedDocumentFiles = {
-        credencial: null,
-        comprobante_domicilio: null,
-      };
-      const documentPreviewState = {
-        credencial: { objectUrl: null, type: null, name: "", sourceUrl: null },
-        comprobante_domicilio: { objectUrl: null, type: null, name: "", sourceUrl: null },
-      };
-      const DOCUMENT_INPUTS = [
-        {
-          key: "credencial",
-          tipo: "credencial",
-          inputId: "credencial-file",
-          statusId: "credencial-status",
-          previewCardId: "credencial-preview-card",
-          previewMediaId: "credencial-preview-media",
-          previewNameId: "credencial-preview-name",
-          label: "Credencial",
-        },
-        {
-          key: "comprobante_domicilio",
-          tipo: "comprobante_domicilio",
-          inputId: "comprobante-domicilio-file",
-          statusId: "comprobante-domicilio-status",
-          previewCardId: "comprobante_domicilio-preview-card",
-          previewMediaId: "comprobante_domicilio-preview-media",
-          previewNameId: "comprobante_domicilio-preview-name",
-          label: "Comprobante de domicilio",
-        },
-      ];
 
       function normalizeMunicipioValue(value) {
         return String(value || "")
