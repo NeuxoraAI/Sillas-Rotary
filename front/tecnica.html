@@ -363,7 +363,7 @@
               <p class="field-error hidden text-red-600 text-xs mt-1" id="altura_total_in-error" data-error-for="altura_total_in" role="alert"></p>
               <div class="measurement-input-group flex flex-col">
                 <label class="text-sm font-bold text-slate-700 mb-1"
-                  >Peso (kg)</label
+                  >Peso (<span data-unit-label-peso>kg</span>)</label
                 >
                 <div class="flex items-center">
                   <input
@@ -376,7 +376,12 @@
                      required
                      aria-describedby="peso_kg-error"
                    />
-                  <span
+                  <select name="unidad_peso_captura" id="unidad_peso_captura"
+                          class="rounded-none border-l-0 border-slate-300 bg-slate-200 text-slate-600 text-sm px-2 py-2 focus:ring-0 cursor-pointer">
+                    <option value="kg">kg</option>
+                    <option value="lb">lb</option>
+                  </select>
+                  <span data-unit-suffix-peso
                     class="bg-slate-200 border border-l-0 border-slate-300 px-4 py-2 rounded-r-lg text-slate-600 text-sm font-semibold"
                     >kg</span
                   >
@@ -678,6 +683,37 @@
         </div>
       </div>
     </div>
+    <!-- Image zoom modal for guia_clinica.jpeg -->
+    <div
+      id="image-zoom-modal"
+      class="hidden fixed inset-0 z-50 bg-slate-950/85 px-4 py-6"
+    >
+      <div class="mx-auto flex h-full max-w-5xl items-center justify-center">
+        <div class="w-full rounded-xl bg-white p-4 shadow-2xl">
+          <div class="flex items-start justify-between gap-4 border-b border-slate-200 pb-3">
+            <div>
+              <h3 class="text-lg font-bold text-slate-900">Guía clínica de referencia</h3>
+              <p class="text-sm text-slate-600">Ampliación de imagen de referencia</p>
+            </div>
+            <button
+              id="image-zoom-close"
+              type="button"
+              class="rounded-md border border-slate-300 px-3 py-1 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              Cerrar
+            </button>
+          </div>
+          <div class="mt-4 flex h-[70vh] items-center justify-center rounded-lg bg-slate-100 p-4">
+            <img
+              id="image-zoom-content"
+              src="assets/guia_clinica.jpeg"
+              alt="Guía clínica de referencia ampliada"
+              class="max-h-full max-w-full object-contain"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
     <div
       id="success-modal"
       class="hidden fixed inset-0 z-50 bg-slate-950/70 px-4 py-6"
@@ -748,6 +784,18 @@
                 return num.toFixed(3);
               };
 
+              // Helper: convert DB weight (always kg) back to capture unit
+              const toDisplayKg = (dbVal, capturaUnidad) => {
+                if (dbVal == null || dbVal === "") return null;
+                const num = parseFloat(dbVal);
+                if (isNaN(num)) return null;
+                if (capturaUnidad === "lb") {
+                  // DB stores kg → convert to lb for display
+                  return (num * 2.20462).toFixed(3);
+                }
+                return num.toFixed(3);
+              };
+
               // Set select fields
               setVal("entorno", data.entorno);
               setVal("control_tronco", data.control_tronco);
@@ -768,13 +816,14 @@
 
               // Set numeric fields with unit-aware conversion
               setVal("altura_total_in", toDisplay(data.altura_total_in, "altura_total_in"));
-              setVal("peso_kg", data.peso_kg);  // peso is always kg
+              setVal("peso_kg", toDisplayKg(data.peso_kg, data.unidad_peso_captura));
               setVal("medida_cabeza_asiento", toDisplay(data.medida_cabeza_asiento, "medida_cabeza_asiento"));
               setVal("medida_hombro_asiento", toDisplay(data.medida_hombro_asiento, "medida_hombro_asiento"));
               setVal("medida_prof_asiento", toDisplay(data.medida_prof_asiento, "medida_prof_asiento"));
               setVal("medida_rodilla_talon", toDisplay(data.medida_rodilla_talon, "medida_rodilla_talon"));
               setVal("medida_ancho_cadera", toDisplay(data.medida_ancho_cadera, "medida_ancho_cadera"));
               setVal("unidad_medida", data.unidad_captura || "in");
+              setVal("unidad_peso_captura", data.unidad_peso_captura || "kg");
 
               // Set text fields moved to gestion.html
 
@@ -1345,6 +1394,7 @@
           medida_rodilla_talon: toStrOrNull(get("medida_rodilla_talon")),
           medida_ancho_cadera: toStrOrNull(get("medida_ancho_cadera")),
           unidad_medida: get("unidad_medida") || "in",
+          unidad_peso_captura: get("unidad_peso_captura") || "kg",
           foto_url,
           status,
         };
@@ -1436,10 +1486,47 @@
         };
         sel.addEventListener("change", apply);
         apply();
+
+        const pesoSel = document.getElementById("unidad_peso_captura");
+        if (pesoSel) {
+          const applyPeso = () => {
+            const unit = pesoSel.value || "kg";
+            document.querySelectorAll("[data-unit-suffix-peso]").forEach((el) => {
+              el.textContent = unit;
+            });
+            document.querySelectorAll("[data-unit-label-peso]").forEach((el) => {
+              el.textContent = unit;
+            });
+          };
+          pesoSel.addEventListener("change", applyPeso);
+          applyPeso();
+        }
+      }
+
+      function setupImageZoom() {
+        const modal = document.getElementById("image-zoom-modal");
+        const closeBtn = document.getElementById("image-zoom-close");
+        const guideImg = document.querySelector(
+          "[data-purpose='technical-measurements-visual'] img[src*='guia_clinica']"
+        );
+
+        if (!modal || !closeBtn || !guideImg) return;
+
+        guideImg.classList.add("cursor-pointer");
+
+        const openZoom = () => modal.classList.remove("hidden");
+        const closeZoom = () => { modal.classList.add("hidden"); };
+
+        guideImg.addEventListener("click", openZoom);
+        closeBtn.addEventListener("click", closeZoom);
+        modal.addEventListener("click", (e) => {
+          if (e.target?.id === "image-zoom-modal") closeZoom();
+        });
       }
 
       setupPhotoInputs();
       setupUnidadMedidaLabels();
+      setupImageZoom();
       _setupObsValidation();
       _setupAllMedidaValidations();
       setupObservacionesPosturalesConditional();
