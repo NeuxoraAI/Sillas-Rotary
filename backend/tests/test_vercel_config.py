@@ -39,11 +39,18 @@ def test_vercel_blocks_internal_paths_before_rewrite() -> None:
     assert any("\\.sql" in pattern for pattern in blocked_patterns)
 
 
-def test_vercel_uses_functions_instead_of_legacy_builds() -> None:
+def test_vercel_defines_python_build_with_frontend_includes() -> None:
     config = _load_vercel_config()
 
-    assert "builds" not in config, "Legacy builds disable Project Settings on Vercel"
-    assert config.get("functions", {}).get("api/**/*.py", {}).get("includeFiles") == "front/**"
+    builds = config.get("builds", [])
+    assert builds, "vercel.json must define a Python build"
+
+    python_builds = [b for b in builds if b.get("use") == "@vercel/python"]
+    assert python_builds, "vercel.json must include a @vercel/python build"
+
+    build = python_builds[0]
+    assert build.get("src") == "api/index.py"
+    assert build.get("config", {}).get("includeFiles") == "front/**"
 
 
 def test_root_requirements_include_runtime_dependencies() -> None:

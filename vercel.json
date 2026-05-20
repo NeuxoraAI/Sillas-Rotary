@@ -1,11 +1,15 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
-  "functions": {
-    "api/**/*.py": {
-      "includeFiles": "front/**"
+  "builds": [
+    {
+      "src": "api/index.py",
+      "use": "@vercel/python",
+      "config": {
+        "includeFiles": "front/**"
+      }
     }
-  },
+  ],
   "headers": [
     {
       "source": "/(.*)",
