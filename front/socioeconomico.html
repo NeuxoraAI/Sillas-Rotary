@@ -1159,6 +1159,41 @@
         delete ciudadSelect.dataset.pendingValue;
       }
 
+      const DOCUMENT_INPUTS = [
+        {
+          key: "credencial",
+          tipo: "credencial",
+          inputId: "credencial-file",
+          statusId: "credencial-status",
+          previewCardId: "credencial-preview-card",
+          previewMediaId: "credencial-preview-media",
+          previewNameId: "credencial-preview-name",
+          label: "Credencial",
+        },
+        {
+          key: "comprobante_domicilio",
+          tipo: "comprobante_domicilio",
+          inputId: "comprobante-domicilio-file",
+          statusId: "comprobante-domicilio-status",
+          previewCardId: "comprobante_domicilio-preview-card",
+          previewMediaId: "comprobante_domicilio-preview-media",
+          previewNameId: "comprobante_domicilio-preview-name",
+          label: "Comprobante de domicilio",
+        },
+      ];
+      const uploadedDocumentRefs = {
+        credencial: { path: null, url: null },
+        comprobante_domicilio: { path: null, url: null },
+      };
+      const capturedDocumentFiles = {
+        credencial: null,
+        comprobante_domicilio: null,
+      };
+      const documentPreviewState = {
+        credencial: { objectUrl: null, type: null, name: "", sourceUrl: null },
+        comprobante_domicilio: { objectUrl: null, type: null, name: "", sourceUrl: null },
+      };
+
       function extractStoredFilename(path) {
         if (!path) return "";
         const segments = String(path).split("/");
