@@ -37,3 +37,11 @@ def test_vercel_blocks_internal_paths_before_rewrite() -> None:
     blocked_patterns = [route.get("src", "") for route in routes if route.get("status") == 404]
     assert any("backend" in pattern for pattern in blocked_patterns)
     assert any("\\.sql" in pattern for pattern in blocked_patterns)
+
+
+def test_root_requirements_delegates_to_backend_requirements() -> None:
+    root = Path(__file__).resolve().parents[2]
+    requirements_path = root / "requirements.txt"
+
+    assert requirements_path.exists(), "Vercel Python runtime expects dependencies at project root"
+    assert requirements_path.read_text(encoding="utf-8").strip() == "-r backend/requirements.txt"
