@@ -1,15 +1,28 @@
 import os
 import uuid
+from decimal import Decimal
 from urllib.parse import urlparse, unquote
 from datetime import datetime, timezone
 from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, model_validator, ValidationInfo
 from supabase import create_client
 
 from database import get_db, _DBAdapter
 from routers.auth import CurrentUser, assert_resource_owner, require_roles
+from validators import (
+    validate_observaciones_posturales,
+    validate_medida_tecnica,
+    validate_entidad_solicitante,
+    validate_justificacion,
+    validate_entorno,
+    validate_control_tronco,
+    validate_control_cabeza,
+    validate_unidad_medida,
+    validate_prioridad,
+    validate_status,
+)
 
 router = APIRouter()
 
@@ -245,13 +258,13 @@ class SolicitudCreateRequest(BaseModel):
     control_de_piernas: str
     observaciones_posturales: Optional[str] = None
     unidad_medida: str = "in"
-    altura_total_in: Optional[float] = None
-    peso_kg: Optional[float] = None
-    medida_cabeza_asiento: Optional[float] = None
-    medida_hombro_asiento: Optional[float] = None
-    medida_prof_asiento: Optional[float] = None
-    medida_rodilla_talon: Optional[float] = None
-    medida_ancho_cadera: Optional[float] = None
+    altura_total_in: Optional[Decimal] = None
+    peso_kg: Optional[Decimal] = None
+    medida_cabeza_asiento: Optional[Decimal] = None
+    medida_hombro_asiento: Optional[Decimal] = None
+    medida_prof_asiento: Optional[Decimal] = None
+    medida_rodilla_talon: Optional[Decimal] = None
+    medida_ancho_cadera: Optional[Decimal] = None
     foto_path: Optional[str] = None
     foto_url: Optional[str] = None
     entidad_solicitante: Optional[str] = None
@@ -261,33 +274,90 @@ class SolicitudCreateRequest(BaseModel):
 
     @field_validator("altura_total_in", "peso_kg", "medida_cabeza_asiento",
                      "medida_hombro_asiento", "medida_prof_asiento",
-                     "medida_rodilla_talon", "medida_ancho_cadera")
+                     "medida_rodilla_talon", "medida_ancho_cadera", mode="before")
     @classmethod
-    def medida_positiva(cls, v: Optional[float]) -> Optional[float]:
-        if v is not None and (v < 0 or v > 999.999):
-            raise ValueError("La medida debe estar entre 0 y 999.999")
-        return v
+    def validate_medida_field(cls, v, info: ValidationInfo) -> Optional[Decimal]:
+        if v is None or (isinstance(v, str) and v.strip() == ""):
+            return None
+        return validate_medida_tecnica(str(v), info.field_name)
+
+    @field_validator("observaciones_posturales", mode="before")
+    @classmethod
+    def validate_obs_field(cls, v) -> Optional[str]:
+        if v is None:
+            return None
+        return validate_observaciones_posturales(str(v))
+
+    @field_validator("entidad_solicitante", mode="before")
+    @classmethod
+    def validate_entidad_solicitante_field(cls, v) -> Optional[str]:
+        if v is None:
+            return None
+        return validate_entidad_solicitante(str(v))
+
+    @field_validator("justificacion", mode="before")
+    @classmethod
+    def validate_justificacion_field(cls, v) -> Optional[str]:
+        if v is None:
+            return None
+        return validate_justificacion(str(v))
+
+    @field_validator("entorno")
+    @classmethod
+    def _entorno_valido(cls, v: str) -> str:
+        return validate_entorno(v)
+
+    @field_validator("control_tronco")
+    @classmethod
+    def _control_tronco_valido(cls, v: str) -> str:
+        return validate_control_tronco(v)
+
+    @field_validator("control_cabeza")
+    @classmethod
+    def _control_cabeza_valido(cls, v: str) -> str:
+        return validate_control_cabeza(v)
 
     @field_validator("unidad_medida")
     @classmethod
-    def unidad_valida(cls, v: str) -> str:
-        if v not in ("in", "cm"):
-            raise ValueError("unidad_medida debe ser in o cm")
-        return v
+    def _unidad_valida(cls, v: str) -> str:
+        return validate_unidad_medida(v)
 
     @field_validator("status")
     @classmethod
-    def status_valido(cls, v: str) -> str:
-        if v not in ("borrador", "completo"):
-            raise ValueError("status debe ser 'borrador' o 'completo'")
-        return v
+    def _status_valido(cls, v: str) -> str:
+        return validate_status(v)
 
     @field_validator("prioridad")
     @classmethod
-    def prioridad_valida(cls, v: Optional[str]) -> Optional[str]:
-        if v is not None and v not in ("Alta", "Media"):
-            raise ValueError("prioridad debe ser 'Alta' o 'Media'")
-        return v
+    def _prioridad_valida(cls, v: Optional[str]) -> Optional[str]:
+        return validate_prioridad(v)
+
+    @model_validator(mode="after")
+    def _validar_completo_t1(self):
+        if self.status != "completo":
+            return self
+
+        missing: list[str] = []
+
+        medidas = {
+            "altura_total_in": self.altura_total_in,
+            "peso_kg": self.peso_kg,
+            "medida_cabeza_asiento": self.medida_cabeza_asiento,
+            "medida_hombro_asiento": self.medida_hombro_asiento,
+            "medida_prof_asiento": self.medida_prof_asiento,
+            "medida_rodilla_talon": self.medida_rodilla_talon,
+            "medida_ancho_cadera": self.medida_ancho_cadera,
+        }
+        for field_name, value in medidas.items():
+            if value is None:
+                missing.append(field_name)
+
+        if missing:
+            raise ValueError(
+                f"{', '.join(missing)} es obligatorio cuando status es completo"
+            )
+
+        return self
 
     @field_validator("control_de_piernas")
     @classmethod
@@ -310,13 +380,13 @@ class SolicitudUpdateRequest(BaseModel):
     control_de_piernas: Optional[str] = None
     observaciones_posturales: Optional[str] = None
     unidad_medida: Optional[str] = None
-    altura_total_in: Optional[float] = None
-    peso_kg: Optional[float] = None
-    medida_cabeza_asiento: Optional[float] = None
-    medida_hombro_asiento: Optional[float] = None
-    medida_prof_asiento: Optional[float] = None
-    medida_rodilla_talon: Optional[float] = None
-    medida_ancho_cadera: Optional[float] = None
+    altura_total_in: Optional[Decimal] = None
+    peso_kg: Optional[Decimal] = None
+    medida_cabeza_asiento: Optional[Decimal] = None
+    medida_hombro_asiento: Optional[Decimal] = None
+    medida_prof_asiento: Optional[Decimal] = None
+    medida_rodilla_talon: Optional[Decimal] = None
+    medida_ancho_cadera: Optional[Decimal] = None
     foto_path: Optional[str] = None
     foto_url: Optional[str] = None
     entidad_solicitante: Optional[str] = None
@@ -324,35 +394,102 @@ class SolicitudUpdateRequest(BaseModel):
     justificacion: Optional[str] = None
     status: Optional[str] = None
 
-    @field_validator("status")
-    @classmethod
-    def status_valido(cls, v: Optional[str]) -> Optional[str]:
-        if v is not None and v not in ("borrador", "completo"):
-            raise ValueError("status debe ser 'borrador' o 'completo'")
-        return v
-
     @field_validator("altura_total_in", "peso_kg", "medida_cabeza_asiento",
                      "medida_hombro_asiento", "medida_prof_asiento",
-                     "medida_rodilla_talon", "medida_ancho_cadera")
+                     "medida_rodilla_talon", "medida_ancho_cadera", mode="before")
     @classmethod
-    def medida_positiva(cls, v: Optional[float]) -> Optional[float]:
-        if v is not None and (v < 0 or v > 999.999):
-            raise ValueError("La medida debe estar entre 0 y 999.999")
-        return v
+    def validate_medida_field(cls, v, info: ValidationInfo) -> Optional[Decimal]:
+        if v is None or (isinstance(v, str) and v.strip() == ""):
+            return None
+        return validate_medida_tecnica(str(v), info.field_name)
+
+    @field_validator("observaciones_posturales", mode="before")
+    @classmethod
+    def validate_obs_field(cls, v) -> Optional[str]:
+        if v is None:
+            return None
+        return validate_observaciones_posturales(str(v))
+
+    @field_validator("entidad_solicitante", mode="before")
+    @classmethod
+    def validate_entidad_solicitante_field(cls, v) -> Optional[str]:
+        if v is None:
+            return None
+        return validate_entidad_solicitante(str(v))
+
+    @field_validator("justificacion", mode="before")
+    @classmethod
+    def validate_justificacion_field(cls, v) -> Optional[str]:
+        if v is None:
+            return None
+        return validate_justificacion(str(v))
+
+    @field_validator("entorno")
+    @classmethod
+    def _entorno_valido(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        return validate_entorno(v)
+
+    @field_validator("control_tronco")
+    @classmethod
+    def _control_tronco_valido(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        return validate_control_tronco(v)
+
+    @field_validator("control_cabeza")
+    @classmethod
+    def _control_cabeza_valido(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        return validate_control_cabeza(v)
+
+    @field_validator("status")
+    @classmethod
+    def _status_valido(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        return validate_status(v)
 
     @field_validator("unidad_medida")
     @classmethod
-    def unidad_valida(cls, v: Optional[str]) -> Optional[str]:
-        if v is not None and v not in ("in", "cm"):
-            raise ValueError("unidad_medida debe ser in o cm")
-        return v
+    def _unidad_valida(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        return validate_unidad_medida(v)
 
     @field_validator("prioridad")
     @classmethod
-    def prioridad_valida(cls, v: Optional[str]) -> Optional[str]:
-        if v is not None and v not in ("Alta", "Media"):
-            raise ValueError("prioridad debe ser 'Alta' o 'Media'")
-        return v
+    def _prioridad_valida(cls, v: Optional[str]) -> Optional[str]:
+        return validate_prioridad(v)
+
+    @model_validator(mode="after")
+    def _validar_completo_t2(self):
+        if self.status != "completo":
+            return self
+
+        missing: list[str] = []
+
+        medidas = {
+            "altura_total_in": self.altura_total_in,
+            "peso_kg": self.peso_kg,
+            "medida_cabeza_asiento": self.medida_cabeza_asiento,
+            "medida_hombro_asiento": self.medida_hombro_asiento,
+            "medida_prof_asiento": self.medida_prof_asiento,
+            "medida_rodilla_talon": self.medida_rodilla_talon,
+            "medida_ancho_cadera": self.medida_ancho_cadera,
+        }
+        for field_name, value in medidas.items():
+            if value is None:
+                missing.append(field_name)
+
+        if missing:
+            raise ValueError(
+                f"{', '.join(missing)} es obligatorio cuando status es completo"
+            )
+
+        return self
 
     @field_validator("control_de_piernas")
     @classmethod
@@ -879,6 +1016,9 @@ def actualizar_solicitud(
     fields = body.model_dump(exclude_none=True)
     if fields.get("unidad_medida") in ("cm", "in"):
         fields = _normalize_medidas_patch(fields)
+    # Rename to DB column name
+    if "unidad_medida" in fields:
+        fields["unidad_captura"] = fields.pop("unidad_medida")
 
     resolved_foto_path, resolved_foto_url = _resolve_foto_refs(
         foto_path=fields.pop("foto_path", None),
@@ -926,11 +1066,13 @@ def actualizar_solicitud(
     )
 
 
-def _to_inches(v: Optional[float], unidad: str) -> Optional[float]:
+def _to_inches(v: Optional[Decimal], unidad: str) -> Optional[Decimal]:
     if v is None:
         return None
     if unidad == "cm":
-        return round(v / 2.54, 3)
+        # cm to inches: divide by 2.54, round to 3 decimal places
+        inches = v / Decimal("2.54")
+        return inches.quantize(Decimal("0.001"))
     return v
 
 

@@ -107,7 +107,7 @@
         </p>
       </header>
       <!-- END: Header -->
-      <form class="p-8 space-y-12">
+      <form class="p-8 space-y-12" novalidate>
         <!-- BEGIN: Seccion Entorno -->
         <section
           data-purpose="wheelchair-context-selection"
@@ -153,11 +153,15 @@
               <select
                 class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary"
                 name="entorno"
+                required
+                aria-describedby="entorno-error"
               >
-                <option>Urbano / Interiores</option>
-                <option>Rural / Terreno irregular</option>
-                <option>Mixto</option>
+                <option value="">Selecciona una opción</option>
+                <option value="Urbano / Interiores">Urbano / Interiores</option>
+                <option value="Rural / Terreno irregular">Rural / Terreno irregular</option>
+                <option value="Mixto">Mixto</option>
               </select>
+              <p class="field-error hidden text-red-600 text-xs mt-1" id="entorno-error" data-error-for="entorno" role="alert"></p>
             </div>
           </div>
         </section>
@@ -197,11 +201,15 @@
               <select
                 class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary"
                 name="control_tronco"
+                required
+                aria-describedby="control_tronco-error"
               >
-                <option>Completo</option>
-                <option>Parcial / Requiere apoyo lateral</option>
-                <option>Nulo / Requiere soporte total</option>
+                <option value="">Selecciona una opción</option>
+                <option value="Completo">Completo</option>
+                <option value="Parcial / Requiere apoyo lateral">Parcial / Requiere apoyo lateral</option>
+                <option value="Nulo / Requiere soporte total">Nulo / Requiere soporte total</option>
               </select>
+              <p class="field-error hidden text-red-600 text-xs mt-1" id="control_tronco-error" data-error-for="control_tronco" role="alert"></p>
             </div>
             <div class="space-y-2">
               <label class="block text-sm font-semibold text-slate-700"
@@ -210,11 +218,15 @@
               <select
                 class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary"
                 name="control_cabeza"
+                required
+                aria-describedby="control_cabeza-error"
               >
-                <option>Independiente</option>
-                <option>Intermitente</option>
-                <option>No posee / Requiere cabezal</option>
+                <option value="">Selecciona una opción</option>
+                <option value="Independiente">Independiente</option>
+                <option value="Intermitente">Intermitente</option>
+                <option value="No posee / Requiere cabezal">No posee / Requiere cabezal</option>
               </select>
+              <p class="field-error hidden text-red-600 text-xs mt-1" id="control_cabeza-error" data-error-for="control_cabeza" role="alert"></p>
             </div>
             <div class="space-y-2">
               <label class="block text-sm font-semibold text-slate-700"
@@ -232,13 +244,22 @@
                 <label class="block text-sm font-semibold text-slate-700"
                   >Observaciones Posturales (Escoliosis, Cifosis, etc.)</label
                 >
+              <label class="inline-flex items-center gap-2 text-sm font-medium text-slate-700">
+                <input class="text-primary h-4 w-4" name="tiene_observaciones" type="checkbox" />
+                <span>Agregar observaciones posturales</span>
+              </label>
               <textarea
-                class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary"
+                class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary bg-slate-100 text-slate-400 cursor-not-allowed"
                 name="observaciones_posturales"
+                minlength="3"
                 maxlength="500"
+                pattern="^[a-zA-ZáéíóúÁÉÍÓÚäëïöüÄËÏÖÜñÑ0-9 ()\/\-.,:;]*$"
                 placeholder="Describa brevemente la condición postural actual para ajustar el respaldo..."
                 rows="3"
+                disabled
+                aria-describedby="observaciones_posturales-error"
               ></textarea>
+              <p class="field-error hidden text-red-600 text-xs mt-1" id="observaciones_posturales-error" data-error-for="observaciones_posturales" role="alert"></p>
             </div>
           </div>
         </section>
@@ -312,10 +333,11 @@
                     class="flex-grow rounded-l-lg border-slate-300 focus:border-primary focus:ring-primary"
                      name="altura_total_in"
                      placeholder="0.0"
-                     type="number"
-                     min="0"
-                     max="120"
-                     step="0.1"
+                     type="text"
+                     inputmode="decimal"
+                     pattern="[0-9]+(\.[0-9]{1,3})?"
+                     required
+                     aria-describedby="altura_total_in-error"
                    />
                   <span
                     class="bg-slate-200 border border-l-0 border-slate-300 px-4 py-2 rounded-r-lg text-slate-600 text-sm font-semibold"
@@ -323,6 +345,7 @@
                    >
                 </div>
               </div>
+              <p class="field-error hidden text-red-600 text-xs mt-1" id="altura_total_in-error" data-error-for="altura_total_in" role="alert"></p>
               <div class="measurement-input-group flex flex-col">
                 <label class="text-sm font-bold text-slate-700 mb-1"
                   >Peso (kg)</label
@@ -332,10 +355,11 @@
                     class="flex-grow rounded-l-lg border-slate-300 focus:border-primary focus:ring-primary"
                      name="peso_kg"
                      placeholder="0.0"
-                     type="number"
-                     min="0"
-                     max="300"
-                     step="0.1"
+                     type="text"
+                     inputmode="decimal"
+                     pattern="[0-9]+(\.[0-9]{1,3})?"
+                     required
+                     aria-describedby="peso_kg-error"
                    />
                   <span
                     class="bg-slate-200 border border-l-0 border-slate-300 px-4 py-2 rounded-r-lg text-slate-600 text-sm font-semibold"
@@ -343,6 +367,7 @@
                   >
                 </div>
               </div>
+              <p class="field-error hidden text-red-600 text-xs mt-1" id="peso_kg-error" data-error-for="peso_kg" role="alert"></p>
               <div class="measurement-input-group flex flex-col">
                 <label class="text-sm font-bold text-slate-700 mb-1"
                   >1. De la cabeza al asiento de la silla (<span data-unit-label>in</span>)</label
@@ -352,10 +377,11 @@
                     class="flex-grow rounded-l-lg border-slate-300 focus:border-primary focus:ring-primary"
                      name="medida_cabeza_asiento"
                      placeholder="0.0"
-                     type="number"
-                     min="0"
-                     max="60"
-                     step="0.1"
+                     type="text"
+                     inputmode="decimal"
+                     pattern="[0-9]+(\.[0-9]{1,3})?"
+                     required
+                     aria-describedby="medida_cabeza_asiento-error"
                    />
                   <span
                     class="bg-slate-200 border border-l-0 border-slate-300 px-4 py-2 rounded-r-lg text-slate-600 text-sm font-semibold"
@@ -363,6 +389,7 @@
                    >
                 </div>
               </div>
+              <p class="field-error hidden text-red-600 text-xs mt-1" id="medida_cabeza_asiento-error" data-error-for="medida_cabeza_asiento" role="alert"></p>
               <div class="measurement-input-group flex flex-col">
                 <label class="text-sm font-bold text-slate-700 mb-1"
                   >2. Del hombro al asiento de la silla (<span data-unit-label>in</span>)</label
@@ -372,10 +399,11 @@
                     class="flex-grow rounded-l-lg border-slate-300 focus:border-primary focus:ring-primary"
                      name="medida_hombro_asiento"
                      placeholder="0.0"
-                     type="number"
-                     min="0"
-                     max="60"
-                     step="0.1"
+                     type="text"
+                     inputmode="decimal"
+                     pattern="[0-9]+(\.[0-9]{1,3})?"
+                     required
+                     aria-describedby="medida_hombro_asiento-error"
                    />
                   <span
                     class="bg-slate-200 border border-l-0 border-slate-300 px-4 py-2 rounded-r-lg text-slate-600 text-sm font-semibold"
@@ -383,6 +411,7 @@
                    >
                 </div>
               </div>
+              <p class="field-error hidden text-red-600 text-xs mt-1" id="medida_hombro_asiento-error" data-error-for="medida_hombro_asiento" role="alert"></p>
               <div class="measurement-input-group flex flex-col">
                 <label class="text-sm font-bold text-slate-700 mb-1"
                   >3. De rodilla al respaldo de la silla (<span data-unit-label>in</span>)</label
@@ -392,10 +421,11 @@
                     class="flex-grow rounded-l-lg border-slate-300 focus:border-primary focus:ring-primary"
                      name="medida_prof_asiento"
                      placeholder="0.0"
-                     type="number"
-                     min="0"
-                     max="60"
-                     step="0.1"
+                     type="text"
+                     inputmode="decimal"
+                     pattern="[0-9]+(\.[0-9]{1,3})?"
+                     required
+                     aria-describedby="medida_prof_asiento-error"
                    />
                   <span
                     class="bg-slate-200 border border-l-0 border-slate-300 px-4 py-2 rounded-r-lg text-slate-600 text-sm font-semibold"
@@ -403,6 +433,7 @@
                    >
                 </div>
               </div>
+              <p class="field-error hidden text-red-600 text-xs mt-1" id="medida_prof_asiento-error" data-error-for="medida_prof_asiento" role="alert"></p>
               <div class="measurement-input-group flex flex-col">
                 <label class="text-sm font-bold text-slate-700 mb-1"
                   >4. De rodilla al suelo (<span data-unit-label>in</span>)</label
@@ -412,10 +443,11 @@
                     class="flex-grow rounded-l-lg border-slate-300 focus:border-primary focus:ring-primary"
                      name="medida_rodilla_talon"
                      placeholder="0.0"
-                     type="number"
-                     min="0"
-                     max="60"
-                     step="0.1"
+                     type="text"
+                     inputmode="decimal"
+                     pattern="[0-9]+(\.[0-9]{1,3})?"
+                     required
+                     aria-describedby="medida_rodilla_talon-error"
                    />
                   <span
                     class="bg-slate-200 border border-l-0 border-slate-300 px-4 py-2 rounded-r-lg text-slate-600 text-sm font-semibold"
@@ -423,6 +455,7 @@
                    >
                 </div>
               </div>
+              <p class="field-error hidden text-red-600 text-xs mt-1" id="medida_rodilla_talon-error" data-error-for="medida_rodilla_talon" role="alert"></p>
               <div class="measurement-input-group flex flex-col">
                 <label class="text-sm font-bold text-slate-700 mb-1"
                   >5. Ancho de cadera (<span data-unit-label>in</span>)</label
@@ -432,10 +465,11 @@
                     class="flex-grow rounded-l-lg border-slate-300 focus:border-primary focus:ring-primary"
                      name="medida_ancho_cadera"
                      placeholder="0.0"
-                     type="number"
-                     min="0"
-                     max="40"
-                     step="0.1"
+                     type="text"
+                     inputmode="decimal"
+                     pattern="[0-9]+(\.[0-9]{1,3})?"
+                     required
+                     aria-describedby="medida_ancho_cadera-error"
                    />
                   <span
                     class="bg-slate-200 border border-l-0 border-slate-300 px-4 py-2 rounded-r-lg text-slate-600 text-sm font-semibold"
@@ -443,6 +477,7 @@
                    >
                 </div>
               </div>
+              <p class="field-error hidden text-red-600 text-xs mt-1" id="medida_ancho_cadera-error" data-error-for="medida_ancho_cadera" role="alert"></p>
             </div>
           </div>
         </section>
@@ -502,85 +537,7 @@
           </div>
         </section>
         <!-- END: Seccion Multimedia -->
-        <!-- BEGIN: Seccion Datos Donacion -->
-        <section data-purpose="donation-data-summary" id="donacion">
-          <div
-            class="flex items-center gap-3 mb-6 border-b border-slate-100 pb-4"
-          >
-            <div class="bg-green-50 p-2 rounded-full">
-              <svg
-                class="w-6 h-6 text-green-700"
-                fill="none"
-                stroke="currentColor"
-                viewbox="0 0 24 24"
-              >
-                <path
-                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                ></path>
-              </svg>
-            </div>
-            <h2 class="text-xl font-semibold">
-              Datos para Gestión de Donación
-            </h2>
-          </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="space-y-2">
-              <label class="block text-sm font-semibold text-slate-700"
-                >Entidad Solicitante</label
-              >
-              <input
-                class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary"
-                name="entidad_solicitante"
-                placeholder="Nombre de la institución o particular"
-                type="text"
-              />
-            </div>
-            <div class="space-y-2">
-              <label class="block text-sm font-semibold text-slate-700"
-                >Prioridad</label
-              >
-              <div class="flex items-center gap-6 mt-2">
-                <label class="inline-flex items-center">
-                  <input
-                    class="text-primary focus:ring-primary h-4 w-4"
-                    name="prioridad"
-                    type="radio"
-                    value="Alta"
-                  />
-                  <span class="ml-2 text-sm font-medium text-slate-700"
-                    >Alta</span
-                  >
-                </label>
-                <label class="inline-flex items-center">
-                  <input
-                    class="text-primary focus:ring-primary h-4 w-4"
-                    name="prioridad"
-                    type="radio"
-                    value="Media"
-                  />
-                  <span class="ml-2 text-sm font-medium text-slate-700"
-                    >Media</span
-                  >
-                </label>
-              </div>
-            </div>
-            <div class="md:col-span-2 space-y-2">
-              <label class="block text-sm font-semibold text-slate-700"
-                >Justificación para Sillas de Ruedas</label
-              >
-              <textarea
-                class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary"
-                name="justificacion"
-                placeholder="Información adicional relevante sobre la necesidad de esta silla específica..."
-                rows="3"
-              ></textarea>
-            </div>
-          </div>
-        </section>
-        <!-- END: Seccion Datos Donacion -->
+        <!-- Datos para Gestión de Donación movidos a gestion.html -->
         <!-- BEGIN: Footer Actions -->
         <footer class="pt-8 border-t border-slate-200">
           <div
@@ -734,6 +691,7 @@
       </div>
     </div>
     <!-- BEGIN: Script for Interactivity -->
+    <script src="assets/js/validations.js"></script>
     <script data-purpose="form-logic">
       // Auth guard + Draft Resume
       (async function () {
@@ -763,6 +721,18 @@
                 if (el && val != null) el.value = val;
               };
 
+              // Helper: convert DB value (inches) back to display unit
+              const toDisplay = (dbVal, fieldName) => {
+                if (dbVal == null || dbVal === "") return null;
+                const num = parseFloat(dbVal);
+                if (isNaN(num)) return null;
+                if (data.unidad_captura === "cm") {
+                  // DB stores inches → convert back to cm for display
+                  return (num * 2.54).toFixed(3);
+                }
+                return num.toFixed(3);
+              };
+
               // Set select fields
               setVal("entorno", data.entorno);
               setVal("control_tronco", data.control_tronco);
@@ -772,27 +742,26 @@
               // Set textarea
               setVal("observaciones_posturales", data.observaciones_posturales);
 
-              // Set numeric fields
-              setVal("altura_total_in", data.altura_total_in);
-              setVal("peso_kg", data.peso_kg);
-              setVal("medida_cabeza_asiento", data.medida_cabeza_asiento);
-              setVal("medida_hombro_asiento", data.medida_hombro_asiento);
-              setVal("medida_prof_asiento", data.medida_prof_asiento);
-              setVal("medida_rodilla_talon", data.medida_rodilla_talon);
-              setVal("medida_ancho_cadera", data.medida_ancho_cadera);
+              // Restore checkbox state for draft resume
+              if (data.observaciones_posturales && data.observaciones_posturales.trim()) {
+                const chk = document.querySelector('[name="tiene_observaciones"]');
+                if (chk) {
+                  chk.checked = true;
+                  chk.dispatchEvent(new Event("change"));
+                }
+              }
+
+              // Set numeric fields with unit-aware conversion
+              setVal("altura_total_in", toDisplay(data.altura_total_in, "altura_total_in"));
+              setVal("peso_kg", data.peso_kg);  // peso is always kg
+              setVal("medida_cabeza_asiento", toDisplay(data.medida_cabeza_asiento, "medida_cabeza_asiento"));
+              setVal("medida_hombro_asiento", toDisplay(data.medida_hombro_asiento, "medida_hombro_asiento"));
+              setVal("medida_prof_asiento", toDisplay(data.medida_prof_asiento, "medida_prof_asiento"));
+              setVal("medida_rodilla_talon", toDisplay(data.medida_rodilla_talon, "medida_rodilla_talon"));
+              setVal("medida_ancho_cadera", toDisplay(data.medida_ancho_cadera, "medida_ancho_cadera"));
               setVal("unidad_medida", data.unidad_captura || "in");
 
-              // Set text fields
-              setVal("entidad_solicitante", data.entidad_solicitante);
-              setVal("justificacion", data.justificacion);
-
-              // Set priority radio button
-              if (data.prioridad) {
-                const prioridadRadio = document.querySelector(
-                  `[name="prioridad"][value="${data.prioridad}"]`,
-                );
-                if (prioridadRadio) prioridadRadio.checked = true;
-              }
+              // Set text fields moved to gestion.html
 
               // Store beneficiario_id if present
               if (data.beneficiario_id) {
@@ -824,9 +793,60 @@
         }
       })();
 
-      const toFloatOrNull = (v) => {
-        const n = parseFloat(v);
-        return isNaN(n) ? null : n;
+      // -- Setup observaciones textarea validation -------------------------------
+      function _setupObsValidation() {
+        const textarea = document.querySelector('[name="observaciones_posturales"]');
+        if (!textarea) return;
+        SR_Validations.setupWhitelistField(
+          textarea,
+          SR_Validations.OBS_WHITELIST_RE,
+          SR_Validations.LIMITS.OBS_MAX
+        );
+      }
+
+      // -- Setup all medida validations ------------------------------------------
+      function _setupAllMedidaValidations() {
+        const medidaNames = [
+          "altura_total_in",
+          "peso_kg",
+          "medida_cabeza_asiento",
+          "medida_hombro_asiento",
+          "medida_prof_asiento",
+          "medida_rodilla_talon",
+          "medida_ancho_cadera",
+        ];
+        medidaNames.forEach((name) => {
+          const el = document.querySelector(`[name="${name}"]`);
+          if (el) SR_Validations.setupMeasureField(el);
+        });
+      }
+
+      // -- Toggle observaciones textarea based on checkbox ------------------------
+      function setupObservacionesPosturalesConditional() {
+        const checkbox = document.querySelector('[name="tiene_observaciones"]');
+        const textarea = document.querySelector('[name="observaciones_posturales"]');
+        if (!checkbox || !textarea) return;
+
+        const apply = () => {
+          if (checkbox.checked) {
+            SR_Validations.setFieldDisabled(textarea, false);
+            textarea.required = true;
+          } else {
+            SR_Validations.setFieldDisabled(textarea, true);
+            textarea.required = false;
+            textarea.value = "";
+            SR_Validations.clearFieldError("observaciones_posturales");
+          }
+        };
+
+        checkbox.addEventListener("change", apply);
+        apply();
+      }
+
+      // Helper: send raw string or null for medida fields (not parseFloat)
+      const toStrOrNull = (v) => {
+        const s = (v || "").trim();
+        return s === "" ? null : s;
       };
 
       let capturedPhotoFile = null;
@@ -1206,6 +1226,58 @@
         );
         const solicitudId = localStorage.getItem("solicitud_id");
         const f = document.querySelector("form");
+        SR_Validations.clearAllFieldErrors(f);
+
+        // Validación de campos obligatorios para status=completo
+        if (status === "completo") {
+          const required = [
+            { id: "entorno", label: "Entorno de Uso" },
+            { id: "control_tronco", label: "Control de Tronco" },
+            { id: "control_cabeza", label: "Control de Cabeza" },
+            { id: "altura_total_in", label: "Altura total" },
+            { id: "peso_kg", label: "Peso" },
+            { id: "medida_cabeza_asiento", label: "Cabeza a asiento" },
+            { id: "medida_hombro_asiento", label: "Hombro a asiento" },
+            { id: "medida_prof_asiento", label: "Profundidad asiento" },
+            { id: "medida_rodilla_talon", label: "Rodilla al suelo" },
+            { id: "medida_ancho_cadera", label: "Ancho de cadera" },
+          ];
+          const missing = SR_Validations.validateRequired(f, required, { status });
+          if (missing.length > 0) {
+            missing.forEach(({ id, label }) => {
+              SR_Validations.showFieldError(id, `${label} es obligatorio`);
+            });
+            errorEl.textContent = "Complete los campos obligatorios";
+            errorEl.classList.remove("hidden");
+            return;
+          }
+
+          // Validate observaciones_posturales if checkbox is checked
+          const tieneObs = f.querySelector('[name="tiene_observaciones"]');
+          if (tieneObs?.checked) {
+            const obsVal = (f.querySelector('[name="observaciones_posturales"]')?.value || "").trim();
+            if (!obsVal) {
+              SR_Validations.showFieldError("observaciones_posturales", "Observaciones posturales es obligatorio");
+              errorEl.textContent = "Complete los campos obligatorios";
+              errorEl.classList.remove("hidden");
+              return;
+            }
+          }
+        }
+
+        // Validar constraints HTML5 (minlength, pattern) replicando validación nativa desactivada por novalidate
+        if (status === "completo") {
+          const constraintErrors = SR_Validations.validateHTML5Constraints(f);
+          if (constraintErrors.length > 0) {
+            constraintErrors.forEach(({ id, message }) => {
+              SR_Validations.showFieldError(id, message);
+            });
+            errorEl.textContent = "Revise los campos con formato incorrecto";
+            errorEl.classList.remove("hidden");
+            return;
+          }
+        }
+
         const fd = new FormData(f);
         const get = (name) => fd.get(name) || "";
 
@@ -1230,18 +1302,15 @@
           control_cabeza: get("control_cabeza"),
           control_de_piernas: get("control_de_piernas"),
           observaciones_posturales: get("observaciones_posturales"),
-          altura_total_in: toFloatOrNull(get("altura_total_in")),
-          peso_kg: toFloatOrNull(get("peso_kg")),
-          medida_cabeza_asiento: toFloatOrNull(get("medida_cabeza_asiento")),
-          medida_hombro_asiento: toFloatOrNull(get("medida_hombro_asiento")),
-          medida_prof_asiento: toFloatOrNull(get("medida_prof_asiento")),
-          medida_rodilla_talon: toFloatOrNull(get("medida_rodilla_talon")),
-          medida_ancho_cadera: toFloatOrNull(get("medida_ancho_cadera")),
+          altura_total_in: toStrOrNull(get("altura_total_in")),
+          peso_kg: toStrOrNull(get("peso_kg")),
+          medida_cabeza_asiento: toStrOrNull(get("medida_cabeza_asiento")),
+          medida_hombro_asiento: toStrOrNull(get("medida_hombro_asiento")),
+          medida_prof_asiento: toStrOrNull(get("medida_prof_asiento")),
+          medida_rodilla_talon: toStrOrNull(get("medida_rodilla_talon")),
+          medida_ancho_cadera: toStrOrNull(get("medida_ancho_cadera")),
           unidad_medida: get("unidad_medida") || "in",
           foto_url,
-          entidad_solicitante: get("entidad_solicitante"),
-          prioridad: get("prioridad"),
-          justificacion: get("justificacion"),
           status,
         };
 
@@ -1261,9 +1330,10 @@
 
             if (!res.ok) {
               const errData = await res.json().catch(() => ({}));
-              errorEl.textContent =
-                errData.detail ||
-                "Error al actualizar la solicitud. Intente de nuevo.";
+              errorEl.textContent = SR_Validations.formatBackendError(
+                errData,
+                "Error al actualizar la solicitud. Intente de nuevo.",
+              );
               errorEl.classList.remove("hidden");
               return;
             }
@@ -1271,16 +1341,8 @@
             data = await res.json();
 
             if (status === "completo") {
-              localStorage.removeItem("estudio_id");
-              localStorage.removeItem("solicitud_id");
-              localStorage.removeItem("beneficiario_id");
-              showSuccessModal({
-                title: "Solicitud guardada",
-                description: "La solicitud técnica se guardó correctamente.",
-                onContinue: () => {
-                  window.location.href = "socioeconomico.html";
-                },
-              });
+              // Keep estudio_id and solicitud_id for gestion.html to close the full flow
+              window.location.href = "gestion.html";
             } else {
               alert("Borrador guardado correctamente.");
             }
@@ -1297,9 +1359,10 @@
 
             if (!res.ok) {
               const errData = await res.json().catch(() => ({}));
-              errorEl.textContent =
-                errData.detail ||
-                "Error al guardar la solicitud. Intente de nuevo.";
+              errorEl.textContent = SR_Validations.formatBackendError(
+                errData,
+                "Error al guardar la solicitud. Intente de nuevo.",
+              );
               errorEl.classList.remove("hidden");
               return;
             }
@@ -1312,16 +1375,8 @@
             }
 
             if (status === "completo") {
-              localStorage.removeItem("estudio_id");
-              localStorage.removeItem("solicitud_id");
-              localStorage.removeItem("beneficiario_id");
-              showSuccessModal({
-                title: "Solicitud guardada",
-                description: "La solicitud técnica se guardó correctamente.",
-                onContinue: () => {
-                  window.location.href = "socioeconomico.html";
-                },
-              });
+              // Keep estudio_id and solicitud_id for gestion.html to close the full flow
+              window.location.href = "gestion.html";
             } else {
               alert("Borrador guardado correctamente.");
             }
@@ -1350,6 +1405,9 @@
 
       setupPhotoInputs();
       setupUnidadMedidaLabels();
+      _setupObsValidation();
+      _setupAllMedidaValidations();
+      setupObservacionesPosturalesConditional();
 
       // Guardar Borrador button
       document.getElementById("btn-guardar-borrador").addEventListener("click", () => {

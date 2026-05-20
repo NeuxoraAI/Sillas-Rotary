@@ -95,7 +95,7 @@
         </div>
       </div>
       <!-- END: Branding Header -->
-      <form class="p-8 space-y-12">
+      <form class="p-8 space-y-12" novalidate>
         <!-- PART 1: ESTUDIO SOCIOECONÓMICO -->
         <header class="bg-slate-800 text-white p-6 -mx-8 -mt-8 mb-8">
           <h1 class="text-2xl font-bold uppercase tracking-wider text-white">
@@ -132,9 +132,11 @@
                 type="text"
                 minlength="2"
                 maxlength="60"
-                pattern="^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ ]+$"
+                pattern="^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ. ]+$"
                 required
+                aria-describedby="nombres-error"
               />
+              <p class="field-error hidden text-red-600 text-xs mt-1" id="nombres-error" data-error-for="nombres" role="alert"></p>
             </div>
             <!-- Apellido Paterno -->
             <div class="space-y-2">
@@ -145,9 +147,11 @@
                 type="text"
                 minlength="2"
                 maxlength="40"
-                pattern="^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ ]+$"
+                pattern="^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ. ]+$"
                 required
+                aria-describedby="apellido_paterno-error"
               />
+              <p class="field-error hidden text-red-600 text-xs mt-1" id="apellido_paterno-error" data-error-for="apellido_paterno" role="alert"></p>
             </div>
             <!-- Apellido Materno -->
             <div class="space-y-2">
@@ -158,9 +162,11 @@
                 type="text"
                 minlength="2"
                 maxlength="40"
-                pattern="^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ ]+$"
+                pattern="^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ. ]+$"
                 required
+                aria-describedby="apellido_materno-error"
               />
+              <p class="field-error hidden text-red-600 text-xs mt-1" id="apellido_materno-error" data-error-for="apellido_materno" role="alert"></p>
             </div>
             <div class="space-y-2">
               <label class="block text-sm font-semibold text-slate-700"
@@ -171,7 +177,9 @@
                 name="fecha_nacimiento"
                 type="date"
                 required
+                aria-describedby="fecha_nacimiento-error"
               />
+              <p class="field-error hidden text-red-600 text-xs mt-1" id="fecha_nacimiento-error" data-error-for="fecha_nacimiento" role="alert"></p>
             </div>
             <div class="space-y-2">
               <label class="block text-sm font-semibold text-slate-700"
@@ -183,8 +191,11 @@
                 type="text"
                 minlength="3"
                 maxlength="160"
+                pattern="^[A-Za-záéíóúÁÉÍÓÚüÜñÑ0-9\s\-().\/.,]+$"
                 required
+                aria-describedby="diagnostico-error"
               />
+              <p class="field-error hidden text-red-600 text-xs mt-1" id="diagnostico-error" data-error-for="diagnostico" role="alert"></p>
             </div>
             <div class="space-y-2">
               <label class="block text-sm font-semibold text-slate-700"
@@ -196,16 +207,23 @@
                 type="text"
                 minlength="3"
                 maxlength="120"
+                pattern="^[A-Za-záéíóúÁÉÍÓÚüÜñÑ0-9.\- ]+$"
                 required
+                aria-describedby="calle-error"
               />
+              <p class="field-error hidden text-red-600 text-xs mt-1" id="calle-error" data-error-for="calle" role="alert"></p>
             </div>
             <div class="space-y-2">
               <label class="block text-sm font-semibold text-slate-700">Número exterior</label>
-              <input class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary" name="num_ext" type="text" pattern="[A-Za-z0-9\-\/ ]{1,10}" maxlength="10" required />
+              <input class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary" name="num_ext" type="text" minlength="1" maxlength="10" pattern="[A-Za-z0-9\-\/]{1,10}" required aria-describedby="num_ext-error" />
+              <p class="field-error hidden text-red-600 text-xs mt-1" id="num_ext-error" data-error-for="num_ext" role="alert"></p>
             </div>
             <div class="space-y-2">
-              <label class="block text-sm font-semibold text-slate-700">Número interior</label>
-              <input class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary" name="num_int" type="text" pattern="[A-Za-z0-9\-\/ ]{0,10}" maxlength="10" />
+              <label class="inline-flex items-center gap-2 text-sm font-medium text-slate-700">
+                <input class="text-primary h-4 w-4" name="tiene_num_interior" type="checkbox" />
+                <span>Agregar número interior</span>
+              </label>
+              <input class="w-full border-slate-300 bg-slate-100 text-slate-400 cursor-not-allowed shadow-sm focus:border-primary focus:ring-primary" name="num_int" type="text" minlength="1" maxlength="10" pattern="[A-Za-z0-9\-\/]{0,10}" disabled />
             </div>
             <div class="space-y-2">
               <label class="block text-sm font-semibold text-slate-700"
@@ -217,34 +235,32 @@
                 type="text"
                 minlength="2"
                 maxlength="120"
+                pattern="^[A-Za-záéíóúÁÉÍÓÚüÜñÑ0-9.\- ]+$"
                 required
+                aria-describedby="colonia-error"
               />
+              <p class="field-error hidden text-red-600 text-xs mt-1" id="colonia-error" data-error-for="colonia" role="alert"></p>
             </div>
-            <div class="space-y-2 ">
+            <div class="space-y-2">
+              <label class="block text-sm font-semibold text-slate-700">Ciudad</label>
+              <input class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary" name="ciudad" type="text" minlength="2" maxlength="80" pattern="^[A-Za-záéíóúÁÉÍÓÚüÜñÑ0-9.\- ]+$" required aria-describedby="ciudad-error" />
+              <p class="field-error hidden text-red-600 text-xs mt-1" id="ciudad-error" data-error-for="ciudad" role="alert"></p>
+            </div>
+            <div class="space-y-2">
               <label class="block text-sm font-semibold text-slate-700">Estado (INEGI)</label>
-              <select class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary" name="estado_codigo" id="estado_codigo" required></select>
+              <select class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary" name="estado_codigo" id="estado_codigo" required aria-describedby="estado_codigo-error"></select>
+              <p class="field-error hidden text-red-600 text-xs mt-1" id="estado_codigo-error" data-error-for="estado_codigo" role="alert"></p>
             </div>
-            <div class="space-y-2 md:order-2">
+            <div class="space-y-2 md:col-span-2">
               <label class="block text-sm font-semibold text-slate-700">Sexo</label>
               <div class="flex gap-6">
-                <label><input type="radio" name="sexo" value="M" required /> M</label>
-                <label><input type="radio" name="sexo" value="F" required /> F</label>
-                <label><input type="radio" name="sexo" value="NE" required /> NE</label>
+                <label><input type="radio" name="sexo" value="M" required aria-describedby="sexo-error" /> Masculino</label>
+                <label><input type="radio" name="sexo" value="F" required /> Femenino</label>
+                <label><input type="radio" name="sexo" value="NE" required /> No especificado</label>
               </div>
+              <p class="field-error hidden text-red-600 text-xs mt-1" id="sexo-error" data-error-for="sexo" role="alert"></p>
             </div>
-            <div class="space-y-2 ">
-              <label class="block text-sm font-semibold text-slate-700">Ciudad / Municipio</label>
-              <select
-                class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary"
-                name="ciudad"
-                id="ciudad"
-                required
-                disabled
-              >
-                <option value="">Selecciona un estado primero</option>
-              </select>
-            </div>
-            <div class="space-y-2 md:order-1">
+            <div class="space-y-2">
               <label class="block text-sm font-semibold text-slate-700"
                 >Teléfonos de contacto</label
               >
@@ -257,8 +273,10 @@
                 minlength="10"
                 pattern="[0-9]{10}"
                 autocomplete="off"
+                required
+                aria-describedby="telefonos-error"
               />
-              <p class="text-xs text-slate-500">10 dígitos, sin espacios ni símbolos</p>
+              <p class="field-error hidden text-red-600 text-xs mt-1" id="telefonos-error" data-error-for="telefonos" role="alert"></p>
             </div>
           </div>
         </section>
@@ -293,17 +311,52 @@
                 Tutor 1
               </h3>
               <div class="space-y-3">
-                <div>
-                  <label class="text-xs font-bold text-slate-500 uppercase"
-                    >Nombre</label
-                  ><input
-                    class="w-full mt-1 border-slate-300"
-                    name="tutor1_nombre"
-                    type="text"
-                    minlength="3"
-                    maxlength="120"
-                    required
-                  />
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label class="text-xs font-bold text-slate-500 uppercase"
+                      >Nombre(s)</label
+                    ><input
+                      class="w-full mt-1 border-slate-300"
+                      name="tutor1_nombres"
+                      type="text"
+                      minlength="2"
+                      maxlength="60"
+                      pattern="^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ. ]+$"
+                      required
+                      aria-describedby="tutor1_nombres-error"
+                    />
+                    <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor1_nombres-error" data-error-for="tutor1_nombres" role="alert"></p>
+                  </div>
+                  <div>
+                    <label class="text-xs font-bold text-slate-500 uppercase"
+                      >Apellido Paterno</label
+                    ><input
+                      class="w-full mt-1 border-slate-300"
+                      name="tutor1_apellido_paterno"
+                      type="text"
+                      minlength="2"
+                      maxlength="40"
+                      pattern="^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ. ]+$"
+                      required
+                      aria-describedby="tutor1_apellido_paterno-error"
+                    />
+                    <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor1_apellido_paterno-error" data-error-for="tutor1_apellido_paterno" role="alert"></p>
+                  </div>
+                  <div>
+                    <label class="text-xs font-bold text-slate-500 uppercase"
+                      >Apellido Materno</label
+                    ><input
+                      class="w-full mt-1 border-slate-300"
+                      name="tutor1_apellido_materno"
+                      type="text"
+                      minlength="2"
+                      maxlength="40"
+                      pattern="^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ. ]+$"
+                      required
+                      aria-describedby="tutor1_apellido_materno-error"
+                    />
+                    <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor1_apellido_materno-error" data-error-for="tutor1_apellido_materno" role="alert"></p>
+                  </div>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                   <div>
@@ -313,9 +366,12 @@
                       class="w-full mt-1 border-slate-300"
                       name="tutor1_edad"
                       type="number"
-                      min="18"
-                      max="100"
+                      min="0"
+                      max="99"
+                      required
+                      aria-describedby="tutor1_edad-error"
                     />
+                    <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor1_edad-error" data-error-for="tutor1_edad" role="alert"></p>
                   </div>
                   <div>
                     <label class="text-xs font-bold text-slate-500 uppercase"
@@ -324,6 +380,8 @@
                     <select
                       class="w-full mt-1 border-slate-300"
                       name="tutor1_nivel_estudios"
+                      required
+                      aria-describedby="tutor1_nivel_estudios-error"
                     >
                       <option value="">Selecciona una opción</option>
                       <option value="NINGUNO">Sin estudios</option>
@@ -335,6 +393,7 @@
                       <option value="MAESTRIA">Maestría</option>
                       <option value="DOCTORADO">Doctorado</option>
                     </select>
+                    <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor1_nivel_estudios-error" data-error-for="tutor1_nivel_estudios" role="alert"></p>
                   </div>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
@@ -345,6 +404,8 @@
                   <select
                       class="w-full mt-1 border-slate-300"
                       name="tutor1_estado_civil"
+                      required
+                      aria-describedby="tutor1_estado_civil-error"
                     >
                       <option value="">Selecciona una opción</option>
                       <option value="SOLTERO">Soltero / Soltera</option>
@@ -353,17 +414,21 @@
                       <option value="DIVORCIADO">Divorciado / Divorciada</option>
                       <option value="UNION_LIBRE">Unión libre</option>
                     </select>
+                    <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor1_estado_civil-error" data-error-for="tutor1_estado_civil" role="alert"></p>
                   </div>
                   <div>
                     <label class="text-xs font-bold text-slate-500 uppercase"
                       >No. Hijos</label
                     ><input
                       class="w-full mt-1 border-slate-300"
-                      name="tutor1_num_hijos"
-                      type="number"
-                      min="0"
-                      max="30"
+                    name="tutor1_num_hijos"
+                    type="number"
+                    min="0"
+                    max="30"
+                      required
+                      aria-describedby="tutor1_num_hijos-error"
                     />
+                    <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor1_num_hijos-error" data-error-for="tutor1_num_hijos" role="alert"></p>
                   </div>
                 </div>
                 <div>
@@ -373,6 +438,8 @@
                   <select
                     class="w-full mt-1 border-slate-300"
                     name="tutor1_vivienda"
+                    required
+                    aria-describedby="tutor1_vivienda-error"
                   >
                     <option value="">Selecciona una opción</option>
                     <option value="PROPIA">Propia</option>
@@ -381,26 +448,32 @@
                     <option value="FAMILIAR">Con familiares</option>
                     <option value="INFORMAL">En albergue / institución</option>
                   </select>
+                  <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor1_vivienda-error" data-error-for="tutor1_vivienda" role="alert"></p>
                 </div>
                 <div>
-                  <label class="inline-flex items-center gap-2 text-sm font-medium text-slate-700 mb-2">
-                    <input class="text-primary h-4 w-4" name="tutor1_sin_empleo" type="checkbox" />
-                    <span>No tiene empleo</span>
-                  </label>
                   <label class="text-xs font-bold text-slate-500 uppercase"
                     >Fuente Empleo</label
                   ><input
                     class="w-full mt-1 border-slate-300"
                     name="tutor1_fuente_empleo"
                     type="text"
+                    minlength="2"
                     maxlength="80"
+                    pattern="^[A-Za-záéíóúÁÉÍÓÚüÜñÑ0-9\s\-().\/.,]+$"
+                    aria-describedby="tutor1_fuente_empleo-error"
                   />
+                  <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor1_fuente_empleo-error" data-error-for="tutor1_fuente_empleo" role="alert"></p>
+                  <label class="inline-flex items-center gap-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-lg px-3 py-2 mt-2">
+                    <input class="text-primary h-4 w-4" name="tutor1_sin_empleo" type="checkbox" />
+                    <span>No tiene empleo</span>
+                  </label>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                   <div>
                     <label class="text-xs font-bold text-slate-500 uppercase"
                       >Antigüedad (años)</label
-                    ><input class="w-full mt-1 border-slate-300" name="tutor1_antiguedad_anios" type="number" min="0" max="50" />
+                    ><input class="w-full mt-1 border-slate-300" name="tutor1_antiguedad_anios" type="number" min="0" max="50" aria-describedby="tutor1_antiguedad_anios-error" />
+                    <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor1_antiguedad_anios-error" data-error-for="tutor1_antiguedad_anios" role="alert"></p>
                   </div>
                   <div>
                     <label class="text-xs font-bold text-slate-500 uppercase"
@@ -415,7 +488,11 @@
                 <div>
                   <label class="text-xs font-bold text-slate-500 uppercase"
                     >Ingreso Mensual</label
-                  ><input class="w-full mt-1 border-slate-300" name="tutor1_ingreso_mensual" type="text" />
+                  ><div class="flex items-center">
+                  <span class="bg-slate-200 border border-r-0 border-slate-300 px-3 py-2 rounded-l-lg text-slate-600 text-sm font-semibold">$</span>
+                  <input class="flex-grow rounded-r-lg border-slate-300" name="tutor1_ingreso_mensual" type="text" aria-describedby="tutor1_ingreso_mensual-error" />
+                </div>
+                  <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor1_ingreso_mensual-error" data-error-for="tutor1_ingreso_mensual" role="alert"></p>
                 </div>
                 <label class="inline-flex items-center gap-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-lg px-3 py-2">
                   <input class="text-primary h-4 w-4" name="tutor1_otras_fuentes_aplica" type="checkbox" />
@@ -423,62 +500,102 @@
                 </label>
                 <div>
                   <label class="text-xs font-bold text-slate-500 uppercase">Otra fuente</label>
-                  <input class="w-full mt-1 border-slate-300" name="tutor1_otras_fuentes_ingreso" type="text" maxlength="100" disabled />
+                  <input class="w-full mt-1 border-slate-300" name="tutor1_otras_fuentes_ingreso" type="text" minlength="2" maxlength="100" pattern="^[A-Za-záéíóúÁÉÍÓÚüÜñÑ0-9\s\-().\/.,]+$" disabled aria-describedby="tutor1_otras_fuentes_ingreso-error" />
+                  <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor1_otras_fuentes_ingreso-error" data-error-for="tutor1_otras_fuentes_ingreso" role="alert"></p>
                 </div>
                 <div>
                   <label class="text-xs font-bold text-slate-500 uppercase">Monto adicional</label>
-                  <input class="w-full mt-1 border-slate-300" name="tutor1_monto_otras_fuentes" type="text" disabled />
+                  <div class="flex items-center">
+                  <span class="bg-slate-200 border border-r-0 border-slate-300 px-3 py-2 rounded-l-lg text-slate-600 text-sm font-semibold">$</span>
+                  <input class="flex-grow rounded-r-lg border-slate-300" name="tutor1_monto_otras_fuentes" type="text" disabled aria-describedby="tutor1_monto_otras_fuentes-error" />
+                </div>
+                  <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor1_monto_otras_fuentes-error" data-error-for="tutor1_monto_otras_fuentes" role="alert"></p>
                 </div>
                 <fieldset class="mt-4">
                   <legend class="text-xs font-bold text-slate-500 uppercase">IMSS</legend>
                   <div class="flex gap-4 mt-1">
                     <label class="inline-flex items-center gap-1">
-                      <input type="radio" name="tutor1_imss" value="SI" class="text-primary" /> Sí
+                      <input type="radio" name="tutor1_imss" value="SI" class="text-primary" required aria-describedby="tutor1_imss-error" /> Sí
                     </label>
                     <label class="inline-flex items-center gap-1">
                       <input type="radio" name="tutor1_imss" value="NO" class="text-primary" /> No
                     </label>
-                    <label class="inline-flex items-center gap-1">
-                      <input type="radio" name="tutor1_imss" value="NO_APLICA" class="text-primary" /> No aplica
-                    </label>
                   </div>
                 </fieldset>
+                <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor1_imss-error" data-error-for="tutor1_imss" role="alert"></p>
                 <fieldset class="mt-3">
                   <legend class="text-xs font-bold text-slate-500 uppercase">INFONAVIT</legend>
                   <div class="flex gap-4 mt-1">
                     <label class="inline-flex items-center gap-1">
-                      <input type="radio" name="tutor1_infonavit" value="SI" class="text-primary" /> Sí
+                      <input type="radio" name="tutor1_infonavit" value="SI" class="text-primary" required aria-describedby="tutor1_infonavit-error" /> Sí
                     </label>
                     <label class="inline-flex items-center gap-1">
                       <input type="radio" name="tutor1_infonavit" value="NO" class="text-primary" /> No
                     </label>
-                    <label class="inline-flex items-center gap-1">
-                      <input type="radio" name="tutor1_infonavit" value="NO_APLICA" class="text-primary" /> No aplica
-                    </label>
                   </div>
                 </fieldset>
+                <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor1_infonavit-error" data-error-for="tutor1_infonavit" role="alert"></p>
               </div>
             </div>
             <!-- Tutor 2 -->
-            <div
-              class="bg-slate-50 p-6 rounded-lg border border-slate-200 space-y-4"
-            >
-              <h3
-                class="font-bold text-slate-800 border-b border-slate-200 pb-2"
+            <div id="tutor2-section">
+              <div
+                class="bg-slate-50 p-6 rounded-lg border border-slate-200 space-y-4"
               >
-                Tutor 2
+              <h3
+                class="font-bold text-slate-800 border-b border-slate-200 pb-2 flex items-center gap-3"
+              >
+                <span>Tutor 2</span>
+                <label class="inline-flex items-center gap-2 text-sm font-medium text-slate-700">
+                  <input class="text-primary h-4 w-4" name="agregar_tutor2" type="checkbox" />
+                  <span>Agregar</span>
+                </label>
               </h3>
+              <div id="tutor2-content" class="space-y-4 opacity-50 transition-opacity duration-200">
               <div class="space-y-3">
-                <div>
-                  <label class="text-xs font-bold text-slate-500 uppercase"
-                    >Nombre</label
-                  ><input
-                    class="w-full mt-1 border-slate-300"
-                    name="tutor2_nombre"
-                    type="text"
-                    minlength="3"
-                    maxlength="120"
-                  />
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label class="text-xs font-bold text-slate-500 uppercase"
+                      >Nombre(s)</label
+                    ><input
+                      class="w-full mt-1 border-slate-300"
+                      name="tutor2_nombres"
+                      type="text"
+                      minlength="2"
+                      maxlength="60"
+                      pattern="^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ. ]+$"
+                      aria-describedby="tutor2_nombres-error"
+                    />
+                    <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor2_nombres-error" data-error-for="tutor2_nombres" role="alert"></p>
+                  </div>
+                  <div>
+                    <label class="text-xs font-bold text-slate-500 uppercase"
+                      >Apellido Paterno</label
+                    ><input
+                      class="w-full mt-1 border-slate-300"
+                      name="tutor2_apellido_paterno"
+                      type="text"
+                      minlength="2"
+                      maxlength="40"
+                      pattern="^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ. ]+$"
+                      aria-describedby="tutor2_apellido_paterno-error"
+                    />
+                    <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor2_apellido_paterno-error" data-error-for="tutor2_apellido_paterno" role="alert"></p>
+                  </div>
+                  <div>
+                    <label class="text-xs font-bold text-slate-500 uppercase"
+                      >Apellido Materno</label
+                    ><input
+                      class="w-full mt-1 border-slate-300"
+                      name="tutor2_apellido_materno"
+                      type="text"
+                      minlength="2"
+                      maxlength="40"
+                      pattern="^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ. ]+$"
+                      aria-describedby="tutor2_apellido_materno-error"
+                    />
+                    <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor2_apellido_materno-error" data-error-for="tutor2_apellido_materno" role="alert"></p>
+                  </div>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                   <div>
@@ -488,9 +605,11 @@
                       class="w-full mt-1 border-slate-300"
                       name="tutor2_edad"
                       type="number"
-                      min="18"
-                      max="100"
+                      min="0"
+                      max="99"
+                      aria-describedby="tutor2_edad-error"
                     />
+                    <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor2_edad-error" data-error-for="tutor2_edad" role="alert"></p>
                   </div>
                   <div>
                     <label class="text-xs font-bold text-slate-500 uppercase"
@@ -499,6 +618,7 @@
                     <select
                       class="w-full mt-1 border-slate-300"
                       name="tutor2_nivel_estudios"
+                      aria-describedby="tutor2_nivel_estudios-error"
                     >
                       <option value="">Selecciona una opción</option>
                       <option value="NINGUNO">Sin estudios</option>
@@ -510,6 +630,7 @@
                       <option value="MAESTRIA">Maestría</option>
                       <option value="DOCTORADO">Doctorado</option>
                     </select>
+                    <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor2_nivel_estudios-error" data-error-for="tutor2_nivel_estudios" role="alert"></p>
                   </div>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
@@ -520,6 +641,7 @@
                     <select
                       class="w-full mt-1 border-slate-300"
                       name="tutor2_estado_civil"
+                      aria-describedby="tutor2_estado_civil-error"
                     >
                       <option value="">Selecciona una opción</option>
                       <option value="SOLTERO">Soltero / Soltera</option>
@@ -528,17 +650,20 @@
                       <option value="DIVORCIADO">Divorciado / Divorciada</option>
                       <option value="UNION_LIBRE">Unión libre</option>
                     </select>
+                    <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor2_estado_civil-error" data-error-for="tutor2_estado_civil" role="alert"></p>
                   </div>
                   <div>
                     <label class="text-xs font-bold text-slate-500 uppercase"
                       >No. Hijos</label
                     ><input
                       class="w-full mt-1 border-slate-300"
-                      name="tutor2_num_hijos"
-                      type="number"
-                      min="0"
-                      max="30"
+                    name="tutor2_num_hijos"
+                    type="number"
+                    min="0"
+                    max="30"
+                      aria-describedby="tutor2_num_hijos-error"
                     />
+                    <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor2_num_hijos-error" data-error-for="tutor2_num_hijos" role="alert"></p>
                   </div>
                 </div>
                 <div>
@@ -548,6 +673,7 @@
                   <select
                     class="w-full mt-1 border-slate-300"
                     name="tutor2_vivienda"
+                    aria-describedby="tutor2_vivienda-error"
                   >
                     <option value="">Selecciona una opción</option>
                     <option value="PROPIA">Propia</option>
@@ -556,26 +682,32 @@
                     <option value="FAMILIAR">Con familiares</option>
                     <option value="INFORMAL">En albergue / institución</option>
                   </select>
+                  <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor2_vivienda-error" data-error-for="tutor2_vivienda" role="alert"></p>
                 </div>
                 <div>
-                  <label class="inline-flex items-center gap-2 text-sm font-medium text-slate-700 mb-2">
-                    <input class="text-primary h-4 w-4" name="tutor2_sin_empleo" type="checkbox" />
-                    <span>No tiene empleo</span>
-                  </label>
                   <label class="text-xs font-bold text-slate-500 uppercase"
                     >Fuente Empleo</label
                   ><input
                     class="w-full mt-1 border-slate-300"
                     name="tutor2_fuente_empleo"
                     type="text"
+                    minlength="2"
                     maxlength="80"
+                    pattern="^[A-Za-záéíóúÁÉÍÓÚüÜñÑ0-9\s\-().\/.,]+$"
+                    aria-describedby="tutor2_fuente_empleo-error"
                   />
+                  <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor2_fuente_empleo-error" data-error-for="tutor2_fuente_empleo" role="alert"></p>
+                  <label class="inline-flex items-center gap-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-lg px-3 py-2 mt-2">
+                    <input class="text-primary h-4 w-4" name="tutor2_sin_empleo" type="checkbox" />
+                    <span>No tiene empleo</span>
+                  </label>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                   <div>
                     <label class="text-xs font-bold text-slate-500 uppercase"
                       >Antigüedad (años)</label
-                    ><input class="w-full mt-1 border-slate-300" name="tutor2_antiguedad_anios" type="number" min="0" max="50" />
+                    ><input class="w-full mt-1 border-slate-300" name="tutor2_antiguedad_anios" type="number" min="0" max="50" aria-describedby="tutor2_antiguedad_anios-error" />
+                    <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor2_antiguedad_anios-error" data-error-for="tutor2_antiguedad_anios" role="alert"></p>
                   </div>
                   <div>
                     <label class="text-xs font-bold text-slate-500 uppercase"
@@ -590,7 +722,11 @@
                 <div>
                   <label class="text-xs font-bold text-slate-500 uppercase"
                     >Ingreso Mensual</label
-                  ><input class="w-full mt-1 border-slate-300" name="tutor2_ingreso_mensual" type="text" />
+                  ><div class="flex items-center">
+                  <span class="bg-slate-200 border border-r-0 border-slate-300 px-3 py-2 rounded-l-lg text-slate-600 text-sm font-semibold">$</span>
+                  <input class="flex-grow rounded-r-lg border-slate-300" name="tutor2_ingreso_mensual" type="text" aria-describedby="tutor2_ingreso_mensual-error" />
+                </div>
+                  <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor2_ingreso_mensual-error" data-error-for="tutor2_ingreso_mensual" role="alert"></p>
                 </div>
                 <label class="inline-flex items-center gap-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-lg px-3 py-2">
                   <input class="text-primary h-4 w-4" name="tutor2_otras_fuentes_aplica" type="checkbox" />
@@ -598,183 +734,48 @@
                 </label>
                 <div>
                   <label class="text-xs font-bold text-slate-500 uppercase">Otra fuente</label>
-                  <input class="w-full mt-1 border-slate-300" name="tutor2_otras_fuentes_ingreso" type="text" maxlength="100" disabled />
+                  <input class="w-full mt-1 border-slate-300" name="tutor2_otras_fuentes_ingreso" type="text" minlength="2" maxlength="100" pattern="^[A-Za-záéíóúÁÉÍÓÚüÜñÑ0-9\s\-().\/.,]+$" disabled aria-describedby="tutor2_otras_fuentes_ingreso-error" />
+                  <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor2_otras_fuentes_ingreso-error" data-error-for="tutor2_otras_fuentes_ingreso" role="alert"></p>
                 </div>
                 <div>
                   <label class="text-xs font-bold text-slate-500 uppercase">Monto adicional</label>
-                  <input class="w-full mt-1 border-slate-300" name="tutor2_monto_otras_fuentes" type="text" disabled />
+                  <div class="flex items-center">
+                  <span class="bg-slate-200 border border-r-0 border-slate-300 px-3 py-2 rounded-l-lg text-slate-600 text-sm font-semibold">$</span>
+                  <input class="flex-grow rounded-r-lg border-slate-300" name="tutor2_monto_otras_fuentes" type="text" disabled aria-describedby="tutor2_monto_otras_fuentes-error" />
+                </div>
+                  <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor2_monto_otras_fuentes-error" data-error-for="tutor2_monto_otras_fuentes" role="alert"></p>
                 </div>
                 <fieldset class="mt-4">
                   <legend class="text-xs font-bold text-slate-500 uppercase">IMSS</legend>
                   <div class="flex gap-4 mt-1">
                     <label class="inline-flex items-center gap-1">
-                      <input type="radio" name="tutor2_imss" value="SI" class="text-primary" /> Sí
+                      <input type="radio" name="tutor2_imss" value="SI" class="text-primary" aria-describedby="tutor2_imss-error" /> Sí
                     </label>
                     <label class="inline-flex items-center gap-1">
                       <input type="radio" name="tutor2_imss" value="NO" class="text-primary" /> No
                     </label>
-                    <label class="inline-flex items-center gap-1">
-                      <input type="radio" name="tutor2_imss" value="NO_APLICA" class="text-primary" /> No aplica
-                    </label>
                   </div>
                 </fieldset>
+                <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor2_imss-error" data-error-for="tutor2_imss" role="alert"></p>
                 <fieldset class="mt-3">
                   <legend class="text-xs font-bold text-slate-500 uppercase">INFONAVIT</legend>
                   <div class="flex gap-4 mt-1">
                     <label class="inline-flex items-center gap-1">
-                      <input type="radio" name="tutor2_infonavit" value="SI" class="text-primary" /> Sí
+                      <input type="radio" name="tutor2_infonavit" value="SI" class="text-primary" aria-describedby="tutor2_infonavit-error" /> Sí
                     </label>
                     <label class="inline-flex items-center gap-1">
                       <input type="radio" name="tutor2_infonavit" value="NO" class="text-primary" /> No
                     </label>
-                    <label class="inline-flex items-center gap-1">
-                      <input type="radio" name="tutor2_infonavit" value="NO_APLICA" class="text-primary" /> No aplica
-                    </label>
                   </div>
                 </fieldset>
+                <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor2_infonavit-error" data-error-for="tutor2_infonavit" role="alert"></p>
               </div>
+            </div>
+            </div>
             </div>
           </div>
         </section>
-        <!-- Otros y Cierre -->
-        <section data-purpose="socioeconomic-closing">
-          <h2
-            class="text-xl font-bold mb-6 text-primary border-b-2 border-primary/10 pb-2"
-          >
-            Otros y Cierre
-          </h2>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="space-y-2">
-              <label class="block text-sm font-semibold text-slate-700"
-                >¿El paciente ha tenido silla previamente?</label
-              >
-              <select class="w-full border-slate-300" name="silla_previa">
-                <option>No</option>
-                <option>Sí</option>
-              </select>
-            </div>
-            <div class="space-y-2">
-              <label class="block text-sm font-semibold text-slate-700"
-                >¿Cómo la obtuvo?</label
-              >
-              <select
-                class="w-full border-slate-300"
-                name="como_obtuvo_silla"
-                disabled
-              >
-                <option value="">Selecciona una opción</option>
-                <option value="COMPRA">Compra</option>
-                <option value="DONACION">Donación</option>
-              </select>
-            </div>
-            <div class="space-y-2">
-              <label class="block text-sm font-semibold text-slate-700"
-                >Elaboró el estudio</label
-              >
-              <input class="w-full border-slate-300 bg-slate-100" name="elaboro_estudio" type="text" readonly />
-            </div>
-            <div class="space-y-2">
-              <label class="block text-sm font-semibold text-slate-700"
-                >Fecha del estudio</label
-              >
-              <input
-                class="w-full border-slate-300"
-                name="fecha_estudio"
-                type="date"
-              />
-            </div>
-            <div class="md:col-span-2 space-y-2">
-              <label class="block text-sm font-semibold text-slate-700"
-                >Sede</label
-              >
-              <input class="w-full border-slate-300 bg-slate-100" name="sede" type="text" readonly />
-            </div>
-            <div class="md:col-span-2 space-y-2">
-              <label class="block text-sm font-semibold text-slate-700">Ciudad del registro</label>
-              <input class="w-full border-slate-300 bg-slate-100" name="ciudad_registro" type="text" readonly />
-            </div>
-            <div class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div class="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-4">
-                <label class="block text-sm font-semibold text-slate-700" for="credencial-file"
-                  >Subir Credencial</label
-                >
-                <input
-                  id="credencial-file"
-                  name="credencial_file"
-                  class="w-full border-slate-300 text-sm file:mr-4 file:rounded-md file:border-0 file:bg-primary file:px-4 file:py-2 file:font-semibold file:text-white hover:file:bg-ug-lightBlue"
-                  type="file"
-                  accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf"
-                />
-                <label class="block text-sm font-semibold text-slate-700 mt-4"
-                  >Tomar foto de Credencial</label
-                >
-                <button
-                  type="button"
-                  data-camera-target="credencial"
-                  class="inline-flex cursor-pointer items-center rounded-md bg-slate-700 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
-                  >Tomar foto</button
-                >
-                <p class="text-xs text-slate-500">Acepta JPG, PNG o PDF. Máximo 10MB.</p>
-                <p id="credencial-status" class="text-xs text-slate-500"></p>
-                <button
-                  type="button"
-                  id="credencial-preview-card"
-                  class="hidden mt-2 w-full overflow-hidden rounded-lg border border-slate-200 bg-white text-left hover:border-primary/40"
-                >
-                  <div
-                    id="credencial-preview-media"
-                    class="flex h-36 items-center justify-center bg-slate-100"
-                  ></div>
-                  <div class="border-t border-slate-200 px-3 py-2">
-                    <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      Vista previa
-                    </p>
-                    <p id="credencial-preview-name" class="truncate text-sm text-slate-700"></p>
-                  </div>
-                </button>
-              </div>
-              <div class="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-4">
-                <label class="block text-sm font-semibold text-slate-700" for="comprobante-domicilio-file"
-                  >Subir Comprobante de domicilio</label
-                >
-                <input
-                  id="comprobante-domicilio-file"
-                  name="comprobante_domicilio_file"
-                  class="w-full border-slate-300 text-sm file:mr-4 file:rounded-md file:border-0 file:bg-primary file:px-4 file:py-2 file:font-semibold file:text-white hover:file:bg-ug-lightBlue"
-                  type="file"
-                  accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf"
-                />
-                <label class="block text-sm font-semibold text-slate-700 mt-4"
-                  >Tomar foto de Comprobante de domicilio</label
-                >
-                <button
-                  type="button"
-                  data-camera-target="comprobante_domicilio"
-                  class="inline-flex cursor-pointer items-center rounded-md bg-slate-700 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
-                  >Tomar foto</button
-                >
-                <p class="text-xs text-slate-500">Acepta JPG, PNG o PDF. Máximo 10MB.</p>
-                <p id="comprobante-domicilio-status" class="text-xs text-slate-500"></p>
-                <button
-                  type="button"
-                  id="comprobante_domicilio-preview-card"
-                  class="hidden mt-2 w-full overflow-hidden rounded-lg border border-slate-200 bg-white text-left hover:border-primary/40"
-                >
-                  <div
-                    id="comprobante_domicilio-preview-media"
-                    class="flex h-36 items-center justify-center bg-slate-100"
-                  ></div>
-                  <div class="border-t border-slate-200 px-3 py-2">
-                    <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      Vista previa
-                    </p>
-                    <p id="comprobante_domicilio-preview-name" class="truncate text-sm text-slate-700"></p>
-                  </div>
-                </button>
-              </div>
-            </div>
-          </div>
-        </section>
+        <!-- Otros y Cierre movidos a gestion.html -->
         <!-- Footer Actions -->
         <footer class="pt-10 border-t border-slate-200">
           <div
@@ -797,7 +798,6 @@
             </div>
             <div class="flex flex-col sm:flex-row gap-4">
               <button
-                id="btn-guardar-borrador-estudio"
                 class="px-6 py-3 border border-slate-300 text-slate-700 font-bold hover:bg-slate-50 transition-all uppercase text-sm tracking-wide"
                 type="button"
               >
@@ -827,125 +827,7 @@
         </footer>
       </form>
     </main>
-    <div
-      id="camera-modal"
-      class="hidden fixed inset-0 z-50 bg-slate-900/80 px-4 py-6"
-    >
-      <div class="mx-auto flex h-full max-w-3xl items-center justify-center">
-        <div class="w-full rounded-xl bg-white p-4 shadow-2xl">
-          <div class="flex items-start justify-between gap-4 border-b border-slate-200 pb-3">
-            <div>
-              <h3 id="camera-modal-title" class="text-lg font-bold text-slate-900">
-                Capturar documento
-              </h3>
-              <p class="text-sm text-slate-600">
-                Acomodá el documento frente a la webcam y tomá la foto.
-              </p>
-            </div>
-            <button
-              id="camera-close"
-              type="button"
-              class="rounded-md border border-slate-300 px-3 py-1 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-            >
-              Cerrar
-            </button>
-          </div>
-          <div class="mt-4 space-y-4">
-            <div id="camera-device-group" class="hidden space-y-2">
-              <label
-                for="camera-device-select"
-                class="block text-sm font-semibold text-slate-700"
-                >Seleccionar cámara</label
-              >
-              <select
-                id="camera-device-select"
-                class="w-full border-slate-300 text-sm"
-              ></select>
-            </div>
-            <video
-              id="camera-video"
-              class="h-[420px] w-full rounded-lg bg-slate-950 object-contain"
-              autoplay
-              playsinline
-              muted
-            ></video>
-            <canvas id="camera-canvas" class="hidden"></canvas>
-            <p id="camera-error" class="hidden text-sm text-red-600"></p>
-            <div class="flex flex-col gap-3 sm:flex-row sm:justify-end">
-              <button
-                id="camera-capture"
-                type="button"
-                class="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-ug-lightBlue"
-              >
-                Tomar foto
-              </button>
-              <button
-                id="camera-cancel"
-                type="button"
-                class="rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div
-      id="success-modal"
-      class="hidden fixed inset-0 z-50 bg-slate-950/70 px-4 py-6"
-    >
-      <div class="mx-auto flex h-full max-w-lg items-center justify-center">
-        <div class="w-full rounded-2xl bg-white p-6 shadow-2xl text-center">
-          <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-700">
-            <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-            </svg>
-          </div>
-          <h3 id="success-modal-title" class="mt-4 text-2xl font-bold text-slate-900">
-            Estudio guardado
-          </h3>
-          <p id="success-modal-description" class="mt-2 text-sm text-slate-600">
-            El estudio socioeconómico se guardó correctamente.
-          </p>
-          <button
-            id="success-modal-action"
-            type="button"
-            class="mt-6 inline-flex items-center justify-center rounded-md bg-primary px-5 py-3 text-sm font-semibold text-white hover:bg-ug-lightBlue"
-          >
-            Continuar
-          </button>
-        </div>
-      </div>
-    </div>
-    <div
-      id="document-preview-modal"
-      class="hidden fixed inset-0 z-50 bg-slate-950/85 px-4 py-6"
-    >
-      <div class="mx-auto flex h-full max-w-5xl items-center justify-center">
-        <div class="w-full rounded-xl bg-white p-4 shadow-2xl">
-          <div class="flex items-start justify-between gap-4 border-b border-slate-200 pb-3">
-            <div>
-              <h3 id="document-preview-title" class="text-lg font-bold text-slate-900">
-                Vista previa del documento
-              </h3>
-              <p id="document-preview-name" class="text-sm text-slate-600"></p>
-            </div>
-            <button
-              id="document-preview-close"
-              type="button"
-              class="rounded-md border border-slate-300 px-3 py-1 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-            >
-              Cerrar
-            </button>
-          </div>
-          <div
-            id="document-preview-content"
-            class="mt-4 flex h-[70vh] items-center justify-center overflow-hidden rounded-lg bg-slate-100"
-          ></div>
-        </div>
-      </div>
-    </div>
+    <script src="assets/js/validations.js"></script>
     <script data-purpose="form-logic">
       const NIVEL_ESTUDIOS_CATALOG = [
         "NINGUNO", "PRIMARIA", "SECUNDARIA", "BACHILLERATO",
@@ -962,781 +844,27 @@
       const MONETARY_FIELD_IDS = [
         "tutor1_ingreso_mensual",
         "tutor2_ingreso_mensual",
+        "tutor1_monto_otras_fuentes",
+        "tutor2_monto_otras_fuentes",
       ];
       const ESTADOS_INEGI = [
         ["01","AGUASCALIENTES"],["02","BAJA CALIFORNIA"],["03","BAJA CALIFORNIA SUR"],["04","CAMPECHE"],["05","COAHUILA"],["06","COLIMA"],["07","CHIAPAS"],["08","CHIHUAHUA"],["09","CIUDAD DE MEXICO"],["10","DURANGO"],["11","GUANAJUATO"],["12","GUERRERO"],["13","HIDALGO"],["14","JALISCO"],["15","ESTADO DE MEXICO"],["16","MICHOACAN"],["17","MORELOS"],["18","NAYARIT"],["19","NUEVO LEON"],["20","OAXACA"],["21","PUEBLA"],["22","QUERETARO"],["23","QUINTANA ROO"],["24","SAN LUIS POTOSI"],["25","SINALOA"],["26","SONORA"],["27","TABASCO"],["28","TAMAULIPAS"],["29","TLAXCALA"],["30","VERACRUZ"],["31","YUCATAN"],["32","ZACATECAS"]
       ];
-      const uploadedDocumentRefs = {
-        credencial: { path: null, url: null },
-        comprobante_domicilio: { path: null, url: null },
-      };
-      const capturedDocumentFiles = {
-        credencial: null,
-        comprobante_domicilio: null,
-      };
-      const documentPreviewState = {
-        credencial: { objectUrl: null, type: null, name: "", sourceUrl: null },
-        comprobante_domicilio: { objectUrl: null, type: null, name: "", sourceUrl: null },
-      };
-      const LOCAL_DRAFT_STORAGE_KEY = "socioeconomico_form_draft_v1";
-      let municipiosPorEstado = null;
-      const cameraState = {
-        key: null,
-        stream: null,
-        selectedDeviceId: null,
-      };
-      const DOCUMENT_INPUTS = [
-        {
-          key: "credencial",
-          tipo: "credencial",
-          inputId: "credencial-file",
-          statusId: "credencial-status",
-          previewCardId: "credencial-preview-card",
-          previewMediaId: "credencial-preview-media",
-          previewNameId: "credencial-preview-name",
-          label: "Credencial",
-        },
-        {
-          key: "comprobante_domicilio",
-          tipo: "comprobante_domicilio",
-          inputId: "comprobante-domicilio-file",
-          statusId: "comprobante-domicilio-status",
-          previewCardId: "comprobante_domicilio-preview-card",
-          previewMediaId: "comprobante_domicilio-preview-media",
-          previewNameId: "comprobante_domicilio-preview-name",
-          label: "Comprobante de domicilio",
-        },
-      ];
-
-      function sanitizeMoneyInput(raw) {
-        if (raw == null) return "";
-        const cleaned = String(raw)
-          .replace(/,/g, "")
-          .replace(/[^\d.]/g, "");
-        const firstDotIndex = cleaned.indexOf(".");
-
-        if (firstDotIndex === -1) {
-          return cleaned;
-        }
-
-        const integerPart = cleaned.slice(0, firstDotIndex);
-        const decimalPart = cleaned.slice(firstDotIndex + 1).replace(/\./g, "");
-        return `${integerPart}.${decimalPart}`;
-      }
-
-      function formatMoneyDisplay(raw) {
-        const sanitized = sanitizeMoneyInput(raw);
-        if (!sanitized) return "";
-
-        const [integerPart, decimalPart] = sanitized.split(".");
-        const formattedInteger = integerPart.replace(
-          /\B(?=(\d{3})+(?!\d))/g,
-          ",",
-        );
-
-        if (decimalPart != null) {
-          return `${formattedInteger}.${decimalPart}`;
-        }
-
-        return formattedInteger;
-      }
-
-      function toMoneyNumberOrNull(raw) {
-        const sanitized = sanitizeMoneyInput(raw);
-        if (!sanitized || sanitized === ".") {
-          return null;
-        }
-
-        const numberValue = Number(sanitized);
-        return Number.isFinite(numberValue) ? numberValue : null;
-      }
-
-      // Integer-only variants for ingreso_mensual (RF-03)
-      function sanitizeIntegerInput(raw) {
-        if (raw == null) return "";
-        return String(raw).replace(/,/g, "").replace(/\D/g, "");
-      }
-
-      function formatIntegerDisplay(raw) {
-        const sanitized = sanitizeIntegerInput(raw);
-        if (!sanitized) return "";
-        return sanitized.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-      }
-
-      function toIntegerOrNull(raw) {
-        const sanitized = sanitizeIntegerInput(raw);
-        if (!sanitized) return null;
-        const numberValue = Number(sanitized);
-        return Number.isFinite(numberValue) ? numberValue : null;
-      }
-
-      function sanitizeTelefono(raw) {
-        return String(raw || "")
-          .replace(/\D/g, "")
-          .slice(0, 10);
-      }
-
-      function telefonoEsValido(raw) {
-        return /^[0-9]{10}$/.test(String(raw || "").trim());
-      }
-
-      function formatBackendErrorMessage(errData, fallbackMessage) {
-        const telefonoMsg =
-          "El teléfono debe contener exactamente 10 dígitos numéricos";
-
-        if (!errData) return fallbackMessage;
-
-        if (typeof errData.detail === "string" && errData.detail.trim()) {
-          return errData.detail;
-        }
-
-        if (Array.isArray(errData.detail)) {
-          const details = errData.detail;
-
-          const telefonoDetail = details.find(
-            (d) =>
-              Array.isArray(d?.loc) &&
-              d.loc.join(".").includes("beneficiario.telefonos"),
-          );
-
-          if (telefonoDetail) {
-            return telefonoDetail.msg || telefonoMsg;
-          }
-
-          const readableMessages = details
-            .map((d) => {
-              const path = Array.isArray(d?.loc) ? d.loc.slice(1).join(".") : "campo";
-              const msg = d?.msg || "valor inválido";
-              return `${path}: ${msg}`;
-            })
-            .filter(Boolean);
-
-          if (readableMessages.length > 0) {
-            return readableMessages.join(" | ");
-          }
-        }
-
-        return fallbackMessage;
-      }
-
-      function extractStoredFilename(path) {
-        if (!path) return "";
-        const segments = String(path).split("/");
-        return segments[segments.length - 1] || path;
-      }
-
-      function setDocumentRef(key, path, url) {
-        uploadedDocumentRefs[key] = {
-          path: path || null,
-          url: url || null,
-        };
-      }
-
-      function clearFileInputValue(inputId) {
-        const inputEl = document.getElementById(inputId);
-        if (inputEl) inputEl.value = "";
-      }
-
-      function getPreviewModalElements() {
-        return {
-          modal: document.getElementById("document-preview-modal"),
-          title: document.getElementById("document-preview-title"),
-          name: document.getElementById("document-preview-name"),
-          content: document.getElementById("document-preview-content"),
-        };
-      }
-
-      function revokePreviewUrl(key) {
-        const state = documentPreviewState[key];
-        if (state?.objectUrl) {
-          URL.revokeObjectURL(state.objectUrl);
-          state.objectUrl = null;
-        }
-      }
-
-      function setPreviewFromFile(key, file) {
-        revokePreviewUrl(key);
-        documentPreviewState[key] = {
-          objectUrl: URL.createObjectURL(file),
-          type: file.type || "application/octet-stream",
-          name: file.name || "Documento",
-          sourceUrl: null,
-        };
-      }
-
-      function setPreviewFromStoredPath(key, path) {
-        revokePreviewUrl(key);
-        const extension = String(path || "").split(".").pop()?.toLowerCase() || "";
-        const type = extension === "pdf" ? "application/pdf" : "image/jpeg";
-        documentPreviewState[key] = {
-          objectUrl: null,
-          type,
-          name: extractStoredFilename(path),
-          sourceUrl: path ? `/api/documentos?path=${encodeURIComponent(path)}` : null,
-        };
-      }
-
-      function clearPreviewState(key) {
-        revokePreviewUrl(key);
-        documentPreviewState[key] = {
-          objectUrl: null,
-          type: null,
-          name: "",
-          sourceUrl: null,
-        };
-      }
-
-      function renderPreviewCard(key) {
-        const config = DOCUMENT_INPUTS.find((item) => item.key === key);
-        const state = documentPreviewState[key];
-        if (!config || !state) return;
-
-        const card = document.getElementById(config.previewCardId);
-        const media = document.getElementById(config.previewMediaId);
-        const name = document.getElementById(config.previewNameId);
-        if (!card || !media || !name) return;
-
-        const previewUrl = state.objectUrl || state.sourceUrl;
-        if (!previewUrl) {
-          card.classList.add("hidden");
-          media.innerHTML = "";
-          name.textContent = "";
-          return;
-        }
-
-        card.classList.remove("hidden");
-        name.textContent = state.name || config.label;
-
-        if (state.type === "application/pdf") {
-          media.innerHTML = `
-            <div class="flex h-full w-full flex-col items-center justify-center gap-2 text-slate-600">
-              <span class="text-3xl">📄</span>
-              <span class="text-xs font-semibold uppercase tracking-wide">PDF</span>
-            </div>
-          `;
-          return;
-        }
-
-        media.innerHTML = `<img src="${previewUrl}" alt="Vista previa de ${config.label}" class="h-full w-full object-cover" />`;
-      }
-
-      function closeDocumentPreviewModal() {
-        const { modal, content, name } = getPreviewModalElements();
-        if (content) content.innerHTML = "";
-        if (name) name.textContent = "";
-        if (modal) modal.classList.add("hidden");
-      }
-
-      function openDocumentPreviewModal(key) {
-        const config = DOCUMENT_INPUTS.find((item) => item.key === key);
-        const state = documentPreviewState[key];
-        const { modal, title, name, content } = getPreviewModalElements();
-        if (!config || !state || !modal || !title || !name || !content) return;
-
-        const previewUrl = state.objectUrl || state.sourceUrl;
-        if (!previewUrl) return;
-
-        title.textContent = `Vista previa de ${config.label}`;
-        name.textContent = state.name || config.label;
-
-        if (state.type === "application/pdf") {
-          content.innerHTML = `<iframe src="${previewUrl}" class="h-full w-full rounded-lg bg-white" title="Vista previa de ${config.label}"></iframe>`;
-        } else {
-          content.innerHTML = `<img src="${previewUrl}" alt="Vista previa ampliada de ${config.label}" class="max-h-full max-w-full object-contain" />`;
-        }
-
-        modal.classList.remove("hidden");
-      }
-
-      function getCameraElements() {
-        return {
-          modal: document.getElementById("camera-modal"),
-          title: document.getElementById("camera-modal-title"),
-          deviceGroup: document.getElementById("camera-device-group"),
-          deviceSelect: document.getElementById("camera-device-select"),
-          video: document.getElementById("camera-video"),
-          canvas: document.getElementById("camera-canvas"),
-          error: document.getElementById("camera-error"),
-        };
-      }
-
-      function stopCameraStream() {
-        if (cameraState.stream) {
-          cameraState.stream.getTracks().forEach((track) => track.stop());
-          cameraState.stream = null;
-        }
-
-        const { video } = getCameraElements();
-        if (video) video.srcObject = null;
-      }
-
-      async function listVideoDevices() {
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        return devices.filter((device) => device.kind === "videoinput");
-      }
-
-      function renderCameraDeviceOptions(devices) {
-        const { deviceGroup, deviceSelect } = getCameraElements();
-        if (!deviceGroup || !deviceSelect) return;
-
-        if (!devices.length) {
-          deviceGroup.classList.add("hidden");
-          deviceSelect.innerHTML = "";
-          return;
-        }
-
-        deviceGroup.classList.toggle("hidden", devices.length <= 1);
-        deviceSelect.innerHTML = devices
-          .map((device, index) => {
-            const selected = device.deviceId === cameraState.selectedDeviceId;
-            const label = device.label || `Cámara ${index + 1}`;
-            return `<option value="${device.deviceId}" ${selected ? "selected" : ""}>${label}</option>`;
-          })
-          .join("");
-      }
-
-      async function refreshCameraDeviceOptions() {
-        const devices = await listVideoDevices();
-        if (!cameraState.selectedDeviceId && devices[0]) {
-          cameraState.selectedDeviceId = devices[0].deviceId;
-        }
-        renderCameraDeviceOptions(devices);
-      }
-
-      async function startCameraStream() {
-        const { video } = getCameraElements();
-        if (!video) return;
-
-        stopCameraStream();
-
-        const constraints = cameraState.selectedDeviceId
-          ? {
-              video: { deviceId: { exact: cameraState.selectedDeviceId } },
-              audio: false,
-            }
-          : {
-              video: true,
-              audio: false,
-            };
-
-        const stream = await navigator.mediaDevices.getUserMedia(constraints);
-        cameraState.stream = stream;
-        const [videoTrack] = stream.getVideoTracks();
-        const activeDeviceId = videoTrack?.getSettings?.().deviceId;
-        if (activeDeviceId) {
-          cameraState.selectedDeviceId = activeDeviceId;
-        }
-
-        video.srcObject = stream;
-        await video.play();
-        await refreshCameraDeviceOptions();
-      }
-
-      function closeCameraModal() {
-        stopCameraStream();
-        cameraState.key = null;
-        const { modal, error, deviceGroup, deviceSelect } = getCameraElements();
-        if (error) {
-          error.textContent = "";
-          error.classList.add("hidden");
-        }
-        if (deviceGroup) deviceGroup.classList.add("hidden");
-        if (deviceSelect) deviceSelect.innerHTML = "";
-        if (modal) modal.classList.add("hidden");
-      }
-
-      async function openCameraModal(key) {
-        const config = DOCUMENT_INPUTS.find((item) => item.key === key);
-        if (!config) return;
-
-        const { modal, title, video, error } = getCameraElements();
-        if (!modal || !title || !video || !error) return;
-
-        if (!navigator.mediaDevices?.getUserMedia) {
-          throw new Error("Este navegador no permite acceder a la webcam desde esta pantalla.");
-        }
-
-        stopCameraStream();
-        cameraState.key = key;
-        title.textContent = `Tomar foto de ${config.label}`;
-        error.textContent = "";
-        error.classList.add("hidden");
-        modal.classList.remove("hidden");
-
-        try {
-          await startCameraStream();
-        } catch (_err) {
-          closeCameraModal();
-          throw new Error("No se pudo acceder a la webcam. Revisá los permisos de cámara en Edge.");
-        }
-      }
-
-      function capturePhotoFromWebcam() {
-        const key = cameraState.key;
-        const config = DOCUMENT_INPUTS.find((item) => item.key === key);
-        const { video, canvas } = getCameraElements();
-        if (!key || !config || !video || !canvas) return;
-
-        const width = video.videoWidth || 1280;
-        const height = video.videoHeight || 720;
-        canvas.width = width;
-        canvas.height = height;
-
-        const context = canvas.getContext("2d");
-        if (!context) {
-          throw new Error("No se pudo procesar la foto capturada.");
-        }
-
-        context.drawImage(video, 0, 0, width, height);
-        canvas.toBlob(
-          (blob) => {
-            if (!blob) return;
-
-            capturedDocumentFiles[key] = new File(
-              [blob],
-              `${config.tipo}-${Date.now()}.jpg`,
-              { type: "image/jpeg" },
-            );
-            setPreviewFromFile(key, capturedDocumentFiles[key]);
-            clearFileInputValue(config.inputId);
-            renderDocumentStatus(key);
-            renderPreviewCard(key);
-            closeCameraModal();
-          },
-          "image/jpeg",
-          0.92,
-        );
-      }
-
-      function renderDocumentStatus(key) {
-        const config = DOCUMENT_INPUTS.find((item) => item.key === key);
-        if (!config) return;
-
-        const statusEl = document.getElementById(config.statusId);
-        const inputEl = document.getElementById(config.inputId);
-        if (!statusEl || !inputEl) return;
-
-        if (inputEl.files?.[0]) {
-          statusEl.textContent = `${config.label} seleccionada: ${inputEl.files[0].name}`;
-          return;
-        }
-
-        if (capturedDocumentFiles[key]) {
-          statusEl.textContent = `${config.label} capturada: ${capturedDocumentFiles[key].name}`;
-          return;
-        }
-
-        const storedPath = uploadedDocumentRefs[key]?.path;
-        statusEl.textContent = storedPath
-          ? `${config.label} cargada: ${extractStoredFilename(storedPath)}`
-          : "";
-      }
-
-      function setupDocumentInputs() {
-        DOCUMENT_INPUTS.forEach((config) => {
-          const inputEl = document.getElementById(config.inputId);
-          if (!inputEl) return;
-          inputEl.addEventListener("change", () => {
-            capturedDocumentFiles[config.key] = null;
-            if (inputEl.files?.[0]) {
-              setPreviewFromFile(config.key, inputEl.files[0]);
-            } else {
-              clearPreviewState(config.key);
-            }
-            renderDocumentStatus(config.key);
-            renderPreviewCard(config.key);
-          });
-          renderDocumentStatus(config.key);
-          renderPreviewCard(config.key);
-
-          const previewCard = document.getElementById(config.previewCardId);
-          if (previewCard) {
-            previewCard.addEventListener("click", () =>
-              openDocumentPreviewModal(config.key),
-            );
-          }
-        });
-
-        document.querySelectorAll("[data-camera-target]").forEach((button) => {
-          button.addEventListener("click", async () => {
-            try {
-              await openCameraModal(button.dataset.cameraTarget);
-            } catch (err) {
-              const errorEl = document.getElementById("error-msg");
-              errorEl.textContent =
-                err instanceof Error ? err.message : "No se pudo abrir la webcam.";
-              errorEl.classList.remove("hidden");
-            }
-          });
-        });
-
-        document
-          .getElementById("camera-close")
-          .addEventListener("click", closeCameraModal);
-        document
-          .getElementById("camera-cancel")
-          .addEventListener("click", closeCameraModal);
-        document
-          .getElementById("camera-capture")
-          .addEventListener("click", capturePhotoFromWebcam);
-        document
-          .getElementById("camera-device-select")
-          .addEventListener("change", async (event) => {
-            cameraState.selectedDeviceId = event.target.value || null;
-            try {
-              await startCameraStream();
-            } catch (_err) {
-              const errorEl = document.getElementById("error-msg");
-              errorEl.textContent = "No se pudo cambiar a la cámara seleccionada.";
-              errorEl.classList.remove("hidden");
-            }
-          });
-        document.getElementById("camera-modal").addEventListener("click", (event) => {
-          if (event.target?.id === "camera-modal") closeCameraModal();
-        });
-
-        document
-          .getElementById("document-preview-close")
-          .addEventListener("click", closeDocumentPreviewModal);
-        document
-          .getElementById("document-preview-modal")
-          .addEventListener("click", (event) => {
-            if (event.target?.id === "document-preview-modal") {
-              closeDocumentPreviewModal();
-            }
-          });
-      }
-
-      async function uploadSupportingDocuments(token) {
-        const nextRefs = {
-          credencial: { ...uploadedDocumentRefs.credencial },
-          comprobante_domicilio: { ...uploadedDocumentRefs.comprobante_domicilio },
-        };
-
-        for (const config of DOCUMENT_INPUTS) {
-          const inputEl = document.getElementById(config.inputId);
-          const file = capturedDocumentFiles[config.key] || inputEl?.files?.[0];
-          if (!file) continue;
-
-          const formData = new FormData();
-          formData.append("tipo", config.tipo);
-          formData.append("archivo", file);
-
-          const response = await fetch("/api/upload-documento", {
-            method: "POST",
-            headers: {
-              Authorization: "Bearer " + token,
-            },
-            body: formData,
-          });
-
-          if (!response.ok) {
-            const errData = await response.json().catch(() => ({}));
-            throw new Error(
-              formatBackendErrorMessage(
-                errData,
-                `No se pudo subir ${config.label.toLowerCase()}.`,
-              ),
-            );
-          }
-
-          const data = await response.json();
-          nextRefs[config.key] = {
-            path: data.documento_path || null,
-            url: data.documento_url || null,
-          };
-          setPreviewFromStoredPath(config.key, data.documento_path);
-          capturedDocumentFiles[config.key] = null;
-          clearFileInputValue(config.inputId);
-          setDocumentRef(config.key, data.documento_path, data.documento_url);
-          renderDocumentStatus(config.key);
-          renderPreviewCard(config.key);
-        }
-
-        return nextRefs;
-      }
-
-      function hasPendingSupportingDocuments() {
-        return DOCUMENT_INPUTS.some((config) => {
-          const inputEl = document.getElementById(config.inputId);
-          return Boolean(capturedDocumentFiles[config.key] || inputEl?.files?.[0]);
-        });
-      }
-
-      async function persistDraftRemotely({ sessionToken, estudioId, payload }) {
-        if (estudioId) {
-          const patchPayload = {
-            ...payload.estudio,
-            tutores: payload.tutores,
-          };
-
-          const response = await fetch(`/api/estudios/${estudioId}`, {
-            method: "PATCH",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: "Bearer " + sessionToken,
-            },
-            body: JSON.stringify(patchPayload),
-          });
-
-          return { response, mode: "patch" };
-        }
-
-        const response = await fetch("/api/estudios", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: "Bearer " + sessionToken,
-          },
-          body: JSON.stringify(payload),
-        });
-
-        return { response, mode: "post" };
-      }
-
-      function buildDraftRemoteErrorMessage(errData, fallbackMessage) {
-        const readable = formatBackendErrorMessage(errData, fallbackMessage);
-        return `${readable} Los datos siguen guardados en este dispositivo; vuelve a intentar cuando regrese la conexión.`;
-      }
-
-      function showSuccessModal({ title, description, onContinue }) {
-        const modal = document.getElementById("success-modal");
-        const titleEl = document.getElementById("success-modal-title");
-        const descriptionEl = document.getElementById("success-modal-description");
-        const actionBtn = document.getElementById("success-modal-action");
-        if (!modal || !titleEl || !descriptionEl || !actionBtn) {
-          onContinue?.();
-          return;
-        }
-
-        titleEl.textContent = title;
-        descriptionEl.textContent = description;
-        actionBtn.onclick = () => {
-          modal.classList.add("hidden");
-          onContinue?.();
-        };
-        modal.classList.remove("hidden");
-      }
-
-      function clearLocalFormDraft() {
-        localStorage.removeItem(LOCAL_DRAFT_STORAGE_KEY);
-      }
-
-      function collectLocalFormDraft() {
-        const form = document.querySelector("form");
-        if (!form) return null;
-
-        const values = {};
-        form.querySelectorAll("input, select, textarea").forEach((field) => {
-          if (!field.name || field.disabled || field.type === "file") return;
-
-          if (field.type === "radio") {
-            if (field.checked) values[field.name] = field.value;
-            return;
-          }
-
-          if (field.type === "checkbox") {
-            values[field.name] = field.checked;
-            return;
-          }
-
-          values[field.name] = field.value;
-        });
-
-        return {
-          updatedAt: new Date().toISOString(),
-          values,
-        };
-      }
-
-      function saveLocalFormDraft() {
-        const snapshot = collectLocalFormDraft();
-        if (!snapshot) return;
-        localStorage.setItem(LOCAL_DRAFT_STORAGE_KEY, JSON.stringify(snapshot));
-      }
-
-      async function applyLocalFormDraft(snapshot) {
-        if (!snapshot?.values) return;
-
-        Object.entries(snapshot.values).forEach(([name, value]) => {
-          const fields = document.querySelectorAll(`[name="${name}"]`);
-          if (!fields.length) return;
-
-          const first = fields[0];
-          if (first.type === "radio") {
-            const target = document.querySelector(`[name="${name}"][value="${value}"]`);
-            if (target) target.checked = true;
-            return;
-          }
-
-          if (first.type === "checkbox") {
-            first.checked = Boolean(value);
-            return;
-          }
-
-          first.value = value ?? "";
-        });
-
-        const ciudadEl = document.getElementById("ciudad");
-        const estadoCodigo = snapshot.values.estado_codigo || "";
-        const ciudad = snapshot.values.ciudad || "";
-        if (ciudadEl && ciudad) {
-          ciudadEl.dataset.pendingValue = ciudad;
-        }
-        if (estadoCodigo) {
-          await loadMunicipiosCatalog();
-          renderMunicipiosSelect(estadoCodigo, ciudad);
-        }
-
-        document.querySelector('[name="silla_previa"]')?.dispatchEvent(new Event("change"));
-      }
-
-      function getLocalFormDraft() {
-        try {
-          return JSON.parse(localStorage.getItem(LOCAL_DRAFT_STORAGE_KEY) || "null");
-        } catch (_err) {
-          return null;
-        }
-      }
-
-      function setupLocalDraftAutosave() {
-        const form = document.querySelector("form");
-        if (!form) return;
-
-        let timeoutId = null;
-        const scheduleSave = () => {
-          if (timeoutId) clearTimeout(timeoutId);
-          timeoutId = setTimeout(saveLocalFormDraft, 300);
-        };
-
-        form.querySelectorAll("input, select, textarea").forEach((field) => {
-          if (!field.name || field.type === "file") return;
-          field.addEventListener("input", scheduleSave);
-          field.addEventListener("change", scheduleSave);
-        });
-      }
 
       function setupTelefonoSanitization() {
         const telefonoInput = document.querySelector('[name="telefonos"]');
         if (!telefonoInput) return;
-
-        telefonoInput.addEventListener("input", () => {
-          telefonoInput.value = sanitizeTelefono(telefonoInput.value);
-        });
-
-        telefonoInput.value = sanitizeTelefono(telefonoInput.value);
+        SR_Validations.setupTelefonoField(telefonoInput);
       }
 
       function setupMonetaryFieldFormatting() {
         MONETARY_FIELD_IDS.forEach((fieldName) => {
           const input = document.querySelector(`[name="${fieldName}"]`);
           if (!input) return;
-
-          input.addEventListener("input", () => {
-            input.value = formatIntegerDisplay(input.value);
-          });
-
-          input.value = formatIntegerDisplay(input.value);
+          const max = fieldName.includes("ingreso")
+            ? SR_Validations.LIMITS.INGRESO_MENSUAL_MAX
+            : SR_Validations.LIMITS.MONTO_OTRAS_FUENTES_MAX;
+          SR_Validations.setupMoneyField(input, max);
         });
       }
 
@@ -1752,85 +880,177 @@
         });
       }
 
-      function normalizeMunicipioValue(value) {
-        return String(value || "")
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "")
-          .replace(/\s+/g, " ")
-          .trim()
-          .toUpperCase();
+      function setupNameFieldValidation() {
+        const names = [
+          "nombres", "apellido_paterno", "apellido_materno",
+          "tutor1_nombres", "tutor1_apellido_paterno", "tutor1_apellido_materno",
+          "tutor2_nombres", "tutor2_apellido_paterno", "tutor2_apellido_materno",
+        ];
+        names.forEach((name) => {
+          const input = document.querySelector(`[name="${name}"]`);
+          if (!input) return;
+          SR_Validations.setupNameField(input);
+        });
       }
 
-      async function loadMunicipiosCatalog() {
-        if (municipiosPorEstado) return municipiosPorEstado;
-        const response = await fetch("/assets/municipios_por_estado.json", {
-          cache: "no-store",
-        });
-        if (!response.ok) {
-          throw new Error("No se pudo cargar el catálogo de municipios.");
-        }
-        municipiosPorEstado = await response.json();
-        return municipiosPorEstado;
+      function setupDiagnosticoValidation() {
+        const input = document.querySelector('[name="diagnostico"]');
+        if (!input) return;
+        SR_Validations.setupTextField(input, SR_Validations.DIAGNOSTICO_RE);
       }
 
-      function renderMunicipiosSelect(estadoCodigo, municipioSeleccionado = "") {
-        const ciudadSelect = document.getElementById("ciudad");
-        if (!ciudadSelect) return;
+      function setupCalleValidation() {
+        const input = document.querySelector('[name="calle"]');
+        if (!input) return;
+        SR_Validations.setupTextField(input, SR_Validations.CALLE_RE);
+      }
 
-        if (!estadoCodigo) {
-          ciudadSelect.innerHTML = '<option value="">Selecciona un estado primero</option>';
-          ciudadSelect.disabled = true;
-          return;
-        }
+      function setupColoniaValidation() {
+        const input = document.querySelector('[name="colonia"]');
+        if (!input) return;
+        SR_Validations.setupTextField(input, SR_Validations.COLONIA_RE);
+      }
 
-        const municipios = municipiosPorEstado?.[estadoCodigo] || [];
-        ciudadSelect.disabled = false;
-        ciudadSelect.innerHTML = '<option value="">Selecciona un municipio</option>';
-
-        municipios.forEach((municipio) => {
-          const option = document.createElement("option");
-          option.value = municipio;
-          option.textContent = municipio;
-          ciudadSelect.appendChild(option);
+      function setupNumeroDomicilioValidation() {
+        ["num_ext", "num_int"].forEach((name) => {
+          const input = document.querySelector(`[name="${name}"]`);
+          if (!input) return;
+          SR_Validations.setupTextField(input, SR_Validations.NUM_DOMICILIO_RE);
         });
+      }
 
-        if (municipioSeleccionado) {
-          const normalizedTarget = normalizeMunicipioValue(municipioSeleccionado);
-          const matchingMunicipio = municipios.find(
-            (municipio) => normalizeMunicipioValue(municipio) === normalizedTarget,
-          );
+      function setupTutorTextValidation() {
+        const fields = [
+          "tutor1_fuente_empleo",
+          "tutor2_fuente_empleo",
+          "tutor1_otras_fuentes_ingreso",
+          "tutor2_otras_fuentes_ingreso",
+        ];
+        fields.forEach((name) => {
+          const input = document.querySelector(`[name="${name}"]`);
+          if (!input) return;
+          SR_Validations.setupTextField(input, SR_Validations.DIAGNOSTICO_RE);
+        });
+      }
 
-          if (matchingMunicipio) {
-            ciudadSelect.value = matchingMunicipio;
-            return;
+      function setupIntegerFieldLimits() {
+        const limits = [
+          { name: "tutor1_edad", min: 0, max: 99 },
+          { name: "tutor2_edad", min: 0, max: 99 },
+          { name: "tutor1_num_hijos", min: 0, max: 30 },
+          { name: "tutor2_num_hijos", min: 0, max: 30 },
+          { name: "tutor1_antiguedad_anios", min: 0, max: 50 },
+          { name: "tutor2_antiguedad_anios", min: 0, max: 50 },
+          { name: "tutor1_antiguedad_meses_extra", min: 0, max: 11 },
+          { name: "tutor2_antiguedad_meses_extra", min: 0, max: 11 },
+        ];
+
+        limits.forEach(({ name, min, max }) => {
+          const input = document.querySelector(`[name="${name}"]`);
+          if (!input) return;
+          SR_Validations.setupIntegerField(input, min, max);
+        });
+      }
+
+      function setupNumInteriorConditional() {
+        const checkbox = document.querySelector('[name="tiene_num_interior"]');
+        const input = document.querySelector('[name="num_int"]');
+        if (!checkbox || !input) return;
+
+        const apply = () => {
+          if (checkbox.checked) {
+            SR_Validations.setFieldDisabled(input, false);
+            input.required = true;
+          } else {
+            SR_Validations.setFieldDisabled(input, true);
+            input.required = false;
+            input.value = "";
           }
+        };
 
-          const exists = municipios.includes(municipioSeleccionado);
-          if (!exists) {
-            const option = document.createElement("option");
-            option.value = municipioSeleccionado;
-            option.textContent = `${municipioSeleccionado} (registro previo)`;
-            ciudadSelect.appendChild(option);
-          }
-          ciudadSelect.value = municipioSeleccionado;
-        }
+        checkbox.addEventListener("change", apply);
+        apply();
       }
 
-      async function setupMunicipiosCatalog() {
-        await loadMunicipiosCatalog();
-        const estadoSelect = document.getElementById("estado_codigo");
-        const ciudadSelect = document.getElementById("ciudad");
-        if (!estadoSelect || !ciudadSelect) return;
+      function setupTutor2Toggle() {
+        const checkbox = document.querySelector('[name="agregar_tutor2"]');
+        const section = document.getElementById("tutor2-section");
+        const content = document.getElementById("tutor2-content");
+        if (!checkbox || !section || !content) return;
 
-        estadoSelect.addEventListener("change", () => {
-          renderMunicipiosSelect(estadoSelect.value, "");
-        });
+        const apply = () => {
+          if (checkbox.checked) {
+            content.classList.remove("opacity-50");
+            content.classList.add("opacity-100");
+            // Habilitar todos los campos del contenido
+            content.querySelectorAll("input, select, textarea").forEach(el => {
+              if (el.name !== "agregar_tutor2") {
+                SR_Validations.setFieldDisabled(el, false);
+              }
+            });
+            // Agregar required a campos estáticos
+            const requiredFields = [
+              "tutor2_nombres", "tutor2_apellido_paterno", "tutor2_apellido_materno",
+              "tutor2_edad", "tutor2_nivel_estudios", "tutor2_estado_civil",
+              "tutor2_num_hijos", "tutor2_vivienda"
+            ];
+            requiredFields.forEach(name => {
+              const el = section.querySelector(`[name="${name}"]`);
+              if (el) el.required = true;
+            });
+            const imssRadio = section.querySelector('[name="tutor2_imss"][value="SI"]');
+            const infonavitRadio = section.querySelector('[name="tutor2_infonavit"][value="SI"]');
+            if (imssRadio) imssRadio.required = true;
+            if (infonavitRadio) infonavitRadio.required = true;
+            setupTutorConditionalFields();
+          } else {
+            content.classList.remove("opacity-100");
+            content.classList.add("opacity-50");
+            // Deshabilitar TODOS los campos del contenido
+            content.querySelectorAll("input, select, textarea").forEach(el => {
+              if (el.name !== "agregar_tutor2") {
+                SR_Validations.setFieldDisabled(el, true);
+                el.required = false;
+              }
+            });
+            // Limpiar valores
+            section.querySelectorAll("input[type='text'], input[type='number'], input[type='tel']").forEach(el => {
+              el.value = "";
+            });
+            section.querySelectorAll("select").forEach(el => {
+              el.selectedIndex = 0;
+            });
+            section.querySelectorAll("input[type='radio']").forEach(el => {
+              el.checked = false;
+            });
+            section.querySelectorAll("input[type='checkbox']").forEach(el => {
+              if (el.name !== "agregar_tutor2") el.checked = false;
+            });
+            // Safety net: explicitly disable conditional fields for Tutor 2
+            const t2Fuente = content.querySelector('[name="tutor2_fuente_empleo"]');
+            const t2Ingreso = content.querySelector('[name="tutor2_ingreso_mensual"]');
+            const t2AntigAnios = content.querySelector('[name="tutor2_antiguedad_anios"]');
+            const t2AntigMeses = content.querySelector('[name="tutor2_antiguedad_meses_extra"]');
+            if (t2Fuente) SR_Validations.setFieldDisabled(t2Fuente, true);
+            if (t2Ingreso) SR_Validations.setFieldDisabled(t2Ingreso, true);
+            if (t2AntigAnios) SR_Validations.setFieldDisabled(t2AntigAnios, true);
+            if (t2AntigMeses) SR_Validations.setFieldDisabled(t2AntigMeses, true);
+          }
+        };
 
-        renderMunicipiosSelect(
-          estadoSelect.value,
-          ciudadSelect.dataset.pendingValue || ciudadSelect.value || "",
-        );
-        delete ciudadSelect.dataset.pendingValue;
+        checkbox.addEventListener("change", apply);
+        apply();
+        // Ensure conditional fields are disabled on initial load if checkbox is unchecked
+        if (!checkbox.checked) {
+          const t2Fuente = content.querySelector('[name="tutor2_fuente_empleo"]');
+          const t2Ingreso = content.querySelector('[name="tutor2_ingreso_mensual"]');
+          const t2AntigAnios = content.querySelector('[name="tutor2_antiguedad_anios"]');
+          const t2AntigMeses = content.querySelector('[name="tutor2_antiguedad_meses_extra"]');
+          if (t2Fuente) SR_Validations.setFieldDisabled(t2Fuente, true);
+          if (t2Ingreso) SR_Validations.setFieldDisabled(t2Ingreso, true);
+          if (t2AntigAnios) SR_Validations.setFieldDisabled(t2AntigAnios, true);
+          if (t2AntigMeses) SR_Validations.setFieldDisabled(t2AntigMeses, true);
+        }
       }
 
       function setupTutorConditionalFields() {
@@ -1848,23 +1068,32 @@
           const applySinEmpleo = () => {
             const checked = !!sinEmpleo?.checked;
             if (fuente) {
-              fuente.disabled = checked;
+              SR_Validations.setFieldDisabled(fuente, checked);
               if (checked) fuente.value = "";
             }
             if (ingreso) {
-              ingreso.disabled = checked;
+              SR_Validations.setFieldDisabled(ingreso, checked);
               if (checked) ingreso.value = "0";
+            }
+            if (antiguedadAnios) {
+              SR_Validations.setFieldDisabled(antiguedadAnios, checked || !!antiguedadNoAplica?.checked);
+              if (checked) antiguedadAnios.value = "";
+            }
+            if (antiguedadMeses) {
+              SR_Validations.setFieldDisabled(antiguedadMeses, checked || !!antiguedadNoAplica?.checked);
+              if (checked) antiguedadMeses.value = "";
             }
           };
 
           const applyAntiguedad = () => {
             const checked = !!antiguedadNoAplica?.checked;
+            const sinEmpleoChecked = !!sinEmpleo?.checked;
             if (antiguedadAnios) {
-              antiguedadAnios.disabled = checked;
+              SR_Validations.setFieldDisabled(antiguedadAnios, checked || sinEmpleoChecked);
               if (checked) antiguedadAnios.value = "";
             }
             if (antiguedadMeses) {
-              antiguedadMeses.disabled = checked;
+              SR_Validations.setFieldDisabled(antiguedadMeses, checked || sinEmpleoChecked);
               if (checked) antiguedadMeses.value = "";
             }
           };
@@ -1872,41 +1101,48 @@
           const applyOtras = () => {
             const checked = !!otrasAplica?.checked;
             if (otrasFuente) {
-              otrasFuente.disabled = !checked;
+              SR_Validations.setFieldDisabled(otrasFuente, !checked);
               if (!checked) otrasFuente.value = "";
             }
             if (otrasMonto) {
-              otrasMonto.disabled = !checked;
+              SR_Validations.setFieldDisabled(otrasMonto, !checked);
               if (!checked) otrasMonto.value = "";
             }
           };
 
-          sinEmpleo?.addEventListener("change", applySinEmpleo);
-          antiguedadNoAplica?.addEventListener("change", applyAntiguedad);
-          otrasAplica?.addEventListener("change", applyOtras);
+          const applySinEmpleoRequired = () => {
+            const checked = !!sinEmpleo?.checked;
+            if (fuente) fuente.required = !checked;
+            if (ingreso) ingreso.required = !checked;
+          };
+
+          const applyAntiguedadRequired = () => {
+            const sinEmpleoChecked = !!sinEmpleo?.checked;
+            const naChecked = !!antiguedadNoAplica?.checked;
+            const shouldRequire = !naChecked && !sinEmpleoChecked;
+            if (antiguedadAnios) antiguedadAnios.required = shouldRequire;
+            if (antiguedadMeses) antiguedadMeses.required = shouldRequire;
+          };
+
+          const applyOtrasRequired = () => {
+            const checked = !!otrasAplica?.checked;
+            if (otrasFuente) otrasFuente.required = checked;
+            if (otrasMonto) otrasMonto.required = checked;
+          };
+
+          sinEmpleo?.addEventListener("change", () => { applySinEmpleo(); applySinEmpleoRequired(); });
+          antiguedadNoAplica?.addEventListener("change", () => { applyAntiguedad(); applyAntiguedadRequired(); });
+          otrasAplica?.addEventListener("change", () => { applyOtras(); applyOtrasRequired(); });
           applySinEmpleo();
           applyAntiguedad();
           applyOtras();
+          applySinEmpleoRequired();
+          applyAntiguedadRequired();
+          applyOtrasRequired();
         });
       }
 
-      function setupSillaPreviaConditionalField() {
-        const sillaPrevia = document.querySelector('[name="silla_previa"]');
-        const comoObtuvo = document.querySelector('[name="como_obtuvo_silla"]');
-        if (!sillaPrevia || !comoObtuvo) return;
 
-        const apply = () => {
-          const hasPreviousChair = sillaPrevia.value === "Sí";
-          comoObtuvo.disabled = !hasPreviousChair;
-          comoObtuvo.required = hasPreviousChair;
-          if (!hasPreviousChair) {
-            comoObtuvo.selectedIndex = 0;
-          }
-        };
-
-        sillaPrevia.addEventListener("change", apply);
-        apply();
-      }
 
       // Auth guard + Draft Resume
       (async function () {
@@ -1919,14 +1155,7 @@
           return;
         }
 
-        const elaboroEl = document.querySelector('[name="elaboro_estudio"]');
-        if (elaboroEl) elaboroEl.value = session.nombre || "";
-        const sedeEl = document.querySelector('[name="sede"]');
-        if (sedeEl) sedeEl.value = regionCtx.sede || "";
-        const ciudadRegEl = document.querySelector('[name="ciudad_registro"]');
-        if (ciudadRegEl) ciudadRegEl.value = regionCtx.region_nombre || "";
 
-        const localDraft = getLocalFormDraft();
 
         // Draft Resume: Check if we have an estudio_id to restore
         const estudioId = localStorage.getItem("estudio_id");
@@ -1976,15 +1205,17 @@
                 setVal("diagnostico", b.diagnostico);
                 setVal("calle", b.calle);
                 setVal("colonia", b.colonia);
+                setVal("ciudad", b.ciudad);
                 setVal("num_ext", b.num_ext);
+                if (b.num_int) {
+                  const numIntCheckbox = document.querySelector('[name="tiene_num_interior"]');
+                  if (numIntCheckbox) {
+                    numIntCheckbox.checked = true;
+                    numIntCheckbox.dispatchEvent(new Event("change"));
+                  }
+                }
                 setVal("num_int", b.num_int);
                 setVal("estado_codigo", b.estado_codigo);
-                const ciudadEl = document.getElementById("ciudad");
-                if (ciudadEl && b.ciudad != null) {
-                  ciudadEl.dataset.pendingValue = b.ciudad;
-                }
-                await loadMunicipiosCatalog();
-                renderMunicipiosSelect(b.estado_codigo, b.ciudad || "");
                 setVal("telefonos", b.telefonos);
                 const sexoEl = document.querySelector(`[name="sexo"][value="${b.sexo || "NE"}"]`);
                 if (sexoEl) sexoEl.checked = true;
@@ -2011,19 +1242,41 @@
                   };
                   const setTriestado = (name, raw) => {
                     let value;
-                    if (raw === "SI" || raw === "NO" || raw === "NO_APLICA") {
+                    if (raw === "SI" || raw === "NO") {
                       value = raw;
                     } else if (raw === true || raw === 1) {
                       value = "SI";
                     } else if (raw === false || raw === 0) {
                       value = "NO";
                     } else {
-                      value = "NO_APLICA";
+                      // Legacy NO_APLICA or unknown -> default to NO
+                      value = "NO";
                     }
                     const radio = document.querySelector(`[name="${name}"][value="${value}"]`);
                     if (radio) radio.checked = true;
                   };
-                  setVal(`tutor${num}_nombre`, t.nombre);
+                  // Structured name: direct populate or legacy fallback from composed nombre
+                  if (t.nombres != null && t.nombres !== "") {
+                    setVal(`tutor${num}_nombres`, t.nombres);
+                    setVal(`tutor${num}_apellido_paterno`, t.apellido_paterno || "");
+                    setVal(`tutor${num}_apellido_materno`, t.apellido_materno || "");
+                  } else if (t.nombre) {
+                    const parts = (t.nombre || "").trim().split(/\s+/).filter(Boolean);
+                    if (parts.length === 0) {
+                      setVal(`tutor${num}_nombres`, "");
+                      setVal(`tutor${num}_apellido_paterno`, "");
+                      setVal(`tutor${num}_apellido_materno`, "");
+                    } else if (parts.length === 1) {
+                      setVal(`tutor${num}_nombres`, parts[0]);
+                    } else if (parts.length === 2) {
+                      setVal(`tutor${num}_nombres`, parts[0]);
+                      setVal(`tutor${num}_apellido_paterno`, parts[1]);
+                    } else {
+                      setVal(`tutor${num}_apellido_materno`, parts.pop());
+                      setVal(`tutor${num}_apellido_paterno`, parts.pop());
+                      setVal(`tutor${num}_nombres`, parts.join(" "));
+                    }
+                  }
                   setVal(`tutor${num}_edad`, t.edad);
                   setCatalogSelectValue(`tutor${num}_nivel_estudios`, t.nivel_estudios, NIVEL_ESTUDIOS_CATALOG);
                   setEstadoCivilCatalogValue(
@@ -2038,67 +1291,46 @@
                   setVal(
                     `tutor${num}_ingreso_mensual`,
                     t.ingreso_mensual != null
-                      ? formatIntegerDisplay(String(t.ingreso_mensual))
+                      ? SR_Validations.formatIntegerDisplay(String(t.ingreso_mensual))
                       : t.ingreso_mensual,
                   );
                   setChecked(`tutor${num}_sin_empleo`, t.sin_empleo);
                   setChecked(`tutor${num}_antiguedad_no_aplica`, !(t.antiguedad_aplica == null ? true : t.antiguedad_aplica));
                   setChecked(`tutor${num}_otras_fuentes_aplica`, t.otras_fuentes_aplica);
                   setVal(`tutor${num}_otras_fuentes_ingreso`, t.otras_fuentes_ingreso);
-                  setVal(`tutor${num}_monto_otras_fuentes`, t.monto_otras_fuentes != null ? formatMoneyDisplay(String(t.monto_otras_fuentes)) : t.monto_otras_fuentes);
+                  setVal(`tutor${num}_monto_otras_fuentes`, t.monto_otras_fuentes != null ? SR_Validations.formatMoneyDisplay(String(t.monto_otras_fuentes)) : t.monto_otras_fuentes);
                   setTriestado(`tutor${num}_imss`, t.imss_estatus ?? t.tiene_imss);
                   setTriestado(`tutor${num}_infonavit`, t.infonavit_estatus ?? t.tiene_infonavit);
                 });
+                const tutor2Data = data.tutores.find(t => t.numero_tutor === 2);
+                if (tutor2Data) {
+                  const agregarTutor2Checkbox = document.querySelector('[name="agregar_tutor2"]');
+                  if (agregarTutor2Checkbox) {
+                    agregarTutor2Checkbox.checked = true;
+                    agregarTutor2Checkbox.dispatchEvent(new Event("change"));
+                  }
+                }
                 setupTutorConditionalFields();
+                // Safety net: re-disable Tutor 2 conditional fields if checkbox is not checked.
+                // setupTutorConditionalFields() re-enables them for both tutors, but Tutor 2
+                // fields must stay disabled when the "Agregar segundo tutor" checkbox is off.
+                if (!document.querySelector('[name="agregar_tutor2"]')?.checked) {
+                  const t2Fuente = document.querySelector('[name="tutor2_fuente_empleo"]');
+                  const t2Ingreso = document.querySelector('[name="tutor2_ingreso_mensual"]');
+                  const t2AntigAnios = document.querySelector('[name="tutor2_antiguedad_anios"]');
+                  const t2AntigMeses = document.querySelector('[name="tutor2_antiguedad_meses_extra"]');
+                  if (t2Fuente) SR_Validations.setFieldDisabled(t2Fuente, true);
+                  if (t2Ingreso) SR_Validations.setFieldDisabled(t2Ingreso, true);
+                  if (t2AntigAnios) SR_Validations.setFieldDisabled(t2AntigAnios, true);
+                  if (t2AntigMeses) SR_Validations.setFieldDisabled(t2AntigMeses, true);
+                }
               }
 
-              // Pre-fill estudio closing fields
-              const setVal = (name, val) => {
-                const el = document.querySelector(`[name="${name}"]`);
-                if (el && val != null) el.value = val;
-              };
-              setVal(
-                "silla_previa",
-                data.tuvo_silla_previa === 1 ? "Sí" : "No",
-              );
-              setCatalogSelectValue("como_obtuvo_silla", data.como_obtuvo_silla, COMO_OBTUVO_SILLA_CATALOG);
-              document.querySelector('[name="silla_previa"]')?.dispatchEvent(new Event("change"));
-              setVal("elaboro_estudio", session.nombre);
-              setVal("fecha_estudio", data.fecha_estudio);
-              setVal("sede", data.sede);
-              setVal("ciudad_registro", data.ciudad_registro || regionCtx.region_nombre);
-              setDocumentRef(
-                "credencial",
-                data.credencial_path,
-                data.credencial_url,
-              );
-              if (data.credencial_path) {
-                setPreviewFromStoredPath("credencial", data.credencial_path);
-              }
-              setDocumentRef(
-                "comprobante_domicilio",
-                data.comprobante_domicilio_path,
-                data.comprobante_domicilio_url,
-              );
-              if (data.comprobante_domicilio_path) {
-                setPreviewFromStoredPath(
-                  "comprobante_domicilio",
-                  data.comprobante_domicilio_path,
-                );
-              }
-              renderDocumentStatus("credencial");
-              renderDocumentStatus("comprobante_domicilio");
-              renderPreviewCard("credencial");
-              renderPreviewCard("comprobante_domicilio");
-              setVal("ciudad_registro", data.ciudad_registro || regionCtx.region_nombre);
+              // Pre-fill estudio closing fields moved to gestion.html
 
               // Also store beneficiario_id from the draft
               if (data.beneficiario_id) {
                 localStorage.setItem("beneficiario_id", data.beneficiario_id);
-              }
-
-              if (localDraft) {
-                await applyLocalFormDraft(localDraft);
               }
             } else if (res.status === 404) {
               // Draft was deleted, clear the localStorage
@@ -2108,8 +1340,6 @@
             // Network error, show fresh form
             console.error("Error loading draft:", err);
           }
-        } else if (localDraft) {
-          await applyLocalFormDraft(localDraft);
         }
       })();
 
@@ -2122,12 +1352,11 @@
             localStorage.removeItem("region_ctx");
             localStorage.removeItem("beneficiario_id");
             localStorage.removeItem("estudio_id");
-            clearLocalFormDraft();
             window.location.href = "login.html";
           }
         });
 
-      function getFormData(status, documentRefs) {
+      function getFormData(status) {
         const regionCtx = JSON.parse(
           localStorage.getItem("region_ctx") || "null",
         );
@@ -2146,45 +1375,51 @@
         };
 
         const tutores = [];
+        const tutor1SinEmpleo = f.querySelector('[name="tutor1_sin_empleo"]').checked;
         tutores.push({
           numero_tutor: 1,
-          nombre: get("tutor1_nombre"),
+          nombres: get("tutor1_nombres"),
+          apellido_paterno: get("tutor1_apellido_paterno"),
+          apellido_materno: get("tutor1_apellido_materno"),
           edad: toIntOrNull(get("tutor1_edad")),
           nivel_estudios: get("tutor1_nivel_estudios"),
           estado_civil: get("tutor1_estado_civil"),
           num_hijos: toIntOrNull(get("tutor1_num_hijos")) || 0,
           vivienda: get("tutor1_vivienda"),
           fuente_empleo: get("tutor1_fuente_empleo"),
-          antiguedad_anios: toIntOrNull(get("tutor1_antiguedad_anios")) || 0,
-          antiguedad_meses_extra: toIntOrNull(get("tutor1_antiguedad_meses_extra")) || 0,
-          antiguedad_aplica: !f.querySelector('[name="tutor1_antiguedad_no_aplica"]').checked,
-          ingreso_mensual: toIntegerOrNull(get("tutor1_ingreso_mensual")),
-          sin_empleo: f.querySelector('[name="tutor1_sin_empleo"]').checked,
+          antiguedad_anios: tutor1SinEmpleo ? null : (toIntOrNull(get("tutor1_antiguedad_anios")) || 0),
+          antiguedad_meses_extra: tutor1SinEmpleo ? null : (toIntOrNull(get("tutor1_antiguedad_meses_extra")) || 0),
+          antiguedad_aplica: tutor1SinEmpleo ? false : !f.querySelector('[name="tutor1_antiguedad_no_aplica"]').checked,
+          ingreso_mensual: SR_Validations.toIntegerOrNull(get("tutor1_ingreso_mensual")),
+          sin_empleo: tutor1SinEmpleo,
           otras_fuentes_aplica: f.querySelector('[name="tutor1_otras_fuentes_aplica"]').checked,
           otras_fuentes_ingreso: get("tutor1_otras_fuentes_ingreso"),
-          monto_otras_fuentes: toMoneyNumberOrNull(get("tutor1_monto_otras_fuentes")),
+          monto_otras_fuentes: SR_Validations.toIntegerOrNull(get("tutor1_monto_otras_fuentes")),
           imss_estatus: getRadio("tutor1_imss"),
           infonavit_estatus: getRadio("tutor1_infonavit"),
         });
-        const tutor2Nombre = get("tutor2_nombre").trim();
-        if (tutor2Nombre) {
+        const agregarTutor2 = f.querySelector('[name="agregar_tutor2"]');
+        if (agregarTutor2 && agregarTutor2.checked) {
+          const tutor2SinEmpleo = f.querySelector('[name="tutor2_sin_empleo"]').checked;
           tutores.push({
             numero_tutor: 2,
-            nombre: tutor2Nombre,
+            nombres: get("tutor2_nombres"),
+            apellido_paterno: get("tutor2_apellido_paterno"),
+            apellido_materno: get("tutor2_apellido_materno"),
             edad: toIntOrNull(get("tutor2_edad")),
             nivel_estudios: get("tutor2_nivel_estudios"),
             estado_civil: get("tutor2_estado_civil"),
             num_hijos: toIntOrNull(get("tutor2_num_hijos")) || 0,
             vivienda: get("tutor2_vivienda"),
             fuente_empleo: get("tutor2_fuente_empleo"),
-            antiguedad_anios: toIntOrNull(get("tutor2_antiguedad_anios")) || 0,
-            antiguedad_meses_extra: toIntOrNull(get("tutor2_antiguedad_meses_extra")) || 0,
-            antiguedad_aplica: !f.querySelector('[name="tutor2_antiguedad_no_aplica"]').checked,
-            ingreso_mensual: toIntegerOrNull(get("tutor2_ingreso_mensual")),
-            sin_empleo: f.querySelector('[name="tutor2_sin_empleo"]').checked,
+            antiguedad_anios: tutor2SinEmpleo ? null : (toIntOrNull(get("tutor2_antiguedad_anios")) || 0),
+            antiguedad_meses_extra: tutor2SinEmpleo ? null : (toIntOrNull(get("tutor2_antiguedad_meses_extra")) || 0),
+            antiguedad_aplica: tutor2SinEmpleo ? false : !f.querySelector('[name="tutor2_antiguedad_no_aplica"]').checked,
+            ingreso_mensual: SR_Validations.toIntegerOrNull(get("tutor2_ingreso_mensual")),
+            sin_empleo: tutor2SinEmpleo,
             otras_fuentes_aplica: f.querySelector('[name="tutor2_otras_fuentes_aplica"]').checked,
             otras_fuentes_ingreso: get("tutor2_otras_fuentes_ingreso"),
-            monto_otras_fuentes: toMoneyNumberOrNull(get("tutor2_monto_otras_fuentes")),
+            monto_otras_fuentes: SR_Validations.toIntegerOrNull(get("tutor2_monto_otras_fuentes")),
             imss_estatus: getRadio("tutor2_imss"),
             infonavit_estatus: getRadio("tutor2_infonavit"),
           });
@@ -2202,7 +1437,7 @@
             diagnostico: get("diagnostico"),
             calle: get("calle"),
             num_ext: get("num_ext"),
-            num_int: get("num_int"),
+            num_int: document.querySelector('[name="tiene_num_interior"]')?.checked ? (get("num_int") || null) : null,
             colonia: get("colonia"),
             ciudad: get("ciudad"),
             estado_codigo: get("estado_codigo"),
@@ -2212,16 +1447,10 @@
           },
           tutores,
           estudio: {
-            tuvo_silla_previa: get("silla_previa") === "Sí",
-            como_obtuvo_silla: get("como_obtuvo_silla"),
+            tuvo_silla_previa: false,
+            como_obtuvo_silla: null,
             elaboro_estudio: null,
-            fecha_estudio: get("fecha_estudio"),
-            credencial_path: documentRefs?.credencial?.path || null,
-            credencial_url: documentRefs?.credencial?.url || null,
-            comprobante_domicilio_path:
-              documentRefs?.comprobante_domicilio?.path || null,
-            comprobante_domicilio_url:
-              documentRefs?.comprobante_domicilio?.url || null,
+            fecha_estudio: new Date().toISOString().split("T")[0],
             status,
           },
         };
@@ -2232,12 +1461,254 @@
         errorEl.classList.add("hidden");
         errorEl.textContent = "";
 
+        // Limpiar errores previos
+        const form = document.querySelector("form");
+        SR_Validations.clearAllFieldErrors(form);
+
+        // Validar teléfono
         const telefonoInput = document.querySelector('[name="telefonos"]');
         if (telefonoInput) {
-          telefonoInput.value = sanitizeTelefono(telefonoInput.value);
-          if (!telefonoEsValido(telefonoInput.value)) {
-            errorEl.textContent =
-              "El teléfono debe contener exactamente 10 dígitos numéricos";
+          telefonoInput.value = SR_Validations.sanitizeIntegerInput(telefonoInput.value);
+          if (status === "completo" && !SR_Validations.TELEFONO_RE.test(telefonoInput.value)) {
+            SR_Validations.showFieldError("telefonos", "El teléfono debe contener exactamente 10 dígitos numéricos");
+            errorEl.textContent = "El teléfono debe contener exactamente 10 dígitos numéricos";
+            errorEl.classList.remove("hidden");
+            return;
+          }
+        }
+
+        // Validar campos obligatorios del beneficiario
+        if (status === "completo") {
+          const beneficiarioRequired = [
+            { id: "nombres", label: "Nombre(s)" },
+            { id: "apellido_paterno", label: "Apellido Paterno" },
+            { id: "apellido_materno", label: "Apellido Materno" },
+            { id: "fecha_nacimiento", label: "Fecha de nacimiento" },
+            { id: "diagnostico", label: "Diagnóstico" },
+            { id: "calle", label: "Calle" },
+            { id: "num_ext", label: "Número exterior" },
+            { id: "colonia", label: "Colonia" },
+            { id: "ciudad", label: "Ciudad" },
+            { id: "estado_codigo", label: "Estado" },
+          ];
+          const beneficiarioMissing = SR_Validations.validateRequired(form, beneficiarioRequired, { status });
+          beneficiarioMissing.forEach(({ id, label }) => {
+            SR_Validations.showFieldError(id, `${label} es obligatorio`);
+          });
+
+          // Validate sexo separately (radio group)
+          if (!form.querySelector('[name="sexo"]:checked')) {
+            SR_Validations.showFieldError("sexo", "Sexo es obligatorio");
+            beneficiarioMissing.push({ id: "sexo", label: "Sexo" });
+          }
+
+          // Validate telefono separately (regex)
+          const telefonoInput = form.querySelector('[name="telefonos"]');
+          if (telefonoInput && !SR_Validations.TELEFONO_RE.test(telefonoInput.value.trim())) {
+            SR_Validations.showFieldError("telefonos", "El teléfono debe contener exactamente 10 dígitos numéricos");
+            beneficiarioMissing.push({ id: "telefonos", label: "Teléfonos" });
+          }
+
+          if (beneficiarioMissing.length > 0) {
+            errorEl.textContent = "Complete los campos obligatorios del beneficiario: " + beneficiarioMissing.map(m => m.label).join(", ");
+            errorEl.classList.remove("hidden");
+            return;
+          }
+        }
+
+        // Validar campos obligatorios de Tutor 1
+        if (status === "completo") {
+          const tutor1Missing = [];
+
+          // Campos estáticos obligatorios
+          const tutor1StaticFields = [
+            { id: "tutor1_edad", label: "Edad del Tutor 1" },
+            { id: "tutor1_nivel_estudios", label: "Nivel de estudios del Tutor 1" },
+            { id: "tutor1_estado_civil", label: "Estado civil del Tutor 1" },
+            { id: "tutor1_num_hijos", label: "Número de hijos del Tutor 1" },
+            { id: "tutor1_vivienda", label: "Vivienda del Tutor 1" },
+          ];
+          for (const { id, label } of tutor1StaticFields) {
+            const el = form.querySelector(`[name="${id}"]`);
+            const val = (el?.value || "").trim();
+            if (!val) {
+              SR_Validations.showFieldError(id, `${label} es obligatorio`);
+              tutor1Missing.push(label);
+            }
+          }
+
+          // IMSS e INFONAVIT
+          if (!form.querySelector('[name="tutor1_imss"]:checked')) {
+            SR_Validations.showFieldError("tutor1_imss", "IMSS del Tutor 1 es obligatorio");
+            tutor1Missing.push("IMSS del Tutor 1");
+          }
+          if (!form.querySelector('[name="tutor1_infonavit"]:checked')) {
+            SR_Validations.showFieldError("tutor1_infonavit", "INFONAVIT del Tutor 1 es obligatorio");
+            tutor1Missing.push("INFONAVIT del Tutor 1");
+          }
+
+          // Campos condicionales
+          const tutor1SinEmpleo = form.querySelector('[name="tutor1_sin_empleo"]');
+          if (!tutor1SinEmpleo?.checked) {
+            const fuente = (form.querySelector('[name="tutor1_fuente_empleo"]')?.value || "").trim();
+            if (!fuente) {
+              SR_Validations.showFieldError("tutor1_fuente_empleo", "Fuente de empleo del Tutor 1 es obligatoria");
+              tutor1Missing.push("Fuente de empleo del Tutor 1");
+            }
+            const ingreso = (form.querySelector('[name="tutor1_ingreso_mensual"]')?.value || "").trim();
+            if (!ingreso) {
+              SR_Validations.showFieldError("tutor1_ingreso_mensual", "Ingreso mensual del Tutor 1 es obligatorio");
+              tutor1Missing.push("Ingreso mensual del Tutor 1");
+            }
+          }
+
+          const tutor1AntiguedadNoAplica = form.querySelector('[name="tutor1_antiguedad_no_aplica"]');
+          if (!tutor1AntiguedadNoAplica?.checked && !tutor1SinEmpleo?.checked) {
+            const anios = (form.querySelector('[name="tutor1_antiguedad_anios"]')?.value || "").trim();
+            const meses = (form.querySelector('[name="tutor1_antiguedad_meses_extra"]')?.value || "").trim();
+            if (!anios && !meses) {
+              SR_Validations.showFieldError("tutor1_antiguedad_anios", "Antigüedad del Tutor 1 es obligatoria");
+              tutor1Missing.push("Antigüedad del Tutor 1");
+            }
+          }
+
+          const tutor1OtrasAplica = form.querySelector('[name="tutor1_otras_fuentes_aplica"]');
+          if (tutor1OtrasAplica?.checked) {
+            const otrasFuente = (form.querySelector('[name="tutor1_otras_fuentes_ingreso"]')?.value || "").trim();
+            if (!otrasFuente) {
+              SR_Validations.showFieldError("tutor1_otras_fuentes_ingreso", "Otra fuente de ingreso del Tutor 1 es obligatoria");
+              tutor1Missing.push("Otra fuente de ingreso del Tutor 1");
+            }
+            const otrasMonto = (form.querySelector('[name="tutor1_monto_otras_fuentes"]')?.value || "").trim();
+            if (!otrasMonto) {
+              SR_Validations.showFieldError("tutor1_monto_otras_fuentes", "Monto de otras fuentes del Tutor 1 es obligatorio");
+              tutor1Missing.push("Monto de otras fuentes del Tutor 1");
+            }
+          }
+
+          if (tutor1Missing.length > 0) {
+            errorEl.textContent = "Complete los campos obligatorios del Tutor 1: " + tutor1Missing.join(", ");
+            errorEl.classList.remove("hidden");
+            return;
+          }
+        }
+
+        // Validar campos obligatorios de Tutor 2
+        if (status === "completo") {
+          const agregarTutor2Chk = form.querySelector('[name="agregar_tutor2"]');
+          if (agregarTutor2Chk?.checked) {
+            const tutor2Missing = [];
+
+            // Campos estáticos obligatorios
+            const tutor2StaticFields = [
+              { id: "tutor2_edad", label: "Edad del Tutor 2" },
+              { id: "tutor2_nivel_estudios", label: "Nivel de estudios del Tutor 2" },
+              { id: "tutor2_estado_civil", label: "Estado civil del Tutor 2" },
+              { id: "tutor2_num_hijos", label: "Número de hijos del Tutor 2" },
+              { id: "tutor2_vivienda", label: "Vivienda del Tutor 2" },
+            ];
+            for (const { id, label } of tutor2StaticFields) {
+              const el = form.querySelector(`[name="${id}"]`);
+              const val = (el?.value || "").trim();
+              if (!val) {
+                SR_Validations.showFieldError(id, `${label} es obligatorio`);
+                tutor2Missing.push(label);
+              }
+            }
+
+            // IMSS e INFONAVIT
+            if (!form.querySelector('[name="tutor2_imss"]:checked')) {
+              SR_Validations.showFieldError("tutor2_imss", "IMSS del Tutor 2 es obligatorio");
+              tutor2Missing.push("IMSS del Tutor 2");
+            }
+            if (!form.querySelector('[name="tutor2_infonavit"]:checked')) {
+              SR_Validations.showFieldError("tutor2_infonavit", "INFONAVIT del Tutor 2 es obligatorio");
+              tutor2Missing.push("INFONAVIT del Tutor 2");
+            }
+
+            // Campos condicionales
+            const tutor2SinEmpleo = form.querySelector('[name="tutor2_sin_empleo"]');
+            if (!tutor2SinEmpleo?.checked) {
+              const fuente = (form.querySelector('[name="tutor2_fuente_empleo"]')?.value || "").trim();
+              if (!fuente) {
+                SR_Validations.showFieldError("tutor2_fuente_empleo", "Fuente de empleo del Tutor 2 es obligatoria");
+                tutor2Missing.push("Fuente de empleo del Tutor 2");
+              }
+              const ingreso = (form.querySelector('[name="tutor2_ingreso_mensual"]')?.value || "").trim();
+              if (!ingreso) {
+                SR_Validations.showFieldError("tutor2_ingreso_mensual", "Ingreso mensual del Tutor 2 es obligatorio");
+                tutor2Missing.push("Ingreso mensual del Tutor 2");
+              }
+            }
+
+            const tutor2AntiguedadNoAplica = form.querySelector('[name="tutor2_antiguedad_no_aplica"]');
+            if (!tutor2AntiguedadNoAplica?.checked && !tutor2SinEmpleo?.checked) {
+              const anios = (form.querySelector('[name="tutor2_antiguedad_anios"]')?.value || "").trim();
+              const meses = (form.querySelector('[name="tutor2_antiguedad_meses_extra"]')?.value || "").trim();
+              if (!anios && !meses) {
+                SR_Validations.showFieldError("tutor2_antiguedad_anios", "Antigüedad del Tutor 2 es obligatoria");
+                tutor2Missing.push("Antigüedad del Tutor 2");
+              }
+            }
+
+            const tutor2OtrasAplica = form.querySelector('[name="tutor2_otras_fuentes_aplica"]');
+            if (tutor2OtrasAplica?.checked) {
+              const otrasFuente = (form.querySelector('[name="tutor2_otras_fuentes_ingreso"]')?.value || "").trim();
+              if (!otrasFuente) {
+                SR_Validations.showFieldError("tutor2_otras_fuentes_ingreso", "Otra fuente de ingreso del Tutor 2 es obligatoria");
+                tutor2Missing.push("Otra fuente de ingreso del Tutor 2");
+              }
+              const otrasMonto = (form.querySelector('[name="tutor2_monto_otras_fuentes"]')?.value || "").trim();
+              if (!otrasMonto) {
+                SR_Validations.showFieldError("tutor2_monto_otras_fuentes", "Monto de otras fuentes del Tutor 2 es obligatorio");
+                tutor2Missing.push("Monto de otras fuentes del Tutor 2");
+              }
+            }
+
+            if (tutor2Missing.length > 0) {
+              errorEl.textContent = "Complete los campos obligatorios del Tutor 2: " + tutor2Missing.join(", ");
+              errorEl.classList.remove("hidden");
+              return;
+            }
+          }
+        }
+
+        // Validar constraints HTML5 (minlength, pattern) replicando validación nativa desactivada por novalidate
+        if (status === "completo") {
+          const constraintErrors = SR_Validations.validateHTML5Constraints(form);
+          if (constraintErrors.length > 0) {
+            constraintErrors.forEach(({ id, message }) => {
+              SR_Validations.showFieldError(id, message);
+            });
+            errorEl.textContent = "Revise los campos con formato incorrecto";
+            errorEl.classList.remove("hidden");
+            return;
+          }
+        }
+
+        // Validar rango de campos monetarios (0 a 999,999,999)
+        if (status === "completo") {
+          const monetaryFields = [
+            { name: "tutor1_ingreso_mensual", label: "Ingreso mensual del Tutor 1" },
+            { name: "tutor1_monto_otras_fuentes", label: "Monto de otras fuentes del Tutor 1" },
+            { name: "tutor2_ingreso_mensual", label: "Ingreso mensual del Tutor 2" },
+            { name: "tutor2_monto_otras_fuentes", label: "Monto de otras fuentes del Tutor 2" },
+          ];
+          const MAX_MONETARY = SR_Validations.LIMITS.INGRESO_MENSUAL_MAX;
+          const rangeErrors = [];
+          for (const { name, label } of monetaryFields) {
+            const input = form.querySelector(`[name="${name}"]`);
+            if (!input || input.disabled) continue;
+            const raw = input.value.trim();
+            if (!raw) continue;
+            const num = SR_Validations.toIntegerOrNull(raw);
+            if (num !== null && (num < 0 || num > MAX_MONETARY)) {
+              SR_Validations.showFieldError(name, `${label} debe estar entre $0 y $999,999,999`);
+              rangeErrors.push(label);
+            }
+          }
+          if (rangeErrors.length > 0) {
+            errorEl.textContent = "Revise los montos monetarios: " + rangeErrors.join(", ");
             errorEl.classList.remove("hidden");
             return;
           }
@@ -2250,113 +1721,65 @@
         }
 
         const estudioId = localStorage.getItem("estudio_id");
-        const shouldDeferDocuments = status === "borrador";
 
         try {
           let res, data;
-          let documentRefs = {
-            credencial: { ...uploadedDocumentRefs.credencial },
-            comprobante_domicilio: { ...uploadedDocumentRefs.comprobante_domicilio },
-          };
-
-          if (!shouldDeferDocuments) {
-            documentRefs = await uploadSupportingDocuments(session.token);
-          }
 
           if (estudioId) {
-            const payload = getFormData(status, documentRefs);
-            ({ response: res } = await persistDraftRemotely({
-              sessionToken: session.token,
-              estudioId,
-              payload,
-            }));
+            // PATCH existing draft - update estudio fields + tutores (for resumed edits)
+            const payload = getFormData(status);
+            const patchPayload = {
+              ...payload.estudio,
+              tutores: payload.tutores,
+            };
+
+            res = await fetch(`/api/estudios/${estudioId}`, {
+              method: "PATCH",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: "Bearer " + session.token,
+              },
+              body: JSON.stringify(patchPayload),
+            });
 
             if (!res.ok) {
               const errData = await res.json().catch(() => ({}));
-              errorEl.textContent = status === "borrador"
-                ? buildDraftRemoteErrorMessage(
-                    errData,
-                    "No se pudo actualizar el borrador en el servidor.",
-                  )
-                : formatBackendErrorMessage(
-                    errData,
-                    "Error al actualizar el estudio. Intente de nuevo.",
-                  );
+              errorEl.textContent = SR_Validations.formatBackendError(
+                errData,
+                "Error al actualizar el estudio. Intente de nuevo.",
+              );
               errorEl.classList.remove("hidden");
               return;
             }
 
             data = await res.json();
 
-            if (shouldDeferDocuments && hasPendingSupportingDocuments()) {
-              try {
-                documentRefs = await uploadSupportingDocuments(session.token);
-                const attachmentPayload = getFormData(status, documentRefs);
-                const attachmentResponse = await fetch(`/api/estudios/${estudioId}`, {
-                  method: "PATCH",
-                  headers: {
-                    "Content-Type": "application/json",
-                    Authorization: "Bearer " + session.token,
-                  },
-                  body: JSON.stringify({
-                    ...attachmentPayload.estudio,
-                    tutores: attachmentPayload.tutores,
-                  }),
-                });
-
-                if (!attachmentResponse.ok) {
-                  errorEl.textContent =
-                    "El borrador del estudio sí se guardó, pero no se pudieron vincular los documentos al servidor. Los datos permanecen guardados en este dispositivo.";
-                  errorEl.classList.remove("hidden");
-                }
-              } catch (err) {
-                errorEl.textContent =
-                  err instanceof Error
-                    ? `El borrador del estudio sí se guardó, pero los documentos no se pudieron subir: ${err.message}`
-                    : "El borrador del estudio sí se guardó, pero los documentos no se pudieron subir.";
-                errorEl.classList.remove("hidden");
-              }
-            }
-
-            // After successful PATCH with status 'completo', clear estudio_id (not resumable)
-            // but keep beneficiario_id for tecnica.html
+            // After successful PATCH with status 'completo', keep estudio_id
+            // for gestion.html to close the full flow; keep beneficiario_id for tecnica.html
             if (status === "completo") {
-              localStorage.removeItem("estudio_id");
-              clearLocalFormDraft();
-              showSuccessModal({
-                title: "Estudio guardado",
-                description: "El estudio socioeconómico se guardó correctamente.",
-                onContinue: () => {
-                  window.location.href = "tecnica.html";
-                },
-              });
+              window.location.href = "tecnica.html";
             } else {
-              saveLocalFormDraft();
-              showSuccessModal({
-                title: "Borrador guardado correctamente",
-                description: "La información capturada se guardó como borrador.",
-                onContinue: () => {},
-              });
+              alert("Borrador guardado correctamente.");
             }
           } else {
-            const payload = getFormData(status, documentRefs);
-            ({ response: res } = await persistDraftRemotely({
-              sessionToken: session.token,
-              estudioId: null,
-              payload,
-            }));
+            // POST new estudio
+            const payload = getFormData(status);
+
+            res = await fetch("/api/estudios", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: "Bearer " + session.token,
+              },
+              body: JSON.stringify(payload),
+            });
 
             if (!res.ok) {
               const errData = await res.json().catch(() => ({}));
-              errorEl.textContent = status === "borrador"
-                ? buildDraftRemoteErrorMessage(
-                    errData,
-                    "No se pudo guardar el borrador en el servidor.",
-                  )
-                : formatBackendErrorMessage(
-                    errData,
-                    "Error al guardar el estudio. Intente de nuevo.",
-                  );
+              errorEl.textContent = SR_Validations.formatBackendError(
+                errData,
+                "Error al guardar el estudio. Intente de nuevo.",
+              );
               errorEl.classList.remove("hidden");
               return;
             }
@@ -2371,86 +1794,38 @@
               localStorage.setItem("beneficiario_id", data.beneficiario_id);
             }
 
-            if (shouldDeferDocuments && hasPendingSupportingDocuments() && data.estudio_id) {
-              try {
-                documentRefs = await uploadSupportingDocuments(session.token);
-                const attachmentPayload = getFormData(status, documentRefs);
-                const attachmentResponse = await fetch(`/api/estudios/${data.estudio_id}`, {
-                  method: "PATCH",
-                  headers: {
-                    "Content-Type": "application/json",
-                    Authorization: "Bearer " + session.token,
-                  },
-                  body: JSON.stringify({
-                    ...attachmentPayload.estudio,
-                    tutores: attachmentPayload.tutores,
-                  }),
-                });
-
-                if (!attachmentResponse.ok) {
-                  errorEl.textContent =
-                    "El borrador del estudio sí se guardó, pero no se pudieron vincular los documentos al servidor. Los datos permanecen guardados en este dispositivo.";
-                  errorEl.classList.remove("hidden");
-                }
-              } catch (err) {
-                errorEl.textContent =
-                  err instanceof Error
-                    ? `El borrador del estudio sí se guardó, pero los documentos no se pudieron subir: ${err.message}`
-                    : "El borrador del estudio sí se guardó, pero los documentos no se pudieron subir.";
-                errorEl.classList.remove("hidden");
-              }
-            }
-
             if (status === "completo") {
-              // Estudio completed — clear estudio_id (not resumable)
-              // but keep beneficiario_id for tecnica.html
-              localStorage.removeItem("estudio_id");
-              clearLocalFormDraft();
-              showSuccessModal({
-                title: "Estudio guardado",
-                description: "El estudio socioeconómico se guardó correctamente.",
-                onContinue: () => {
-                  window.location.href = "tecnica.html";
-                },
-              });
+              // Estudio completed — keep estudio_id for gestion.html
+              // keep beneficiario_id for tecnica.html
+              window.location.href = "tecnica.html";
             } else {
               // Borrador saved — keep both IDs for later resumption
-              saveLocalFormDraft();
-              showSuccessModal({
-                title: "Borrador guardado correctamente",
-                description: "La información capturada se guardó como borrador.",
-                onContinue: () => {},
-              });
+              alert("Borrador guardado correctamente.");
             }
           }
         } catch (err) {
-          errorEl.textContent =
-            err instanceof Error
-              ? err.message
-              : "No se pudo conectar con el servidor.";
+          errorEl.textContent = "No se pudo conectar con el servidor.";
           errorEl.classList.remove("hidden");
         }
       }
 
       // Guardar Borrador button
+      setupNameFieldValidation();
+      setupDiagnosticoValidation();
+      setupCalleValidation();
+      setupColoniaValidation();
+      setupNumeroDomicilioValidation();
+      setupTutorTextValidation();
+      setupIntegerFieldLimits();
       setupMonetaryFieldFormatting();
       setupTelefonoSanitization();
+      setupNumInteriorConditional();
       setupEstadosCatalog();
       setupTutorConditionalFields();
-      setupSillaPreviaConditionalField();
-      setupDocumentInputs();
-      setupMunicipiosCatalog().catch((err) => {
-        const errorEl = document.getElementById("error-msg");
-        errorEl.textContent =
-          err instanceof Error
-            ? err.message
-            : "No se pudo cargar el catálogo de municipios.";
-        errorEl.classList.remove("hidden");
-      });
-      setupLocalDraftAutosave();
+      setupTutor2Toggle();
 
       document
-        .getElementById("btn-guardar-borrador-estudio")
+        .querySelector('button[type="button"]')
         .addEventListener("click", () => {
           submitEstudio("borrador");
         });

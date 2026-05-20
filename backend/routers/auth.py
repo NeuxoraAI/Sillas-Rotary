@@ -18,9 +18,10 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from passlib.exc import UnknownHashError
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, field_validator
 
 from database import get_db, _DBAdapter
+from validators import validate_email_format
 
 router = APIRouter()
 
@@ -51,6 +52,11 @@ _oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 class LoginRequest(BaseModel):
     email: str
     password: str
+
+    @field_validator("email")
+    @classmethod
+    def _email_valido(cls, v: str) -> str:
+        return validate_email_format(v)
 
 
 class LoginResponse(BaseModel):

@@ -175,3 +175,245 @@ class TestTecnicaRbac:
             json={"status": "completo"},
         )
         assert close_response.status_code == 403
+
+
+# ---------------------------------------------------------------------------
+# Phase 5: Measura validation tests (Pydantic model-level, no DB needed)
+# ---------------------------------------------------------------------------
+
+import pytest
+from pydantic import ValidationError
+from routers.tecnica import SolicitudCreateRequest, SolicitudUpdateRequest
+
+
+class TestMedidaValidation:
+    """Test Pydantic validation of medida fields (tasks 5.1-5.2)."""
+
+    def _base_payload(self):
+        return {
+            "beneficiario_id": 1,
+            "entorno": "Urbano / Interiores",
+            "control_tronco": "Completo",
+            "control_cabeza": "Independiente",
+        }
+
+    def test_acepta_entero_simple_como_string(self):
+        """Valid integer string is accepted and converted to Decimal."""
+        payload = self._base_payload()
+        payload["altura_total_in"] = "2"
+        model = SolicitudCreateRequest(**payload)
+        from decimal import Decimal
+        assert model.altura_total_in == Decimal("2.000")
+
+    def test_acepta_decimal_tres_digitos(self):
+        """Decimal string with 3 places is preserved."""
+        payload = self._base_payload()
+        payload["medida_cabeza_asiento"] = "2.100"
+        model = SolicitudCreateRequest(**payload)
+        from decimal import Decimal
+        assert model.medida_cabeza_asiento == Decimal("2.100")
+
+    def test_acepta_leading_zeros(self):
+        """Leading zeros are normalized."""
+        payload = self._base_payload()
+        payload["peso_kg"] = "002.3"
+        model = SolicitudCreateRequest(**payload)
+        from decimal import Decimal
+        assert model.peso_kg == Decimal("2.300")
+
+    def test_acepta_valor_grande(self):
+        """Value near max (1000.320) passes."""
+        payload = self._base_payload()
+        payload["altura_total_in"] = "1000.320"
+        model = SolicitudCreateRequest(**payload)
+        from decimal import Decimal
+        assert model.altura_total_in == Decimal("1000.320")
+
+    def test_acepta_valor_maximo(self):
+        """Maximum allowed value (9999.999) passes."""
+        payload = self._base_payload()
+        payload["altura_total_in"] = "9999.999"
+        model = SolicitudCreateRequest(**payload)
+        from decimal import Decimal
+        assert model.altura_total_in == Decimal("9999.999")
+
+    def test_rechaza_mas_de_4_enteros(self):
+        """5 integer digits raises ValidationError."""
+        payload = self._base_payload()
+        payload["altura_total_in"] = "12345"
+        with pytest.raises(ValidationError) as exc_info:
+            SolicitudCreateRequest(**payload)
+        errors = exc_info.value.errors()
+        assert any("altura_total_in" in str(e.get("loc", [])) for e in errors)
+
+    def test_rechaza_mas_de_3_decimales(self):
+        """4 decimal places raises ValidationError."""
+        payload = self._base_payload()
+        payload["medida_cabeza_asiento"] = "2.1234"
+        with pytest.raises(ValidationError) as exc_info:
+            SolicitudCreateRequest(**payload)
+        errors = exc_info.value.errors()
+        assert any("medida_cabeza_asiento" in str(e.get("loc", [])) for e in errors)
+
+    def test_rechaza_dos_puntos(self):
+        """Two decimal points raise ValidationError."""
+        payload = self._base_payload()
+        payload["altura_total_in"] = "1..2"
+        with pytest.raises(ValidationError):
+            SolicitudCreateRequest(**payload)
+
+    def test_rechaza_coma(self):
+        """Comma as decimal separator raises ValidationError."""
+        payload = self._base_payload()
+        payload["peso_kg"] = "12,3"
+        with pytest.raises(ValidationError):
+            SolicitudCreateRequest(**payload)
+
+    def test_rechaza_letras(self):
+        """Alphabetic chars raise ValidationError."""
+        payload = self._base_payload()
+        payload["altura_total_in"] = "abc"
+        with pytest.raises(ValidationError):
+            SolicitudCreateRequest(**payload)
+
+    def test_rechaza_negativo(self):
+        """Negative sign raises ValidationError."""
+        payload = self._base_payload()
+        payload["peso_kg"] = "-2"
+        with pytest.raises(ValidationError):
+            SolicitudCreateRequest(**payload)
+
+    def test_null_es_aceptado(self):
+        """None/null is accepted (optional field)."""
+        payload = self._base_payload()
+        payload["altura_total_in"] = None
+        model = SolicitudCreateRequest(**payload)
+        assert model.altura_total_in is None
+
+    def test_vacio_es_null(self):
+        """Empty string is treated as None."""
+        payload = self._base_payload()
+        payload["altura_total_in"] = ""
+        model = SolicitudCreateRequest(**payload)
+        assert model.altura_total_in is None
+
+    def test_normalizacion_entero_a_tres_decimales(self):
+        """Integer "2" becomes Decimal("2.000")."""
+        payload = self._base_payload()
+        payload["peso_kg"] = "2"
+        model = SolicitudCreateRequest(**payload)
+        from decimal import Decimal
+        assert model.peso_kg == Decimal("2.000")
+
+    def test_patch_acepta_mismos_validadores(self):
+        """SolicitudUpdateRequest applies same validators."""
+        payload = {"altura_total_in": "2.5"}
+        model = SolicitudUpdateRequest(**payload)
+        from decimal import Decimal
+        assert model.altura_total_in == Decimal("2.500")
+
+    def test_patch_rechaza_invalido(self):
+        """SolicitudUpdateRequest rejects invalid values."""
+        with pytest.raises(ValidationError):
+            SolicitudUpdateRequest(altura_total_in="abc")
+
+
+class TestObservacionesPosturalesValidation:
+    """Test Pydantic validation of observaciones_posturales (tasks 5.3-5.4)."""
+
+    def _base_payload(self):
+        return {
+            "beneficiario_id": 1,
+            "entorno": "Urbano / Interiores",
+            "control_tronco": "Completo",
+            "control_cabeza": "Independiente",
+        }
+
+    def test_acepta_texto_valido(self):
+        """Valid text with allowed chars passes."""
+        payload = self._base_payload()
+        payload["observaciones_posturales"] = "Paciente con escoliosis."
+        model = SolicitudCreateRequest(**payload)
+        assert model.observaciones_posturales == "Paciente con escoliosis."
+
+    def test_acepta_null(self):
+        """None is accepted."""
+        payload = self._base_payload()
+        model = SolicitudCreateRequest(**payload)
+        assert model.observaciones_posturales is None
+
+    def test_rechaza_arroba(self):
+        """@ symbol raises ValidationError."""
+        payload = self._base_payload()
+        payload["observaciones_posturales"] = "email@test.com"
+        with pytest.raises(ValidationError) as exc_info:
+            SolicitudCreateRequest(**payload)
+        errors = exc_info.value.errors()
+        assert any("observaciones_posturales" in str(e.get("loc", [])) for e in errors)
+
+    def test_rechaza_script_tag(self):
+        """HTML tags raise ValidationError."""
+        payload = self._base_payload()
+        payload["observaciones_posturales"] = "<script>alert(1)</script>"
+        with pytest.raises(ValidationError):
+            SolicitudCreateRequest(**payload)
+
+    def test_rechaza_excede_500_chars(self):
+        """Text exceeding 500 chars raises ValidationError."""
+        payload = self._base_payload()
+        payload["observaciones_posturales"] = "x" * 501
+        with pytest.raises(ValidationError):
+            SolicitudCreateRequest(**payload)
+
+    def test_acepta_exactamente_500(self):
+        """Exactly 500 allowed chars passes."""
+        payload = self._base_payload()
+        payload["observaciones_posturales"] = "a" * 500
+        model = SolicitudCreateRequest(**payload)
+        assert len(model.observaciones_posturales) == 500
+
+
+class TestValidationErrorFormat:
+    """Test that Pydantic validation errors include structured detail (task 5.8)."""
+
+    def _base_payload(self):
+        return {
+            "beneficiario_id": 1,
+            "entorno": "Urbano / Interiores",
+            "control_tronco": "Completo",
+            "control_cabeza": "Independiente",
+        }
+
+    def test_error_tiene_loc_field(self):
+        """Validation errors include field location (loc)."""
+        payload = self._base_payload()
+        payload["altura_total_in"] = "invalid"
+        with pytest.raises(ValidationError) as exc_info:
+            SolicitudCreateRequest(**payload)
+        errors = exc_info.value.errors()
+        assert len(errors) >= 1
+        # Pydantic v2 error format: loc is a tuple, first element is field name
+        first_error = errors[0]
+        assert "loc" in first_error
+        assert "altura_total_in" in str(first_error["loc"])
+
+    def test_error_tiene_msg(self):
+        """Validation errors include a message (msg)."""
+        payload = self._base_payload()
+        payload["altura_total_in"] = "invalid"
+        with pytest.raises(ValidationError) as exc_info:
+            SolicitudCreateRequest(**payload)
+        errors = exc_info.value.errors()
+        first_error = errors[0]
+        assert "msg" in first_error
+        assert len(first_error["msg"]) > 0
+
+    def test_error_tiene_type(self):
+        """Validation errors include an error type."""
+        payload = self._base_payload()
+        payload["altura_total_in"] = "invalid"
+        with pytest.raises(ValidationError) as exc_info:
+            SolicitudCreateRequest(**payload)
+        errors = exc_info.value.errors()
+        first_error = errors[0]
+        assert "type" in first_error
