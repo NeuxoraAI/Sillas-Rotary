@@ -38,6 +38,7 @@ DDL = [
         beneficiario_id  INTEGER NOT NULL REFERENCES beneficiarios(id) ON DELETE CASCADE,
         numero_tutor     INTEGER NOT NULL CHECK(numero_tutor IN (1, 2)),
         nombre           TEXT    NOT NULL,
+        email            TEXT,
         edad             INTEGER CHECK(edad IS NULL OR (edad > 0 AND edad < 120)),
         nivel_estudios   TEXT,
         estado_civil     TEXT,

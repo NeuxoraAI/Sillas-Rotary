@@ -564,6 +564,18 @@
                   </div>
                 </fieldset>
                 <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor1_infonavit-error" data-error-for="tutor1_infonavit" role="alert"></p>
+                <div>
+                  <label class="text-xs font-bold text-slate-500 uppercase"
+                    >Correo electrónico (opcional)</label
+                  ><input
+                    class="w-full mt-1 border-slate-300"
+                    name="tutor1_email"
+                    type="email"
+                    maxlength="254"
+                    autocomplete="email"
+                    placeholder="correo@ejemplo.com"
+                  />
+                </div>
               </div>
             </div>
             <!-- Tutor 2 -->
@@ -798,6 +810,18 @@
                   </div>
                 </fieldset>
                 <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor2_infonavit-error" data-error-for="tutor2_infonavit" role="alert"></p>
+                <div>
+                  <label class="text-xs font-bold text-slate-500 uppercase"
+                    >Correo electrónico (opcional)</label
+                  ><input
+                    class="w-full mt-1 border-slate-300"
+                    name="tutor2_email"
+                    type="email"
+                    maxlength="254"
+                    autocomplete="email"
+                    placeholder="correo@ejemplo.com"
+                  />
+                </div>
               </div>
             </div>
             </div>
@@ -1902,7 +1926,7 @@
               }
             });
             // Limpiar valores
-            section.querySelectorAll("input[type='text'], input[type='number'], input[type='tel']").forEach(el => {
+            section.querySelectorAll("input[type='text'], input[type='number'], input[type='tel'], input[type='email']").forEach(el => {
               el.value = "";
             });
             section.querySelectorAll("select").forEach(el => {
@@ -2180,6 +2204,7 @@
                   );
                   setVal(`tutor${num}_num_hijos`, t.num_hijos);
                   setVal(`tutor${num}_vivienda`, t.vivienda);
+                  setVal(`tutor${num}_email`, t.email);
                   setVal(`tutor${num}_fuente_empleo`, t.fuente_empleo);
                   setVal(`tutor${num}_antiguedad_anios`, t.antiguedad_meses != null ? Math.floor(t.antiguedad_meses / 12) : "");
                   setVal(`tutor${num}_antiguedad_meses_extra`, t.antiguedad_meses != null ? t.antiguedad_meses % 12 : "");
@@ -2310,6 +2335,7 @@
           monto_otras_fuentes: SR_Validations.toIntegerOrNull(get("tutor1_monto_otras_fuentes")),
           imss_estatus: getRadio("tutor1_imss"),
           infonavit_estatus: getRadio("tutor1_infonavit"),
+          email: get("tutor1_email") || null,
         });
         const agregarTutor2 = f.querySelector('[name="agregar_tutor2"]');
         if (agregarTutor2 && agregarTutor2.checked) {
@@ -2335,6 +2361,7 @@
             monto_otras_fuentes: SR_Validations.toIntegerOrNull(get("tutor2_monto_otras_fuentes")),
             imss_estatus: getRadio("tutor2_imss"),
             infonavit_estatus: getRadio("tutor2_infonavit"),
+            email: get("tutor2_email") || null,
           });
         }
 

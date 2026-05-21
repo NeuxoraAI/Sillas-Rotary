@@ -27,6 +27,7 @@ from utils.text import normalize_text
 from validators import (
     validate_nombre,
     validate_apellido,
+    validate_email_format,
     validate_diagnostico,
     validate_calle,
     validate_colonia,
@@ -222,6 +223,7 @@ class TutorIn(BaseModel):
     nombres: str
     apellido_paterno: str
     apellido_materno: str
+    email: Optional[str] = None
     edad: Optional[int] = None
     nivel_estudios: Optional[str] = None
     estado_civil: Optional[str] = None
@@ -290,6 +292,13 @@ class TutorIn(BaseModel):
     @classmethod
     def _fuente_empleo_valida(cls, v: Optional[str]) -> Optional[str]:
         return validate_fuente_empleo(v)
+
+    @field_validator("email")
+    @classmethod
+    def _email_valido(cls, v: Optional[str]) -> Optional[str]:
+        if v in (None, ""):
+            return None
+        return validate_email_format(v)
 
     @field_validator("otras_fuentes_ingreso")
     @classmethod
@@ -850,17 +859,18 @@ def _insertar_tutores(db: _DBAdapter, beneficiario_id: int, tutores: list[TutorI
         db.execute(
             """
             INSERT INTO tutores
-                (beneficiario_id, numero_tutor, nombre, edad, nivel_estudios,
+                (beneficiario_id, numero_tutor, nombre, email, edad, nivel_estudios,
                  estado_civil, num_hijos, vivienda, fuente_empleo, antiguedad,
                  ingreso_mensual, tiene_imss, tiene_infonavit,
-                 antiguedad_meses, antiguedad_aplica, sin_empleo,
-                 otras_fuentes_aplica, otras_fuentes_ingreso, monto_otras_fuentes)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                  antiguedad_meses, antiguedad_aplica, sin_empleo,
+                  otras_fuentes_aplica, otras_fuentes_ingreso, monto_otras_fuentes)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """,
             (
                 beneficiario_id,
                 tutor.numero_tutor,
                 nombre_compuesto,
+                tutor.email,
                 tutor.edad,
                 tutor.nivel_estudios or None,
                 tutor.estado_civil,
