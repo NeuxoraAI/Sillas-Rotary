@@ -313,10 +313,10 @@
             </h2>
           </div>
           <div class="mb-4">
-            <label class="block text-sm font-semibold text-slate-700 mb-1">Unidad de medida</label>
+            <label class="block text-sm font-semibold text-slate-700 mb-1">Sistema de medición</label>
             <select name="unidad_medida" id="unidad_medida" class="w-full md:w-60 border-slate-300 shadow-sm focus:border-primary focus:ring-primary">
-              <option value="in">Pulgadas (in)</option>
-              <option value="cm">Centímetros (cm)</option>
+              <option value="imperial">Pulgadas / Libras</option>
+              <option value="metric">Centímetros / Kilogramos</option>
             </select>
           </div>
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
@@ -363,7 +363,7 @@
               <p class="field-error hidden text-red-600 text-xs mt-1" id="altura_total_in-error" data-error-for="altura_total_in" role="alert"></p>
               <div class="measurement-input-group flex flex-col">
                 <label class="text-sm font-bold text-slate-700 mb-1"
-                  >Peso (<span data-unit-label-peso>kg</span>)</label
+                  >Peso (<span data-unit-label-peso>lb</span>)</label
                 >
                 <div class="flex items-center">
                   <input
@@ -376,14 +376,9 @@
                      required
                      aria-describedby="peso_kg-error"
                    />
-                  <select name="unidad_peso_captura" id="unidad_peso_captura"
-                          class="rounded-none border-l-0 border-slate-300 bg-slate-200 text-slate-600 text-sm px-2 py-2 focus:ring-0 cursor-pointer">
-                    <option value="kg">kg</option>
-                    <option value="lb">lb</option>
-                  </select>
                   <span data-unit-suffix-peso
                     class="bg-slate-200 border border-l-0 border-slate-300 px-4 py-2 rounded-r-lg text-slate-600 text-sm font-semibold"
-                    >kg</span
+                    >lb</span
                   >
                 </div>
               </div>
@@ -814,16 +809,21 @@
                 }
               }
 
+              // Derive system from stored measurement unit
+              const system = (data.unidad_captura === "cm") ? "metric" : "imperial";
+              setVal("unidad_medida", system);
+
+              // For weight: use stored unit if available, otherwise infer from system
+              const pesoUnidad = data.unidad_peso_captura || (system === "imperial" ? "lb" : "kg");
+
               // Set numeric fields with unit-aware conversion
               setVal("altura_total_in", toDisplay(data.altura_total_in, "altura_total_in"));
-              setVal("peso_kg", toDisplayKg(data.peso_kg, data.unidad_peso_captura));
+              setVal("peso_kg", toDisplayKg(data.peso_kg, pesoUnidad));
               setVal("medida_cabeza_asiento", toDisplay(data.medida_cabeza_asiento, "medida_cabeza_asiento"));
               setVal("medida_hombro_asiento", toDisplay(data.medida_hombro_asiento, "medida_hombro_asiento"));
               setVal("medida_prof_asiento", toDisplay(data.medida_prof_asiento, "medida_prof_asiento"));
               setVal("medida_rodilla_talon", toDisplay(data.medida_rodilla_talon, "medida_rodilla_talon"));
               setVal("medida_ancho_cadera", toDisplay(data.medida_ancho_cadera, "medida_ancho_cadera"));
-              setVal("unidad_medida", data.unidad_captura || "in");
-              setVal("unidad_peso_captura", data.unidad_peso_captura || "kg");
 
               // Set text fields moved to gestion.html
 
@@ -1393,8 +1393,9 @@
           medida_prof_asiento: toStrOrNull(get("medida_prof_asiento")),
           medida_rodilla_talon: toStrOrNull(get("medida_rodilla_talon")),
           medida_ancho_cadera: toStrOrNull(get("medida_ancho_cadera")),
-          unidad_medida: get("unidad_medida") || "in",
-          unidad_peso_captura: get("unidad_peso_captura") || "kg",
+          // Derive actual units from system selection
+          unidad_medida: (get("unidad_medida") === "metric" ? "cm" : "in"),
+          unidad_peso_captura: (get("unidad_medida") === "metric" ? "kg" : "lb"),
           foto_url,
           status,
         };
@@ -1476,31 +1477,25 @@
         const sel = document.getElementById("unidad_medida");
         if (!sel) return;
         const apply = () => {
-          const unit = sel.value || "in";
+          const system = sel.value || "imperial";
+          const measureUnit = system === "metric" ? "cm" : "in";
+          const weightUnit = system === "metric" ? "kg" : "lb";
+
           document.querySelectorAll("[data-unit-suffix]").forEach((el) => {
-            el.textContent = unit;
+            el.textContent = measureUnit;
           });
           document.querySelectorAll("[data-unit-label]").forEach((el) => {
-            el.textContent = unit;
+            el.textContent = measureUnit;
+          });
+          document.querySelectorAll("[data-unit-suffix-peso]").forEach((el) => {
+            el.textContent = weightUnit;
+          });
+          document.querySelectorAll("[data-unit-label-peso]").forEach((el) => {
+            el.textContent = weightUnit;
           });
         };
         sel.addEventListener("change", apply);
         apply();
-
-        const pesoSel = document.getElementById("unidad_peso_captura");
-        if (pesoSel) {
-          const applyPeso = () => {
-            const unit = pesoSel.value || "kg";
-            document.querySelectorAll("[data-unit-suffix-peso]").forEach((el) => {
-              el.textContent = unit;
-            });
-            document.querySelectorAll("[data-unit-label-peso]").forEach((el) => {
-              el.textContent = unit;
-            });
-          };
-          pesoSel.addEventListener("change", applyPeso);
-          applyPeso();
-        }
       }
 
       function setupImageZoom() {
