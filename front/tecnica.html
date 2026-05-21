@@ -784,9 +784,9 @@
                 if (dbVal == null || dbVal === "") return null;
                 const num = parseFloat(dbVal);
                 if (isNaN(num)) return null;
-                if (capturaUnidad === "lb") {
-                  // DB stores kg → convert to lb for display
-                  return (num * 2.20462).toFixed(3);
+                if (capturaUnidad === "kg") {
+                  // DB stores lb → convert to kg for display
+                  return (num / 2.20462).toFixed(3);
                 }
                 return num.toFixed(3);
               };

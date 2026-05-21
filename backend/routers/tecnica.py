@@ -1517,17 +1517,17 @@ def _to_inches(v: Optional[Decimal], unidad: str) -> Optional[Decimal]:
 
 
 def _to_kg(v: Optional[Decimal], unidad: str) -> Optional[Decimal]:
-    """Convert a weight value to kilograms (canonical storage unit).
+    """Convert a weight value to pounds (canonical storage unit).
 
-    If the capture unit is 'lb', divide by 2.20462 (1 kg ≈ 2.20462 lb)
+    If the capture unit is 'kg', multiply by 2.20462 (1 kg ≈ 2.20462 lb)
     and quantize to 3 decimal places. Otherwise return unchanged.
     """
     if v is None:
         return None
-    if unidad == "lb":
-        kg = v / Decimal("2.20462")
-        return kg.quantize(Decimal("0.001"))
-    return v  # already kg
+    if unidad == "kg":
+        lb = v * Decimal("2.20462")
+        return lb.quantize(Decimal("0.001"))
+    return v  # already lb
 
 
 def _normalize_medidas(body: SolicitudCreateRequest) -> SolicitudCreateRequest:
