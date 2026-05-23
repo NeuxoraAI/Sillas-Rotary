@@ -94,7 +94,7 @@ CONTROL_TRONCO_CATALOG = frozenset({
     "Completo", "Parcial / Requiere apoyo lateral", "Nulo / Requiere soporte total"
 })
 CONTROL_CABEZA_CATALOG = frozenset({
-    "Independiente", "Intermitente", "No posee / Requiere cabezal"
+    "Independiente", "No posee / Requiere cabezal"
 })
 PRIORIDAD_CATALOG = frozenset({"Alta", "Media"})
 UNIDAD_MEDIDA_CATALOG = frozenset({"in", "cm"})

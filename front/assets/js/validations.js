@@ -73,7 +73,6 @@
   ];
   const CONTROL_CABEZA_OPTIONS = [
     "Independiente",
-    "Intermitente",
     "No posee / Requiere cabezal",
   ];
   const PRIORIDAD_OPTIONS = ["Alta", "Media"];

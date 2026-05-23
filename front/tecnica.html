@@ -238,7 +238,6 @@
               >
                 <option value="">Selecciona una opción</option>
                 <option value="Independiente">Independiente</option>
-                <option value="Intermitente">Intermitente</option>
                 <option value="No posee / Requiere cabezal">No posee / Requiere cabezal</option>
               </select>
               <p class="field-error hidden text-red-600 text-xs mt-1" id="control_cabeza-error" data-error-for="control_cabeza" role="alert"></p>
@@ -250,10 +249,14 @@
               <select
                 class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary"
                 name="control_de_piernas"
+                required
+                aria-describedby="control_de_piernas-error"
               >
-                <option>Parcial</option>
-                <option>Nulo</option>
+                <option value="">Selecciona una opción</option>
+                <option value="Parcial">Parcial</option>
+                <option value="Nulo">Nulo</option>
               </select>
+              <p class="field-error hidden text-red-600 text-xs mt-1" id="control_de_piernas-error" data-error-for="control_de_piernas" role="alert"></p>
             </div>
             <div class="md:col-span-2 space-y-2">
                 <label class="block text-sm font-semibold text-slate-700"

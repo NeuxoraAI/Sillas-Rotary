@@ -18,7 +18,7 @@ Este documento define TODAS las reglas de validación del sistema. Cualquier cam
 | `como_obtuvo_silla` | COMPRA, DONACION | Condicional* |
 | `entorno` | Urbano / Interiores, Rural / Terreno irregular, Mixto | Sí |
 | `control_tronco` | Completo, Parcial / Requiere apoyo lateral, Nulo / Requiere soporte total | Sí |
-| `control_cabeza` | Independiente, Intermitente, No posee / Requiere cabezal | Sí |
+| `control_cabeza` | Independiente, No posee / Requiere cabezal | Sí |
 | `prioridad` | Alta, Media | No |
 | `unidad_medida` | in, cm | Sí |
 | `status` | borrador, completo | Sí |
