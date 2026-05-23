@@ -20,6 +20,7 @@
   const COLONIA_RE = CALLE_RE;
   const NUM_DOMICILIO_RE = /^[A-Za-z0-9\-/]+$/;
   const TELEFONO_RE = /^[0-9]{10}$/;
+  const EMAIL_RE = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   const OBS_WHITELIST_RE =
     /^[a-zA-ZáéíóúÁÉÍÓÚäëïöüÄËÏÖÜñÑ0-9 ()\/\-.,:;]*$/;
   const ENTIDAD_WHITELIST_RE =
@@ -49,6 +50,9 @@
     MONTO_OTRAS_FUENTES_MAX: 999999999,
     NUM_HIJOS_MAX: 30,
     EDAD_MAX: 99,
+    EMAIL_MAX: 254,
+    TIEMPO_DX_ANIOS_MAX: 120,
+    TIEMPO_DX_MESES_MAX: 11,
     MEASURE_INT_DIGITS: 4,
     MEASURE_DEC_DIGITS: 3,
   };
@@ -74,7 +78,7 @@
   ];
   const PRIORIDAD_OPTIONS = ["Alta", "Media"];
   const COMO_OBTUVO_OPTIONS = ["COMPRA", "DONACION"];
-  const SEX_OPTIONS = ["M", "F", "NE"];
+  const SEX_OPTIONS = ["M", "F"];
   const UNIDAD_MEDIDA_OPTIONS = ["in", "cm"];
   const STATUS_OPTIONS = ["borrador", "completo"];
 
@@ -291,6 +295,44 @@
         }
       }
       inputEl.value = sanitized;
+    });
+  }
+
+  /**
+   * Configura campo monetario con sanitización + máximo + formateo visual con comas.
+   */
+  function setupMoneyFieldWithFormatting(inputEl, max) {
+    if (!inputEl) return;
+
+    inputEl.addEventListener("input", () => {
+      let raw = inputEl.value.replace(/,/g, "").replace(/[^\d.]/g, "");
+      if (raw) {
+        const num = parseFloat(raw);
+        if (!isNaN(num) && num > max) raw = String(max);
+      }
+      inputEl.value = raw ? formatIntegerDisplay(raw) : raw;
+    });
+
+    if (inputEl.value) {
+      inputEl.value = formatIntegerDisplay(inputEl.value.replace(/,/g, ""));
+    }
+  }
+
+  /**
+   * Configura campo de correo electrónico.
+   * Sanitiza al blur: trim + toLowerCase.
+   */
+  function setupEmailField(inputEl) {
+    if (!inputEl) return;
+
+    inputEl.addEventListener("blur", () => {
+      inputEl.value = inputEl.value.trim().toLowerCase();
+    });
+
+    inputEl.addEventListener("input", () => {
+      if (inputEl.value.length > LIMITS.EMAIL_MAX) {
+        inputEl.value = inputEl.value.slice(0, LIMITS.EMAIL_MAX);
+      }
     });
   }
 
@@ -614,6 +656,7 @@
     COLONIA_RE,
     NUM_DOMICILIO_RE,
     TELEFONO_RE,
+    EMAIL_RE,
     OBS_WHITELIST_RE,
     ENTIDAD_WHITELIST_RE,
     MEASURE_PARTIAL_RE,
@@ -642,6 +685,8 @@
     setupNameField,
     setupTelefonoField,
     setupMoneyField,
+    setupMoneyFieldWithFormatting,
+    setupEmailField,
     setupIntegerField,
     setupTextField,
     validateRequired,
