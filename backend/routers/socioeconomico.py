@@ -34,7 +34,6 @@ from validators import (
     validate_ciudad,
     validate_numero_domicilio,
     validate_telefono,
-    validate_telefono_opcional,
     validate_estado_codigo,
     validate_estado_nombre,
     validate_sexo,
@@ -46,8 +45,6 @@ from validators import (
     validate_edad_tutor,
     validate_antiguedad_anios,
     validate_antiguedad_meses,
-    validate_tiempo_diagnostico_anios,
-    validate_tiempo_diagnostico_meses,
     validate_numero_tutor,
     validate_fecha_nacimiento,
     validate_fecha_estudio,
@@ -143,9 +140,6 @@ class BeneficiarioIn(BaseModel):
     estado_nombre: Optional[str] = None
     sexo: str
     telefonos: str
-    telefono_alternativo: Optional[str] = None
-    tiempo_diagnostico_anios: Optional[int] = None
-    tiempo_diagnostico_meses: Optional[int] = None
     email: Optional[str] = None
 
     @field_validator("fecha_nacimiento")
@@ -157,21 +151,6 @@ class BeneficiarioIn(BaseModel):
     @classmethod
     def _telefonos_valido(cls, v: str) -> str:
         return validate_telefono(v)
-
-    @field_validator("telefono_alternativo")
-    @classmethod
-    def _telefono_alternativo_valido(cls, v: Optional[str]) -> Optional[str]:
-        return validate_telefono_opcional(v)
-
-    @field_validator("tiempo_diagnostico_anios")
-    @classmethod
-    def _tiempo_diagnostico_anios_valido(cls, v: Optional[int]) -> Optional[int]:
-        return validate_tiempo_diagnostico_anios(v)
-
-    @field_validator("tiempo_diagnostico_meses")
-    @classmethod
-    def _tiempo_diagnostico_meses_valido(cls, v: Optional[int]) -> Optional[int]:
-        return validate_tiempo_diagnostico_meses(v)
 
     @field_validator("estado_codigo")
     @classmethod
@@ -469,11 +448,6 @@ class EstudioUpdateRequest(BaseModel):
                     "como_obtuvo_silla es obligatorio cuando tuvo_silla_previa es verdadero"
                 )
 
-            if self.beneficiario is not None:
-                b = self.beneficiario
-                if b.tiempo_diagnostico_anios is None:
-                    raise ValueError("tiempo_diagnostico_anios es obligatorio cuando status es completo")
-
         return self
 
 
@@ -570,9 +544,6 @@ def crear_estudio(
     nombre_composed = f"{b.nombres} {b.apellido_paterno} {b.apellido_materno}"
 
     # 3. INSERT beneficiario (with folio + region + sede + structured name)
-    # NOTE: Columns telefono_alternativo, tiempo_diagnostico_* require migration
-    #       0009_add_tiempo_diagnostico_and_telefono_alternativo.sql on the live DB.
-    #       Until then, they are collected by the frontend but not persisted.
     beneficiario_id = db.execute(
         """
         INSERT INTO beneficiarios
@@ -709,18 +680,6 @@ def actualizar_estudio(
         if b.telefonos is not None:
             ben_fields.append("telefonos = %s")
             ben_values.append(b.telefonos)
-        # NOTE: telefono_alternativo and tiempo_diagnostico_* require migration
-        #       0009_add_tiempo_diagnostico_and_telefono_alternativo.sql on live DB.
-        #       Until then, these fields are accepted by the API but not persisted.
-        # if b.telefono_alternativo is not None:
-        #     ben_fields.append("telefono_alternativo = %s")
-        #     ben_values.append(b.telefono_alternativo)
-        # if b.tiempo_diagnostico_anios is not None:
-        #     ben_fields.append("tiempo_diagnostico_anios = %s")
-        #     ben_values.append(b.tiempo_diagnostico_anios)
-        # if b.tiempo_diagnostico_meses is not None:
-        #     ben_fields.append("tiempo_diagnostico_meses = %s")
-        #     ben_values.append(b.tiempo_diagnostico_meses)
         if b.email is not None:
             ben_fields.append("email = %s")
             ben_values.append(b.email)

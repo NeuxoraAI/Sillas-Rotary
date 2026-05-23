@@ -213,33 +213,6 @@
               <p class="field-error hidden text-red-600 text-xs mt-1" id="diagnostico-error" data-error-for="diagnostico" role="alert"></p>
             </div>
             <div class="space-y-2">
-              <label class="block text-sm font-semibold text-slate-700">Tiempo desde el diagnóstico</label>
-              <div class="grid grid-cols-2 gap-4">
-                <div>
-                  <label class="text-xs font-bold text-slate-500 uppercase">Años</label>
-                  <input
-                    class="w-full mt-1 border-slate-300 shadow-sm focus:border-primary focus:ring-primary"
-                    name="tiempo_diagnostico_anios"
-                    type="number"
-                    min="0"
-                    max="120"
-                    aria-describedby="tiempo_diagnostico_anios-error"
-                  />
-                  <p class="field-error hidden text-red-600 text-xs mt-1" id="tiempo_diagnostico_anios-error" data-error-for="tiempo_diagnostico_anios" role="alert"></p>
-                </div>
-                <div>
-                  <label class="text-xs font-bold text-slate-500 uppercase">Meses</label>
-                  <input
-                    class="w-full mt-1 border-slate-300 shadow-sm focus:border-primary focus:ring-primary"
-                    name="tiempo_diagnostico_meses"
-                    type="number"
-                    min="0"
-                    max="11"
-                  />
-                </div>
-              </div>
-            </div>
-            <div class="space-y-2">
               <label class="block text-sm font-semibold text-slate-700"
                 >Calle</label
               >
@@ -332,30 +305,6 @@
                 />
               </div>
               <p class="field-error hidden text-red-600 text-xs mt-1" id="telefonos-error" data-error-for="telefonos" role="alert"></p>
-            </div>
-            <div class="space-y-2">
-              <label class="inline-flex items-center gap-2 text-sm font-medium text-slate-700">
-                <input class="text-primary h-4 w-4" name="tiene_telefono_alternativo" type="checkbox" />
-                <span>Agregar teléfono alternativo</span>
-              </label>
-              <div class="flex">
-                <span class="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-slate-300 bg-slate-100 text-slate-600 text-sm">
-                  🇲🇽 +52
-                </span>
-                <input
-                  class="flex-1 rounded-r-lg border-slate-300 shadow-sm focus:border-primary focus:ring-primary bg-slate-100 text-slate-400 cursor-not-allowed"
-                  name="telefono_alternativo"
-                  type="tel"
-                  inputmode="numeric"
-                  maxlength="10"
-                  minlength="10"
-                  pattern="[0-9]{10}"
-                  autocomplete="off"
-                  disabled
-                  aria-describedby="telefono_alternativo-error"
-                />
-              </div>
-              <p class="field-error hidden text-red-600 text-xs mt-1" id="telefono_alternativo-error" data-error-for="telefono_alternativo" role="alert"></p>
             </div>
           </div>
         </section>
@@ -1119,30 +1068,6 @@
         if (telefonoInput) {
           SR_Validations.setupTelefonoField(telefonoInput);
         }
-        const telefonoAltInput = document.querySelector('[name="telefono_alternativo"]');
-        if (telefonoAltInput) {
-          SR_Validations.setupTelefonoField(telefonoAltInput);
-        }
-      }
-
-      function setupTelefonoAlternativoConditional() {
-        const checkbox = document.querySelector('[name="tiene_telefono_alternativo"]');
-        const input = document.querySelector('[name="telefono_alternativo"]');
-        if (!checkbox || !input) return;
-
-        const apply = () => {
-          if (checkbox.checked) {
-            SR_Validations.setFieldDisabled(input, false);
-            input.required = true;
-          } else {
-            SR_Validations.setFieldDisabled(input, true);
-            input.required = false;
-            input.value = "";
-          }
-        };
-
-        checkbox.addEventListener("change", apply);
-        apply();
       }
 
       function setupEmailToggle(num) {
@@ -1947,8 +1872,6 @@
           { name: "tutor2_antiguedad_anios", min: 0, max: 50 },
           { name: "tutor1_antiguedad_meses_extra", min: 0, max: 11 },
           { name: "tutor2_antiguedad_meses_extra", min: 0, max: 11 },
-          { name: "tiempo_diagnostico_anios", min: 0, max: 120 },
-          { name: "tiempo_diagnostico_meses", min: 0, max: 11 },
         ];
 
         limits.forEach(({ name, min, max }) => {
@@ -2238,16 +2161,6 @@
                   renderMunicipiosSelect(b.estado_codigo, b.ciudad || "");
                 }
                 setVal("telefonos", b.telefonos);
-                if (b.telefono_alternativo) {
-                  const telAltCheckbox = document.querySelector('[name="tiene_telefono_alternativo"]');
-                  if (telAltCheckbox) {
-                    telAltCheckbox.checked = true;
-                    telAltCheckbox.dispatchEvent(new Event("change"));
-                  }
-                }
-                setVal("telefono_alternativo", b.telefono_alternativo);
-                setVal("tiempo_diagnostico_anios", b.tiempo_diagnostico_anios);
-                setVal("tiempo_diagnostico_meses", b.tiempo_diagnostico_meses);
                 setVal("email", b.email);
                 const sexoEl = document.querySelector(`[name="sexo"][value="${b.sexo}"]`);
                 if (sexoEl) sexoEl.checked = true;
@@ -2504,9 +2417,6 @@
             estado_nombre: ESTADOS_INEGI.find((x) => x[0] === get("estado_codigo"))?.[1] || null,
             sexo: get("sexo"),
             telefonos: get("telefonos"),
-            telefono_alternativo: document.querySelector('[name="tiene_telefono_alternativo"]')?.checked ? (get("telefono_alternativo") || null) : null,
-            tiempo_diagnostico_anios: toIntOrNull(get("tiempo_diagnostico_anios")),
-            tiempo_diagnostico_meses: toIntOrNull(get("tiempo_diagnostico_meses")) || 0,
             email: get("email") || null,
           },
           tutores,
@@ -2597,21 +2507,6 @@
           if (telefonoInput && !SR_Validations.TELEFONO_RE.test(telefonoInput.value.trim())) {
             SR_Validations.showFieldError("telefonos", "El teléfono debe contener exactamente 10 dígitos numéricos");
             beneficiarioMissing.push({ id: "telefonos", label: "Teléfonos" });
-          }
-
-          // Validate tiempo_diagnostico_anios (required in completo)
-          const tiempoDxAnios = form.querySelector('[name="tiempo_diagnostico_anios"]');
-          if (tiempoDxAnios && !tiempoDxAnios.value.trim()) {
-            SR_Validations.showFieldError("tiempo_diagnostico_anios", "Tiempo desde el diagnóstico (años) es obligatorio");
-            beneficiarioMissing.push({ id: "tiempo_diagnostico_anios", label: "Tiempo desde el diagnóstico (años)" });
-          }
-
-          // Validate telefono alternativo if checkbox is checked
-          const tieneTelAlt = form.querySelector('[name="tiene_telefono_alternativo"]')?.checked;
-          const telAltInput = form.querySelector('[name="telefono_alternativo"]');
-          if (tieneTelAlt && telAltInput && !SR_Validations.TELEFONO_RE.test(telAltInput.value.trim())) {
-            SR_Validations.showFieldError("telefono_alternativo", "El teléfono alternativo debe contener exactamente 10 dígitos numéricos");
-            beneficiarioMissing.push({ id: "telefono_alternativo", label: "Teléfono alternativo" });
           }
 
           if (beneficiarioMissing.length > 0) {
@@ -3038,7 +2933,6 @@
       setupTelefonoPrefix();
       setupTelefonoSanitization();
       setupNumInteriorConditional();
-      setupTelefonoAlternativoConditional();
       setupEmailToggle(1);
       setupEmailToggle(2);
       setupEstadosCatalog();

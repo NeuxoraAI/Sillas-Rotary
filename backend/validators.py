@@ -111,8 +111,6 @@ NUM_HIJOS_MAX = 30
 EDAD_MAX = 99
 ANTIGUEDAD_ANIOS_MAX = 50
 ANTIGUEDAD_MESES_MAX = 11
-TIEMPO_DX_ANIOS_MAX = 120
-TIEMPO_DX_MESES_MAX = 11
 
 
 # ──────────────────────────────────────────────────────────────────────────
@@ -309,25 +307,7 @@ def validate_antiguedad_meses(value: Optional[int]) -> Optional[int]:
     return value
 
 
-def validate_tiempo_diagnostico_anios(value: Optional[int]) -> Optional[int]:
-    if value is not None and (value < 0 or value > TIEMPO_DX_ANIOS_MAX):
-        raise ValueError(f"tiempo_diagnostico_anios debe estar entre 0 y {TIEMPO_DX_ANIOS_MAX}")
-    return value
 
-
-def validate_tiempo_diagnostico_meses(value: Optional[int]) -> Optional[int]:
-    if value is not None and (value < 0 or value > TIEMPO_DX_MESES_MAX):
-        raise ValueError(f"tiempo_diagnostico_meses debe estar entre 0 y {TIEMPO_DX_MESES_MAX}")
-    return value
-
-
-def validate_telefono_opcional(value: Optional[str]) -> Optional[str]:
-    if value is None or value == "":
-        return None
-    telefono = re.sub(r"\D", "", value)
-    if not _TELEFONO_RE.match(telefono):
-        raise ValueError("El teléfono debe contener exactamente 10 dígitos numéricos")
-    return telefono
 
 
 def validate_edad_tutor(value: Optional[int]) -> Optional[int]:
