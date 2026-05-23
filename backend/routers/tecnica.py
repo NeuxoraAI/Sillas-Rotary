@@ -21,6 +21,7 @@ from validators import (
     validate_entorno,
     validate_control_tronco,
     validate_control_cabeza,
+    validate_control_de_piernas,
     validate_unidad_medida,
     validate_unidad_peso,
     validate_prioridad,
@@ -446,9 +447,7 @@ class SolicitudCreateRequest(BaseModel):
     @field_validator("control_de_piernas")
     @classmethod
     def _control_de_piernas_valido(cls, v: str) -> str:
-        if v not in ("Parcial", "Nulo"):
-            raise ValueError("control_de_piernas debe ser 'Parcial' o 'Nulo'")
-        return v
+        return validate_control_de_piernas(v)
 
     @field_validator("observaciones_posturales", mode="before")
     @classmethod
@@ -580,9 +579,9 @@ class SolicitudUpdateRequest(BaseModel):
     @field_validator("control_de_piernas")
     @classmethod
     def _control_de_piernas_valido(cls, v: Optional[str]) -> Optional[str]:
-        if v is not None and v not in ("Parcial", "Nulo"):
-            raise ValueError("control_de_piernas debe ser 'Parcial' o 'Nulo'")
-        return v
+        if v is None:
+            return v
+        return validate_control_de_piernas(v)
 
     @field_validator("observaciones_posturales", mode="before")
     @classmethod

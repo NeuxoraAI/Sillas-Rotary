@@ -96,6 +96,9 @@ CONTROL_TRONCO_CATALOG = frozenset({
 CONTROL_CABEZA_CATALOG = frozenset({
     "Independiente", "No posee / Requiere cabezal"
 })
+CONTROL_PIERNAS_CATALOG = frozenset({
+    "Parcial", "Nulo"
+})
 PRIORIDAD_CATALOG = frozenset({"Alta", "Media"})
 UNIDAD_MEDIDA_CATALOG = frozenset({"in", "cm"})
 UNIDAD_PESO_CATALOG = frozenset({"kg", "lb"})
@@ -265,6 +268,10 @@ def validate_control_tronco(value: str) -> str:
 
 def validate_control_cabeza(value: str) -> str:
     return validate_catalog(value, CONTROL_CABEZA_CATALOG, "control_cabeza")
+
+
+def validate_control_de_piernas(value: str) -> str:
+    return validate_catalog(value, CONTROL_PIERNAS_CATALOG, "control_de_piernas")
 
 
 # ──────────────────────────────────────────────────────────────────────────

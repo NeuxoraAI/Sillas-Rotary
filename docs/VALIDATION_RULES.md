@@ -19,6 +19,7 @@ Este documento define TODAS las reglas de validación del sistema. Cualquier cam
 | `entorno` | Urbano / Interiores, Rural / Terreno irregular, Mixto | Sí |
 | `control_tronco` | Completo, Parcial / Requiere apoyo lateral, Nulo / Requiere soporte total | Sí |
 | `control_cabeza` | Independiente, No posee / Requiere cabezal | Sí |
+| `control_de_piernas` | Parcial, Nulo | Sí |
 | `prioridad` | Alta, Media | No |
 | `unidad_medida` | in, cm | Sí |
 | `status` | borrador, completo | Sí |

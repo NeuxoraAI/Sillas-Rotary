@@ -75,6 +75,10 @@
     "Independiente",
     "No posee / Requiere cabezal",
   ];
+  const CONTROL_PIERNAS_OPTIONS = [
+    "Parcial",
+    "Nulo",
+  ];
   const PRIORIDAD_OPTIONS = ["Alta", "Media"];
   const COMO_OBTUVO_OPTIONS = ["COMPRA", "DONACION"];
   const SEX_OPTIONS = ["M", "F"];
@@ -668,6 +672,7 @@
     ENTORNO_OPTIONS,
     CONTROL_TRONCO_OPTIONS,
     CONTROL_CABEZA_OPTIONS,
+    CONTROL_PIERNAS_OPTIONS,
     PRIORIDAD_OPTIONS,
     COMO_OBTUVO_OPTIONS,
     SEX_OPTIONS,
