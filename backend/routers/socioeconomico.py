@@ -34,6 +34,7 @@ from validators import (
     validate_ciudad,
     validate_numero_domicilio,
     validate_telefono,
+    validate_telefono_opcional,
     validate_estado_codigo,
     validate_estado_nombre,
     validate_sexo,
@@ -42,8 +43,11 @@ from validators import (
     validate_monto_otras_fuentes,
     validate_num_hijos,
     validate_edad,
+    validate_edad_tutor,
     validate_antiguedad_anios,
     validate_antiguedad_meses,
+    validate_tiempo_diagnostico_anios,
+    validate_tiempo_diagnostico_meses,
     validate_numero_tutor,
     validate_fecha_nacimiento,
     validate_fecha_estudio,
@@ -139,6 +143,9 @@ class BeneficiarioIn(BaseModel):
     estado_nombre: Optional[str] = None
     sexo: str
     telefonos: str
+    telefono_alternativo: Optional[str] = None
+    tiempo_diagnostico_anios: Optional[int] = None
+    tiempo_diagnostico_meses: Optional[int] = None
     email: Optional[str] = None
 
     @field_validator("fecha_nacimiento")
@@ -150,6 +157,21 @@ class BeneficiarioIn(BaseModel):
     @classmethod
     def _telefonos_valido(cls, v: str) -> str:
         return validate_telefono(v)
+
+    @field_validator("telefono_alternativo")
+    @classmethod
+    def _telefono_alternativo_valido(cls, v: Optional[str]) -> Optional[str]:
+        return validate_telefono_opcional(v)
+
+    @field_validator("tiempo_diagnostico_anios")
+    @classmethod
+    def _tiempo_diagnostico_anios_valido(cls, v: Optional[int]) -> Optional[int]:
+        return validate_tiempo_diagnostico_anios(v)
+
+    @field_validator("tiempo_diagnostico_meses")
+    @classmethod
+    def _tiempo_diagnostico_meses_valido(cls, v: Optional[int]) -> Optional[int]:
+        return validate_tiempo_diagnostico_meses(v)
 
     @field_validator("estado_codigo")
     @classmethod
@@ -265,7 +287,7 @@ class TutorIn(BaseModel):
     @field_validator("edad")
     @classmethod
     def _edad_valida(cls, v: Optional[int]) -> Optional[int]:
-        return validate_edad(v)
+        return validate_edad_tutor(v)
 
     @field_validator("nombres", "apellido_paterno", "apellido_materno",
                       "nivel_estudios", "fuente_empleo", "otras_fuentes_ingreso", mode="before")
@@ -417,6 +439,7 @@ class EstudioUpdateRequest(BaseModel):
     ciudad_registro: Optional[str] = None
     fecha_estudio: Optional[str] = None
     status: Optional[str] = None
+    beneficiario: Optional[BeneficiarioIn] = None
     tutores: Optional[list[TutorIn]] = None
     credencial_path: Optional[str] = None
     credencial_url: Optional[str] = None
@@ -445,6 +468,11 @@ class EstudioUpdateRequest(BaseModel):
                 raise ValueError(
                     "como_obtuvo_silla es obligatorio cuando tuvo_silla_previa es verdadero"
                 )
+
+            if self.beneficiario is not None:
+                b = self.beneficiario
+                if b.tiempo_diagnostico_anios is None:
+                    raise ValueError("tiempo_diagnostico_anios es obligatorio cuando status es completo")
 
         return self
 
@@ -542,6 +570,9 @@ def crear_estudio(
     nombre_composed = f"{b.nombres} {b.apellido_paterno} {b.apellido_materno}"
 
     # 3. INSERT beneficiario (with folio + region + sede + structured name)
+    # NOTE: Columns telefono_alternativo, tiempo_diagnostico_* require migration
+    #       0009_add_tiempo_diagnostico_and_telefono_alternativo.sql on the live DB.
+    #       Until then, they are collected by the frontend but not persisted.
     beneficiario_id = db.execute(
         """
         INSERT INTO beneficiarios
@@ -670,12 +701,42 @@ def actualizar_estudio(
 
     assert_resource_owner(existing["usuario_id"], usuario)
 
+    # Update beneficiario if provided (partial update of mutable fields only)
+    if body.beneficiario is not None:
+        b = body.beneficiario
+        ben_fields = []
+        ben_values = []
+        if b.telefonos is not None:
+            ben_fields.append("telefonos = %s")
+            ben_values.append(b.telefonos)
+        # NOTE: telefono_alternativo and tiempo_diagnostico_* require migration
+        #       0009_add_tiempo_diagnostico_and_telefono_alternativo.sql on live DB.
+        #       Until then, these fields are accepted by the API but not persisted.
+        # if b.telefono_alternativo is not None:
+        #     ben_fields.append("telefono_alternativo = %s")
+        #     ben_values.append(b.telefono_alternativo)
+        # if b.tiempo_diagnostico_anios is not None:
+        #     ben_fields.append("tiempo_diagnostico_anios = %s")
+        #     ben_values.append(b.tiempo_diagnostico_anios)
+        # if b.tiempo_diagnostico_meses is not None:
+        #     ben_fields.append("tiempo_diagnostico_meses = %s")
+        #     ben_values.append(b.tiempo_diagnostico_meses)
+        if b.email is not None:
+            ben_fields.append("email = %s")
+            ben_values.append(b.email)
+        if ben_fields:
+            ben_values.append(existing["beneficiario_id"])
+            db.execute(
+                f"UPDATE beneficiarios SET {', '.join(ben_fields)} WHERE id = %s",
+                ben_values,
+            )
+
     if body.tutores is not None:
         _validar_tutores(body.tutores)
         db.execute("DELETE FROM tutores WHERE beneficiario_id = %s", (existing["beneficiario_id"],))
         _insertar_tutores(db, existing["beneficiario_id"], body.tutores)
 
-    fields = body.model_dump(exclude_none=True, exclude={"tutores", "elaboro_estudio", "ciudad_registro"})
+    fields = body.model_dump(exclude_none=True, exclude={"tutores", "elaboro_estudio", "ciudad_registro", "beneficiario"})
     fields["elaboro_estudio"] = usuario.nombre
     if "tuvo_silla_previa" in fields:
         fields["tuvo_silla_previa"] = int(fields["tuvo_silla_previa"])
