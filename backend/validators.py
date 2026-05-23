@@ -100,7 +100,7 @@ PRIORIDAD_CATALOG = frozenset({"Alta", "Media"})
 UNIDAD_MEDIDA_CATALOG = frozenset({"in", "cm"})
 UNIDAD_PESO_CATALOG = frozenset({"kg", "lb"})
 STATUS_CATALOG = frozenset({"borrador", "completo"})
-SEXO_CATALOG = frozenset({"M", "F", "NE"})
+SEXO_CATALOG = frozenset({"M", "F"})
 
 # Monetary limits
 INGRESO_MENSUAL_MAX = 999_999_999
@@ -111,6 +111,8 @@ NUM_HIJOS_MAX = 30
 EDAD_MAX = 99
 ANTIGUEDAD_ANIOS_MAX = 50
 ANTIGUEDAD_MESES_MAX = 11
+TIEMPO_DX_ANIOS_MAX = 120
+TIEMPO_DX_MESES_MAX = 11
 
 
 # ──────────────────────────────────────────────────────────────────────────
@@ -304,6 +306,33 @@ def validate_antiguedad_anios(value: Optional[int]) -> Optional[int]:
 def validate_antiguedad_meses(value: Optional[int]) -> Optional[int]:
     if value is not None and (value < 0 or value > ANTIGUEDAD_MESES_MAX):
         raise ValueError(f"antiguedad_meses_extra debe estar entre 0 y {ANTIGUEDAD_MESES_MAX}")
+    return value
+
+
+def validate_tiempo_diagnostico_anios(value: Optional[int]) -> Optional[int]:
+    if value is not None and (value < 0 or value > TIEMPO_DX_ANIOS_MAX):
+        raise ValueError(f"tiempo_diagnostico_anios debe estar entre 0 y {TIEMPO_DX_ANIOS_MAX}")
+    return value
+
+
+def validate_tiempo_diagnostico_meses(value: Optional[int]) -> Optional[int]:
+    if value is not None and (value < 0 or value > TIEMPO_DX_MESES_MAX):
+        raise ValueError(f"tiempo_diagnostico_meses debe estar entre 0 y {TIEMPO_DX_MESES_MAX}")
+    return value
+
+
+def validate_telefono_opcional(value: Optional[str]) -> Optional[str]:
+    if value is None or value == "":
+        return None
+    telefono = re.sub(r"\D", "", value)
+    if not _TELEFONO_RE.match(telefono):
+        raise ValueError("El teléfono debe contener exactamente 10 dígitos numéricos")
+    return telefono
+
+
+def validate_edad_tutor(value: Optional[int]) -> Optional[int]:
+    if value is not None and (value < 18 or value > EDAD_MAX):
+        raise ValueError(f"edad del tutor debe estar entre 18 y {EDAD_MAX}")
     return value
 
 

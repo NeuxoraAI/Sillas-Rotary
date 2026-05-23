@@ -27,9 +27,14 @@ DDL = [
         ciudad            TEXT NOT NULL,
         estado_codigo     TEXT,
         estado_nombre     TEXT,
-        sexo              TEXT,
-        telefonos         TEXT NOT NULL,
-        created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        sexo                         TEXT,
+        telefonos                    TEXT NOT NULL,
+        tiempo_diagnostico_anios       INTEGER
+                                       CHECK (tiempo_diagnostico_anios IS NULL OR (tiempo_diagnostico_anios >= 0 AND tiempo_diagnostico_anios <= 120)),
+        tiempo_diagnostico_meses       INTEGER
+                                       CHECK (tiempo_diagnostico_meses IS NULL OR (tiempo_diagnostico_meses >= 0 AND tiempo_diagnostico_meses <= 11)),
+        telefono_alternativo           TEXT,
+        created_at                     TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
     """,
     """
