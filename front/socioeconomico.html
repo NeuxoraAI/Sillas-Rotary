@@ -2465,48 +2465,61 @@
         const form = document.querySelector("form");
         SR_Validations.clearAllFieldErrors(form);
 
-        // Validar teléfono
-        const telefonoInput = document.querySelector('[name="telefonos"]');
-        if (telefonoInput) {
-          telefonoInput.value = SR_Validations.sanitizeIntegerInput(telefonoInput.value);
-          if (status === "completo" && !SR_Validations.TELEFONO_RE.test(telefonoInput.value)) {
-            SR_Validations.showFieldError("telefonos", "El teléfono debe contener exactamente 10 dígitos numéricos");
-            errorEl.textContent = "El teléfono debe contener exactamente 10 dígitos numéricos";
-            errorEl.classList.remove("hidden");
-            return;
-          }
-        }
-
-        // Validar campos obligatorios del beneficiario
+        // ── Validar campos obligatorios del beneficiario (orden visual de arriba hacia abajo) ──
         if (status === "completo") {
-          const beneficiarioRequired = [
+          const beneficiarioMissing = [];
+
+          // 1. Datos personales
+          const personalFields = [
             { id: "nombres", label: "Nombre(s)" },
             { id: "apellido_paterno", label: "Apellido Paterno" },
             { id: "apellido_materno", label: "Apellido Materno" },
             { id: "fecha_nacimiento", label: "Fecha de nacimiento" },
-            { id: "diagnostico", label: "Diagnóstico" },
+          ];
+          for (const { id, label } of personalFields) {
+            const el = form.querySelector(`[name="${id}"]`);
+            if (!el || !(el.value || "").trim()) {
+              SR_Validations.showFieldError(id, `${label} es obligatorio`);
+              beneficiarioMissing.push({ id, label });
+            }
+          }
+
+          // Sexo (radio group)
+          if (!form.querySelector('[name="sexo"]:checked')) {
+            SR_Validations.showFieldError("sexo", "Sexo es obligatorio");
+            beneficiarioMissing.push({ id: "sexo", label: "Sexo" });
+          }
+
+          // Diagnóstico
+          if (!((form.querySelector('[name="diagnostico"]')?.value || "").trim())) {
+            SR_Validations.showFieldError("diagnostico", "Diagnóstico es obligatorio");
+            beneficiarioMissing.push({ id: "diagnostico", label: "Diagnóstico" });
+          }
+
+          // 2. Domicilio
+          const domicilioFields = [
             { id: "calle", label: "Calle" },
             { id: "num_ext", label: "Número exterior" },
             { id: "colonia", label: "Colonia" },
             { id: "ciudad", label: "Ciudad" },
             { id: "estado_codigo", label: "Estado" },
           ];
-          const beneficiarioMissing = SR_Validations.validateRequired(form, beneficiarioRequired, { status });
-          beneficiarioMissing.forEach(({ id, label }) => {
-            SR_Validations.showFieldError(id, `${label} es obligatorio`);
-          });
-
-          // Validate sexo separately (radio group)
-          if (!form.querySelector('[name="sexo"]:checked')) {
-            SR_Validations.showFieldError("sexo", "Sexo es obligatorio");
-            beneficiarioMissing.push({ id: "sexo", label: "Sexo" });
+          for (const { id, label } of domicilioFields) {
+            const el = form.querySelector(`[name="${id}"]`);
+            if (!el || !(el.value || "").trim()) {
+              SR_Validations.showFieldError(id, `${label} es obligatorio`);
+              beneficiarioMissing.push({ id, label });
+            }
           }
 
-          // Validate telefono separately (regex)
+          // 3. Contacto – Teléfono (regex + sanitización)
           const telefonoInput = form.querySelector('[name="telefonos"]');
-          if (telefonoInput && !SR_Validations.TELEFONO_RE.test(telefonoInput.value.trim())) {
-            SR_Validations.showFieldError("telefonos", "El teléfono debe contener exactamente 10 dígitos numéricos");
-            beneficiarioMissing.push({ id: "telefonos", label: "Teléfonos" });
+          if (telefonoInput) {
+            telefonoInput.value = SR_Validations.sanitizeIntegerInput(telefonoInput.value);
+            if (!SR_Validations.TELEFONO_RE.test(telefonoInput.value.trim())) {
+              SR_Validations.showFieldError("telefonos", "El teléfono debe contener exactamente 10 dígitos numéricos");
+              beneficiarioMissing.push({ id: "telefonos", label: "Teléfono" });
+            }
           }
 
           if (beneficiarioMissing.length > 0) {

@@ -142,32 +142,24 @@ class BeneficiarioIn(BaseModel):
     telefonos: str
     email: Optional[str] = None
 
-    @field_validator("fecha_nacimiento")
-    @classmethod
-    def _fecha_nacimiento_valida(cls, v: str) -> str:
-        return validate_fecha_nacimiento(v)
-
-    @field_validator("telefonos")
-    @classmethod
-    def _telefonos_valido(cls, v: str) -> str:
-        return validate_telefono(v)
-
-    @field_validator("estado_codigo")
-    @classmethod
-    def _estado_codigo_valido(cls, v: str) -> str:
-        return validate_estado_codigo(v)
-
-    @field_validator("sexo")
-    @classmethod
-    def _sexo_valido(cls, v: str) -> str:
-        return validate_sexo(v)
-
+    # ── Normalizaciones (mode="before") deben ir antes que las validaciones normales ──
     @field_validator("nombres", "apellido_paterno", "apellido_materno",
                       "diagnostico", "calle", "colonia", "ciudad", mode="before")
     @classmethod
     def _normalizar_textos_principales(cls, v: Optional[str]) -> Optional[str]:
         return normalize_text(v)
 
+    @field_validator("num_ext", "num_int", mode="before")
+    @classmethod
+    def _validar_numero_domicilio(cls, v: Optional[str]) -> Optional[str]:
+        return validate_numero_domicilio(v)
+
+    @field_validator("estado_nombre", mode="before")
+    @classmethod
+    def _normalizar_estado_nombre(cls, v: Optional[str]) -> Optional[str]:
+        return normalize_text(v)
+
+    # ── Validaciones secuenciales (orden visual del formulario) ──
     @field_validator("nombres")
     @classmethod
     def _validar_nombres(cls, v: str) -> str:
@@ -182,6 +174,16 @@ class BeneficiarioIn(BaseModel):
     @classmethod
     def _validar_apellido_materno(cls, v: str) -> str:
         return validate_apellido(v, "apellido_materno")
+
+    @field_validator("fecha_nacimiento")
+    @classmethod
+    def _fecha_nacimiento_valida(cls, v: str) -> str:
+        return validate_fecha_nacimiento(v)
+
+    @field_validator("sexo")
+    @classmethod
+    def _sexo_valido(cls, v: str) -> str:
+        return validate_sexo(v)
 
     @field_validator("diagnostico")
     @classmethod
@@ -203,20 +205,20 @@ class BeneficiarioIn(BaseModel):
     def _ciudad_valida(cls, v: str) -> str:
         return validate_ciudad(v)
 
-    @field_validator("num_ext", "num_int", mode="before")
+    @field_validator("estado_codigo")
     @classmethod
-    def _validar_numero_domicilio(cls, v: Optional[str]) -> Optional[str]:
-        return validate_numero_domicilio(v)
-
-    @field_validator("estado_nombre", mode="before")
-    @classmethod
-    def _normalizar_estado_nombre(cls, v: Optional[str]) -> Optional[str]:
-        return normalize_text(v)
+    def _estado_codigo_valido(cls, v: str) -> str:
+        return validate_estado_codigo(v)
 
     @field_validator("estado_nombre")
     @classmethod
     def _estado_nombre_consistente(cls, v: Optional[str], info) -> Optional[str]:
         return validate_estado_nombre(v, info.data.get("estado_codigo"))
+
+    @field_validator("telefonos")
+    @classmethod
+    def _telefonos_valido(cls, v: str) -> str:
+        return validate_telefono(v)
 
 
 class TutorIn(BaseModel):
@@ -242,37 +244,31 @@ class TutorIn(BaseModel):
     imss_estatus:      Optional[str] = None   # replaced: tiene_imss: bool = False
     infonavit_estatus: Optional[str] = None   # replaced: tiene_infonavit: bool = False
 
-    @field_validator("numero_tutor")
-    @classmethod
-    def _numero_tutor_valido(cls, v: int) -> int:
-        return validate_numero_tutor(v)
-
-    @field_validator("estado_civil")
-    @classmethod
-    def _estado_civil_valido(cls, v: Optional[str]) -> Optional[str]:
-        if v in (None, ""):
-            return None
-        vv = normalize_text(v)
-        return validate_catalog(vv, ESTADO_CIVIL_CATALOG, "estado_civil")
-
-    @field_validator("vivienda")
-    @classmethod
-    def _vivienda_valida(cls, v: Optional[str]) -> Optional[str]:
-        if v in (None, ""):
-            return None
-        vv = normalize_text(v)
-        return validate_catalog(vv, VIVIENDA_CATALOG, "vivienda")
-
-    @field_validator("edad")
-    @classmethod
-    def _edad_valida(cls, v: Optional[int]) -> Optional[int]:
-        return validate_edad_tutor(v)
-
+    # ── Normalizaciones (mode="before") ──
     @field_validator("nombres", "apellido_paterno", "apellido_materno",
                       "nivel_estudios", "fuente_empleo", "otras_fuentes_ingreso", mode="before")
     @classmethod
     def _normalizar_textos_tutor(cls, v: Optional[str]) -> Optional[str]:
         return normalize_text(v)
+
+    @model_validator(mode="before")
+    @classmethod
+    def backward_compat_imss_infonavit(cls, data: dict) -> dict:
+        """Map legacy boolean tiene_imss/tiene_infonavit to new imss_estatus/infonavit_estatus."""
+        if isinstance(data, dict):
+            if "imss_estatus" not in data and "tiene_imss" in data:
+                raw = data.pop("tiene_imss")
+                data["imss_estatus"] = "SI" if raw in (True, 1) else "NO" if raw in (False, 0) else None
+            if "infonavit_estatus" not in data and "tiene_infonavit" in data:
+                raw = data.pop("tiene_infonavit")
+                data["infonavit_estatus"] = "SI" if raw in (True, 1) else "NO" if raw in (False, 0) else None
+        return data
+
+    # ── Validaciones secuenciales (orden visual del formulario) ──
+    @field_validator("numero_tutor")
+    @classmethod
+    def _numero_tutor_valido(cls, v: int) -> int:
+        return validate_numero_tutor(v)
 
     @field_validator("nombres")
     @classmethod
@@ -289,10 +285,10 @@ class TutorIn(BaseModel):
     def _validar_apellido_materno_tutor(cls, v: str) -> str:
         return validate_apellido(v, "apellido_materno")
 
-    @field_validator("fuente_empleo")
+    @field_validator("edad")
     @classmethod
-    def _fuente_empleo_valida(cls, v: Optional[str]) -> Optional[str]:
-        return validate_fuente_empleo(v)
+    def _edad_valida(cls, v: Optional[int]) -> Optional[int]:
+        return validate_edad_tutor(v)
 
     @field_validator("email")
     @classmethod
@@ -301,11 +297,6 @@ class TutorIn(BaseModel):
             return None
         return validate_email_format(v)
 
-    @field_validator("otras_fuentes_ingreso")
-    @classmethod
-    def _otras_fuentes_ingreso_valida(cls, v: Optional[str]) -> Optional[str]:
-        return validate_otras_fuentes_ingreso(v)
-
     @field_validator("nivel_estudios")
     @classmethod
     def _nivel_estudios_valido(cls, v: Optional[str]) -> Optional[str]:
@@ -313,20 +304,26 @@ class TutorIn(BaseModel):
             return None
         return validate_catalog(v, NIVEL_ESTUDIOS_CATALOG, "nivel_estudios")
 
-    @field_validator("ingreso_mensual")
+    @field_validator("estado_civil")
     @classmethod
-    def _ingreso_mensual_valido(cls, v: Optional[int]) -> Optional[int]:
-        return validate_ingreso_mensual(v)
-
-    @field_validator("monto_otras_fuentes")
-    @classmethod
-    def _monto_otras_fuentes_valido(cls, v: Optional[float]) -> Optional[float]:
-        return validate_monto_otras_fuentes(v)
+    def _estado_civil_valido(cls, v: Optional[str]) -> Optional[str]:
+        if v in (None, ""):
+            return None
+        vv = normalize_text(v)
+        return validate_catalog(vv, ESTADO_CIVIL_CATALOG, "estado_civil")
 
     @field_validator("num_hijos")
     @classmethod
     def _num_hijos_valido(cls, v: Optional[int]) -> Optional[int]:
         return validate_num_hijos(v)
+
+    @field_validator("vivienda")
+    @classmethod
+    def _vivienda_valida(cls, v: Optional[str]) -> Optional[str]:
+        if v in (None, ""):
+            return None
+        vv = normalize_text(v)
+        return validate_catalog(vv, VIVIENDA_CATALOG, "vivienda")
 
     @field_validator("imss_estatus", "infonavit_estatus")
     @classmethod
@@ -336,19 +333,15 @@ class TutorIn(BaseModel):
         vv = normalize_text(v)
         return validate_catalog(vv, TRIESTADO_CATALOG, "estatus")
 
-    @model_validator(mode="before")
+    @field_validator("fuente_empleo")
     @classmethod
-    def backward_compat_imss_infonavit(cls, data: dict) -> dict:
-        """Map legacy boolean tiene_imss/tiene_infonavit to new imss_estatus/infonavit_estatus."""
-        if isinstance(data, dict):
-            # Only apply backward compat if the new fields are NOT present
-            if "imss_estatus" not in data and "tiene_imss" in data:
-                raw = data.pop("tiene_imss")
-                data["imss_estatus"] = "SI" if raw in (True, 1) else "NO" if raw in (False, 0) else None
-            if "infonavit_estatus" not in data and "tiene_infonavit" in data:
-                raw = data.pop("tiene_infonavit")
-                data["infonavit_estatus"] = "SI" if raw in (True, 1) else "NO" if raw in (False, 0) else None
-        return data
+    def _fuente_empleo_valida(cls, v: Optional[str]) -> Optional[str]:
+        return validate_fuente_empleo(v)
+
+    @field_validator("ingreso_mensual")
+    @classmethod
+    def _ingreso_mensual_valido(cls, v: Optional[int]) -> Optional[int]:
+        return validate_ingreso_mensual(v)
 
     @field_validator("antiguedad_anios")
     @classmethod
@@ -359,6 +352,16 @@ class TutorIn(BaseModel):
     @classmethod
     def _antiguedad_meses_valida(cls, v: Optional[int]) -> Optional[int]:
         return validate_antiguedad_meses(v)
+
+    @field_validator("otras_fuentes_ingreso")
+    @classmethod
+    def _otras_fuentes_ingreso_valida(cls, v: Optional[str]) -> Optional[str]:
+        return validate_otras_fuentes_ingreso(v)
+
+    @field_validator("monto_otras_fuentes")
+    @classmethod
+    def _monto_otras_fuentes_valido(cls, v: Optional[float]) -> Optional[float]:
+        return validate_monto_otras_fuentes(v)
 
 
 class EstudioIn(BaseModel):

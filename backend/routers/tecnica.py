@@ -428,36 +428,6 @@ class SolicitudCreateRequest(BaseModel):
     justificacion: Optional[str] = None
     status: str = "borrador"
 
-    @field_validator("altura_total_in", "peso_kg", "medida_cabeza_asiento",
-                     "medida_hombro_asiento", "medida_prof_asiento",
-                     "medida_rodilla_talon", "medida_ancho_cadera", mode="before")
-    @classmethod
-    def validate_medida_field(cls, v, info: ValidationInfo) -> Optional[Decimal]:
-        if v is None or (isinstance(v, str) and v.strip() == ""):
-            return None
-        return validate_medida_tecnica(str(v), info.field_name)
-
-    @field_validator("observaciones_posturales", mode="before")
-    @classmethod
-    def validate_obs_field(cls, v) -> Optional[str]:
-        if v is None:
-            return None
-        return validate_observaciones_posturales(str(v))
-
-    @field_validator("entidad_solicitante", mode="before")
-    @classmethod
-    def validate_entidad_solicitante_field(cls, v) -> Optional[str]:
-        if v is None:
-            return None
-        return validate_entidad_solicitante(str(v))
-
-    @field_validator("justificacion", mode="before")
-    @classmethod
-    def validate_justificacion_field(cls, v) -> Optional[str]:
-        if v is None:
-            return None
-        return validate_justificacion(str(v))
-
     @field_validator("entorno")
     @classmethod
     def _entorno_valido(cls, v: str) -> str:
@@ -473,6 +443,20 @@ class SolicitudCreateRequest(BaseModel):
     def _control_cabeza_valido(cls, v: str) -> str:
         return validate_control_cabeza(v)
 
+    @field_validator("control_de_piernas")
+    @classmethod
+    def _control_de_piernas_valido(cls, v: str) -> str:
+        if v not in ("Parcial", "Nulo"):
+            raise ValueError("control_de_piernas debe ser 'Parcial' o 'Nulo'")
+        return v
+
+    @field_validator("observaciones_posturales", mode="before")
+    @classmethod
+    def validate_obs_field(cls, v) -> Optional[str]:
+        if v is None:
+            return None
+        return validate_observaciones_posturales(str(v))
+
     @field_validator("unidad_medida")
     @classmethod
     def _unidad_valida(cls, v: str) -> str:
@@ -483,15 +467,38 @@ class SolicitudCreateRequest(BaseModel):
     def _unidad_peso_valida(cls, v: str) -> str:
         return validate_unidad_peso(v)
 
-    @field_validator("status")
+    @field_validator("altura_total_in", "peso_kg", "medida_cabeza_asiento",
+                     "medida_hombro_asiento", "medida_prof_asiento",
+                     "medida_rodilla_talon", "medida_ancho_cadera", mode="before")
     @classmethod
-    def _status_valido(cls, v: str) -> str:
-        return validate_status(v)
+    def validate_medida_field(cls, v, info: ValidationInfo) -> Optional[Decimal]:
+        if v is None or (isinstance(v, str) and v.strip() == ""):
+            return None
+        return validate_medida_tecnica(str(v), info.field_name)
+
+    @field_validator("entidad_solicitante", mode="before")
+    @classmethod
+    def validate_entidad_solicitante_field(cls, v) -> Optional[str]:
+        if v is None:
+            return None
+        return validate_entidad_solicitante(str(v))
 
     @field_validator("prioridad")
     @classmethod
     def _prioridad_valida(cls, v: Optional[str]) -> Optional[str]:
         return validate_prioridad(v)
+
+    @field_validator("justificacion", mode="before")
+    @classmethod
+    def validate_justificacion_field(cls, v) -> Optional[str]:
+        if v is None:
+            return None
+        return validate_justificacion(str(v))
+
+    @field_validator("status")
+    @classmethod
+    def _status_valido(cls, v: str) -> str:
+        return validate_status(v)
 
     @model_validator(mode="after")
     def _validar_completo_t1(self):
@@ -519,13 +526,6 @@ class SolicitudCreateRequest(BaseModel):
             )
 
         return self
-
-    @field_validator("control_de_piernas")
-    @classmethod
-    def control_de_piernas_valido(cls, v: str) -> str:
-        if v not in ("Parcial", "Nulo"):
-            raise ValueError("control_de_piernas debe ser 'Parcial' o 'Nulo'")
-        return v
 
 
 class SolicitudCreateResponse(BaseModel):
@@ -556,36 +556,6 @@ class SolicitudUpdateRequest(BaseModel):
     justificacion: Optional[str] = None
     status: Optional[str] = None
 
-    @field_validator("altura_total_in", "peso_kg", "medida_cabeza_asiento",
-                     "medida_hombro_asiento", "medida_prof_asiento",
-                     "medida_rodilla_talon", "medida_ancho_cadera", mode="before")
-    @classmethod
-    def validate_medida_field(cls, v, info: ValidationInfo) -> Optional[Decimal]:
-        if v is None or (isinstance(v, str) and v.strip() == ""):
-            return None
-        return validate_medida_tecnica(str(v), info.field_name)
-
-    @field_validator("observaciones_posturales", mode="before")
-    @classmethod
-    def validate_obs_field(cls, v) -> Optional[str]:
-        if v is None:
-            return None
-        return validate_observaciones_posturales(str(v))
-
-    @field_validator("entidad_solicitante", mode="before")
-    @classmethod
-    def validate_entidad_solicitante_field(cls, v) -> Optional[str]:
-        if v is None:
-            return None
-        return validate_entidad_solicitante(str(v))
-
-    @field_validator("justificacion", mode="before")
-    @classmethod
-    def validate_justificacion_field(cls, v) -> Optional[str]:
-        if v is None:
-            return None
-        return validate_justificacion(str(v))
-
     @field_validator("entorno")
     @classmethod
     def _entorno_valido(cls, v: Optional[str]) -> Optional[str]:
@@ -607,12 +577,19 @@ class SolicitudUpdateRequest(BaseModel):
             return v
         return validate_control_cabeza(v)
 
-    @field_validator("status")
+    @field_validator("control_de_piernas")
     @classmethod
-    def _status_valido(cls, v: Optional[str]) -> Optional[str]:
+    def _control_de_piernas_valido(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None and v not in ("Parcial", "Nulo"):
+            raise ValueError("control_de_piernas debe ser 'Parcial' o 'Nulo'")
+        return v
+
+    @field_validator("observaciones_posturales", mode="before")
+    @classmethod
+    def validate_obs_field(cls, v) -> Optional[str]:
         if v is None:
-            return v
-        return validate_status(v)
+            return None
+        return validate_observaciones_posturales(str(v))
 
     @field_validator("unidad_medida")
     @classmethod
@@ -628,10 +605,40 @@ class SolicitudUpdateRequest(BaseModel):
             return v
         return validate_unidad_peso(v)
 
+    @field_validator("altura_total_in", "peso_kg", "medida_cabeza_asiento",
+                     "medida_hombro_asiento", "medida_prof_asiento",
+                     "medida_rodilla_talon", "medida_ancho_cadera", mode="before")
+    @classmethod
+    def validate_medida_field(cls, v, info: ValidationInfo) -> Optional[Decimal]:
+        if v is None or (isinstance(v, str) and v.strip() == ""):
+            return None
+        return validate_medida_tecnica(str(v), info.field_name)
+
+    @field_validator("entidad_solicitante", mode="before")
+    @classmethod
+    def validate_entidad_solicitante_field(cls, v) -> Optional[str]:
+        if v is None:
+            return None
+        return validate_entidad_solicitante(str(v))
+
     @field_validator("prioridad")
     @classmethod
     def _prioridad_valida(cls, v: Optional[str]) -> Optional[str]:
         return validate_prioridad(v)
+
+    @field_validator("justificacion", mode="before")
+    @classmethod
+    def validate_justificacion_field(cls, v) -> Optional[str]:
+        if v is None:
+            return None
+        return validate_justificacion(str(v))
+
+    @field_validator("status")
+    @classmethod
+    def _status_valido(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        return validate_status(v)
 
     @model_validator(mode="after")
     def _validar_completo_t2(self):
@@ -659,13 +666,6 @@ class SolicitudUpdateRequest(BaseModel):
             )
 
         return self
-
-    @field_validator("control_de_piernas")
-    @classmethod
-    def control_de_piernas_valido(cls, v: Optional[str]) -> Optional[str]:
-        if v is not None and v not in ("Parcial", "Nulo"):
-            raise ValueError("control_de_piernas debe ser 'Parcial' o 'Nulo'")
-        return v
 
 
 class SolicitudUpdateResponse(BaseModel):
