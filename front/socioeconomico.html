@@ -213,6 +213,33 @@
               <p class="field-error hidden text-red-600 text-xs mt-1" id="diagnostico-error" data-error-for="diagnostico" role="alert"></p>
             </div>
             <div class="space-y-2">
+              <label class="block text-sm font-semibold text-slate-700">Tiempo desde el diagnóstico</label>
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="text-xs font-bold text-slate-500 uppercase">Años</label>
+                  <input
+                    class="w-full mt-1 border-slate-300 shadow-sm focus:border-primary focus:ring-primary"
+                    name="tiempo_diagnostico_anios"
+                    type="number"
+                    min="0"
+                    max="120"
+                    aria-describedby="tiempo_diagnostico_anios-error"
+                  />
+                  <p class="field-error hidden text-red-600 text-xs mt-1" id="tiempo_diagnostico_anios-error" data-error-for="tiempo_diagnostico_anios" role="alert"></p>
+                </div>
+                <div>
+                  <label class="text-xs font-bold text-slate-500 uppercase">Meses</label>
+                  <input
+                    class="w-full mt-1 border-slate-300 shadow-sm focus:border-primary focus:ring-primary"
+                    name="tiempo_diagnostico_meses"
+                    type="number"
+                    min="0"
+                    max="11"
+                  />
+                </div>
+              </div>
+            </div>
+            <div class="space-y-2">
               <label class="block text-sm font-semibold text-slate-700"
                 >Calle</label
               >
@@ -257,7 +284,7 @@
               <p class="field-error hidden text-red-600 text-xs mt-1" id="colonia-error" data-error-for="colonia" role="alert"></p>
             </div>
             <div class="space-y-2">
-              <label class="block text-sm font-semibold text-slate-700">Estado (INEGI)</label>
+              <label class="block text-sm font-semibold text-slate-700">Estado</label>
               <select class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary" name="estado_codigo" id="estado_codigo" required aria-describedby="estado_codigo-error"></select>
               <p class="field-error hidden text-red-600 text-xs mt-1" id="estado_codigo-error" data-error-for="estado_codigo" role="alert"></p>
             </div>
@@ -280,7 +307,6 @@
               <div class="flex gap-6">
                 <label><input type="radio" name="sexo" value="M" required aria-describedby="sexo-error" /> Masculino</label>
                 <label><input type="radio" name="sexo" value="F" required /> Femenino</label>
-                <label><input type="radio" name="sexo" value="NE" required /> No especificado</label>
               </div>
               <p class="field-error hidden text-red-600 text-xs mt-1" id="sexo-error" data-error-for="sexo" role="alert"></p>
             </div>
@@ -306,6 +332,30 @@
                 />
               </div>
               <p class="field-error hidden text-red-600 text-xs mt-1" id="telefonos-error" data-error-for="telefonos" role="alert"></p>
+            </div>
+            <div class="space-y-2">
+              <label class="inline-flex items-center gap-2 text-sm font-medium text-slate-700">
+                <input class="text-primary h-4 w-4" name="tiene_telefono_alternativo" type="checkbox" />
+                <span>Agregar teléfono alternativo</span>
+              </label>
+              <div class="flex">
+                <span class="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-slate-300 bg-slate-100 text-slate-600 text-sm">
+                  🇲🇽 +52
+                </span>
+                <input
+                  class="flex-1 rounded-r-lg border-slate-300 shadow-sm focus:border-primary focus:ring-primary bg-slate-100 text-slate-400 cursor-not-allowed"
+                  name="telefono_alternativo"
+                  type="tel"
+                  inputmode="numeric"
+                  maxlength="10"
+                  minlength="10"
+                  pattern="[0-9]{10}"
+                  autocomplete="off"
+                  disabled
+                  aria-describedby="telefono_alternativo-error"
+                />
+              </div>
+              <p class="field-error hidden text-red-600 text-xs mt-1" id="telefono_alternativo-error" data-error-for="telefono_alternativo" role="alert"></p>
             </div>
           </div>
         </section>
@@ -564,17 +614,22 @@
                   </div>
                 </fieldset>
                 <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor1_infonavit-error" data-error-for="tutor1_infonavit" role="alert"></p>
-                <div>
-                  <label class="text-xs font-bold text-slate-500 uppercase"
-                    >Correo electrónico (opcional)</label
-                  ><input
-                    class="w-full mt-1 border-slate-300"
+                <div class="space-y-2">
+                  <label class="inline-flex items-center gap-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-lg px-3 py-2">
+                    <input class="text-primary h-4 w-4" name="tutor1_tiene_email" type="checkbox" />
+                    <span>Agregar correo electrónico</span>
+                  </label>
+                  <input
+                    class="w-full mt-1 border-slate-300 shadow-sm focus:border-primary focus:ring-primary bg-slate-100 text-slate-400 cursor-not-allowed"
                     name="tutor1_email"
                     type="email"
                     maxlength="254"
                     autocomplete="email"
                     placeholder="correo@ejemplo.com"
+                    disabled
+                    aria-describedby="tutor1_email-error"
                   />
+                  <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor1_email-error" data-error-for="tutor1_email" role="alert"></p>
                 </div>
               </div>
             </div>
@@ -810,17 +865,22 @@
                   </div>
                 </fieldset>
                 <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor2_infonavit-error" data-error-for="tutor2_infonavit" role="alert"></p>
-                <div>
-                  <label class="text-xs font-bold text-slate-500 uppercase"
-                    >Correo electrónico (opcional)</label
-                  ><input
-                    class="w-full mt-1 border-slate-300"
+                <div class="space-y-2">
+                  <label class="inline-flex items-center gap-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-lg px-3 py-2">
+                    <input class="text-primary h-4 w-4" name="tutor2_tiene_email" type="checkbox" />
+                    <span>Agregar correo electrónico</span>
+                  </label>
+                  <input
+                    class="w-full mt-1 border-slate-300 shadow-sm focus:border-primary focus:ring-primary bg-slate-100 text-slate-400 cursor-not-allowed"
                     name="tutor2_email"
                     type="email"
                     maxlength="254"
                     autocomplete="email"
                     placeholder="correo@ejemplo.com"
+                    disabled
+                    aria-describedby="tutor2_email-error"
                   />
+                  <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor2_email-error" data-error-for="tutor2_email" role="alert"></p>
                 </div>
               </div>
             </div>
@@ -1056,8 +1116,52 @@
 
       function setupTelefonoSanitization() {
         const telefonoInput = document.querySelector('[name="telefonos"]');
-        if (!telefonoInput) return;
-        SR_Validations.setupTelefonoField(telefonoInput);
+        if (telefonoInput) {
+          SR_Validations.setupTelefonoField(telefonoInput);
+        }
+        const telefonoAltInput = document.querySelector('[name="telefono_alternativo"]');
+        if (telefonoAltInput) {
+          SR_Validations.setupTelefonoField(telefonoAltInput);
+        }
+      }
+
+      function setupTelefonoAlternativoConditional() {
+        const checkbox = document.querySelector('[name="tiene_telefono_alternativo"]');
+        const input = document.querySelector('[name="telefono_alternativo"]');
+        if (!checkbox || !input) return;
+
+        const apply = () => {
+          if (checkbox.checked) {
+            SR_Validations.setFieldDisabled(input, false);
+            input.required = true;
+          } else {
+            SR_Validations.setFieldDisabled(input, true);
+            input.required = false;
+            input.value = "";
+          }
+        };
+
+        checkbox.addEventListener("change", apply);
+        apply();
+      }
+
+      function setupEmailToggle(num) {
+        const checkbox = document.querySelector(`[name="tutor${num}_tiene_email"]`);
+        const input = document.querySelector(`[name="tutor${num}_email"]`);
+        if (!checkbox || !input) return;
+
+        const apply = () => {
+          if (checkbox.checked) {
+            SR_Validations.setFieldDisabled(input, false);
+            SR_Validations.setupEmailField(input);
+          } else {
+            SR_Validations.setFieldDisabled(input, true);
+            input.value = "";
+          }
+        };
+
+        checkbox.addEventListener("change", apply);
+        apply();
       }
 
       function setupMonetaryFieldFormatting() {
@@ -1068,21 +1172,8 @@
             ? SR_Validations.LIMITS.INGRESO_MENSUAL_MAX
             : SR_Validations.LIMITS.MONTO_OTRAS_FUENTES_MAX;
 
-          // Validación de máximo (de eramirezh)
-          SR_Validations.setupMoneyField(input, max);
-
-          // Formateo visual con comas (de beto)
-          input.addEventListener("input", () => {
-            const raw = input.value.replace(/,/g, "");
-            if (raw) {
-              input.value = SR_Validations.formatIntegerDisplay(raw);
-            }
-          });
-
-          // Formatear valor inicial si existe
-          if (input.value) {
-            input.value = SR_Validations.formatIntegerDisplay(input.value.replace(/,/g, ""));
-          }
+          // Sanitización + validación de máximo + formateo visual con comas (consolidado)
+          SR_Validations.setupMoneyFieldWithFormatting(input, max);
         });
       }
 
@@ -1635,6 +1726,7 @@
         if (estudioId) {
           const patchPayload = {
             ...payload.estudio,
+            beneficiario: payload.beneficiario,
             tutores: payload.tutores,
           };
 
@@ -1855,6 +1947,8 @@
           { name: "tutor2_antiguedad_anios", min: 0, max: 50 },
           { name: "tutor1_antiguedad_meses_extra", min: 0, max: 11 },
           { name: "tutor2_antiguedad_meses_extra", min: 0, max: 11 },
+          { name: "tiempo_diagnostico_anios", min: 0, max: 120 },
+          { name: "tiempo_diagnostico_meses", min: 0, max: 11 },
         ];
 
         limits.forEach(({ name, min, max }) => {
@@ -1994,6 +2088,14 @@
             if (antiguedadMeses) {
               SR_Validations.setFieldDisabled(antiguedadMeses, checked || !!antiguedadNoAplica?.checked);
               if (checked) antiguedadMeses.value = "";
+            }
+            // Bloquear/desbloquear checkbox "No aplica antigüedad" según sin_empleo
+            if (antiguedadNoAplica) {
+              SR_Validations.setFieldDisabled(antiguedadNoAplica, checked);
+              if (checked) {
+                antiguedadNoAplica.checked = false;
+                antiguedadNoAplica.dispatchEvent(new Event("change"));
+              }
             }
           };
 
@@ -2136,7 +2238,18 @@
                   renderMunicipiosSelect(b.estado_codigo, b.ciudad || "");
                 }
                 setVal("telefonos", b.telefonos);
-                const sexoEl = document.querySelector(`[name="sexo"][value="${b.sexo || "NE"}"]`);
+                if (b.telefono_alternativo) {
+                  const telAltCheckbox = document.querySelector('[name="tiene_telefono_alternativo"]');
+                  if (telAltCheckbox) {
+                    telAltCheckbox.checked = true;
+                    telAltCheckbox.dispatchEvent(new Event("change"));
+                  }
+                }
+                setVal("telefono_alternativo", b.telefono_alternativo);
+                setVal("tiempo_diagnostico_anios", b.tiempo_diagnostico_anios);
+                setVal("tiempo_diagnostico_meses", b.tiempo_diagnostico_meses);
+                setVal("email", b.email);
+                const sexoEl = document.querySelector(`[name="sexo"][value="${b.sexo}"]`);
                 if (sexoEl) sexoEl.checked = true;
               }
 
@@ -2204,7 +2317,14 @@
                   );
                   setVal(`tutor${num}_num_hijos`, t.num_hijos);
                   setVal(`tutor${num}_vivienda`, t.vivienda);
-                  setVal(`tutor${num}_email`, t.email);
+                  if (t.email) {
+                    const emailCheckbox = document.querySelector(`[name="tutor${num}_tiene_email"]`);
+                    if (emailCheckbox) {
+                      emailCheckbox.checked = true;
+                      emailCheckbox.dispatchEvent(new Event("change"));
+                    }
+                    setVal(`tutor${num}_email`, t.email);
+                  }
                   setVal(`tutor${num}_fuente_empleo`, t.fuente_empleo);
                   setVal(`tutor${num}_antiguedad_anios`, t.antiguedad_meses != null ? Math.floor(t.antiguedad_meses / 12) : "");
                   setVal(`tutor${num}_antiguedad_meses_extra`, t.antiguedad_meses != null ? t.antiguedad_meses % 12 : "");
@@ -2335,7 +2455,7 @@
           monto_otras_fuentes: SR_Validations.toIntegerOrNull(get("tutor1_monto_otras_fuentes")),
           imss_estatus: getRadio("tutor1_imss"),
           infonavit_estatus: getRadio("tutor1_infonavit"),
-          email: get("tutor1_email") || null,
+          email: f.querySelector('[name="tutor1_tiene_email"]')?.checked ? (get("tutor1_email") || null) : null,
         });
         const agregarTutor2 = f.querySelector('[name="agregar_tutor2"]');
         if (agregarTutor2 && agregarTutor2.checked) {
@@ -2361,7 +2481,7 @@
             monto_otras_fuentes: SR_Validations.toIntegerOrNull(get("tutor2_monto_otras_fuentes")),
             imss_estatus: getRadio("tutor2_imss"),
             infonavit_estatus: getRadio("tutor2_infonavit"),
-            email: get("tutor2_email") || null,
+            email: f.querySelector('[name="tutor2_tiene_email"]')?.checked ? (get("tutor2_email") || null) : null,
           });
         }
 
@@ -2384,6 +2504,10 @@
             estado_nombre: ESTADOS_INEGI.find((x) => x[0] === get("estado_codigo"))?.[1] || null,
             sexo: get("sexo"),
             telefonos: get("telefonos"),
+            telefono_alternativo: document.querySelector('[name="tiene_telefono_alternativo"]')?.checked ? (get("telefono_alternativo") || null) : null,
+            tiempo_diagnostico_anios: toIntOrNull(get("tiempo_diagnostico_anios")),
+            tiempo_diagnostico_meses: toIntOrNull(get("tiempo_diagnostico_meses")) || 0,
+            email: get("email") || null,
           },
           tutores,
           estudio: {
@@ -2475,6 +2599,21 @@
             beneficiarioMissing.push({ id: "telefonos", label: "Teléfonos" });
           }
 
+          // Validate tiempo_diagnostico_anios (required in completo)
+          const tiempoDxAnios = form.querySelector('[name="tiempo_diagnostico_anios"]');
+          if (tiempoDxAnios && !tiempoDxAnios.value.trim()) {
+            SR_Validations.showFieldError("tiempo_diagnostico_anios", "Tiempo desde el diagnóstico (años) es obligatorio");
+            beneficiarioMissing.push({ id: "tiempo_diagnostico_anios", label: "Tiempo desde el diagnóstico (años)" });
+          }
+
+          // Validate telefono alternativo if checkbox is checked
+          const tieneTelAlt = form.querySelector('[name="tiene_telefono_alternativo"]')?.checked;
+          const telAltInput = form.querySelector('[name="telefono_alternativo"]');
+          if (tieneTelAlt && telAltInput && !SR_Validations.TELEFONO_RE.test(telAltInput.value.trim())) {
+            SR_Validations.showFieldError("telefono_alternativo", "El teléfono alternativo debe contener exactamente 10 dígitos numéricos");
+            beneficiarioMissing.push({ id: "telefono_alternativo", label: "Teléfono alternativo" });
+          }
+
           if (beneficiarioMissing.length > 0) {
             errorEl.textContent = "Complete los campos obligatorios del beneficiario: " + beneficiarioMissing.map(m => m.label).join(", ");
             errorEl.classList.remove("hidden");
@@ -2501,6 +2640,13 @@
               SR_Validations.showFieldError(id, `${label} es obligatorio`);
               tutor1Missing.push(label);
             }
+          }
+
+          // Validar edad mínima del tutor (18 años)
+          const tutor1EdadVal = parseInt((form.querySelector('[name="tutor1_edad"]')?.value || "").trim(), 10);
+          if (!isNaN(tutor1EdadVal) && tutor1EdadVal < 18) {
+            SR_Validations.showFieldError("tutor1_edad", "El tutor debe tener al menos 18 años");
+            tutor1Missing.push("Edad del Tutor 1 (mínimo 18 años)");
           }
 
           // IMSS e INFONAVIT
@@ -2580,6 +2726,13 @@
                 SR_Validations.showFieldError(id, `${label} es obligatorio`);
                 tutor2Missing.push(label);
               }
+            }
+
+            // Validar edad mínima del tutor (18 años)
+            const tutor2EdadVal = parseInt((form.querySelector('[name="tutor2_edad"]')?.value || "").trim(), 10);
+            if (!isNaN(tutor2EdadVal) && tutor2EdadVal < 18) {
+              SR_Validations.showFieldError("tutor2_edad", "El tutor debe tener al menos 18 años");
+              tutor2Missing.push("Edad del Tutor 2 (mínimo 18 años)");
             }
 
             // IMSS e INFONAVIT
@@ -2680,6 +2833,31 @@
           }
         }
 
+        // Validar formato de correos electrónicos si están activos
+        if (status === "completo") {
+          const emailErrors = [];
+          [1, 2].forEach((num) => {
+            const tieneEmail = form.querySelector(`[name="tutor${num}_tiene_email"]`)?.checked;
+            const emailInput = form.querySelector(`[name="tutor${num}_email"]`);
+            if (tieneEmail && emailInput && emailInput.value.trim()) {
+              const val = emailInput.value.trim().toLowerCase();
+              if (!SR_Validations.EMAIL_RE.test(val)) {
+                SR_Validations.showFieldError(`tutor${num}_email`, "El correo electrónico no es válido");
+                emailErrors.push(`Correo electrónico del Tutor ${num}`);
+              }
+              if (val.length > SR_Validations.LIMITS.EMAIL_MAX) {
+                SR_Validations.showFieldError(`tutor${num}_email`, "El correo electrónico excede 254 caracteres");
+                emailErrors.push(`Correo electrónico del Tutor ${num}`);
+              }
+            }
+          });
+          if (emailErrors.length > 0) {
+            errorEl.textContent = "Revise los correos electrónicos: " + emailErrors.join(", ");
+            errorEl.classList.remove("hidden");
+            return;
+          }
+        }
+
         const session = JSON.parse(localStorage.getItem("session") || "null");
         if (!session?.token) {
           window.location.href = "login.html";
@@ -2708,6 +2886,7 @@
             const payload = getFormData(status, documentRefs);
             const patchPayload = {
               ...payload.estudio,
+              beneficiario: payload.beneficiario,
               tutores: payload.tutores,
             };
 
@@ -2859,6 +3038,9 @@
       setupTelefonoPrefix();
       setupTelefonoSanitization();
       setupNumInteriorConditional();
+      setupTelefonoAlternativoConditional();
+      setupEmailToggle(1);
+      setupEmailToggle(2);
       setupEstadosCatalog();
       setupMunicipiosCatalog().catch((err) => {
         console.error("Error cargando catálogo de municipios:", err);
