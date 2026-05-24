@@ -145,7 +145,7 @@
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="space-y-2">
               <label class="block text-sm font-semibold text-slate-700"
-                >¿El paciente ha tenido silla previamente?</label
+                >¿El beneficiario ha tenido silla previamente?</label
               >
               <select class="w-full border-slate-300" name="silla_previa" required aria-describedby="silla_previa-error">
                 <option value="">Selecciona una opción</option>
@@ -661,7 +661,6 @@
               );
               setCatalogSelectValue("como_obtuvo_silla", data.como_obtuvo_silla, COMO_OBTUVO_SILLA_CATALOG);
               document.querySelector('[name="silla_previa"]')?.dispatchEvent(new Event("change"));
-              setVal("fecha_estudio", data.fecha_estudio);
               setVal("sede", data.sede || regionCtx.sede);
               setVal("ciudad_registro", data.ciudad_registro || regionCtx.region_nombre);
             } else if (res.status === 404) {
