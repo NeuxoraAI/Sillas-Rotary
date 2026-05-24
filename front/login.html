@@ -238,8 +238,10 @@
   function _redirectByRole(rol) {
     if (rol === 'admin') {
       window.location.href = 'admin-usuarios.html';
+    } else if (rol === 'tecnico') {
+      window.location.href = 'vista_tecnicos.html';
     } else {
-      // capturista and tecnico both need to select region before their form
+      // capturista needs to select region before their form
       window.location.href = 'seleccion-region.html';
     }
   }
