@@ -655,12 +655,6 @@
                 if (el && val != null) el.value = val;
               };
 
-              setVal(
-                "silla_previa",
-                data.tuvo_silla_previa === 1 ? "Sí" : "No",
-              );
-              setCatalogSelectValue("como_obtuvo_silla", data.como_obtuvo_silla, COMO_OBTUVO_SILLA_CATALOG);
-              document.querySelector('[name="silla_previa"]')?.dispatchEvent(new Event("change"));
               setVal("sede", data.sede || regionCtx.sede);
               setVal("ciudad_registro", data.ciudad_registro || regionCtx.region_nombre);
             } else if (res.status === 404) {
