@@ -976,8 +976,9 @@ def exportar_beneficiarios_tecnica(
                 detail={"type": "invalid_filter", "message": "ids debe ser una lista de enteros separados por coma"},
             )
     if ids_list:
-        where_clause += " AND b.id = ANY(%s)"
-        params.append(tuple(ids_list))
+        placeholders = ",".join(["%s"] * len(ids_list))
+        where_clause += f" AND b.id IN ({placeholders})"
+        params.extend(ids_list)
 
     rows = db.execute(
         f"""
@@ -1035,8 +1036,8 @@ def exportar_beneficiarios_tecnica(
         "Padecimiento",
         "Fecha de nacimiento",
         "EDAD",
-        "PESO (kg)",
-        "ESTATURA (cm)",
+        "PESO (lb)",
+        "ESTATURA (in)",
         "Nombre de Padre o tutor",
         "Club o A sociación",
         "QUIEN CANALIZA",
@@ -1059,12 +1060,7 @@ def exportar_beneficiarios_tecnica(
         direccion = (row["calle"] or "") + (f' {row["num_ext"]}' if row.get("num_ext") else "")
         municipio_estado = (row["ciudad"] or "") + (f', {row["estado_nombre"]}' if row.get("estado_nombre") else "")
 
-        altura_cm = None
-        if row.get("altura_total_in") is not None:
-            if row.get("unidad_captura") == "cm":
-                altura_cm = row["altura_total_in"]
-            else:
-                altura_cm = round(row["altura_total_in"] * 2.54, 1)
+        altura_in = row.get("altura_total_in")
 
         edad = _calcular_edad(row.get("fecha_nacimiento"))
 
@@ -1081,7 +1077,7 @@ def exportar_beneficiarios_tecnica(
             row.get("fecha_nacimiento") or "",
             edad,
             row.get("peso_kg"),
-            altura_cm,
+            altura_in,
             row.get("tutor_nombre") or "",
             row.get("entidad_solicitante") or "",  # Club o Asociación — mapeamos a entidad solicitante
             "",  # QUIEN CANALIZA — no hay campo

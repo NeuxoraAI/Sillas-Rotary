@@ -285,7 +285,7 @@
             <div class="space-y-1">
               <label
                 class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider"
-                >Peso mínimo (kg)</label
+                >Peso mínimo (lb)</label
               >
               <input
                 id="filter-peso-min"
@@ -301,7 +301,7 @@
             <div class="space-y-1">
               <label
                 class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider"
-                >Peso máximo (kg)</label
+                >Peso máximo (lb)</label
               >
               <input
                 id="filter-peso-max"
@@ -317,7 +317,7 @@
             <div class="space-y-1">
               <label
                 class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider"
-                >Altura mín (in/cm)</label
+                >Altura mín (in)</label
               >
               <input
                 id="filter-altura-min"
@@ -333,7 +333,7 @@
             <div class="space-y-1">
               <label
                 class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider"
-                >Altura máx (in/cm)</label
+                >Altura máx (in)</label
               >
               <input
                 id="filter-altura-max"
@@ -891,7 +891,8 @@
         btnEl.classList.add("opacity-60", "cursor-not-allowed");
 
         try {
-          const filters = readFilters();
+          const filters =
+            idsArray && idsArray.length > 0 ? {} : readFilters();
           const params = new URLSearchParams();
           Object.entries(filters).forEach(function ([key, val]) {
             if (val !== undefined && val !== null && val !== "") {
@@ -1306,7 +1307,7 @@
         </h4>
         <div class="bg-slate-50 rounded-xl p-4 space-y-2 text-sm">
           <div class="grid grid-cols-2 gap-2">
-            <div><span class="text-slate-400">Peso:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.peso_kg != null ? solicitud.peso_kg + " kg" : null)}</span></div>
+            <div><span class="text-slate-400">Peso:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.peso_kg != null ? solicitud.peso_kg + " lb" : null)}</span></div>
             <div><span class="text-slate-400">Altura total:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.altura_total_in != null ? solicitud.altura_total_in + " in" : null)}</span></div>
             <div><span class="text-slate-400">Cabeza-asiento:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.medida_cabeza_asiento != null ? solicitud.medida_cabeza_asiento + " in" : null)}</span></div>
             <div><span class="text-slate-400">Hombro-asiento:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.medida_hombro_asiento != null ? solicitud.medida_hombro_asiento + " in" : null)}</span></div>
