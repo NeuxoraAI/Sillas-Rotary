@@ -9,7 +9,7 @@ from env_bootstrap import load_root_env_if_needed
 
 load_root_env_if_needed(__file__)
 
-from routers import auth, socioeconomico, tecnica, usuarios, regiones
+from routers import admin, auth, socioeconomico, tecnica, usuarios, regiones
 
 # Serve the frontend — path is resolved relative to this file so it works
 # both locally (uvicorn from backend/) and on Vercel (/var/task/backend/).
@@ -60,6 +60,7 @@ def create_app() -> FastAPI:
         response.headers.setdefault("Cache-Control", _cache_control_for_path(request.url.path))
         return response
 
+    app.include_router(admin.router, prefix="/api")
     app.include_router(auth.router, prefix="/api")
     app.include_router(socioeconomico.router, prefix="/api")
     app.include_router(tecnica.router, prefix="/api")
