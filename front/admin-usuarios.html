@@ -321,6 +321,7 @@
                   <option value="">— Seleccione un rol —</option>
                   <option value="capturista">Capturista</option>
                   <option value="tecnico">Técnico</option>
+                  <option value="organizacion">Organización</option>
                   <option value="admin">Administrador</option>
                 </select>
                 <span
@@ -456,6 +457,7 @@
       function _logout() {
         localStorage.removeItem("session");
         localStorage.removeItem("region_ctx");
+        localStorage.removeItem("guest_ctx");
         window.location.href = "login.html";
       }
 
@@ -659,6 +661,11 @@
             icon: "build",
             label: "Técnico",
           },
+          organizacion: {
+            cls: "bg-amber-100 text-amber-700",
+            icon: "groups",
+            label: "Organización",
+          },
         };
         const m = map[rol] || {
           cls: "bg-slate-100 text-slate-600",
@@ -688,6 +695,7 @@
           admin: "bg-purple-100 text-purple-700",
           capturista: "bg-blue-100 text-blue-700",
           tecnico: "bg-teal-100 text-teal-700",
+          organizacion: "bg-amber-100 text-amber-700",
         };
         return map[rol] || "bg-slate-100 text-slate-600";
       }

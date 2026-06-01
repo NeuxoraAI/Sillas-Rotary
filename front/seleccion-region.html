@@ -317,10 +317,18 @@
       sede,
     }));
 
-    // Route by role: tecnico goes to technical exam, capturista to socioeconomic
+    // Route by role
     if (session.rol === 'tecnico') {
       localStorage.removeItem('beneficiario_id');
       window.location.href = 'vista_tecnicos.html';
+    } else if (session.rol === 'organizacion') {
+      // Must have guest_ctx to proceed
+      const guestCtx = JSON.parse(localStorage.getItem('guest_ctx') || 'null');
+      if (!guestCtx?.nombre) {
+        window.location.href = 'perfil-organizacion.html?reason=missing_guest';
+        return;
+      }
+      window.location.href = 'socioeconomico.html';
     } else {
       window.location.href = 'socioeconomico.html';
     }
@@ -340,7 +348,7 @@
   }
 
   function _formatRol(rol) {
-    const map = { admin: 'Administrador', capturista: 'Capturista', tecnico: 'Técnico' };
+    const map = { admin: 'Administrador', capturista: 'Capturista', tecnico: 'Técnico', organizacion: 'Organización' };
     return map[rol] || rol || '—';
   }
 

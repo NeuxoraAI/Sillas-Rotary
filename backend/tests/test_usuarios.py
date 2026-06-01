@@ -43,6 +43,21 @@ class TestCreateUser:
         assert res.status_code == 201
         assert res.json()["rol"] == "tecnico"
 
+    def test_admin_creates_organizacion_user(self, client, admin_headers):
+        """Admin can create a user with rol=organizacion."""
+        res = client.post("/api/usuarios", json={
+            "nombre": "ONG Rotary",
+            "email": "ong@test.mx",
+            "password": "password123",
+            "rol": "organizacion",
+        }, headers=admin_headers)
+
+        assert res.status_code == 201
+        data = res.json()
+        assert data["rol"] == "organizacion"
+        assert data["nombre"] == "ONG Rotary"
+        assert data["activo"] is True
+
     def test_duplicate_email_returns_409(self, client, admin_headers, capturista_user):
         """Creating a user with an existing email returns 409."""
         res = client.post("/api/usuarios", json={

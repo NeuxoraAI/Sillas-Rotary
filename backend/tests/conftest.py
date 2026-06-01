@@ -350,6 +350,20 @@ def tecnico_user(_test_db_conn, request) -> dict:
     return row
 
 
+@pytest.fixture
+def organizacion_user(_test_db_conn, request) -> dict:
+    """Create an organization user."""
+    row = _create_user(
+        _test_db_conn,
+        nombre="Organización Test",
+        email="org@test.mx",
+        password="orgpass123",
+        rol="organizacion",
+    )
+    _track("usuarios", row["id"], _get_tracker(request))
+    return row
+
+
 def _get_token(client, email: str, password: str) -> str:
     """Helper to login and get JWT token."""
     res = client.post("/api/auth/login", json={"email": email, "password": password})
@@ -375,6 +389,13 @@ def capturista_headers(client, capturista_user) -> dict:
 def tecnico_headers(client, tecnico_user) -> dict:
     """Authorization headers for técnico user."""
     token = _get_token(client, "tec@test.mx", "tecpass123")
+    return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture
+def organizacion_headers(client, organizacion_user) -> dict:
+    """Authorization headers for organization user."""
+    token = _get_token(client, "org@test.mx", "orgpass123")
     return {"Authorization": f"Bearer {token}"}
 
 

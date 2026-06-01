@@ -17,7 +17,7 @@ from routers.auth import CurrentUser, require_admin, _hash_password
 
 router = APIRouter()
 
-_VALID_ROLES = {"admin", "capturista", "tecnico"}
+_VALID_ROLES = {"admin", "capturista", "tecnico", "organizacion"}
 
 
 # ---------------------------------------------------------------------------

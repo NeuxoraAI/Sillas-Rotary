@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Mi Perfil | Capturista — Ecosistema VIDA UG</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block" rel="stylesheet"/>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          "ug-blue":         "#1e3a8a",
+          "ug-yellow":       "#facc15",
+          "ug-yellow-light": "#fef08a",
+          "primary":         "#ec5b13",
+        },
+        fontFamily: { "display": ["Public Sans"] },
+      },
+    },
+  }
+</script>
+<style>
+  body { font-family: 'Public Sans', sans-serif; }
+  .material-symbols-outlined {
+    font-family: 'Material Symbols Outlined';
+    font-weight: normal;
+    font-style: normal;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    display: inline-block;
+    white-space: nowrap;
+    word-wrap: normal;
+    direction: ltr;
+    -webkit-font-feature-settings: 'liga';
+    -webkit-font-smoothing: antialiased;
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  }
+  .captura-card {
+    transition: all 0.2s;
+  }
+  .captura-card:hover {
+    transform: translateX(4px);
+    border-color: #1e3a8a40;
+  }
+</style>
+</head>
+<body class="bg-slate-50 font-display min-h-screen flex flex-col">
+
+<!-- Header -->
+<header class="w-full bg-ug-blue py-4 px-6 shadow-lg">
+  <div class="max-w-5xl mx-auto flex items-center justify-between gap-4">
+    <div class="flex items-center gap-4">
+      <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow overflow-hidden">
+        <img alt="VIDA UG" class="w-4/5 h-4/5 object-contain" src="assets/logo_vida_ug.png"/>
+      </div>
+      <div class="hidden sm:block">
+        <p class="text-white text-sm font-bold tracking-tight">Mi Perfil</p>
+        <p class="text-white/50 text-[10px] uppercase tracking-wider">Capturista</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <span id="user-nombre-header" class="text-white text-sm font-semibold hidden sm:block">—</span>
+      <button id="btn-logout" title="Cerrar sesión" class="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/70 hover:text-white transition-all">
+        <span class="material-symbols-outlined text-base">logout</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- Main -->
+<main class="flex-1 px-4 py-8">
+  <div class="max-w-3xl mx-auto space-y-6">
+
+    <!-- Profile Card -->
+    <div class="bg-white rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.07)] border border-slate-100 overflow-hidden">
+      <div class="px-6 py-6 sm:px-8 sm:py-8">
+        <div class="flex items-start justify-between gap-4">
+          <div class="flex items-center gap-4">
+            <div class="w-14 h-14 bg-ug-blue/10 rounded-2xl flex items-center justify-center shrink-0">
+              <span class="material-symbols-outlined text-ug-blue text-3xl">person</span>
+            </div>
+            <div>
+              <h1 class="text-xl font-bold text-slate-900" id="user-nombre">—</h1>
+              <p class="text-sm text-slate-500" id="user-rol">—</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="bg-ug-blue/5 rounded-xl p-5 border border-ug-blue/10">
+            <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Total de capturas</p>
+            <p class="text-3xl font-bold text-ug-blue mt-1" id="stat-capturas">0</p>
+          </div>
+          <div class="bg-green-50 rounded-xl p-5 border border-green-100">
+            <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Completados</p>
+            <p class="text-3xl font-bold text-green-600 mt-1" id="stat-completados">0</p>
+          </div>
+        </div>
+
+        <div class="mt-6 flex flex-col sm:flex-row gap-3">
+          <button id="btn-nueva-captura" class="flex-1 py-3 bg-ug-blue hover:bg-ug-blue/90 active:scale-[0.98] text-white font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2">
+            <span class="material-symbols-outlined text-xl">add_circle</span>
+            <span>Nueva Captura</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Error banner -->
+    <div id="error-banner" class="hidden bg-red-50 border border-red-200 rounded-xl px-5 py-4 flex items-start gap-3" role="alert">
+      <span class="material-symbols-outlined text-red-400 text-xl mt-0.5 shrink-0">error</span>
+      <p id="error-text" class="text-red-700 text-sm leading-relaxed"></p>
+    </div>
+
+    <!-- Beneficiary List -->
+    <div class="bg-white rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.07)] border border-slate-100 overflow-hidden">
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
+        <span class="material-symbols-outlined text-ug-blue text-xl">group</span>
+        <h2 class="text-base font-semibold text-slate-800">Beneficiarios registrados</h2>
+        <span id="count-capturas" class="text-xs font-bold text-ug-blue bg-ug-blue/10 rounded-full px-2.5 py-0.5">0</span>
+      </div>
+
+      <div id="beneficiary-list" class="divide-y divide-slate-100">
+        <!-- Loading state -->
+        <div id="loading-state" class="px-6 py-10 text-center text-slate-400 text-sm">
+          <span class="material-symbols-outlined text-3xl block mb-2 animate-pulse">hourglass_empty</span>
+          Cargando capturas…
+        </div>
+        <!-- Empty state -->
+        <div id="empty-state" class="hidden px-6 py-12 text-center">
+          <span class="material-symbols-outlined text-5xl block mb-3 text-slate-300">person_off</span>
+          <p class="font-semibold text-slate-500">Aún no has registrado beneficiarios</p>
+          <p class="text-sm text-slate-400 mt-1">Iniciá una nueva captura para comenzar.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Footer -->
+<footer class="w-full bg-gradient-to-b from-ug-yellow via-ug-yellow to-ug-yellow-light">
+  <div class="py-4 px-6">
+    <div class="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div class="flex items-center gap-2 text-ug-blue/70">
+        <span class="material-symbols-outlined text-base">code</span>
+        <span class="text-xs font-medium">Desarrollado por <strong class="text-ug-blue font-bold">NEUXORA - C-MED</strong> · León, Gto.</span>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // ── Auth guard ──────────────────────────────────────────────────────────────
+  const session = _getSession();
+  if (!session?.token || session.rol !== 'capturista') {
+    window.location.replace('login.html');
+  }
+
+  // Populate user info
+  document.getElementById('user-nombre').textContent   = session.nombre;
+  document.getElementById('user-nombre-header').textContent = session.nombre;
+  document.getElementById('user-rol').textContent      = _formatRol(session.rol);
+
+  // ── Logout ──────────────────────────────────────────────────────────────────
+  document.getElementById('btn-logout').addEventListener('click', function () {
+    _clearAllStorage();
+    window.location.href = 'login.html';
+  });
+
+  // ── Nueva captura ──────────────────────────────────────────────────────────
+  document.getElementById('btn-nueva-captura').addEventListener('click', function () {
+    window.location.href = 'seleccion-region.html';
+  });
+
+  // ── Load profile data ──────────────────────────────────────────────────────
+  loadProfile();
+
+  async function loadProfile() {
+    try {
+      const res = await fetch('/api/me/capturas', {
+        headers: { 'Authorization': 'Bearer ' + session.token }
+      });
+      if (!res.ok) {
+        if (res.status === 401) { _clearAllStorage(); window.location.href = 'login.html'; return; }
+        throw new Error('HTTP ' + res.status);
+      }
+      const captures = await res.json();
+
+      const total    = captures.length;
+      const completados = captures.filter(c => c.status === 'completo').length;
+      document.getElementById('stat-capturas').textContent    = total;
+      document.getElementById('stat-completados').textContent = completados;
+      document.getElementById('count-capturas').textContent   = total;
+
+      const listEl   = document.getElementById('beneficiary-list');
+      const loading  = document.getElementById('loading-state');
+      const empty    = document.getElementById('empty-state');
+
+      loading.classList.add('hidden');
+
+      if (total === 0) {
+        empty.classList.remove('hidden');
+        return;
+      }
+
+      // Render list
+      const itemsHtml = captures.map(c => `
+        <div class="captura-card px-6 py-4 border-b border-slate-100 last:border-b-0">
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0 flex-1">
+              <p class="font-semibold text-slate-900 truncate">${_esc(c.beneficiario_nombre)}</p>
+              <div class="flex flex-wrap gap-x-3 gap-y-1 mt-1 text-xs text-slate-500">
+                <span class="inline-flex items-center gap-1">
+                  <span class="material-symbols-outlined text-xs">tag</span>
+                  ${_esc(c.folio)}
+                </span>
+                <span class="inline-flex items-center gap-1">
+                  <span class="material-symbols-outlined text-xs">calendar_today</span>
+                  ${_esc(c.fecha_estudio)}
+                </span>
+                <span class="inline-flex items-center gap-1">
+                  <span class="material-symbols-outlined text-xs">person</span>
+                  ${_esc(c.elaboro_estudio)}
+                </span>
+              </div>
+            </div>
+            <span class="shrink-0 ${c.status === 'completo' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'} text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full">
+              ${c.status === 'completo' ? 'Completo' : c.status === 'borrador' ? 'Borrador' : _esc(c.status)}
+            </span>
+          </div>
+        </div>
+      `).join('');
+
+      // Remove loading/empty, prepend items
+      listEl.innerHTML = itemsHtml;
+    } catch (_err) {
+      _showError('No se pudieron cargar tus capturas. Verificá tu conexión.');
+    }
+  }
+
+  // ── Helpers ─────────────────────────────────────────────────────────────────
+
+  function _getSession() {
+    try { return JSON.parse(localStorage.getItem('session') || 'null'); }
+    catch (_) { return null; }
+  }
+
+  function _formatRol(rol) {
+    const map = { admin: 'Administrador', capturista: 'Capturista', tecnico: 'Técnico', organizacion: 'Organización' };
+    return map[rol] || rol || '—';
+  }
+
+  function _esc(str) {
+    return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function _showError(msg) {
+    const banner = document.getElementById('error-banner');
+    const text   = document.getElementById('error-text');
+    text.textContent = msg;
+    banner.classList.remove('hidden');
+  }
+
+  function _clearAllStorage() {
+    localStorage.removeItem('session');
+    localStorage.removeItem('region_ctx');
+    localStorage.removeItem('estudio_id');
+    localStorage.removeItem('beneficiario_id');
+    localStorage.removeItem('solicitud_id');
+    localStorage.removeItem('guest_ctx');
+  }
+</script>
+</body>
+</html>

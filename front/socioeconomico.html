@@ -2081,7 +2081,7 @@
 
 
 
-      // Auth guard + Draft Resume
+        // Auth guard + Draft Resume
       (async function () {
         const session = JSON.parse(localStorage.getItem("session") || "null");
         const regionCtx = JSON.parse(
@@ -2090,6 +2090,15 @@
         if (!session?.token || !regionCtx?.region_id) {
           window.location.href = "login.html";
           return;
+        }
+
+        // organizacion must have guest_ctx set before capturing
+        if (session?.rol === 'organizacion') {
+          const guestCtx = JSON.parse(localStorage.getItem('guest_ctx') || 'null');
+          if (!guestCtx?.nombre) {
+            window.location.href = 'perfil-organizacion.html?reason=missing_guest';
+            return;
+          }
         }
 
 
@@ -2314,7 +2323,7 @@
         }
       })();
 
-      // Cambiar capturista
+      // Cambiar capturista / cerrar sesión
       document
         .getElementById("btn-cambiar-capturista")
         .addEventListener("click", function () {
@@ -2323,6 +2332,8 @@
             localStorage.removeItem("region_ctx");
             localStorage.removeItem("beneficiario_id");
             localStorage.removeItem("estudio_id");
+            localStorage.removeItem("solicitud_id");
+            localStorage.removeItem("guest_ctx");
             window.location.href = "login.html";
           }
         });
@@ -2330,6 +2341,12 @@
       function getFormData(status, documentRefs) {
         const regionCtx = JSON.parse(
           localStorage.getItem("region_ctx") || "null",
+        );
+        const session = JSON.parse(
+          localStorage.getItem("session") || "null",
+        );
+        const guestCtx = JSON.parse(
+          localStorage.getItem("guest_ctx") || "null",
         );
         const f = document.querySelector("form");
         const fd = new FormData(f);
@@ -2423,7 +2440,7 @@
           estudio: {
             tuvo_silla_previa: false,
             como_obtuvo_silla: null,
-            elaboro_estudio: null,
+            elaboro_estudio: (session?.rol === 'organizacion' && guestCtx?.nombre) ? guestCtx.nombre : null,
             fecha_estudio: new Date().toISOString().split("T")[0],
             credencial_path: documentRefs?.credencial?.path || null,
             credencial_url: documentRefs?.credencial?.url || null,

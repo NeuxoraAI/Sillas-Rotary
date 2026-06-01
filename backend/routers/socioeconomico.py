@@ -526,7 +526,7 @@ def ver_documento_estudio(
 def crear_estudio(
     body: EstudioCreateRequest,
     db: Annotated[_DBAdapter, Depends(get_db)],
-    usuario: Annotated[CurrentUser, Depends(require_roles("capturista", "admin"))],
+    usuario: Annotated[CurrentUser, Depends(require_roles("capturista", "admin", "organizacion"))],
 ) -> EstudioCreateResponse:
     """Create a complete estudio socioeconómico with beneficiario, tutores, and study data."""
     _validar_tutores(body.tutores)
@@ -603,7 +603,7 @@ def crear_estudio(
             None,
             int(estudio.tuvo_silla_previa) if estudio.tuvo_silla_previa is not None else None,
             _resolve_como_obtuvo_silla(estudio.tuvo_silla_previa, estudio.como_obtuvo_silla),
-            usuario.nombre,
+            _resolve_elaboro_estudio(usuario, estudio.elaboro_estudio),
             estudio.fecha_estudio,
             body.sede,
             body.ciudad_registro,
@@ -658,12 +658,49 @@ def obtener_estudio(
     return result
 
 
+@router.get("/me/capturas", response_model=list[dict])
+def mis_capturas(
+    db: Annotated[_DBAdapter, Depends(get_db)],
+    usuario: Annotated[CurrentUser, Depends(require_roles("capturista", "organizacion", "admin"))],
+) -> list[dict]:
+    """Return all estudios_socioeconomicos with their Beneficiarios for the authenticated user.
+
+    For 'organizacion', returns ALL studies created by any volunteer
+    under that org account (all share the same usuario_id).
+
+    Results sorted by created_at DESC.
+    """
+    rows = db.execute(
+        """
+        SELECT
+            e.id         AS estudio_id,
+            e.elaboro_estudio,
+            e.fecha_estudio,
+            e.sede,
+            e.status,
+            e.created_at,
+            b.id         AS beneficiario_id,
+            b.nombre     AS beneficiario_nombre,
+            b.folio,
+            b.ciudad     AS beneficiario_ciudad,
+            b.telefonos  AS beneficiario_telefonos
+        FROM estudios_socioeconomicos e
+        JOIN beneficiarios b ON b.id = e.beneficiario_id
+        WHERE e.usuario_id = %s
+        ORDER BY e.created_at DESC
+        """,
+        (usuario.usuario_id,),
+    ).fetchall()
+
+    return [dict(row) for row in rows]
+
+
 @router.patch("/estudios/{id}", response_model=EstudioUpdateResponse)
 def actualizar_estudio(
     id: int,
     body: EstudioUpdateRequest,
     db: Annotated[_DBAdapter, Depends(get_db)],
-    usuario: Annotated[CurrentUser, Depends(require_roles("capturista", "admin"))],
+    usuario: Annotated[CurrentUser, Depends(require_roles("capturista", "admin", "organizacion"))],
 ) -> EstudioUpdateResponse:
     """Partial update of an estudio. Only the owner or an admin may update it."""
     existing = db.execute(
@@ -699,7 +736,11 @@ def actualizar_estudio(
         _insertar_tutores(db, existing["beneficiario_id"], body.tutores)
 
     fields = body.model_dump(exclude_none=True, exclude={"tutores", "elaboro_estudio", "ciudad_registro", "beneficiario"})
-    fields["elaboro_estudio"] = usuario.nombre
+    # Conditional elaboro_estudio: org users can provide their own value
+    if usuario.rol == "organizacion" and body.elaboro_estudio:
+        fields["elaboro_estudio"] = normalize_text(body.elaboro_estudio)[:120]
+    else:
+        fields["elaboro_estudio"] = usuario.nombre
     if "tuvo_silla_previa" in fields:
         fields["tuvo_silla_previa"] = int(fields["tuvo_silla_previa"])
         fields["como_obtuvo_silla"] = _resolve_como_obtuvo_silla(fields["tuvo_silla_previa"], fields.get("como_obtuvo_silla"))
@@ -912,6 +953,19 @@ def _insertar_tutores(db: _DBAdapter, beneficiario_id: int, tutores: list[TutorI
                 tutor.monto_otras_fuentes if tutor.otras_fuentes_aplica else None,
             ),
         )
+
+
+def _resolve_elaboro_estudio(usuario: CurrentUser, client_value: Optional[str]) -> str:
+    """Determine the elaboro_estudio value based on user role.
+
+    For organizacion users: accept and validate the client-provided value.
+    For all other roles: unconditionally use usuario.nombre.
+    """
+    if usuario.rol == "organizacion" and client_value:
+        elab = normalize_text(client_value)
+        if elab and len(elab) <= 120:
+            return elab
+    return usuario.nombre
 
 
 def _resolve_como_obtuvo_silla(tuvo_silla_previa: bool, como_obtuvo_silla: Optional[str]) -> Optional[str]:

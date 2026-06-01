@@ -1,0 +1,878 @@
+Activando entorno virtual...
+Instalando/verificando dependencias...
+Iniciando servidor en http://localhost:8080
+Abre http://localhost:8080/ en tu navegador para acceder al sistema.
+INFO:     Will watch for changes in these directories: ['/home/pprogramming/Escritorio/Sillas_Rotary/backend']
+INFO:     Loading environment from '../.env'
+INFO:     Uvicorn running on http://0.0.0.0:8080 (Press CTRL+C to quit)
+INFO:     Started reloader process [15258] using WatchFiles
+INFO:     Started server process [15260]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:54506 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51160 - "GET /docs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51160 - "GET /openapi.json HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51164 - "GET / HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51164 - "GET /login.html HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33142 - "GET /assets/Logo_ug.png HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33148 - "GET /assets/Logo_rotary_200.png HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51164 - "GET /assets/css/login.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33142 - "GET /assets/logo_vida_ug.png HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33148 - "GET /assets/iconografia_silla.png HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33148 - "GET /seleccion-region.html HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33148 - "GET /assets/css/seleccion-region.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33142 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:33164 - "GET /login.html HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47054 - "GET /login.html HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56684 - "GET /login.html HTTP/1.1" 200 OK
+ERROR:    Exception in ASGI application
+  + Exception Group Traceback (most recent call last):
+  |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/_utils.py", line 77, in collapse_excgroups
+  |     yield
+  |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 186, in __call__
+  |     async with anyio.create_task_group() as task_group:
+  |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 799, in __aexit__
+  |     raise BaseExceptionGroup(
+  | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | Traceback (most recent call last):
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/uvicorn/protocols/http/httptools_impl.py", line 401, in run_asgi
+    |     result = await app(  # type: ignore[func-returns-value]
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/uvicorn/middleware/proxy_headers.py", line 70, in __call__
+    |     return await self.app(scope, receive, send)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/fastapi/applications.py", line 1054, in __call__
+    |     await super().__call__(scope, receive, send)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/applications.py", line 113, in __call__
+    |     await self.middleware_stack(scope, receive, send)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 187, in __call__
+    |     raise exc
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 165, in __call__
+    |     await self.app(scope, receive, _send)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 185, in __call__
+    |     with collapse_excgroups():
+    |   File "/usr/lib/python3.12/contextlib.py", line 158, in __exit__
+    |     self.gen.throw(value)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/_utils.py", line 83, in collapse_excgroups
+    |     raise exc
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
+    |     response = await self.dispatch_func(request, call_next)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/main.py", line 57, in apply_security_headers
+    |     response = await call_next(request)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
+    |     raise app_exc
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 149, in coro
+    |     await self.app(scope, receive_or_disconnect, send_no_error)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    |     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 62, in wrapped_app
+    |     raise exc
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 51, in wrapped_app
+    |     await app(scope, receive, sender)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 715, in __call__
+    |     await self.middleware_stack(scope, receive, send)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 735, in app
+    |     await route.handle(scope, receive, send)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 288, in handle
+    |     await self.app(scope, receive, send)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 76, in app
+    |     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 62, in wrapped_app
+    |     raise exc
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 51, in wrapped_app
+    |     await app(scope, receive, sender)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 73, in app
+    |     response = await f(request)
+    |                ^^^^^^^^^^^^^^^^
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/fastapi/routing.py", line 291, in app
+    |     solved_result = await solve_dependencies(
+    |                     ^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/fastapi/dependencies/utils.py", line 624, in solve_dependencies
+    |     solved = await solve_generator(
+    |              ^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/fastapi/dependencies/utils.py", line 550, in solve_generator
+    |     return await stack.enter_async_context(cm)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/usr/lib/python3.12/contextlib.py", line 659, in enter_async_context
+    |     result = await _enter(cm)
+    |              ^^^^^^^^^^^^^^^^
+    |   File "/usr/lib/python3.12/contextlib.py", line 210, in __aenter__
+    |     return await anext(self.gen)
+    |            ^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/fastapi/concurrency.py", line 35, in contextmanager_in_threadpool
+    |     raise e
+    | psycopg2.OperationalError: connection to server at "aws-1-us-east-1.pooler.supabase.com" (3.227.209.82), port 6543 failed: Connection timed out
+    | 	Is the server running on that host and accepting TCP/IP connections?
+    | connection to server at "aws-1-us-east-1.pooler.supabase.com" (18.213.155.45), port 6543 failed: Connection timed out
+    | 	Is the server running on that host and accepting TCP/IP connections?
+    | connection to server at "aws-1-us-east-1.pooler.supabase.com" (18.214.78.123), port 6543 failed: Connection timed out
+    | 	Is the server running on that host and accepting TCP/IP connections?
+    | 
+    +------------------------------------
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/uvicorn/protocols/http/httptools_impl.py", line 401, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/uvicorn/middleware/proxy_headers.py", line 70, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/fastapi/applications.py", line 1054, in __call__
+    await super().__call__(scope, receive, send)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 187, in __call__
+    raise exc
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 165, in __call__
+    await self.app(scope, receive, _send)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 185, in __call__
+    with collapse_excgroups():
+  File "/usr/lib/python3.12/contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/_utils.py", line 83, in collapse_excgroups
+    raise exc
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/main.py", line 57, in apply_security_headers
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
+    raise app_exc
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 149, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 62, in wrapped_app
+    raise exc
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 51, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 715, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 735, in app
+    await route.handle(scope, receive, send)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 288, in handle
+    await self.app(scope, receive, send)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 76, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 62, in wrapped_app
+    raise exc
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 51, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 73, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/fastapi/routing.py", line 291, in app
+    solved_result = await solve_dependencies(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/fastapi/dependencies/utils.py", line 624, in solve_dependencies
+    solved = await solve_generator(
+             ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/fastapi/dependencies/utils.py", line 550, in solve_generator
+    return await stack.enter_async_context(cm)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/contextlib.py", line 659, in enter_async_context
+    result = await _enter(cm)
+             ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/contextlib.py", line 210, in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/fastapi/concurrency.py", line 35, in contextmanager_in_threadpool
+    raise e
+psycopg2.OperationalError: connection to server at "aws-1-us-east-1.pooler.supabase.com" (3.227.209.82), port 6543 failed: Connection timed out
+	Is the server running on that host and accepting TCP/IP connections?
+connection to server at "aws-1-us-east-1.pooler.supabase.com" (18.213.155.45), port 6543 failed: Connection timed out
+	Is the server running on that host and accepting TCP/IP connections?
+connection to server at "aws-1-us-east-1.pooler.supabase.com" (18.214.78.123), port 6543 failed: Connection timed out
+	Is the server running on that host and accepting TCP/IP connections?
+
+ERROR:    Exception in ASGI application
+  + Exception Group Traceback (most recent call last):
+  |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/_utils.py", line 77, in collapse_excgroups
+  |     yield
+  |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 186, in __call__
+  |     async with anyio.create_task_group() as task_group:
+  |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 799, in __aexit__
+  |     raise BaseExceptionGroup(
+  | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | Traceback (most recent call last):
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/uvicorn/protocols/http/httptools_impl.py", line 401, in run_asgi
+    |     result = await app(  # type: ignore[func-returns-value]
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/uvicorn/middleware/proxy_headers.py", line 70, in __call__
+    |     return await self.app(scope, receive, send)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/fastapi/applications.py", line 1054, in __call__
+    |     await super().__call__(scope, receive, send)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/applications.py", line 113, in __call__
+    |     await self.middleware_stack(scope, receive, send)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 187, in __call__
+    |     raise exc
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 165, in __call__
+    |     await self.app(scope, receive, _send)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 185, in __call__
+    |     with collapse_excgroups():
+    |   File "/usr/lib/python3.12/contextlib.py", line 158, in __exit__
+    |     self.gen.throw(value)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/_utils.py", line 83, in collapse_excgroups
+    |     raise exc
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
+    |     response = await self.dispatch_func(request, call_next)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/main.py", line 57, in apply_security_headers
+    |     response = await call_next(request)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
+    |     raise app_exc
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 149, in coro
+    |     await self.app(scope, receive_or_disconnect, send_no_error)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    |     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 62, in wrapped_app
+    |     raise exc
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 51, in wrapped_app
+    |     await app(scope, receive, sender)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 715, in __call__
+    |     await self.middleware_stack(scope, receive, send)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 735, in app
+    |     await route.handle(scope, receive, send)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 288, in handle
+    |     await self.app(scope, receive, send)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 76, in app
+    |     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 62, in wrapped_app
+    |     raise exc
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 51, in wrapped_app
+    |     await app(scope, receive, sender)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 73, in app
+    |     response = await f(request)
+    |                ^^^^^^^^^^^^^^^^
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/fastapi/routing.py", line 291, in app
+    |     solved_result = await solve_dependencies(
+    |                     ^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/fastapi/dependencies/utils.py", line 624, in solve_dependencies
+    |     solved = await solve_generator(
+    |              ^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/fastapi/dependencies/utils.py", line 550, in solve_generator
+    |     return await stack.enter_async_context(cm)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/usr/lib/python3.12/contextlib.py", line 659, in enter_async_context
+    |     result = await _enter(cm)
+    |              ^^^^^^^^^^^^^^^^
+    |   File "/usr/lib/python3.12/contextlib.py", line 210, in __aenter__
+    |     return await anext(self.gen)
+    |            ^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/fastapi/concurrency.py", line 35, in contextmanager_in_threadpool
+    |     raise e
+    | psycopg2.OperationalError: connection to server at "aws-1-us-east-1.pooler.supabase.com" (18.214.78.123), port 6543 failed: Connection timed out
+    | 	Is the server running on that host and accepting TCP/IP connections?
+    | connection to server at "aws-1-us-east-1.pooler.supabase.com" (3.227.209.82), port 6543 failed: Connection timed out
+    | 	Is the server running on that host and accepting TCP/IP connections?
+    | connection to server at "aws-1-us-east-1.pooler.supabase.com" (18.213.155.45), port 6543 failed: Connection timed out
+    | 	Is the server running on that host and accepting TCP/IP connections?
+    | 
+    +------------------------------------
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/uvicorn/protocols/http/httptools_impl.py", line 401, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/uvicorn/middleware/proxy_headers.py", line 70, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/fastapi/applications.py", line 1054, in __call__
+    await super().__call__(scope, receive, send)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 187, in __call__
+    raise exc
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 165, in __call__
+    await self.app(scope, receive, _send)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 185, in __call__
+    with collapse_excgroups():
+  File "/usr/lib/python3.12/contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/_utils.py", line 83, in collapse_excgroups
+    raise exc
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/main.py", line 57, in apply_security_headers
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
+    raise app_exc
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 149, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 62, in wrapped_app
+    raise exc
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 51, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 715, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 735, in app
+    await route.handle(scope, receive, send)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 288, in handle
+    await self.app(scope, receive, send)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 76, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 62, in wrapped_app
+    raise exc
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 51, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 73, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/fastapi/routing.py", line 291, in app
+    solved_result = await solve_dependencies(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/fastapi/dependencies/utils.py", line 624, in solve_dependencies
+    solved = await solve_generator(
+             ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/fastapi/dependencies/utils.py", line 550, in solve_generator
+    return await stack.enter_async_context(cm)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/contextlib.py", line 659, in enter_async_context
+    result = await _enter(cm)
+             ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/contextlib.py", line 210, in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/fastapi/concurrency.py", line 35, in contextmanager_in_threadpool
+    raise e
+psycopg2.OperationalError: connection to server at "aws-1-us-east-1.pooler.supabase.com" (18.214.78.123), port 6543 failed: Connection timed out
+	Is the server running on that host and accepting TCP/IP connections?
+connection to server at "aws-1-us-east-1.pooler.supabase.com" (3.227.209.82), port 6543 failed: Connection timed out
+	Is the server running on that host and accepting TCP/IP connections?
+connection to server at "aws-1-us-east-1.pooler.supabase.com" (18.213.155.45), port 6543 failed: Connection timed out
+	Is the server running on that host and accepting TCP/IP connections?
+
+ERROR:    Exception in ASGI application
+  + Exception Group Traceback (most recent call last):
+  |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/_utils.py", line 77, in collapse_excgroups
+  |     yield
+  |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 186, in __call__
+  |     async with anyio.create_task_group() as task_group:
+  |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 799, in __aexit__
+  |     raise BaseExceptionGroup(
+  | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | Traceback (most recent call last):
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/uvicorn/protocols/http/httptools_impl.py", line 401, in run_asgi
+    |     result = await app(  # type: ignore[func-returns-value]
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/uvicorn/middleware/proxy_headers.py", line 70, in __call__
+    |     return await self.app(scope, receive, send)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/fastapi/applications.py", line 1054, in __call__
+    |     await super().__call__(scope, receive, send)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/applications.py", line 113, in __call__
+    |     await self.middleware_stack(scope, receive, send)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 187, in __call__
+    |     raise exc
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 165, in __call__
+    |     await self.app(scope, receive, _send)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 185, in __call__
+    |     with collapse_excgroups():
+    |   File "/usr/lib/python3.12/contextlib.py", line 158, in __exit__
+    |     self.gen.throw(value)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/_utils.py", line 83, in collapse_excgroups
+    |     raise exc
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
+    |     response = await self.dispatch_func(request, call_next)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/main.py", line 57, in apply_security_headers
+    |     response = await call_next(request)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
+    |     raise app_exc
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 149, in coro
+    |     await self.app(scope, receive_or_disconnect, send_no_error)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    |     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 62, in wrapped_app
+    |     raise exc
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 51, in wrapped_app
+    |     await app(scope, receive, sender)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 715, in __call__
+    |     await self.middleware_stack(scope, receive, send)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 735, in app
+    |     await route.handle(scope, receive, send)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 288, in handle
+    |     await self.app(scope, receive, send)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 76, in app
+    |     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 62, in wrapped_app
+    |     raise exc
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 51, in wrapped_app
+    |     await app(scope, receive, sender)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 73, in app
+    |     response = await f(request)
+    |                ^^^^^^^^^^^^^^^^
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/fastapi/routing.py", line 291, in app
+    |     solved_result = await solve_dependencies(
+    |                     ^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/fastapi/dependencies/utils.py", line 624, in solve_dependencies
+    |     solved = await solve_generator(
+    |              ^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/fastapi/dependencies/utils.py", line 550, in solve_generator
+    |     return await stack.enter_async_context(cm)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/usr/lib/python3.12/contextlib.py", line 659, in enter_async_context
+    |     result = await _enter(cm)
+    |              ^^^^^^^^^^^^^^^^
+    |   File "/usr/lib/python3.12/contextlib.py", line 210, in __aenter__
+    |     return await anext(self.gen)
+    |            ^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/fastapi/concurrency.py", line 35, in contextmanager_in_threadpool
+    |     raise e
+    | psycopg2.OperationalError: connection to server at "aws-1-us-east-1.pooler.supabase.com" (18.213.155.45), port 6543 failed: Connection timed out
+    | 	Is the server running on that host and accepting TCP/IP connections?
+    | connection to server at "aws-1-us-east-1.pooler.supabase.com" (18.214.78.123), port 6543 failed: Connection timed out
+    | 	Is the server running on that host and accepting TCP/IP connections?
+    | connection to server at "aws-1-us-east-1.pooler.supabase.com" (3.227.209.82), port 6543 failed: Connection timed out
+    | 	Is the server running on that host and accepting TCP/IP connections?
+    | 
+    +------------------------------------
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/uvicorn/protocols/http/httptools_impl.py", line 401, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/uvicorn/middleware/proxy_headers.py", line 70, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/fastapi/applications.py", line 1054, in __call__
+    await super().__call__(scope, receive, send)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 187, in __call__
+    raise exc
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 165, in __call__
+    await self.app(scope, receive, _send)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 185, in __call__
+    with collapse_excgroups():
+  File "/usr/lib/python3.12/contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/_utils.py", line 83, in collapse_excgroups
+    raise exc
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/main.py", line 57, in apply_security_headers
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
+    raise app_exc
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 149, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 62, in wrapped_app
+    raise exc
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 51, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 715, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 735, in app
+    await route.handle(scope, receive, send)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 288, in handle
+    await self.app(scope, receive, send)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 76, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 62, in wrapped_app
+    raise exc
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 51, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 73, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/fastapi/routing.py", line 291, in app
+    solved_result = await solve_dependencies(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/fastapi/dependencies/utils.py", line 624, in solve_dependencies
+    solved = await solve_generator(
+             ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/fastapi/dependencies/utils.py", line 550, in solve_generator
+    return await stack.enter_async_context(cm)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/contextlib.py", line 659, in enter_async_context
+    result = await _enter(cm)
+             ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/contextlib.py", line 210, in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/fastapi/concurrency.py", line 35, in contextmanager_in_threadpool
+    raise e
+psycopg2.OperationalError: connection to server at "aws-1-us-east-1.pooler.supabase.com" (18.213.155.45), port 6543 failed: Connection timed out
+	Is the server running on that host and accepting TCP/IP connections?
+connection to server at "aws-1-us-east-1.pooler.supabase.com" (18.214.78.123), port 6543 failed: Connection timed out
+	Is the server running on that host and accepting TCP/IP connections?
+connection to server at "aws-1-us-east-1.pooler.supabase.com" (3.227.209.82), port 6543 failed: Connection timed out
+	Is the server running on that host and accepting TCP/IP connections?
+
+ERROR:    Exception in ASGI application
+  + Exception Group Traceback (most recent call last):
+  |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/_utils.py", line 77, in collapse_excgroups
+  |     yield
+  |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 186, in __call__
+  |     async with anyio.create_task_group() as task_group:
+  |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 799, in __aexit__
+  |     raise BaseExceptionGroup(
+  | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | Traceback (most recent call last):
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/uvicorn/protocols/http/httptools_impl.py", line 401, in run_asgi
+    |     result = await app(  # type: ignore[func-returns-value]
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/uvicorn/middleware/proxy_headers.py", line 70, in __call__
+    |     return await self.app(scope, receive, send)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/fastapi/applications.py", line 1054, in __call__
+    |     await super().__call__(scope, receive, send)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/applications.py", line 113, in __call__
+    |     await self.middleware_stack(scope, receive, send)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 187, in __call__
+    |     raise exc
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 165, in __call__
+    |     await self.app(scope, receive, _send)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 185, in __call__
+    |     with collapse_excgroups():
+    |   File "/usr/lib/python3.12/contextlib.py", line 158, in __exit__
+    |     self.gen.throw(value)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/_utils.py", line 83, in collapse_excgroups
+    |     raise exc
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
+    |     response = await self.dispatch_func(request, call_next)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/main.py", line 57, in apply_security_headers
+    |     response = await call_next(request)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
+    |     raise app_exc
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 149, in coro
+    |     await self.app(scope, receive_or_disconnect, send_no_error)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    |     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 62, in wrapped_app
+    |     raise exc
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 51, in wrapped_app
+    |     await app(scope, receive, sender)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 715, in __call__
+    |     await self.middleware_stack(scope, receive, send)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 735, in app
+    |     await route.handle(scope, receive, send)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 288, in handle
+    |     await self.app(scope, receive, send)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 76, in app
+    |     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 62, in wrapped_app
+    |     raise exc
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 51, in wrapped_app
+    |     await app(scope, receive, sender)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 73, in app
+    |     response = await f(request)
+    |                ^^^^^^^^^^^^^^^^
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/fastapi/routing.py", line 291, in app
+    |     solved_result = await solve_dependencies(
+    |                     ^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/fastapi/dependencies/utils.py", line 624, in solve_dependencies
+    |     solved = await solve_generator(
+    |              ^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/fastapi/dependencies/utils.py", line 550, in solve_generator
+    |     return await stack.enter_async_context(cm)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/usr/lib/python3.12/contextlib.py", line 659, in enter_async_context
+    |     result = await _enter(cm)
+    |              ^^^^^^^^^^^^^^^^
+    |   File "/usr/lib/python3.12/contextlib.py", line 210, in __aenter__
+    |     return await anext(self.gen)
+    |            ^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/fastapi/concurrency.py", line 35, in contextmanager_in_threadpool
+    |     raise e
+    | psycopg2.OperationalError: connection to server at "aws-1-us-east-1.pooler.supabase.com" (18.214.78.123), port 6543 failed: Connection timed out
+    | 	Is the server running on that host and accepting TCP/IP connections?
+    | connection to server at "aws-1-us-east-1.pooler.supabase.com" (3.227.209.82), port 6543 failed: Connection timed out
+    | 	Is the server running on that host and accepting TCP/IP connections?
+    | connection to server at "aws-1-us-east-1.pooler.supabase.com" (18.213.155.45), port 6543 failed: Connection timed out
+    | 	Is the server running on that host and accepting TCP/IP connections?
+    | 
+    +------------------------------------
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/uvicorn/protocols/http/httptools_impl.py", line 401, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/uvicorn/middleware/proxy_headers.py", line 70, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/fastapi/applications.py", line 1054, in __call__
+    await super().__call__(scope, receive, send)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 187, in __call__
+    raise exc
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 165, in __call__
+    await self.app(scope, receive, _send)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 185, in __call__
+    with collapse_excgroups():
+  File "/usr/lib/python3.12/contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/_utils.py", line 83, in collapse_excgroups
+    raise exc
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/main.py", line 57, in apply_security_headers
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
+    raise app_exc
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 149, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 62, in wrapped_app
+    raise exc
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 51, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 715, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 735, in app
+    await route.handle(scope, receive, send)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 288, in handle
+    await self.app(scope, receive, send)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 76, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 62, in wrapped_app
+    raise exc
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 51, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 73, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/fastapi/routing.py", line 291, in app
+    solved_result = await solve_dependencies(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/fastapi/dependencies/utils.py", line 624, in solve_dependencies
+    solved = await solve_generator(
+             ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/fastapi/dependencies/utils.py", line 550, in solve_generator
+    return await stack.enter_async_context(cm)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/contextlib.py", line 659, in enter_async_context
+    result = await _enter(cm)
+             ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/contextlib.py", line 210, in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/fastapi/concurrency.py", line 35, in contextmanager_in_threadpool
+    raise e
+psycopg2.OperationalError: connection to server at "aws-1-us-east-1.pooler.supabase.com" (18.214.78.123), port 6543 failed: Connection timed out
+	Is the server running on that host and accepting TCP/IP connections?
+connection to server at "aws-1-us-east-1.pooler.supabase.com" (3.227.209.82), port 6543 failed: Connection timed out
+	Is the server running on that host and accepting TCP/IP connections?
+connection to server at "aws-1-us-east-1.pooler.supabase.com" (18.213.155.45), port 6543 failed: Connection timed out
+	Is the server running on that host and accepting TCP/IP connections?
+
+ERROR:    Exception in ASGI application
+  + Exception Group Traceback (most recent call last):
+  |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/_utils.py", line 77, in collapse_excgroups
+  |     yield
+  |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 186, in __call__
+  |     async with anyio.create_task_group() as task_group:
+  |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 799, in __aexit__
+  |     raise BaseExceptionGroup(
+  | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | Traceback (most recent call last):
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/uvicorn/protocols/http/httptools_impl.py", line 401, in run_asgi
+    |     result = await app(  # type: ignore[func-returns-value]
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/uvicorn/middleware/proxy_headers.py", line 70, in __call__
+    |     return await self.app(scope, receive, send)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/fastapi/applications.py", line 1054, in __call__
+    |     await super().__call__(scope, receive, send)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/applications.py", line 113, in __call__
+    |     await self.middleware_stack(scope, receive, send)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 187, in __call__
+    |     raise exc
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 165, in __call__
+    |     await self.app(scope, receive, _send)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 185, in __call__
+    |     with collapse_excgroups():
+    |   File "/usr/lib/python3.12/contextlib.py", line 158, in __exit__
+    |     self.gen.throw(value)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/_utils.py", line 83, in collapse_excgroups
+    |     raise exc
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
+    |     response = await self.dispatch_func(request, call_next)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/main.py", line 57, in apply_security_headers
+    |     response = await call_next(request)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
+    |     raise app_exc
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 149, in coro
+    |     await self.app(scope, receive_or_disconnect, send_no_error)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    |     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 62, in wrapped_app
+    |     raise exc
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 51, in wrapped_app
+    |     await app(scope, receive, sender)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 715, in __call__
+    |     await self.middleware_stack(scope, receive, send)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 735, in app
+    |     await route.handle(scope, receive, send)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 288, in handle
+    |     await self.app(scope, receive, send)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 76, in app
+    |     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 62, in wrapped_app
+    |     raise exc
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 51, in wrapped_app
+    |     await app(scope, receive, sender)
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 73, in app
+    |     response = await f(request)
+    |                ^^^^^^^^^^^^^^^^
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/fastapi/routing.py", line 291, in app
+    |     solved_result = await solve_dependencies(
+    |                     ^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/fastapi/dependencies/utils.py", line 624, in solve_dependencies
+    |     solved = await solve_generator(
+    |              ^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/fastapi/dependencies/utils.py", line 550, in solve_generator
+    |     return await stack.enter_async_context(cm)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/usr/lib/python3.12/contextlib.py", line 659, in enter_async_context
+    |     result = await _enter(cm)
+    |              ^^^^^^^^^^^^^^^^
+    |   File "/usr/lib/python3.12/contextlib.py", line 210, in __aenter__
+    |     return await anext(self.gen)
+    |            ^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/fastapi/concurrency.py", line 35, in contextmanager_in_threadpool
+    |     raise e
+    | psycopg2.OperationalError: connection to server at "aws-1-us-east-1.pooler.supabase.com" (18.214.78.123), port 6543 failed: Connection timed out
+    | 	Is the server running on that host and accepting TCP/IP connections?
+    | connection to server at "aws-1-us-east-1.pooler.supabase.com" (3.227.209.82), port 6543 failed: Connection timed out
+    | 	Is the server running on that host and accepting TCP/IP connections?
+    | connection to server at "aws-1-us-east-1.pooler.supabase.com" (18.213.155.45), port 6543 failed: Connection timed out
+    | 	Is the server running on that host and accepting TCP/IP connections?
+    | 
+    +------------------------------------
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/uvicorn/protocols/http/httptools_impl.py", line 401, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/uvicorn/middleware/proxy_headers.py", line 70, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/fastapi/applications.py", line 1054, in __call__
+    await super().__call__(scope, receive, send)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 187, in __call__
+    raise exc
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 165, in __call__
+    await self.app(scope, receive, _send)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 185, in __call__
+    with collapse_excgroups():
+  File "/usr/lib/python3.12/contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/_utils.py", line 83, in collapse_excgroups
+    raise exc
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/main.py", line 57, in apply_security_headers
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
+    raise app_exc
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 149, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 62, in wrapped_app
+    raise exc
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 51, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 715, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 735, in app
+    await route.handle(scope, receive, send)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 288, in handle
+    await self.app(scope, receive, send)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 76, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 62, in wrapped_app
+    raise exc
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 51, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/starlette/routing.py", line 73, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/fastapi/routing.py", line 291, in app
+    solved_result = await solve_dependencies(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/fastapi/dependencies/utils.py", line 624, in solve_dependencies
+    solved = await solve_generator(
+             ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/fastapi/dependencies/utils.py", line 550, in solve_generator
+    return await stack.enter_async_context(cm)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/contextlib.py", line 659, in enter_async_context
+    result = await _enter(cm)
+             ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/contextlib.py", line 210, in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/pprogramming/Escritorio/Sillas_Rotary/backend/venv/lib/python3.12/site-packages/fastapi/concurrency.py", line 35, in contextmanager_in_threadpool
+    raise e
+psycopg2.OperationalError: connection to server at "aws-1-us-east-1.pooler.supabase.com" (18.214.78.123), port 6543 failed: Connection timed out
+	Is the server running on that host and accepting TCP/IP connections?
+connection to server at "aws-1-us-east-1.pooler.supabase.com" (3.227.209.82), port 6543 failed: Connection timed out
+	Is the server running on that host and accepting TCP/IP connections?
+connection to server at "aws-1-us-east-1.pooler.supabase.com" (18.213.155.45), port 6543 failed: Connection timed out
+	Is the server running on that host and accepting TCP/IP connections?
+
+WARNING:  WatchFiles detected changes in 'routers/auth.py', 'validators.py', 'utils/text.py', 'tests/test_tecnica_phase2_contracts.py', 'tests_vista_tecnicos/test_list_where_clause.py', 'routers/socioeconomico.py', 'tests/test_cleanup_scope.py', 'routers/regiones.py', 'tests/test_imss_infonavit_triestado.py', 'routers/tecnica.py', 'tests_vista_tecnicos/test_list_endpoint.py', 'tests/test_regex_mirror.py', 'tests/test_database_safety.py', 'init_db.py', 'tests_vista_tecnicos/conftest.py', 'database.py', 'tests/test_socioeconomico.py', 'tests/test_storage_security_migration.py', 'tests/test_tecnica_phase1_helpers.py', 'main.py', 'tests/test_tecnica.py', 'tests/test_env_bootstrap.py', 'tests/test_socioeconomico_storage.py', 'env_bootstrap.py', 'tests/test_estudio_error_contract.py', 'tests/conftest.py', 'tests_vista_tecnicos/__init__.py', 'tests/test_vista_tecnicos_integration.py', 'tests/test_nombre_estructurado.py', 'tests/test_validators.py', 'tests/test_vercel_config.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [15260]
+INFO:     Started server process [59442]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'routers/auth.py', 'validators.py', 'utils/text.py', 'tests/test_tecnica_phase2_contracts.py', 'tests_vista_tecnicos/test_list_where_clause.py', 'routers/socioeconomico.py', 'tests/test_cleanup_scope.py', 'routers/regiones.py', 'tests/test_imss_infonavit_triestado.py', 'routers/tecnica.py', 'tests_vista_tecnicos/test_list_endpoint.py', 'tests/test_regex_mirror.py', 'tests/test_database_safety.py', 'init_db.py', 'tests_vista_tecnicos/conftest.py', 'database.py', 'tests/test_socioeconomico.py', 'tests/test_storage_security_migration.py', 'tests/test_env_bootstrap.py', 'tests/test_tecnica_phase1_helpers.py', 'main.py', 'tests/test_tecnica.py', 'tests/test_socioeconomico_storage.py', 'env_bootstrap.py', 'tests/test_estudio_error_contract.py', 'tests/conftest.py', 'tests_vista_tecnicos/__init__.py', 'tests/test_nombre_estructurado.py', 'tests/test_vista_tecnicos_integration.py', 'tests/test_validators.py', 'tests/test_vercel_config.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [59442]
+INFO:     Started server process [63537]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [63537]
+INFO:     Stopping reloader process [15258]
