@@ -411,6 +411,10 @@
       function _authFetch(url, opts) {
         opts = opts || {};
         opts.headers = Object.assign({ Authorization: "Bearer " + _getSession().token }, opts.headers || {});
+        // Prevent browser caching for GET requests
+        if (!opts.method || opts.method === "GET") {
+          opts.cache = "no-store";
+        }
         return fetch(url, opts);
       }
       function _escapeHtml(str) {
@@ -782,6 +786,7 @@
           const res = await _authFetch("/api/admin/beneficiarios/" + beneficiarioId);
           if (!res.ok) throw new Error("HTTP " + res.status);
           const data = await res.json();
+          console.log("[DEBUG] detail fetch email:", data.beneficiario?.email);
           state.currentDetail = data;
           renderDetailContent(data);
           modalLoading.classList.add("hidden");
@@ -1577,7 +1582,9 @@
           }
 
           // 1. Save beneficiario
-          const benFields = _extractBeneficiarioPayload(state.editDraft.estudio);
+          const benFields = _extractBeneficiarioPayload(state.editDraft.estudio, state.editOriginal.estudio);
+          console.log("[DEBUG] benFields:", JSON.stringify(benFields));
+          console.log("[DEBUG] draft.email:", state.editDraft.estudio.email, "| orig.email:", state.editOriginal.estudio.email);
           if (Object.keys(benFields).length > 0) {
             const res = await _authFetch("/api/admin/beneficiarios/" + benId, {
               method: "PATCH", headers: { "Content-Type": "application/json" },
@@ -1587,7 +1594,7 @@
           }
 
           // 2. Save estudio core fields (admin PATCH — no tutors/docs)
-          const estFields = _extractEstudioPayload(state.editDraft.estudio);
+          const estFields = _extractEstudioPayload(state.editDraft.estudio, state.editOriginal.estudio);
           if (Object.keys(estFields).length > 0) {
             const res = await _authFetch("/api/admin/beneficiarios/" + benId + "/estudio", {
               method: "PATCH", headers: { "Content-Type": "application/json" },
@@ -1616,7 +1623,7 @@
           }
 
           // 4. Save solicitud
-          const solFields = _extractSolicitudPayload(state.editDraft.tecnica);
+          const solFields = _extractSolicitudPayload(state.editDraft.tecnica, state.editOriginal.tecnica);
           if (Object.keys(solFields).length > 0) {
             const res = await _authFetch("/api/admin/beneficiarios/" + benId + "/solicitud", {
               method: "PATCH", headers: { "Content-Type": "application/json" },
@@ -1626,7 +1633,7 @@
           }
 
           // 5. Save gestion
-          const gesFields = _extractGestionPayload(state.editDraft.gestion);
+          const gesFields = _extractGestionPayload(state.editDraft.gestion, state.editOriginal.gestion);
           if (Object.keys(gesFields).length > 0) {
             const res = await _authFetch("/api/admin/beneficiarios/" + benId + "/gestion", {
               method: "PATCH", headers: { "Content-Type": "application/json" },
@@ -1647,32 +1654,50 @@
         }
       });
 
-      function _extractBeneficiarioPayload(draft) {
+      function _extractBeneficiarioPayload(draft, original) {
+        original = original || {};
         const fields = {};
         const keys = ["nombres", "apellido_paterno", "apellido_materno", "fecha_nacimiento",
                        "sexo", "diagnostico", "calle", "num_ext", "num_int", "colonia", "ciudad",
                        "estado_codigo", "telefonos", "email"];
         keys.forEach(function (k) {
-          if (draft[k] !== undefined && draft[k] !== "") fields[k] = draft[k] || undefined;
+          var hasValue = draft[k] !== undefined && draft[k] !== "";
+          var wasEmpty = !original[k] || original[k] === "";
+          if (hasValue) {
+            fields[k] = draft[k];
+          } else if (!wasEmpty) {
+            // Field was cleared: send empty string to override DB value
+            fields[k] = "";
+          }
         });
         // Derive estado_nombre from estado_codigo
-        if (fields.estado_codigo) {
+        if (fields.estado_codigo !== undefined) {
           const found = ESTADOS_INEGI.find(function (e) { return e[0] === fields.estado_codigo; });
-          fields.estado_nombre = found ? found[1] : undefined;
+          fields.estado_nombre = found ? found[1] : "";
         }
         return fields;
       }
 
-      function _extractEstudioPayload(draft) {
+      function _extractEstudioPayload(draft, original) {
+        original = original || {};
         const fields = {};
         const keys = ["sede", "fecha_estudio", "ciudad_registro", "status"];
         keys.forEach(function (k) {
-          if (draft[k] !== undefined && draft[k] !== "") fields[k] = draft[k] || undefined;
+          var hasValue = draft[k] !== undefined && draft[k] !== "";
+          var wasEmpty = !original[k] || original[k] === "";
+          if (hasValue) {
+            fields[k] = draft[k];
+          } else if (!wasEmpty) {
+            fields[k] = "";
+          }
         });
         if (draft.tuvo_silla_previa !== undefined) {
           fields["tuvo_silla_previa"] = draft.tuvo_silla_previa === "true";
           if (draft.tuvo_silla_previa === "true" && draft.como_obtuvo_silla) {
             fields["como_obtuvo_silla"] = draft.como_obtuvo_silla;
+          } else if (draft.tuvo_silla_previa !== "true" && original.como_obtuvo_silla) {
+            // Clear como_obtuvo_silla when tuvo_silla_previa is false
+            fields["como_obtuvo_silla"] = "";
           }
         }
         return fields;
@@ -1798,7 +1823,8 @@
         }) || _hasPendingDocuments();
       }
 
-      function _extractSolicitudPayload(draft) {
+      function _extractSolicitudPayload(draft, original) {
+        original = original || {};
         const fields = {};
         const keys = ["entorno", "control_tronco", "control_cabeza", "control_de_piernas",
                        "observaciones_posturales", "altura_total_in", "peso_kg",
@@ -1806,16 +1832,30 @@
                        "medida_rodilla_talon", "medida_ancho_cadera",
                        "unidad_medida", "unidad_peso_captura", "status"];
         keys.forEach(function (k) {
-          if (draft[k] !== undefined && draft[k] !== "") fields[k] = draft[k] || undefined;
+          var hasValue = draft[k] !== undefined && draft[k] !== "";
+          var wasEmpty = !original[k] || original[k] === "";
+          if (hasValue) {
+            fields[k] = draft[k];
+          } else if (!wasEmpty) {
+            fields[k] = "";
+          }
         });
         return fields;
       }
 
-      function _extractGestionPayload(draft) {
+      function _extractGestionPayload(draft, original) {
+        original = original || {};
         const fields = {};
-        if (draft.entidad_solicitante) fields["entidad_solicitante"] = draft.entidad_solicitante;
-        if (draft.prioridad) fields["prioridad"] = draft.prioridad;
-        if (draft.justificacion) fields["justificacion"] = draft.justificacion;
+        var keys = ["entidad_solicitante", "prioridad", "justificacion"];
+        keys.forEach(function (k) {
+          var hasValue = draft[k] !== undefined && draft[k] !== "";
+          var wasEmpty = !original[k] || original[k] === "";
+          if (hasValue) {
+            fields[k] = draft[k];
+          } else if (!wasEmpty) {
+            fields[k] = "";
+          }
+        });
         return fields;
       }
 

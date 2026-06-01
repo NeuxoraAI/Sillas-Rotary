@@ -84,103 +84,105 @@ class AdminBeneficiarioUpdateRequest(BaseModel):
                       "diagnostico", "calle", "colonia", "ciudad", mode="before")
     @classmethod
     def _normalizar_textos(cls, v: Optional[str]) -> Optional[str]:
-        if v is None:
-            return None
+        if v is None or v == "":
+            return v
         return normalize_text(v)
 
     @field_validator("num_ext", "num_int", mode="before")
     @classmethod
     def _validar_numero_domicilio(cls, v: Optional[str]) -> Optional[str]:
+        if v == "":
+            return v
         return validate_numero_domicilio(v)
 
     @field_validator("nombres")
     @classmethod
     def _validar_nombres(cls, v: Optional[str]) -> Optional[str]:
-        if v is None:
+        if v is None or v == "":
             return v
         return validate_nombre(v)
 
     @field_validator("apellido_paterno")
     @classmethod
     def _validar_apellido_paterno(cls, v: Optional[str]) -> Optional[str]:
-        if v is None:
+        if v is None or v == "":
             return v
         return validate_apellido(v, "apellido_paterno")
 
     @field_validator("apellido_materno")
     @classmethod
     def _validar_apellido_materno(cls, v: Optional[str]) -> Optional[str]:
-        if v is None:
+        if v is None or v == "":
             return v
         return validate_apellido(v, "apellido_materno")
 
     @field_validator("fecha_nacimiento")
     @classmethod
     def _fecha_nacimiento_valida(cls, v: Optional[str]) -> Optional[str]:
-        if v is None:
+        if v is None or v == "":
             return v
         return validate_fecha_nacimiento(v)
 
     @field_validator("sexo")
     @classmethod
     def _sexo_valido(cls, v: Optional[str]) -> Optional[str]:
-        if v is None:
+        if v is None or v == "":
             return v
         return validate_sexo(v)
 
     @field_validator("diagnostico")
     @classmethod
     def _diagnostico_valido(cls, v: Optional[str]) -> Optional[str]:
-        if v is None:
+        if v is None or v == "":
             return v
         return validate_diagnostico(v)
 
     @field_validator("calle")
     @classmethod
     def _calle_valida(cls, v: Optional[str]) -> Optional[str]:
-        if v is None:
+        if v is None or v == "":
             return v
         return validate_calle(v)
 
     @field_validator("colonia")
     @classmethod
     def _colonia_valida(cls, v: Optional[str]) -> Optional[str]:
-        if v is None:
+        if v is None or v == "":
             return v
         return validate_colonia(v)
 
     @field_validator("ciudad")
     @classmethod
     def _ciudad_valida(cls, v: Optional[str]) -> Optional[str]:
-        if v is None:
+        if v is None or v == "":
             return v
         return validate_ciudad(v)
 
     @field_validator("estado_codigo")
     @classmethod
     def _estado_codigo_valido(cls, v: Optional[str]) -> Optional[str]:
-        if v is None:
+        if v is None or v == "":
             return v
         return validate_estado_codigo(v)
 
     @field_validator("estado_nombre")
     @classmethod
     def _estado_nombre_consistente(cls, v: Optional[str], info) -> Optional[str]:
-        if v is None:
+        if v is None or v == "":
             return v
         return validate_estado_nombre(v, info.data.get("estado_codigo"))
 
     @field_validator("telefonos")
     @classmethod
     def _telefonos_valido(cls, v: Optional[str]) -> Optional[str]:
-        if v is None:
+        if v is None or v == "":
             return v
         return validate_telefono(v)
 
     @field_validator("email")
     @classmethod
     def _email_valido(cls, v: Optional[str]) -> Optional[str]:
-        if v is None:
+        if v is None or v == "":
             return v
         return validate_email_format(v)
 
@@ -198,15 +200,15 @@ class AdminEstudioUpdateRequest(BaseModel):
     @field_validator("status")
     @classmethod
     def _status_valido(cls, v: Optional[str]) -> Optional[str]:
-        if v is None:
+        if v is None or v == "":
             return v
         return validate_status(v)
 
     @field_validator("como_obtuvo_silla", "ciudad_registro", mode="before")
     @classmethod
     def _normalizar(cls, v: Optional[str]) -> Optional[str]:
-        if v is None:
-            return None
+        if v is None or v == "":
+            return v
         return normalize_text(v)
 
     @model_validator(mode="after")
@@ -245,49 +247,49 @@ class AdminSolicitudUpdateRequest(BaseModel):
     @field_validator("entorno")
     @classmethod
     def _entorno_valido(cls, v: Optional[str]) -> Optional[str]:
-        if v is None:
+        if v is None or v == "":
             return v
         return validate_entorno(v)
 
     @field_validator("control_tronco")
     @classmethod
     def _control_tronco_valido(cls, v: Optional[str]) -> Optional[str]:
-        if v is None:
+        if v is None or v == "":
             return v
         return validate_control_tronco(v)
 
     @field_validator("control_cabeza")
     @classmethod
     def _control_cabeza_valido(cls, v: Optional[str]) -> Optional[str]:
-        if v is None:
+        if v is None or v == "":
             return v
         return validate_control_cabeza(v)
 
     @field_validator("control_de_piernas")
     @classmethod
     def _control_de_piernas_valido(cls, v: Optional[str]) -> Optional[str]:
-        if v is None:
+        if v is None or v == "":
             return v
         return validate_control_de_piernas(v)
 
     @field_validator("observaciones_posturales", mode="before")
     @classmethod
     def validate_obs_field(cls, v) -> Optional[str]:
-        if v is None:
+        if v is None or (isinstance(v, str) and v.strip() == ""):
             return None
         return validate_observaciones_posturales(str(v))
 
     @field_validator("unidad_medida")
     @classmethod
     def _unidad_valida(cls, v: Optional[str]) -> Optional[str]:
-        if v is None:
+        if v is None or v == "":
             return v
         return validate_unidad_medida(v)
 
     @field_validator("unidad_peso_captura")
     @classmethod
     def _unidad_peso_valida(cls, v: Optional[str]) -> Optional[str]:
-        if v is None:
+        if v is None or v == "":
             return v
         return validate_unidad_peso(v)
 
@@ -303,26 +305,28 @@ class AdminSolicitudUpdateRequest(BaseModel):
     @field_validator("entidad_solicitante", mode="before")
     @classmethod
     def validate_entidad_solicitante_field(cls, v) -> Optional[str]:
-        if v is None:
+        if v is None or (isinstance(v, str) and v.strip() == ""):
             return None
         return validate_entidad_solicitante(str(v))
 
     @field_validator("prioridad")
     @classmethod
     def _prioridad_valida(cls, v: Optional[str]) -> Optional[str]:
+        if v is None or v == "":
+            return v
         return validate_prioridad(v)
 
     @field_validator("justificacion", mode="before")
     @classmethod
     def validate_justificacion_field(cls, v) -> Optional[str]:
-        if v is None:
+        if v is None or (isinstance(v, str) and v.strip() == ""):
             return None
         return validate_justificacion(str(v))
 
     @field_validator("status")
     @classmethod
     def _status_valido(cls, v: Optional[str]) -> Optional[str]:
-        if v is None:
+        if v is None or v == "":
             return v
         return validate_status(v)
 
@@ -345,33 +349,35 @@ class AdminGestionUpdateRequest(BaseModel):
     @field_validator("como_obtuvo_silla", "ciudad_registro", mode="before")
     @classmethod
     def _normalizar(cls, v: Optional[str]) -> Optional[str]:
-        if v is None:
-            return None
+        if v is None or v == "":
+            return v
         return normalize_text(v)
 
     @field_validator("status_estudio")
     @classmethod
     def _status_valido(cls, v: Optional[str]) -> Optional[str]:
-        if v is None:
+        if v is None or v == "":
             return v
         return validate_status(v)
 
     @field_validator("entidad_solicitante", mode="before")
     @classmethod
     def _entidad_valida(cls, v: Optional[str]) -> Optional[str]:
-        if v is None:
+        if v is None or (isinstance(v, str) and v.strip() == ""):
             return None
         return validate_entidad_solicitante(str(v))
 
     @field_validator("prioridad")
     @classmethod
     def _prioridad_valida(cls, v: Optional[str]) -> Optional[str]:
+        if v is None or v == "":
+            return v
         return validate_prioridad(v)
 
     @field_validator("justificacion", mode="before")
     @classmethod
     def _justificacion_valida(cls, v: Optional[str]) -> Optional[str]:
-        if v is None:
+        if v is None or (isinstance(v, str) and v.strip() == ""):
             return None
         return validate_justificacion(str(v))
 
@@ -681,6 +687,11 @@ def obtener_detalle_admin(
     return snapshot
 
 
+def _nullify_empty_strings(fields: dict) -> dict:
+    """Convert empty strings to None so psycopg2 writes NULL in the DB."""
+    return {k: (None if v == "" else v) for k, v in fields.items()}
+
+
 @router.patch("/admin/beneficiarios/{beneficiario_id}")
 def actualizar_beneficiario_admin(
     beneficiario_id: int,
@@ -694,6 +705,8 @@ def actualizar_beneficiario_admin(
     fields = body.model_dump(exclude_none=True)
     if not fields:
         return {"beneficiario_id": beneficiario_id, "updated": False}
+
+    fields = _nullify_empty_strings(fields)
 
     # Rebuild nombre from structured fields if all three are provided
     if "nombres" in fields or "apellido_paterno" in fields or "apellido_materno" in fields:
@@ -729,11 +742,22 @@ def actualizar_estudio_admin(
     if not fields:
         return {"estudio_id": estudio["id"], "updated": False}
 
+    fields = _nullify_empty_strings(fields)
+
     if "tuvo_silla_previa" in fields:
         fields["tuvo_silla_previa"] = int(fields["tuvo_silla_previa"])
         fields["como_obtuvo_silla"] = _resolve_como_obtuvo_silla(
             fields["tuvo_silla_previa"], fields.get("como_obtuvo_silla")
         )
+
+    set_clause = ", ".join(f"{k} = %s" for k in fields)
+    values = list(fields.values())
+    values.append(estudio["id"])
+
+    db.execute(
+        f"UPDATE estudios_socioeconomicos SET {set_clause} WHERE id = %s",
+        values,
+    )
 
     set_clause = ", ".join(f"{k} = %s" for k in fields)
     values = list(fields.values())
@@ -760,6 +784,8 @@ def actualizar_solicitud_admin(
     fields = body.model_dump(exclude_none=True)
     if not fields:
         return {"solicitud_id": solicitud["id"], "updated": False}
+
+    fields = _nullify_empty_strings(fields)
 
     # Rename unidad_medida to unidad_captura for DB
     if "unidad_medida" in fields:
@@ -813,6 +839,7 @@ def actualizar_gestion_admin(
         )
 
     if estudio_fields:
+        estudio_fields = _nullify_empty_strings(estudio_fields)
         set_clause = ", ".join(f"{k} = %s" for k in estudio_fields)
         values = list(estudio_fields.values())
         values.append(estudio["id"])
@@ -831,6 +858,7 @@ def actualizar_gestion_admin(
             solicitud_fields[key] = val
 
     if solicitud_fields:
+        solicitud_fields = _nullify_empty_strings(solicitud_fields)
         set_clause = ", ".join(f"{k} = %s" for k in solicitud_fields)
         values = list(solicitud_fields.values())
         values.append(solicitud["id"])
