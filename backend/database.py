@@ -110,7 +110,8 @@ def _connect() -> psycopg2.extensions.connection:
 class _DBAdapter:
     """Thin adapter so routers can call conn.execute() uniformly."""
 
-    def __init__(self, cursor: psycopg2.extensions.cursor) -> None:
+    def __init__(self, conn: psycopg2.extensions.connection, cursor: psycopg2.extensions.cursor) -> None:
+        self._conn = conn
         self._cur = cursor
 
     def execute(self, sql: str, params: tuple = ()) -> "_DBAdapter":
@@ -122,6 +123,12 @@ class _DBAdapter:
 
     def fetchall(self) -> list[dict]:
         return self._cur.fetchall()  # type: ignore[return-value]
+
+    def commit(self) -> None:
+        self._conn.commit()
+
+    def rollback(self) -> None:
+        self._conn.rollback()
 
 
 # ---------------------------------------------------------------------------
@@ -139,7 +146,7 @@ def get_db() -> Generator["_DBAdapter", None, None]:
     """
     conn = _connect()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    adapter = _DBAdapter(cur)
+    adapter = _DBAdapter(conn, cur)
     try:
         yield adapter
         conn.commit()
@@ -161,7 +168,7 @@ def get_db_ctx() -> Generator["_DBAdapter", None, None]:
     """Context manager version of get_db. Use Depends(get_db) for new code."""
     conn = _connect()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    adapter = _DBAdapter(cur)
+    adapter = _DBAdapter(conn, cur)
     try:
         yield adapter
         conn.commit()

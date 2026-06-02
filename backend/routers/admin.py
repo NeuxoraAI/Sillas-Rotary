@@ -720,10 +720,17 @@ def actualizar_beneficiario_admin(
     values = list(fields.values())
     values.append(beneficiario_id)
 
+    import logging
+    logging.basicConfig(level=logging.DEBUG)
+    logger = logging.getLogger(__name__)
+    logger.debug(f"[ADMIN PATCH] SQL: UPDATE beneficiarios SET {set_clause} WHERE id = %s")
+    logger.debug(f"[ADMIN PATCH] Values: {values}")
+
     db.execute(
         f"UPDATE beneficiarios SET {set_clause} WHERE id = %s",
         values,
     )
+    db.commit()
 
     return {"beneficiario_id": beneficiario_id, "updated": True}
 
@@ -848,6 +855,7 @@ def actualizar_gestion_admin(
             values,
         )
         updated_estudio = True
+        db.commit()
 
     # Build solicitud fields
     solicitud_fields = {}
@@ -867,6 +875,7 @@ def actualizar_gestion_admin(
             values,
         )
         updated_solicitud = True
+        db.commit()
 
     return {
         "beneficiario_id": beneficiario_id,
@@ -943,6 +952,7 @@ def eliminar_beneficiario_admin(
         (beneficiario_id,),
     )
     deleted["beneficiarios"] = result._cur.rowcount
+    db.commit()
 
     return {
         "beneficiario_id": beneficiario_id,
