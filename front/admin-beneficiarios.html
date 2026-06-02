@@ -340,20 +340,62 @@
         </div>
       </div>
 
+      <!-- Unsaved Changes Modal -->
+      <div id="unsaved-edit-overlay" class="hidden fixed inset-0 z-[70] bg-black/40 flex items-center justify-center p-4">
+        <div class="animate-fade-in bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 relative">
+          <button id="btn-close-unsaved-edit" class="absolute right-3 top-3 w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-700 transition-all shrink-0" aria-label="Cerrar aviso">
+            <span class="material-symbols-outlined text-lg">close</span>
+          </button>
+          <div class="text-center mb-5">
+            <div class="w-14 h-14 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-3">
+              <span class="material-symbols-outlined text-amber-600 text-3xl">warning</span>
+            </div>
+            <h3 class="text-lg font-bold text-slate-900">Cambios sin guardar</h3>
+            <p class="text-sm text-slate-500 mt-1">Tienes cambios pendientes en este formulario.</p>
+          </div>
+          <p class="text-sm text-slate-600 mb-5">Si cierras ahora, perderás las modificaciones no guardadas.</p>
+          <div class="flex items-center justify-end gap-3">
+            <button id="btn-return-unsaved-edit" class="px-4 py-2 text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors">Regresar</button>
+            <button id="btn-accept-unsaved-edit" class="px-4 py-2 text-sm font-bold text-white bg-ug-blue hover:bg-ug-blue/90 rounded-xl transition-colors">Aceptar</button>
+          </div>
+        </div>
+      </div>
+
       <!-- Save Confirmation Modal -->
       <div id="save-confirm-overlay" class="hidden fixed inset-0 z-[70] bg-black/40 flex items-center justify-center p-4">
         <div class="animate-fade-in bg-white w-full max-w-md rounded-2xl shadow-2xl p-6">
           <div class="text-center mb-4">
             <div class="w-14 h-14 bg-ug-blue/10 rounded-full flex items-center justify-center mx-auto mb-3">
-              <span class="material-symbols-outlined text-ug-blue text-3xl">save</span>
+              <span class="material-symbols-outlined text-ug-blue text-3xl">warning</span>
             </div>
-            <h3 class="text-lg font-bold text-slate-900">Guardar cambios</h3>
-            <p class="text-sm text-slate-500 mt-1">¿Desea guardar los cambios realizados?</p>
+            <h3 id="save-confirm-title" class="text-lg font-bold text-slate-900">Confirmar guardado</h3>
+            <p id="save-confirm-message" class="text-sm text-slate-500 mt-1">Revise los cambios antes de continuar.</p>
           </div>
-          <p class="text-sm text-slate-600 mb-4">Los cambios se persistirán en la base de datos y no se podrán deshacer.</p>
+          <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
+            <p id="save-confirm-summary" class="text-sm text-amber-900 font-semibold mb-2">Hay campos opcionales que tenían datos y ahora están vacíos.</p>
+            <ul id="save-confirm-list" class="text-sm text-amber-800 list-disc pl-5 space-y-1"></ul>
+          </div>
           <div class="flex items-center justify-end gap-3">
-            <button id="btn-cancel-save" class="px-4 py-2 text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors">Regresar</button>
-            <button id="btn-confirm-save" class="px-4 py-2 text-sm font-bold text-white bg-ug-blue hover:bg-ug-blue/90 rounded-xl transition-colors">Aceptar</button>
+            <button id="btn-cancel-save" class="px-4 py-2 text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors">Regresar a editar</button>
+            <button id="btn-confirm-save" class="px-4 py-2 text-sm font-bold text-white bg-ug-blue hover:bg-ug-blue/90 rounded-xl transition-colors">Confirmar y guardar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tutor 2 Delete Confirmation Modal -->
+      <div id="tutor2-delete-overlay" class="hidden fixed inset-0 z-[75] bg-black/40 flex items-center justify-center p-4">
+        <div class="animate-fade-in bg-white w-full max-w-md rounded-2xl shadow-2xl p-6">
+          <div class="text-center mb-4">
+            <div class="w-14 h-14 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-3">
+              <span class="material-symbols-outlined text-amber-600 text-3xl">warning</span>
+            </div>
+            <h3 class="text-lg font-bold text-slate-900">Eliminar Tutor 2</h3>
+            <p class="text-sm text-slate-500 mt-1">Se borrarán los datos capturados del segundo tutor en este formulario.</p>
+          </div>
+          <p class="text-sm text-slate-600 mb-5">Esta acción solo limpia el formulario actual. Podrás volver a agregar Tutor 2 después si es necesario.</p>
+          <div class="flex items-center justify-end gap-3">
+            <button id="btn-cancel-tutor2-delete" class="px-4 py-2 text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors">Cancelar</button>
+            <button id="btn-confirm-tutor2-delete" class="px-4 py-2 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-colors">Eliminar Tutor 2</button>
           </div>
         </div>
       </div>
@@ -430,7 +472,11 @@
       }
       function _formatDate(iso) {
         if (!iso) return "—";
-        try { return new Date(iso).toLocaleDateString("es-MX", { year: "numeric", month: "short", day: "numeric" }); } catch (_) { return iso; }
+        try {
+          const d = new Date(iso);
+          if (isNaN(d.getTime())) return iso;
+          return d.toLocaleDateString("es-MX", { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" });
+        } catch (_) { return iso; }
       }
       function _debounce(fn, ms) {
         let timer;
@@ -466,6 +512,8 @@
         items: [], total: 0, page: 1, perPage: 20, loading: false,
         paisesCache: [], regionesCache: {}, selectedIds: new Set(),
         currentDetail: null, currentEditTab: "estudio",
+        pendingSave: null,
+        serverOriginal: { estudio: {}, tecnica: {}, gestion: {} },
         editDraft: { estudio: {}, tecnica: {}, gestion: {} },
         editOriginal: { estudio: {}, tecnica: {}, gestion: {} },
       };
@@ -500,6 +548,19 @@
       const editOverlay = $("edit-overlay");
       const editContent = $("edit-content");
       const editError = $("edit-error");
+      const saveConfirmOverlay = $("save-confirm-overlay");
+      const saveConfirmTitle = $("save-confirm-title");
+      const saveConfirmMessage = $("save-confirm-message");
+      const saveConfirmSummary = $("save-confirm-summary");
+      const saveConfirmList = $("save-confirm-list");
+      const unsavedEditOverlay = $("unsaved-edit-overlay");
+      const btnCloseUnsavedEdit = $("btn-close-unsaved-edit");
+      const btnReturnUnsavedEdit = $("btn-return-unsaved-edit");
+      const btnAcceptUnsavedEdit = $("btn-accept-unsaved-edit");
+      const tutor2DeleteOverlay = $("tutor2-delete-overlay");
+      const btnCancelTutor2Delete = $("btn-cancel-tutor2-delete");
+      const btnConfirmTutor2Delete = $("btn-confirm-tutor2-delete");
+      let pendingTutor2DeleteAction = null;
 
       // ═══════════════════════════════════════════════════════════════════════════
       // TOAST
@@ -783,10 +844,9 @@
         modalTitle.textContent = "—"; modalFolio.textContent = "—";
 
         try {
-          const res = await _authFetch("/api/admin/beneficiarios/" + beneficiarioId);
+          const res = await _authFetch("/api/admin/beneficiarios/" + beneficiarioId + "?_ts=" + Date.now());
           if (!res.ok) throw new Error("HTTP " + res.status);
           const data = await res.json();
-          console.log("[DEBUG] detail fetch email:", data.beneficiario?.email);
           state.currentDetail = data;
           renderDetailContent(data);
           modalLoading.classList.add("hidden");
@@ -806,68 +866,164 @@
         const e = data.estudio || {};
         const s = data.solicitud || {};
         const tutores = data.tutores || [];
-        const tutorNames = tutores.map(function (t) { return _escapeHtml(t.nombre); }).join(", ") || "Sin tutores";
+        const proceso = data.proceso_tecnico || {};
+        const participantes = data.participantes || [];
 
-        modalContent.innerHTML = `
-          <section>
-            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Identificación</h3>
-            <div class="grid grid-cols-2 gap-3 text-sm">
-              <div><span class="text-slate-400 text-xs">Nombres</span><p class="font-medium text-slate-800">${_escapeHtml(b.nombres || '—')}</p></div>
-              <div><span class="text-slate-400 text-xs">Apellidos</span><p class="font-medium text-slate-800">${_escapeHtml(b.apellido_paterno || '')} ${_escapeHtml(b.apellido_materno || '')}</p></div>
-              <div><span class="text-slate-400 text-xs">Fecha nacimiento</span><p class="font-medium text-slate-800">${_formatDate(b.fecha_nacimiento)}</p></div>
-              <div><span class="text-slate-400 text-xs">Sexo</span><p class="font-medium text-slate-800">${_escapeHtml(b.sexo || '—')}</p></div>
-              <div class="col-span-2"><span class="text-slate-400 text-xs">Diagnóstico</span><p class="font-medium text-slate-800">${_escapeHtml(b.diagnostico || '—')}</p></div>
-            </div>
-          </section>
-          <section>
-            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Contacto</h3>
-            <div class="grid grid-cols-2 gap-3 text-sm">
-              <div><span class="text-slate-400 text-xs">Teléfono</span><p class="font-medium text-slate-800">${_escapeHtml(b.telefonos || '—')}</p></div>
-              <div><span class="text-slate-400 text-xs">Email</span><p class="font-medium text-slate-800">${_escapeHtml(b.email || '—')}</p></div>
-              <div class="col-span-2"><span class="text-slate-400 text-xs">Dirección</span><p class="font-medium text-slate-800">${_escapeHtml(b.calle || '')} ${_escapeHtml(b.num_ext || '')} ${_escapeHtml(b.num_int || '' ? 'Int. ' + b.num_int : '')}, ${_escapeHtml(b.colonia || '')}, ${_escapeHtml(b.ciudad || '')}, ${_escapeHtml(b.estado_nombre || '')}</p></div>
-            </div>
-          </section>
-          <section>
-            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Datos del Estudio</h3>
-            <div class="grid grid-cols-2 gap-3 text-sm">
-              <div><span class="text-slate-400 text-xs">Sede</span><p class="font-medium text-slate-800">${_escapeHtml(e.sede || '—')}</p></div>
-              <div><span class="text-slate-400 text-xs">Fecha estudio</span><p class="font-medium text-slate-800">${_formatDate(e.fecha_estudio)}</p></div>
-              <div><span class="text-slate-400 text-xs">Ciudad registro</span><p class="font-medium text-slate-800">${_escapeHtml(e.ciudad_registro || '—')}</p></div>
-              <div><span class="text-slate-400 text-xs">Tuvo silla previa</span><p class="font-medium text-slate-800">${e.tuvo_silla_previa ? 'Sí' : 'No'}</p></div>
-              <div class="col-span-2"><span class="text-slate-400 text-xs">Tutores</span><p class="font-medium text-slate-800">${tutorNames}</p></div>
-              <div class="col-span-2"><span class="text-slate-400 text-xs">Status</span><p class="font-medium text-slate-800">${_escapeHtml(e.status || '—')}</p></div>
-            </div>
-          </section>
-          <section>
-            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Datos Técnicos</h3>
-            <div class="grid grid-cols-2 gap-3 text-sm">
-              <div><span class="text-slate-400 text-xs">Entorno</span><p class="font-medium text-slate-800">${_escapeHtml(s.entorno || '—')}</p></div>
-              <div><span class="text-slate-400 text-xs">Control tronco</span><p class="font-medium text-slate-800">${_escapeHtml(s.control_tronco || '—')}</p></div>
-              <div><span class="text-slate-400 text-xs">Control cabeza</span><p class="font-medium text-slate-800">${_escapeHtml(s.control_cabeza || '—')}</p></div>
-              <div><span class="text-slate-400 text-xs">Control piernas</span><p class="font-medium text-slate-800">${_escapeHtml(s.control_de_piernas || '—')}</p></div>
-              <div><span class="text-slate-400 text-xs">Peso (lb)</span><p class="font-medium text-slate-800">${s.peso_kg != null ? s.peso_kg : '—'}</p></div>
-              <div><span class="text-slate-400 text-xs">Altura total (in)</span><p class="font-medium text-slate-800">${s.altura_total_in != null ? s.altura_total_in : '—'}</p></div>
-              <div><span class="text-slate-400 text-xs">Entidad</span><p class="font-medium text-slate-800">${_escapeHtml(s.entidad_solicitante || '—')}</p></div>
-              <div><span class="text-slate-400 text-xs">Prioridad</span><p class="font-medium text-slate-800">${_escapeHtml(s.prioridad || '—')}</p></div>
-              <div class="col-span-2"><span class="text-slate-400 text-xs">Justificación</span><p class="font-medium text-slate-800">${_escapeHtml(s.justificacion || '—')}</p></div>
-            </div>
-          </section>
-          <section>
-            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Fotografía</h3>
-            ${s.foto_url_resolved ? `<img src="${_escapeHtml(s.foto_url_resolved)}" alt="Foto" class="w-full max-w-xs rounded-xl border border-slate-200"/>` : '<p class="text-slate-300 italic">Sin fotografía</p>'}
-          </section>
-          <section>
-            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Estado del Proceso</h3>
-            <div class="text-sm">
-              <span class="badge-${data.proceso_tecnico?.estado || 'sin_iniciar'} text-xs font-bold px-2.5 py-0.5 rounded-full">${_formatEstado(data.proceso_tecnico?.estado || 'sin_iniciar')}</span>
-              ${data.proceso_tecnico?.revision_pendiente ? '<span class="ml-2 text-xs font-bold text-amber-700 bg-amber-100 rounded-full px-2.5 py-0.5">Revisión pendiente</span>' : ''}
-            </div>
-          </section>`;
+        // Helper: render a field row
+        function _fd(label, value) {
+          var display = value != null && value !== "" ? _escapeHtml(String(value)) : '<span class="text-slate-300 italic text-xs">No capturado</span>';
+          return '<div><span class="text-slate-400 text-[11px] uppercase tracking-wide">' + label + '</span><p class="font-medium text-slate-800 text-sm mt-0.5">' + display + '</p></div>';
+        }
+        // Helper: render a section
+        function _sec(title, content) {
+          return '<section class="border-t border-slate-100 pt-4 mt-4 first:border-0 first:pt-0 first:mt-0"><h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">' + title + '</h3>' + content + '</section>';
+        }
+        // Helper: boolean display
+        function _bool(val) { return val ? '<span class="text-emerald-600 font-semibold">Sí</span>' : '<span class="text-slate-400">No</span>'; }
+
+        // ── Tutores ──
+        var tutoresHtml = "";
+        if (tutores.length === 0) {
+          tutoresHtml = '<p class="text-slate-300 italic text-sm">Sin tutores registrados</p>';
+        } else {
+          tutores.forEach(function (t) {
+            var imss = t.imss_estatus || (t.tiene_imss === 1 ? 'Sí' : t.tiene_imss === 0 ? 'No' : '—');
+            var infonavit = t.infonavit_estatus || (t.tiene_infonavit === 1 ? 'Sí' : t.tiene_infonavit === 0 ? 'No' : '—');
+            var sinEmp = t.sin_empleo === 1 || t.sin_empleo === true;
+            var antAplica = t.antiguedad_aplica === 1 || t.antiguedad_aplica === true;
+            var otrasAplica = t.otras_fuentes_aplica === 1 || t.otras_fuentes_aplica === true;
+            tutoresHtml += '<div class="bg-slate-50 rounded-xl p-3 mb-2 border border-slate-100">' +
+              '<p class="text-xs font-bold text-slate-700 mb-2">Tutor ' + (t.numero_tutor || '?') + '</p>' +
+              '<div class="grid grid-cols-2 md:grid-cols-3 gap-3">' +
+                _fd("Nombre", t.nombre) +
+                _fd("Edad", t.edad) +
+                _fd("Estudios", t.nivel_estudios) +
+                _fd("Estado civil", t.estado_civil) +
+                _fd("No. Hijos", t.num_hijos) +
+                _fd("Vivienda", t.vivienda) +
+                _fd("Sin empleo", sinEmp ? "Sí" : "No") +
+                _fd("Fuente empleo", sinEmp ? null : t.fuente_empleo) +
+                _fd("Ingreso mensual", t.ingreso_mensual != null ? "$" + Number(t.ingreso_mensual).toLocaleString("es-MX") : null) +
+                _fd("Antigüedad aplica", antAplica ? "Sí" : "No aplica") +
+                _fd("Antigüedad", antAplica ? (t.antiguedad || "—") : null) +
+                _fd("Otras fuentes", otrasAplica ? "Sí" : "No") +
+                _fd("Otra fuente", otrasAplica ? t.otras_fuentes_ingreso : null) +
+                _fd("Monto adicional", otrasAplica && t.monto_otras_fuentes ? "$" + Number(t.monto_otras_fuentes).toLocaleString("es-MX") : null) +
+                _fd("IMSS", imss) +
+                _fd("INFONAVIT", infonavit) +
+                _fd("Email", t.email) +
+              '</div></div>';
+          });
+        }
+
+        // ── Documentos ──
+        var docsHtml = '<div class="grid grid-cols-2 gap-3">';
+        if (e.credencial_url_resolved) {
+          docsHtml += '<div class="bg-slate-50 rounded-xl p-3 border border-slate-100"><p class="text-[11px] font-bold text-slate-500 uppercase mb-1">Credencial</p><a href="' + _escapeHtml(e.credencial_url_resolved) + '" target="_blank" rel="noopener" class="text-sm text-ug-blue underline hover:text-ug-blue/80 break-all">Ver documento</a></div>';
+        } else { docsHtml += _fd("Credencial", null); }
+        if (e.comprobante_domicilio_url_resolved) {
+          docsHtml += '<div class="bg-slate-50 rounded-xl p-3 border border-slate-100"><p class="text-[11px] font-bold text-slate-500 uppercase mb-1">Comprobante domicilio</p><a href="' + _escapeHtml(e.comprobante_domicilio_url_resolved) + '" target="_blank" rel="noopener" class="text-sm text-ug-blue underline hover:text-ug-blue/80 break-all">Ver documento</a></div>';
+        } else { docsHtml += _fd("Comprobante domicilio", null); }
+        docsHtml += '</div>';
+
+        // ── Medidas técnicas ──
+        var medidasHtml = '<div class="grid grid-cols-2 md:grid-cols-3 gap-3">' +
+          _fd("Altura total (in)", s.altura_total_in) +
+          _fd("Peso (lb)", s.peso_kg) +
+          _fd("Cabeza-Asiento (in)", s.medida_cabeza_asiento) +
+          _fd("Hombro-Asiento (in)", s.medida_hombro_asiento) +
+          _fd("Prof. Asiento (in)", s.medida_prof_asiento) +
+          _fd("Rodilla-Talón (in)", s.medida_rodilla_talon) +
+          _fd("Ancho Cadera (in)", s.medida_ancho_cadera) +
+          _fd("Unidad captura", s.unidad_captura || s.unidad_medida) +
+        '</div>';
+
+        // ── Participantes ──
+        var partHtml = "";
+        if (participantes.length === 0) {
+          partHtml = '<p class="text-slate-300 italic text-sm">Sin participantes registrados</p>';
+        } else {
+          partHtml = '<div class="space-y-2">';
+          participantes.forEach(function (p) {
+            partHtml += '<div class="flex items-center gap-2 text-sm"><span class="w-2 h-2 rounded-full bg-ug-blue"></span><span class="font-medium text-slate-700">' + _escapeHtml(p.nombre || "—") + '</span><span class="text-slate-400 text-xs">' + _escapeHtml(p.accion || "—") + '</span><span class="text-slate-300 text-xs">' + _formatDate(p.created_at) + '</span></div>';
+          });
+          partHtml += '</div>';
+        }
+
+        modalContent.innerHTML =
+          // 1. Identificación
+          _sec("Identificación",
+            '<div class="grid grid-cols-2 md:grid-cols-3 gap-3">' +
+              _fd("Nombres", b.nombres) +
+              _fd("Apellido Paterno", b.apellido_paterno) +
+              _fd("Apellido Materno", b.apellido_materno) +
+              _fd("Fecha nacimiento", _formatDate(b.fecha_nacimiento)) +
+              _fd("Sexo", b.sexo) +
+              _fd("Diagnóstico", b.diagnostico) +
+            '</div>') +
+          // 2. Contacto y Dirección
+          _sec("Contacto y Dirección",
+          '<div class="grid grid-cols-2 md:grid-cols-3 gap-3">' +
+              _fd("Teléfono", b.telefonos) +
+              _fd("Calle", b.calle) +
+              _fd("Núm. Ext.", b.num_ext) +
+              _fd("Núm. Int.", b.num_int) +
+              _fd("Colonia", b.colonia) +
+              _fd("Ciudad", b.ciudad) +
+              _fd("Estado", b.estado_nombre ? (b.estado_nombre + " (" + (b.estado_codigo || "") + ")") : null) +
+            '</div>') +
+          // 3. Tutores
+          _sec("Tutores", tutoresHtml) +
+          // 4. Documentos de Soporte
+          _sec("Documentos de Soporte", docsHtml) +
+          // 5. Estudio Socioeconómico
+          _sec("Estudio Socioeconómico",
+            '<div class="grid grid-cols-2 md:grid-cols-3 gap-3">' +
+              _fd("Sede", e.sede) +
+              _fd("Fecha estudio", _formatDate(e.fecha_estudio)) +
+              _fd("Ciudad registro", e.ciudad_registro) +
+              _fd("Tuvo silla previa", e.tuvo_silla_previa != null ? (e.tuvo_silla_previa ? "Sí" : "No") : null) +
+              _fd("Cómo obtuvo silla", e.como_obtuvo_silla) +
+              _fd("Elaboró estudio", e.elaboro_estudio) +
+              _fd("Status", e.status) +
+            '</div>') +
+          // 6. Datos Técnicos — Controles
+          _sec("Datos Técnicos — Controles",
+            '<div class="grid grid-cols-2 md:grid-cols-3 gap-3">' +
+              _fd("Entorno", s.entorno) +
+              _fd("Control tronco", s.control_tronco) +
+              _fd("Control cabeza", s.control_cabeza) +
+              _fd("Control piernas", s.control_de_piernas) +
+              _fd("Observaciones posturales", s.observaciones_posturales) +
+            '</div>') +
+          // 7. Datos Técnicos — Medidas
+          _sec("Datos Técnicos — Medidas Antropométricas", medidasHtml) +
+          // 8. Gestión de Donación
+          _sec("Gestión de Donación",
+            '<div class="grid grid-cols-2 md:grid-cols-3 gap-3">' +
+              _fd("Entidad solicitante", s.entidad_solicitante) +
+              _fd("Prioridad", s.prioridad) +
+              _fd("Justificación", s.justificacion) +
+              _fd("Status técnico", s.status) +
+            '</div>') +
+          // 9. Fotografía
+          _sec("Fotografía Técnica",
+            s.foto_url_resolved ? '<img src="' + _escapeHtml(s.foto_url_resolved) + '" alt="Foto técnica" class="w-full max-w-xs rounded-xl border border-slate-200"/>' : '<p class="text-slate-300 italic text-sm">Sin fotografía</p>') +
+          // 10. Proceso Técnico
+          _sec("Proceso Técnico",
+            '<div class="flex items-center gap-2 mb-3"><span class="badge-' + (proceso.estado || 'sin_iniciar') + ' text-xs font-bold px-2.5 py-0.5 rounded-full">' + _formatEstado(proceso.estado || 'sin_iniciar') + '</span>' +
+            (proceso.revision_pendiente ? '<span class="ml-2 text-xs font-bold text-amber-700 bg-amber-100 rounded-full px-2.5 py-0.5">Revisión pendiente</span>' : '') + '</div>' +
+            '<div class="grid grid-cols-2 gap-3 text-sm mb-3">' +
+              _fd("Responsable actual", proceso.responsable_nombre) +
+              _fd("Técnico inicio", proceso.tecnico_nombre) +
+              _fd("Fecha inicio", _formatDate(proceso.fecha_inicio)) +
+              _fd("Último movimiento", _formatDate(proceso.fecha_ultimo_movimiento)) +
+            '</div>' +
+            '<p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Participantes</p>' + partHtml);
       }
 
-      // Modal close
+      // Modal close (only via X button — no outside click)
       $("btn-close-modal").addEventListener("click", closeDetailModal);
-      modalOverlay.addEventListener("click", function (e) { if (e.target === modalOverlay) closeDetailModal(); });
       function closeDetailModal() {
         modalOverlay.classList.add("hidden"); state.currentDetail = null;
       }
@@ -899,6 +1055,11 @@
           gestion: _extractGestionFields(detail),
         };
         state.editOriginal = {
+          estudio: JSON.parse(JSON.stringify(_extractEstudioFields(detail))),
+          tecnica: JSON.parse(JSON.stringify(_extractTecnicaFields(detail))),
+          gestion: JSON.parse(JSON.stringify(_extractGestionFields(detail))),
+        };
+        state.serverOriginal = {
           estudio: JSON.parse(JSON.stringify(_extractEstudioFields(detail))),
           tecnica: JSON.parse(JSON.stringify(_extractTecnicaFields(detail))),
           gestion: JSON.parse(JSON.stringify(_extractGestionFields(detail))),
@@ -943,12 +1104,9 @@
           r[prefix + "num_hijos"] = t.num_hijos != null ? String(t.num_hijos) : "";
           r[prefix + "vivienda"] = t.vivienda || "";
           r[prefix + "fuente_empleo"] = t.fuente_empleo || "";
-          r[prefix + "sin_empleo"] = t.sin_empleo ? "true" : "false";
           r[prefix + "antiguedad_anios"] = t.antiguedad_anios != null ? String(t.antiguedad_anios) : "";
           r[prefix + "antiguedad_meses_extra"] = t.antiguedad_meses_extra != null ? String(t.antiguedad_meses_extra) : "";
-          r[prefix + "antiguedad_no_aplica"] = t.antiguedad_aplica === 0 || t.antiguedad_aplica === false ? "true" : "false";
           r[prefix + "ingreso_mensual"] = t.ingreso_mensual != null ? String(t.ingreso_mensual) : "";
-          r[prefix + "otras_fuentes_aplica"] = t.otras_fuentes_aplica ? "true" : "false";
           r[prefix + "otras_fuentes_ingreso"] = t.otras_fuentes_ingreso || "";
           r[prefix + "monto_otras_fuentes"] = t.monto_otras_fuentes != null ? String(t.monto_otras_fuentes) : "";
           // IMSS/INFONAVIT: from raw DB (tiene_imss int) or mapped (imss_estatus string)
@@ -959,15 +1117,12 @@
           else if (t.tiene_infonavit === 1 || t.tiene_infonavit === true) { r[prefix + "infonavit"] = "SI"; }
           else { r[prefix + "infonavit"] = "NO"; }
           r[prefix + "email"] = t.email || "";
-          r[prefix + "tiene_email"] = (t.email != null && t.email !== "") ? "true" : "false";
           return r;
         }
 
         // Find tutor 1 and tutor 2
         const t1 = tutores.find(function (t) { return t.numero_tutor === 1; });
         const t2 = tutores.find(function (t) { return t.numero_tutor === 2; });
-        const hasTutor2 = !!t2;
-
         // Document fields
         const docFields = {
           credencial_path: e.credencial_path || "",
@@ -985,7 +1140,7 @@
           calle: b.calle || "", num_ext: b.num_ext || "", num_int: b.num_int || "",
           colonia: b.colonia || "", ciudad: b.ciudad || "",
           estado_codigo: b.estado_codigo || "11", estado_nombre: b.estado_nombre || "",
-          telefonos: b.telefonos || "", email: b.email || "",
+          telefonos: b.telefonos || "",
           // Estudio fields
           estudio_id: e.id || 0,
           sede: e.sede || "", fecha_estudio: e.fecha_estudio || "",
@@ -993,8 +1148,6 @@
           tuvo_silla_previa: e.tuvo_silla_previa ? "true" : "false",
           como_obtuvo_silla: e.como_obtuvo_silla || "",
           status: e.status || "borrador",
-          // Tutor toggle
-          agregar_tutor2: hasTutor2 ? "true" : "false",
           // Document fields
         }, docFields, _extractTutor(t1, 1), _extractTutor(t2, 2));
       }
@@ -1040,8 +1193,19 @@
         if (tab === "estudio") {
           editContent.innerHTML = _renderEstudioForm(draft);
           _populateFields(draft);
+          _setupSillaPreviaConditionalField();
           _setupEstudioValidations();
           _setupMunicipiosCatalog();
+          const delTutor2Btn = document.getElementById("btn-delete-tutor2");
+          if (delTutor2Btn) {
+            delTutor2Btn.addEventListener("click", function () {
+              openTutor2DeleteModal(function () {
+                _clearTutorDraft(2);
+                _renderEditTab("estudio");
+                showToast("Tutor 2 eliminado del formulario", "warning");
+              });
+            });
+          }
           _highlightModifiedFields();
           return;
         }
@@ -1095,6 +1259,81 @@
           ciudadSelect.value = municipioSeleccionado;
         }
       }
+
+      function _clearTutorDraft(num) {
+        const p = "tutor" + num + "_";
+        Object.keys(state.editDraft.estudio || {}).forEach(function (key) {
+          if (key.indexOf(p) === 0) {
+            state.editDraft.estudio[key] = "";
+          }
+        });
+      }
+
+      function _setupSillaPreviaConditionalField() {
+        const sillaPrevia = document.querySelector('[name="tuvo_silla_previa"]');
+        const comoObtuvo = document.querySelector('[name="como_obtuvo_silla"]');
+        if (!sillaPrevia || !comoObtuvo) return;
+
+        const apply = function () {
+          const hasPreviousChair = sillaPrevia.value === "true";
+          SR_Validations.setFieldDisabled(comoObtuvo, !hasPreviousChair);
+          comoObtuvo.required = hasPreviousChair;
+          if (!hasPreviousChair) {
+            comoObtuvo.value = "";
+            SR_Validations.clearFieldError("como_obtuvo_silla");
+          }
+        };
+
+        sillaPrevia.addEventListener("change", apply);
+        apply();
+      }
+
+      function _hasUnsavedEditChanges() {
+        return ["estudio", "tecnica", "gestion"].some(function (tab) {
+          const draft = state.editDraft[tab] || {};
+          const orig = state.editOriginal[tab] || {};
+          const keys = new Set(Object.keys(draft).concat(Object.keys(orig)));
+          for (const key of keys) {
+            if (String(draft[key] ?? "") !== String(orig[key] ?? "")) return true;
+          }
+          return false;
+        });
+      }
+
+      function _openUnsavedEditModal() {
+        unsavedEditOverlay.classList.remove("hidden");
+      }
+
+      function _closeUnsavedEditModal() {
+        unsavedEditOverlay.classList.add("hidden");
+      }
+
+      function _confirmCloseEditModal() {
+        _hideSaveWarningModal();
+        _closeUnsavedEditModal();
+        editOverlay.classList.add("hidden");
+      }
+
+      function openTutor2DeleteModal(onConfirm) {
+        pendingTutor2DeleteAction = typeof onConfirm === "function" ? onConfirm : null;
+        tutor2DeleteOverlay.classList.remove("hidden");
+      }
+
+      function closeTutor2DeleteModal() {
+        tutor2DeleteOverlay.classList.add("hidden");
+        pendingTutor2DeleteAction = null;
+      }
+
+      if (btnCancelTutor2Delete) {
+        btnCancelTutor2Delete.addEventListener("click", closeTutor2DeleteModal);
+      }
+      if (btnConfirmTutor2Delete) {
+        btnConfirmTutor2Delete.addEventListener("click", function () {
+          const action = pendingTutor2DeleteAction;
+          closeTutor2DeleteModal();
+          if (typeof action === "function") action();
+        });
+      }
       async function _setupMunicipiosCatalog() {
         await _loadMunicipiosCatalog();
         const estadoSelect = document.getElementById("field-estado_codigo");
@@ -1112,72 +1351,63 @@
         const nivOpts = Object.keys(NIVEL_ESTUDIOS_LABELS).map(function (v) { return '<option value="' + v + '">' + NIVEL_ESTUDIOS_LABELS[v] + '</option>'; }).join("");
         const ecOpts = Object.keys(ESTADO_CIVIL_LABELS).map(function (v) { return '<option value="' + v + '">' + ESTADO_CIVIL_LABELS[v] + '</option>'; }).join("");
         const vivOpts = Object.keys(VIVIENDA_LABELS).map(function (v) { return '<option value="' + v + '">' + VIVIENDA_LABELS[v] + '</option>'; }).join("");
-        const estOpts = '<option value="">Selecciona</option>' + ESTADOS_INEGI.map(function (e) { return '<option value="' + e[0] + '">' + e[1] + ' (' + e[0] + ')</option>'; }).join("");
-        const hasTutor2 = draft.agregar_tutor2 === "true";
+        const estOpts = ESTADOS_INEGI.map(function (e) { return '<option value="' + e[0] + '">' + e[1] + ' (' + e[0] + ')</option>'; }).join("");
 
         // Helper: build a tutor card
         function _tutorCard(num) {
           const p = "tutor" + num + "_";
           const v = function (k) { return draft[p + k] || ""; };
+          const hasTutor2Data = num === 2 && Object.keys(draft).some(function (k) {
+            return k.indexOf("tutor2_") === 0 && !_isEmptyValue(draft[k]);
+          });
           const imssSI = v("imss") === "SI" ? "checked" : "";
           const imssNO = v("imss") === "NO" ? "checked" : "";
           const infSI = v("infonavit") === "SI" ? "checked" : "";
           const infNO = v("infonavit") === "NO" ? "checked" : "";
-          const sinEmp = v("sin_empleo") === "true" ? "checked" : "";
-          const antNA = v("antiguedad_no_aplica") === "true" ? "checked" : "";
-          const otrasA = v("otras_fuentes_aplica") === "true" ? "checked" : "";
-          const tieneE = v("tiene_email") === "true" ? "checked" : "";
-          const isTutor2Disabled = num === 2 && !hasTutor2;
-          const disAttr = isTutor2Disabled ? " disabled" : "";
 
           return '<div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">' +
-            '<h4 class="font-bold text-slate-800 text-sm border-b border-slate-200 pb-2">Tutor ' + num + '</h4>' +
-            (num === 2 ? '<label class="inline-flex items-center gap-2 text-sm font-medium text-slate-700 mb-2"><input class="text-ug-blue h-4 w-4" name="agregar_tutor2" type="checkbox" ' + (hasTutor2 ? "checked" : "") + ' /><span>Agregar Tutor 2</span></label>' : '') +
+            '<div class="flex items-center justify-between gap-3 border-b border-slate-200 pb-2"><h4 class="font-bold text-slate-800 text-sm">Tutor ' + num + '</h4>' +
+            (hasTutor2Data ? '<button type="button" id="btn-delete-tutor2" class="text-xs font-bold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg">Eliminar Tutor 2</button>' : '') +
+            '</div>' +
             '<div class="grid grid-cols-3 gap-3">' +
-            _field(p + "nombres", "Nombre(s)", "text", { maxlength: 60, required: true, disabled: isTutor2Disabled }) +
-            _field(p + "apellido_paterno", "Apellido Paterno", "text", { maxlength: 40, required: true, disabled: isTutor2Disabled }) +
-            _field(p + "apellido_materno", "Apellido Materno", "text", { maxlength: 40, disabled: isTutor2Disabled }) +
+            _field(p + "nombres", "Nombre(s)", "text", { maxlength: 60, required: true }) +
+            _field(p + "apellido_paterno", "Apellido Paterno", "text", { maxlength: 40, required: true }) +
+            _field(p + "apellido_materno", "Apellido Materno", "text", { maxlength: 40 }) +
             '</div>' +
             '<div class="grid grid-cols-2 gap-3">' +
-            _field(p + "edad", "Edad", "number", { min: 0, max: 99, required: true, disabled: isTutor2Disabled }) +
-            '<div class="space-y-1"><label class="text-xs font-semibold text-slate-500">Estudios</label><select id="field-' + p + 'nivel_estudios" name="' + p + 'nivel_estudios" class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 py-2 px-3"' + disAttr + ' required><option value="">Selecciona</option>' + nivOpts + '</select></div>' +
+            _field(p + "edad", "Edad", "number", { min: 0, max: 99, required: true }) +
+            '<div class="space-y-1"><label class="text-xs font-semibold text-slate-500">Estudios</label><select id="field-' + p + 'nivel_estudios" name="' + p + 'nivel_estudios" class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 py-2 px-3" required>' + nivOpts + '</select></div>' +
             '</div>' +
             '<div class="grid grid-cols-2 gap-3">' +
-            '<div class="space-y-1"><label class="text-xs font-semibold text-slate-500">Edo. Civil</label><select id="field-' + p + 'estado_civil" name="' + p + 'estado_civil" class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 py-2 px-3"' + disAttr + ' required><option value="">Selecciona</option>' + ecOpts + '</select></div>' +
-            _field(p + "num_hijos", "No. Hijos", "number", { min: 0, max: 30, disabled: isTutor2Disabled }) +
+            '<div class="space-y-1"><label class="text-xs font-semibold text-slate-500">Edo. Civil</label><select id="field-' + p + 'estado_civil" name="' + p + 'estado_civil" class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 py-2 px-3" required>' + ecOpts + '</select></div>' +
+            _field(p + "num_hijos", "No. Hijos", "number", { min: 0, max: 30 }) +
             '</div>' +
-            '<div class="space-y-1"><label class="text-xs font-semibold text-slate-500">Vivienda</label><select id="field-' + p + 'vivienda" name="' + p + 'vivienda" class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 py-2 px-3"' + disAttr + ' required><option value="">Selecciona</option>' + vivOpts + '</select></div>' +
+            '<div class="space-y-1"><label class="text-xs font-semibold text-slate-500">Vivienda</label><select id="field-' + p + 'vivienda" name="' + p + 'vivienda" class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 py-2 px-3" required>' + vivOpts + '</select></div>' +
             '<div class="space-y-2">' +
-            _field(p + "fuente_empleo", "Fuente Empleo", "text", { maxlength: 80, disabled: isTutor2Disabled }) +
-            '<label class="inline-flex items-center gap-2 text-sm font-medium text-slate-700 border border-slate-200 rounded-lg px-3 py-2"><input class="text-ug-blue h-4 w-4" name="' + p + 'sin_empleo" type="checkbox" ' + sinEmp + disAttr + ' /><span>No tiene empleo</span></label>' +
+            _field(p + "fuente_empleo", "Fuente Empleo", "text", { maxlength: 80 }) +
             '</div>' +
             '<div class="grid grid-cols-2 gap-3">' +
-            _field(p + "antiguedad_anios", "Antigüedad (años)", "number", { min: 0, max: 50, disabled: isTutor2Disabled }) +
-            _field(p + "antiguedad_meses_extra", "Antigüedad (meses)", "number", { min: 0, max: 11, disabled: isTutor2Disabled }) +
+            _field(p + "antiguedad_anios", "Antigüedad (años)", "number", { min: 0, max: 50 }) +
+            _field(p + "antiguedad_meses_extra", "Antigüedad (meses)", "number", { min: 0, max: 11 }) +
             '</div>' +
-            '<label class="inline-flex items-center gap-2 text-sm font-medium text-slate-700 border border-slate-200 rounded-lg px-3 py-2"><input class="text-ug-blue h-4 w-4" name="' + p + 'antiguedad_no_aplica" type="checkbox" ' + antNA + disAttr + ' /><span>No aplica antigüedad</span></label>' +
             '<div class="space-y-1">' +
             '<label class="text-xs font-semibold text-slate-500">Ingreso Mensual ($)</label>' +
-            '<input id="field-' + p + 'ingreso_mensual" name="' + p + 'ingreso_mensual" type="text" class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 py-2 px-3"' + disAttr + ' />' +
+            '<input id="field-' + p + 'ingreso_mensual" name="' + p + 'ingreso_mensual" type="text" class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 py-2 px-3" />' +
             '</div>' +
-            '<label class="inline-flex items-center gap-2 text-sm font-medium text-slate-700 border border-slate-200 rounded-lg px-3 py-2"><input class="text-ug-blue h-4 w-4" name="' + p + 'otras_fuentes_aplica" type="checkbox" ' + otrasA + disAttr + ' /><span>Tiene otras fuentes de ingreso</span></label>' +
             '<div class="grid grid-cols-2 gap-3">' +
-            _field(p + "otras_fuentes_ingreso", "Otra fuente", "text", { maxlength: 100, disabled: isTutor2Disabled }) +
-            '<div class="space-y-1"><label class="text-xs font-semibold text-slate-500">Monto adicional ($)</label><input id="field-' + p + 'monto_otras_fuentes" name="' + p + 'monto_otras_fuentes" type="text" class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 py-2 px-3"' + disAttr + ' /></div>' +
+            _field(p + "otras_fuentes_ingreso", "Otra fuente", "text", { maxlength: 100 }) +
+            '<div class="space-y-1"><label class="text-xs font-semibold text-slate-500">Monto adicional ($)</label><input id="field-' + p + 'monto_otras_fuentes" name="' + p + 'monto_otras_fuentes" type="text" class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 py-2 px-3" /></div>' +
             '</div>' +
             '<fieldset class="mt-3"><legend class="text-xs font-bold text-slate-500 uppercase">IMSS</legend><div class="flex gap-4 mt-1">' +
-            '<label class="inline-flex items-center gap-1"><input type="radio" name="' + p + 'imss" value="SI" class="text-ug-blue"' + (imssSI ? " checked" : "") + disAttr + ' /> Sí</label>' +
-            '<label class="inline-flex items-center gap-1"><input type="radio" name="' + p + 'imss" value="NO" class="text-ug-blue"' + (imssNO ? " checked" : "") + disAttr + ' /> No</label>' +
+            '<label class="inline-flex items-center gap-1"><input type="radio" name="' + p + 'imss" value="SI" class="text-ug-blue"' + (imssSI ? " checked" : "") + ' /> Sí</label>' +
+            '<label class="inline-flex items-center gap-1"><input type="radio" name="' + p + 'imss" value="NO" class="text-ug-blue"' + (imssNO ? " checked" : "") + ' /> No</label>' +
             '</div></fieldset>' +
             '<fieldset class="mt-3"><legend class="text-xs font-bold text-slate-500 uppercase">INFONAVIT</legend><div class="flex gap-4 mt-1">' +
-            '<label class="inline-flex items-center gap-1"><input type="radio" name="' + p + 'infonavit" value="SI" class="text-ug-blue"' + (infSI ? " checked" : "") + disAttr + ' /> Sí</label>' +
-            '<label class="inline-flex items-center gap-1"><input type="radio" name="' + p + 'infonavit" value="NO" class="text-ug-blue"' + (infNO ? " checked" : "") + disAttr + ' /> No</label>' +
+            '<label class="inline-flex items-center gap-1"><input type="radio" name="' + p + 'infonavit" value="SI" class="text-ug-blue"' + (infSI ? " checked" : "") + ' /> Sí</label>' +
+            '<label class="inline-flex items-center gap-1"><input type="radio" name="' + p + 'infonavit" value="NO" class="text-ug-blue"' + (infNO ? " checked" : "") + ' /> No</label>' +
             '</div></fieldset>' +
-            '<div class="space-y-2">' +
-            '<label class="inline-flex items-center gap-2 text-sm font-medium text-slate-700 border border-slate-200 rounded-lg px-3 py-2"><input class="text-ug-blue h-4 w-4" name="' + p + 'tiene_email" type="checkbox" ' + tieneE + disAttr + ' /><span>Agregar correo electrónico</span></label>' +
-            _field(p + "email", "Correo electrónico", "email", { maxlength: 254, disabled: isTutor2Disabled || v("tiene_email") !== "true" }) +
-            '</div>' +
-            '</div>';
+            _field(p + "email", "Correo electrónico", "email", { maxlength: 254 }) +
+          '</div>';
         }
 
         // Document section: show existing URLs + upload input
@@ -1200,7 +1430,7 @@
           _field("nombres", "Nombres", "text", { maxlength: 60, required: true }) +
           _field("apellido_paterno", "Apellido Paterno", "text", { maxlength: 40, required: true }) +
           _field("apellido_materno", "Apellido Materno", "text", { maxlength: 40 }) +
-          _field("fecha_nacimiento", "Fecha de Nacimiento", "date", { pattern: "\\d{4}-\\d{2}-\\d{2}" }) +
+          _field("fecha_nacimiento", "Fecha de Nacimiento", "date") +
           '<div class="space-y-1"><label class="text-xs font-semibold text-slate-500">Sexo</label><select id="field-sexo" name="sexo" class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 py-2 px-3"><option value="M" ' + (sexoChecked === "M" ? "selected" : "") + '>Masculino</option><option value="F" ' + (sexoChecked === "F" ? "selected" : "") + '>Femenino</option></select></div>' +
           _fieldArea("diagnostico", "Diagnóstico", { maxlength: 160 }) +
           _field("calle", "Calle", "text", { maxlength: 120 }) +
@@ -1210,7 +1440,7 @@
           '<div class="space-y-1"><label class="text-xs font-semibold text-slate-500">Estado</label><select id="field-estado_codigo" name="estado_codigo" class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 py-2 px-3">' + estOpts + '</select></div>' +
           '<div class="space-y-1"><label class="text-xs font-semibold text-slate-500">Ciudad / Municipio</label><select id="field-ciudad" name="ciudad" class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 py-2 px-3" disabled><option value="">Selecciona un estado primero</option></select></div>' +
           _field("telefonos", "Teléfono (10 dígitos)", "tel", { maxlength: 10 }) +
-          _field("email", "Correo Electrónico", "email") +
+          '' +
           '</div>' +
           '<h3 class="text-sm font-bold text-slate-700 mb-3 mt-4 pt-4 border-t border-slate-100">Tutores</h3>' +
           _tutorCard(1) +
@@ -1222,11 +1452,11 @@
           '</div>' +
           '<h3 class="text-sm font-bold text-slate-700 mb-3 mt-4 pt-4 border-t border-slate-100">Datos del Estudio</h3>' +
           '<div class="grid grid-cols-2 gap-3">' +
-          _field("sede", "Sede", "text", { maxlength: 80 }) +
-          _field("fecha_estudio", "Fecha de Estudio", "date") +
-          _field("ciudad_registro", "Ciudad de Registro", "text", { maxlength: 80 }) +
+          _field("sede", "Sede", "text", { maxlength: 80, required: true }) +
+          _field("fecha_estudio", "Fecha de Estudio", "date", { required: true }) +
+          _field("ciudad_registro", "Ciudad de Registro", "text", { maxlength: 80, required: true }) +
           '<div class="space-y-1"><label class="text-xs font-semibold text-slate-500">¿Tuvo silla previa?</label><select id="field-tuvo_silla_previa" name="tuvo_silla_previa" class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 py-2 px-3"><option value="false" ' + (draft.tuvo_silla_previa === "false" ? "selected" : "") + '>No</option><option value="true" ' + (draft.tuvo_silla_previa === "true" ? "selected" : "") + '>Sí</option></select></div>' +
-          _field("como_obtuvo_silla", "Cómo obtuvo silla", "text", { maxlength: 60 }) +
+          '<div class="space-y-1"><label class="text-xs font-semibold text-slate-500">Cómo obtuvo silla</label><select id="field-como_obtuvo_silla" name="como_obtuvo_silla" class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 py-2 px-3"><option value="">Selecciona una opción</option><option value="COMPRA">Compra</option><option value="DONACION">Donación</option></select></div>' +
           '<div class="space-y-1"><label class="text-xs font-semibold text-slate-500">Status</label><select id="field-status" name="status" class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 py-2 px-3"><option value="borrador">Borrador</option><option value="completo">Completo</option></select></div>' +
           '</div>';
       }
@@ -1327,12 +1557,16 @@
           } else if (el.tagName === "TEXTAREA") {
             el.textContent = draft[key];
           } else {
-            el.value = draft[key] != null ? draft[key] : "";
+            if (MONETARY_FIELD_IDS.indexOf(key) !== -1) {
+              el.value = key.indexOf("ingreso_mensual") !== -1
+                ? SR_Validations.formatIntegerDisplay(draft[key])
+                : SR_Validations.formatIntegerDisplay(draft[key]);
+            } else {
+              el.value = draft[key] != null ? draft[key] : "";
+            }
           }
         });
-        // After populating, run conditional field setup
-        _setupTutorConditionalFields();
-        _setupTutor2Toggle();
+        // After populating, run validations only (no conditional field toggles for admin)
       }
 
       function _highlightModifiedFields() {
@@ -1352,86 +1586,6 @@
         });
       }
 
-      // ═══════════════════════════════════════════════════════════════════════════
-      // TUTOR CONDITIONAL FIELD LOGIC (mirrored from socioeconomico.html)
-      // ═══════════════════════════════════════════════════════════════════════════
-      function _setupTutor2Toggle() {
-        var checkbox = document.querySelector('[name="agregar_tutor2"]');
-        if (!checkbox) return;
-        var apply = function () {
-          var checked = checkbox.checked;
-          // Enable/disable all tutor2 fields
-          var t2Fields = document.querySelectorAll('[name^="tutor2_"]');
-          t2Fields.forEach(function (el) {
-            if (el.type === "radio") {
-              // Disable all radios with same name
-              var allRadios = document.querySelectorAll('[name="' + el.name + '"]');
-              allRadios.forEach(function (r) { r.disabled = !checked; });
-            } else if (el.type === "checkbox") {
-              el.disabled = !checked;
-            } else {
-              el.disabled = !checked;
-            }
-          });
-        };
-        checkbox.addEventListener("change", apply);
-        apply();
-      }
-
-      function _setupTutorConditionalFields() {
-        [1, 2].forEach(function (num) {
-          var p = "tutor" + num + "_";
-          var sinEmpleo = document.querySelector('[name="' + p + 'sin_empleo"]');
-          var fuente = document.querySelector('[name="' + p + 'fuente_empleo"]');
-          var ingreso = document.querySelector('[name="' + p + 'ingreso_mensual"]');
-          var antNoAplica = document.querySelector('[name="' + p + 'antiguedad_no_aplica"]');
-          var antAnios = document.querySelector('[name="' + p + 'antiguedad_anios"]');
-          var antMeses = document.querySelector('[name="' + p + 'antiguedad_meses_extra"]');
-          var otrasAplica = document.querySelector('[name="' + p + 'otras_fuentes_aplica"]');
-          var otrasFuente = document.querySelector('[name="' + p + 'otras_fuentes_ingreso"]');
-          var otrasMonto = document.querySelector('[name="' + p + 'monto_otras_fuentes"]');
-          var tieneEmail = document.querySelector('[name="' + p + 'tiene_email"]');
-          var email = document.querySelector('[name="' + p + 'email"]');
-
-          var applySinEmpleo = function () {
-            var checked = !!(sinEmpleo && sinEmpleo.checked);
-            if (fuente) { fuente.disabled = checked; if (checked) fuente.value = ""; }
-            if (ingreso) { ingreso.disabled = checked; if (checked) ingreso.value = ""; }
-            if (antAnios) { antAnios.disabled = checked || !!(antNoAplica && antNoAplica.checked); if (checked) antAnios.value = ""; }
-            if (antMeses) { antMeses.disabled = checked || !!(antNoAplica && antNoAplica.checked); if (checked) antMeses.value = ""; }
-            if (antNoAplica) { antNoAplica.disabled = checked; if (checked) { antNoAplica.checked = false; } }
-          };
-
-          var applyAntiguedad = function () {
-            var checked = !!(antNoAplica && antNoAplica.checked);
-            var sinEmpChecked = !!(sinEmpleo && sinEmpleo.checked);
-            if (antAnios) { antAnios.disabled = checked || sinEmpChecked; if (checked) antAnios.value = ""; }
-            if (antMeses) { antMeses.disabled = checked || sinEmpChecked; if (checked) antMeses.value = ""; }
-          };
-
-          var applyOtras = function () {
-            var checked = !!(otrasAplica && otrasAplica.checked);
-            if (otrasFuente) { otrasFuente.disabled = !checked; if (!checked) otrasFuente.value = ""; }
-            if (otrasMonto) { otrasMonto.disabled = !checked; if (!checked) otrasMonto.value = ""; }
-          };
-
-          var applyEmail = function () {
-            var checked = !!(tieneEmail && tieneEmail.checked);
-            if (email) { email.disabled = !checked; if (!checked) email.value = ""; }
-          };
-
-          if (sinEmpleo) sinEmpleo.addEventListener("change", applySinEmpleo);
-          if (antNoAplica) antNoAplica.addEventListener("change", applyAntiguedad);
-          if (otrasAplica) otrasAplica.addEventListener("change", applyOtras);
-          if (tieneEmail) tieneEmail.addEventListener("change", applyEmail);
-
-          applySinEmpleo();
-          applyAntiguedad();
-          applyOtras();
-          applyEmail();
-        });
-      }
-
       function _setupEstudioValidations() {
         if (typeof SR_Validations === "undefined") return;
         ["nombres", "apellido_paterno", "apellido_materno"].forEach(function (id) {
@@ -1441,7 +1595,9 @@
         SR_Validations.setupWhitelistField(document.getElementById("field-calle"), SR_Validations.CALLE_RE, SR_Validations.LIMITS.CALLE_MAX);
         SR_Validations.setupWhitelistField(document.getElementById("field-colonia"), SR_Validations.COLONIA_RE, SR_Validations.LIMITS.COLONIA_MAX);
         SR_Validations.setupTelefonoField(document.getElementById("field-telefonos"));
-        SR_Validations.setupEmailField(document.getElementById("field-email"));
+        ["num_ext", "num_int"].forEach(function (id) {
+          SR_Validations.setupTextField(document.getElementById("field-" + id), SR_Validations.NUM_DOMICILIO_RE);
+        });
         // Tutor field validations
         [1, 2].forEach(function (num) {
           var p = "tutor" + num + "_";
@@ -1450,13 +1606,34 @@
           });
           [p + "fuente_empleo", p + "otras_fuentes_ingreso"].forEach(function (name) {
             var el = document.querySelector('[name="' + name + '"]');
-            if (el) SR_Validations.setupWhitelistField(el, SR_Validations.DIAGNOSTICO_RE, 100);
+            if (!el) return;
+            var max = name.includes("fuente_empleo")
+              ? SR_Validations.LIMITS.FUENTE_EMPLEO_MAX
+              : SR_Validations.LIMITS.OTRAS_FUENTES_INGRESO_MAX;
+            SR_Validations.setupWhitelistField(el, SR_Validations.DIAGNOSTICO_RE, max);
+          });
+          [p + "edad", p + "num_hijos", p + "antiguedad_anios", p + "antiguedad_meses_extra"].forEach(function (name) {
+            var el = document.querySelector('[name="' + name + '"]');
+            if (!el) return;
+            var suffix = name.replace(p, "");
+            var limits = {
+              edad: [0, 99],
+              num_hijos: [0, 30],
+              antiguedad_anios: [0, 50],
+              antiguedad_meses_extra: [0, 11],
+            }[suffix];
+            if (!limits) return;
+            SR_Validations.setupIntegerField(el, limits[0], limits[1]);
+          });
+          [p + "ingreso_mensual", p + "monto_otras_fuentes"].forEach(function (name) {
+            var el = document.querySelector('[name="' + name + '"]');
+            if (!el) return;
+            var max = name.includes("ingreso") ? SR_Validations.LIMITS.INGRESO_MENSUAL_MAX : SR_Validations.LIMITS.MONTO_OTRAS_FUENTES_MAX;
+            SR_Validations.setupMoneyFieldWithFormatting(el, max);
           });
           var emailEl = document.querySelector('[name="' + p + 'email"]');
           if (emailEl) SR_Validations.setupEmailField(emailEl);
         });
-        _setupTutorConditionalFields();
-        _setupTutor2Toggle();
       }
 
       function _setupTecnicaValidations() {
@@ -1481,6 +1658,205 @@
           document.getElementById("field-justificacion"),
           SR_Validations.OBS_WHITELIST_RE, SR_Validations.LIMITS.JUST_MAX
         );
+      }
+
+      const EDIT_FIELD_RULES = {
+        estudio: [
+          { key: "nombres", label: "Nombres", required: true },
+          { key: "apellido_paterno", label: "Apellido Paterno", required: true },
+          { key: "apellido_materno", label: "Apellido Materno", required: true },
+          { key: "fecha_nacimiento", label: "Fecha de Nacimiento", required: true },
+          { key: "diagnostico", label: "Diagnóstico", required: true },
+          { key: "calle", label: "Calle", required: true },
+          { key: "colonia", label: "Colonia", required: true },
+          { key: "ciudad", label: "Ciudad / Municipio", required: true },
+          { key: "estado_codigo", label: "Estado", required: true },
+          { key: "sexo", label: "Sexo", required: true },
+          { key: "telefonos", label: "Teléfono", required: true },
+          { key: "num_ext", label: "Núm. Ext.", required: true },
+          { key: "num_int", label: "Núm. Int." },
+          { key: "sede", label: "Sede", required: true },
+          { key: "fecha_estudio", label: "Fecha de Estudio", required: true },
+          { key: "ciudad_registro", label: "Ciudad de Registro", required: true },
+          { key: "tuvo_silla_previa", label: "¿Tuvo silla previa?", required: true },
+          { key: "como_obtuvo_silla", label: "Cómo obtuvo silla", requiredIf: function (draft) { return draft.tuvo_silla_previa === "true"; } },
+          { key: "status", label: "Status", required: true },
+          { key: "tutor1_nombres", label: "Tutor 1 - Nombre(s)", required: true },
+          { key: "tutor1_apellido_paterno", label: "Tutor 1 - Apellido Paterno", required: true },
+          { key: "tutor1_apellido_materno", label: "Tutor 1 - Apellido Materno", required: true },
+          { key: "tutor1_edad", label: "Tutor 1 - Edad", required: true },
+          { key: "tutor1_nivel_estudios", label: "Tutor 1 - Estudios", required: true },
+          { key: "tutor1_estado_civil", label: "Tutor 1 - Edo. Civil", required: true },
+          { key: "tutor1_num_hijos", label: "Tutor 1 - No. Hijos", required: true },
+          { key: "tutor1_vivienda", label: "Tutor 1 - Vivienda", required: true },
+          { key: "tutor1_fuente_empleo", label: "Tutor 1 - Fuente Empleo" },
+          { key: "tutor1_antiguedad_anios", label: "Tutor 1 - Antigüedad (años)" },
+          { key: "tutor1_antiguedad_meses_extra", label: "Tutor 1 - Antigüedad (meses)" },
+          { key: "tutor1_ingreso_mensual", label: "Tutor 1 - Ingreso Mensual" },
+          { key: "tutor1_otras_fuentes_ingreso", label: "Tutor 1 - Otra fuente" },
+          { key: "tutor1_monto_otras_fuentes", label: "Tutor 1 - Monto adicional" },
+          { key: "tutor1_imss", label: "Tutor 1 - IMSS", required: true },
+          { key: "tutor1_infonavit", label: "Tutor 1 - INFONAVIT", required: true },
+          { key: "tutor1_email", label: "Tutor 1 - Correo electrónico" },
+          { key: "tutor2_nombres", label: "Tutor 2 - Nombre(s)" },
+          { key: "tutor2_apellido_paterno", label: "Tutor 2 - Apellido Paterno" },
+          { key: "tutor2_apellido_materno", label: "Tutor 2 - Apellido Materno" },
+          { key: "tutor2_edad", label: "Tutor 2 - Edad" },
+          { key: "tutor2_nivel_estudios", label: "Tutor 2 - Estudios" },
+          { key: "tutor2_estado_civil", label: "Tutor 2 - Edo. Civil" },
+          { key: "tutor2_num_hijos", label: "Tutor 2 - No. Hijos" },
+          { key: "tutor2_vivienda", label: "Tutor 2 - Vivienda" },
+          { key: "tutor2_fuente_empleo", label: "Tutor 2 - Fuente Empleo" },
+          { key: "tutor2_antiguedad_anios", label: "Tutor 2 - Antigüedad (años)" },
+          { key: "tutor2_antiguedad_meses_extra", label: "Tutor 2 - Antigüedad (meses)" },
+          { key: "tutor2_ingreso_mensual", label: "Tutor 2 - Ingreso Mensual" },
+          { key: "tutor2_otras_fuentes_ingreso", label: "Tutor 2 - Otra fuente" },
+          { key: "tutor2_monto_otras_fuentes", label: "Tutor 2 - Monto adicional" },
+          { key: "tutor2_imss", label: "Tutor 2 - IMSS" },
+          { key: "tutor2_infonavit", label: "Tutor 2 - INFONAVIT" },
+          { key: "tutor2_email", label: "Tutor 2 - Correo electrónico" },
+        ],
+        tecnica: [
+          { key: "entorno", label: "Entorno", requiredIf: function (draft) { return draft.status === "completo"; } },
+          { key: "control_tronco", label: "Control Tronco", requiredIf: function (draft) { return draft.status === "completo"; } },
+          { key: "control_cabeza", label: "Control Cabeza", requiredIf: function (draft) { return draft.status === "completo"; } },
+          { key: "control_de_piernas", label: "Control de Piernas", required: true },
+          { key: "altura_total_in", label: "Altura Total (in)", requiredIf: function (draft) { return draft.status === "completo"; } },
+          { key: "peso_kg", label: "Peso (lb)", requiredIf: function (draft) { return draft.status === "completo"; } },
+          { key: "medida_cabeza_asiento", label: "Cabeza-Asiento (in)", requiredIf: function (draft) { return draft.status === "completo"; } },
+          { key: "medida_hombro_asiento", label: "Hombro-Asiento (in)", requiredIf: function (draft) { return draft.status === "completo"; } },
+          { key: "medida_prof_asiento", label: "Prof. Asiento (in)", requiredIf: function (draft) { return draft.status === "completo"; } },
+          { key: "medida_rodilla_talon", label: "Rodilla-Talón (in)", requiredIf: function (draft) { return draft.status === "completo"; } },
+          { key: "medida_ancho_cadera", label: "Ancho Cadera (in)", requiredIf: function (draft) { return draft.status === "completo"; } },
+          { key: "observaciones_posturales", label: "Observaciones Posturales" },
+          { key: "status", label: "Status", required: true },
+        ],
+        gestion: [
+          { key: "entidad_solicitante", label: "Entidad Solicitante", required: true },
+          { key: "prioridad", label: "Prioridad", required: true },
+          { key: "justificacion", label: "Justificación" },
+        ],
+      };
+
+      function _isEmptyValue(value) {
+        return value === undefined || value === null || String(value).trim() === "";
+      }
+
+      function _ruleApplies(rule, draft) {
+        if (typeof rule.requiredIf === "function") return !!rule.requiredIf(draft || {});
+        return !!rule.required;
+      }
+
+      function _getRuleElement(key) {
+        return document.querySelector('[name="' + key + '"]') || document.getElementById("field-" + key);
+      }
+
+      function _getRuleElements(key) {
+        var nodes = editContent.querySelectorAll('[name="' + key + '"]');
+        if (nodes && nodes.length) return Array.from(nodes);
+        var el = document.getElementById("field-" + key);
+        return el ? [el] : [];
+      }
+
+      function _clearValidationMarks() {
+        editContent.querySelectorAll("[data-validation-state]").forEach(function (el) {
+          el.style.borderColor = "";
+          el.style.backgroundColor = "";
+          el.style.outline = "";
+          el.style.outlineOffset = "";
+          delete el.dataset.validationState;
+        });
+        _hide(editError);
+      }
+
+      function _markValidation(key, mode) {
+        _getRuleElements(key).forEach(function (el) {
+          el.dataset.validationState = mode;
+          if (mode === "error") {
+            el.style.borderColor = "#f87171";
+            el.style.backgroundColor = "#fef2f2";
+            el.style.outline = "2px solid #f87171";
+            el.style.outlineOffset = "2px";
+          } else if (mode === "warning") {
+            el.style.borderColor = "#f59e0b";
+            el.style.backgroundColor = "#fffbeb";
+            el.style.outline = "2px solid #f59e0b";
+            el.style.outlineOffset = "2px";
+          }
+        });
+      }
+
+      function _showValidationErrors(items) {
+        if (!items.length) return _hide(editError);
+        editError.innerHTML = '<strong>Corrige los siguientes campos:</strong><br>' + items.map(function (item) {
+          return '• ' + _escapeHtml(item.label);
+        }).join('<br>');
+        editError.classList.remove("hidden");
+      }
+
+      function _collectMissingRequiredFields(tabs) {
+        var items = [];
+        tabs.forEach(function (tab) {
+          var draft = state.editDraft[tab] || {};
+          (EDIT_FIELD_RULES[tab] || []).forEach(function (rule) {
+            if (!_ruleApplies(rule, draft)) return;
+            if (_isEmptyValue(draft[rule.key])) items.push({ tab: tab, key: rule.key, label: rule.label });
+          });
+        });
+        return items;
+      }
+
+      function _collectClearedOptionalFields(tabs) {
+        var items = [];
+        tabs.forEach(function (tab) {
+          var draft = state.editDraft[tab] || {};
+          var orig = state.editOriginal[tab] || {};
+          (EDIT_FIELD_RULES[tab] || []).forEach(function (rule) {
+            if (_ruleApplies(rule, draft)) return;
+            if (!_isEmptyValue(orig[rule.key]) && _isEmptyValue(draft[rule.key])) {
+              items.push({ tab: tab, key: rule.key, label: rule.label });
+            }
+          });
+        });
+        return items;
+      }
+
+      function _renderSaveWarningModal(title, message, items, onConfirm) {
+        state.pendingSave = onConfirm;
+        saveConfirmTitle.textContent = title;
+        saveConfirmMessage.textContent = message;
+        saveConfirmSummary.textContent = items.length ? "Hay campos opcionales que tenían datos y ahora están vacíos." : "Los cambios se guardarán en la base de datos.";
+        saveConfirmList.innerHTML = items.length ? items.map(function (item) {
+          return '<li>' + _escapeHtml(item.label) + '</li>';
+        }).join("") : '';
+        saveConfirmOverlay.classList.remove("hidden");
+      }
+
+      function _hideSaveWarningModal() {
+        saveConfirmOverlay.classList.add("hidden");
+        state.pendingSave = null;
+        saveConfirmList.innerHTML = "";
+        saveConfirmSummary.textContent = "";
+      }
+
+      function _currentDraftTabs() {
+        return ["estudio", "tecnica", "gestion"];
+      }
+
+      function _runAdminValidation(tabs) {
+        _clearValidationMarks();
+        var missing = _collectMissingRequiredFields(tabs);
+        missing.forEach(function (item) { _markValidation(item.key, "error"); });
+        if (missing.length) {
+          _showValidationErrors(missing);
+          return { ok: false, missing: missing, cleared: [] };
+        }
+        var cleared = _collectClearedOptionalFields(tabs);
+        cleared.forEach(function (item) { _markValidation(item.key, "warning"); });
+        if (cleared.length) {
+          return { ok: false, missing: [], cleared: cleared };
+        }
+        return { ok: true, missing: [], cleared: [] };
       }
 
       // Tab switching
@@ -1514,45 +1890,25 @@
           } else if (el.type === "radio") {
             if (el.checked) draft[el.name] = el.value;
           } else {
-            draft[el.name] = el.tagName === "TEXTAREA" ? el.textContent : el.value;
+            if (MONETARY_FIELD_IDS.indexOf(el.name) !== -1) {
+              draft[el.name] = String(SR_Validations.toIntegerOrNull(el.value) ?? "");
+            } else {
+              draft[el.name] = el.value;
+            }
           }
         });
         state.editDraft[tab] = Object.assign({}, state.editDraft[tab], draft);
       }
 
-      // Save current tab (draft to localStorage)
-      $("btn-save-tab").addEventListener("click", function () {
-        _saveDraftFromForm(state.currentEditTab);
-        const key = "admin_edit_draft_" + state.currentEditTab + "_" + (state.currentDetail?.beneficiario?.id || "0");
-        localStorage.setItem(key, JSON.stringify(state.editDraft[state.currentEditTab]));
-        // Promote saved values to original so red indicators disappear for this tab
-        state.editOriginal[state.currentEditTab] = JSON.parse(JSON.stringify(state.editDraft[state.currentEditTab]));
+      function _saveCurrentTabLocally() {
+        const tab = state.currentEditTab;
+        const key = "admin_edit_draft_" + tab + "_" + (state.currentDetail?.beneficiario?.id || "0");
+        localStorage.setItem(key, JSON.stringify(state.editDraft[tab]));
+        state.editOriginal[tab] = JSON.parse(JSON.stringify(state.editDraft[tab]));
         _highlightModifiedFields();
-        showToast("Pestaña guardada localmente", "success");
-      });
+      }
 
-      // Save confirmation modal handlers
-      $("btn-save-all").addEventListener("click", function () {
-        _saveDraftFromForm(state.currentEditTab);
-        $("save-confirm-overlay").classList.remove("hidden");
-      });
-
-      $("btn-cancel-save").addEventListener("click", function () {
-        $("save-confirm-overlay").classList.add("hidden");
-        _highlightModifiedFields();
-        showToast("Los campos modificados se marcaron en rojo. Revisa antes de guardar.", "warning");
-      });
-
-      $("save-confirm-overlay").addEventListener("click", function (e) {
-        if (e.target === this) {
-          this.classList.add("hidden");
-          _highlightModifiedFields();
-          showToast("Los campos modificados se marcaron en rojo. Revisa antes de guardar.", "warning");
-        }
-      });
-
-      $("btn-confirm-save").addEventListener("click", async function () {
-        $("save-confirm-overlay").classList.add("hidden");
+      async function _runGlobalSave() {
         const benId = state.currentDetail?.beneficiario?.id;
         const estudioId = state.editDraft.estudio?.estudio_id;
         if (!benId) return;
@@ -1567,7 +1923,6 @@
             if (_hasPendingDocuments()) {
               credUpload = await _uploadDocumento("credencial", "field-credencial_file");
               compUpload = await _uploadDocumento("comprobante_domicilio", "field-comprobante_domicilio_file");
-              // Update draft with new paths/urls
               if (credUpload) {
                 state.editDraft.estudio.credencial_path = credUpload.path;
                 state.editDraft.estudio.credencial_url = credUpload.url;
@@ -1582,9 +1937,7 @@
           }
 
           // 1. Save beneficiario
-          const benFields = _extractBeneficiarioPayload(state.editDraft.estudio, state.editOriginal.estudio);
-          console.log("[DEBUG] benFields:", JSON.stringify(benFields));
-          console.log("[DEBUG] draft.email:", state.editDraft.estudio.email, "| orig.email:", state.editOriginal.estudio.email);
+          const benFields = _extractBeneficiarioPayload(state.editDraft.estudio, state.serverOriginal.estudio);
           if (Object.keys(benFields).length > 0) {
             const res = await _authFetch("/api/admin/beneficiarios/" + benId, {
               method: "PATCH", headers: { "Content-Type": "application/json" },
@@ -1594,7 +1947,7 @@
           }
 
           // 2. Save estudio core fields (admin PATCH — no tutors/docs)
-          const estFields = _extractEstudioPayload(state.editDraft.estudio, state.editOriginal.estudio);
+          const estFields = _extractEstudioPayload(state.editDraft.estudio, state.serverOriginal.estudio);
           if (Object.keys(estFields).length > 0) {
             const res = await _authFetch("/api/admin/beneficiarios/" + benId + "/estudio", {
               method: "PATCH", headers: { "Content-Type": "application/json" },
@@ -1605,7 +1958,7 @@
 
           // 3. Save tutors + documents via /api/estudios/{id} (regular endpoint, admin-allowed)
           if (estudioId && _hasTutorOrDocChanges()) {
-            const fullPayload = _extractEstudioFullPayload(state.editDraft.estudio);
+            const fullPayload = _extractEstudioFullPayload(state.editDraft.estudio, state.serverOriginal.estudio);
             if (fullPayload) {
               const res = await _authFetch("/api/estudios/" + estudioId, {
                 method: "PATCH", headers: { "Content-Type": "application/json" },
@@ -1623,7 +1976,7 @@
           }
 
           // 4. Save solicitud
-          const solFields = _extractSolicitudPayload(state.editDraft.tecnica, state.editOriginal.tecnica);
+          const solFields = _extractSolicitudPayload(state.editDraft.tecnica, state.serverOriginal.tecnica);
           if (Object.keys(solFields).length > 0) {
             const res = await _authFetch("/api/admin/beneficiarios/" + benId + "/solicitud", {
               method: "PATCH", headers: { "Content-Type": "application/json" },
@@ -1633,7 +1986,7 @@
           }
 
           // 5. Save gestion
-          const gesFields = _extractGestionPayload(state.editDraft.gestion, state.editOriginal.gestion);
+          const gesFields = _extractGestionPayload(state.editDraft.gestion, state.serverOriginal.gestion);
           if (Object.keys(gesFields).length > 0) {
             const res = await _authFetch("/api/admin/beneficiarios/" + benId + "/gestion", {
               method: "PATCH", headers: { "Content-Type": "application/json" },
@@ -1646,11 +1999,69 @@
             _show(editError, errors.join(" | "));
           } else {
             showToast("Todos los cambios guardados correctamente", "success");
-            closeEditModal();
+            closeEditModal(true);
+            await new Promise(function (resolve) { setTimeout(resolve, 250); });
+            await openDetailModal(benId);
             loadBeneficiarios();
           }
         } catch (err) {
           _show(editError, "Error de conexión al guardar.");
+        }
+      }
+
+      // Save current tab (draft to localStorage)
+      $("btn-save-tab").addEventListener("click", function () {
+        _saveDraftFromForm(state.currentEditTab);
+        const check = _runAdminValidation([state.currentEditTab]);
+        if (!check.ok) {
+          if (check.cleared.length) {
+            _renderSaveWarningModal(
+              "Campos opcionales vaciados",
+              "Revisa los campos que tenían datos y ahora están vacíos.",
+              check.cleared,
+              async function () {
+                _hideSaveWarningModal();
+                _saveCurrentTabLocally();
+                showToast("Pestaña guardada localmente", "success");
+              }
+            );
+          }
+          return;
+        }
+        _saveCurrentTabLocally();
+        showToast("Pestaña guardada localmente", "success");
+      });
+
+      // Save confirmation modal handlers
+      $("btn-save-all").addEventListener("click", async function () {
+        _saveDraftFromForm(state.currentEditTab);
+        const check = _runAdminValidation(_currentDraftTabs());
+        if (!check.ok && !check.cleared.length) {
+          return;
+        }
+        _renderSaveWarningModal(
+          check.cleared.length ? "Campos opcionales vaciados" : "Confirmar guardado",
+          check.cleared.length ? "Revisa los campos que tenían datos y ahora están vacíos antes de guardar todo." : "¿Desea guardar los cambios realizados?",
+          check.cleared,
+          async function () {
+            _hideSaveWarningModal();
+            await _runGlobalSave();
+          }
+        );
+      });
+
+      $("btn-cancel-save").addEventListener("click", function () {
+        _hideSaveWarningModal();
+        _highlightModifiedFields();
+        showToast("Revisa los cambios antes de guardar.", "warning");
+      });
+
+      $("btn-confirm-save").addEventListener("click", async function () {
+        if (typeof state.pendingSave === "function") {
+          var action = state.pendingSave;
+          _hideSaveWarningModal();
+          _clearValidationMarks();
+          await action();
         }
       });
 
@@ -1659,7 +2070,7 @@
         const fields = {};
         const keys = ["nombres", "apellido_paterno", "apellido_materno", "fecha_nacimiento",
                        "sexo", "diagnostico", "calle", "num_ext", "num_int", "colonia", "ciudad",
-                       "estado_codigo", "telefonos", "email"];
+                       "estado_codigo", "telefonos"];
         keys.forEach(function (k) {
           var hasValue = draft[k] !== undefined && draft[k] !== "";
           var wasEmpty = !original[k] || original[k] === "";
@@ -1698,37 +2109,46 @@
           } else if (draft.tuvo_silla_previa !== "true" && original.como_obtuvo_silla) {
             // Clear como_obtuvo_silla when tuvo_silla_previa is false
             fields["como_obtuvo_silla"] = "";
+          } else if (draft.tuvo_silla_previa !== "true") {
+            fields["como_obtuvo_silla"] = "";
           }
         }
         return fields;
       }
 
       // Build tutor payload for PATCH /api/estudios/{id} (the regular endpoint supports tutors)
-      function _buildTutorPayload(draft, num) {
+      function _buildTutorPayload(draft, num, original) {
         var p = "tutor" + num + "_";
+        original = original || {};
         var getVal = function (k) { return draft[p + k] || ""; };
         var getValInt = function (k) { var v = draft[p + k]; return (v != null && v !== "") ? parseInt(v, 10) : null; };
         var getValFloat = function (k) { var v = draft[p + k]; return (v != null && v !== "") ? parseFloat(v) : null; };
-        var nombres = (getVal("nombres") || "").trim();
-        if (!nombres) return null; // No tutor data entered
+        var originalHasData = ["nombres","apellido_paterno","apellido_materno","edad","nivel_estudios","estado_civil","num_hijos","vivienda","fuente_empleo","antiguedad_anios","antiguedad_meses_extra","ingreso_mensual","otras_fuentes_ingreso","monto_otras_fuentes","imss","infonavit","email"].some(function (k) {
+          return !_isEmptyValue(original[p + k]);
+        });
+        var draftHasData = ["nombres","apellido_paterno","apellido_materno","edad","nivel_estudios","estado_civil","num_hijos","vivienda","fuente_empleo","antiguedad_anios","antiguedad_meses_extra","ingreso_mensual","otras_fuentes_ingreso","monto_otras_fuentes","imss","infonavit","email"].some(function (k) {
+          return !_isEmptyValue(draft[p + k]);
+        });
+        if (num === 1 && _isEmptyValue(getVal("nombres"))) return null;
+        if (num === 2 && !draftHasData && !originalHasData) return null;
         return {
           numero_tutor: num,
-          nombres: nombres,
+          nombres: getVal("nombres").trim(),
           apellido_paterno: getVal("apellido_paterno").trim(),
           apellido_materno: getVal("apellido_materno").trim(),
-          email: draft[p + "tiene_email"] === "true" ? getVal("email") : null,
+          email: _isEmptyValue(draft[p + "email"]) ? null : getVal("email"),
           edad: getValInt("edad"),
           nivel_estudios: getVal("nivel_estudios") || null,
           estado_civil: getVal("estado_civil") || null,
           num_hijos: getValInt("num_hijos"),
           vivienda: getVal("vivienda") || null,
           fuente_empleo: getVal("fuente_empleo") || null,
-          sin_empleo: getVal("sin_empleo") === "true",
+          sin_empleo: _isEmptyValue(draft[p + "fuente_empleo"]) && _isEmptyValue(draft[p + "ingreso_mensual"]),
           antiguedad_anios: getValInt("antiguedad_anios"),
           antiguedad_meses_extra: getValInt("antiguedad_meses_extra"),
-          antiguedad_aplica: getVal("antiguedad_no_aplica") !== "true",
+          antiguedad_aplica: !(_isEmptyValue(draft[p + "antiguedad_anios"]) && _isEmptyValue(draft[p + "antiguedad_meses_extra"])),
           ingreso_mensual: getValInt("ingreso_mensual"),
-          otras_fuentes_aplica: getVal("otras_fuentes_aplica") === "true",
+          otras_fuentes_aplica: !(_isEmptyValue(draft[p + "otras_fuentes_ingreso"]) && _isEmptyValue(draft[p + "monto_otras_fuentes"])),
           otras_fuentes_ingreso: getVal("otras_fuentes_ingreso") || null,
           monto_otras_fuentes: getValFloat("monto_otras_fuentes"),
           imss_estatus: getVal("imss") || null,
@@ -1736,19 +2156,17 @@
         };
       }
 
-      function _buildTutoresArray(draft) {
+      function _buildTutoresArray(draft, original) {
         var tutores = [];
-        var t1 = _buildTutorPayload(draft, 1);
+        var t1 = _buildTutorPayload(draft, 1, original);
         if (t1) tutores.push(t1);
-        if (draft.agregar_tutor2 === "true") {
-          var t2 = _buildTutorPayload(draft, 2);
-          if (t2) tutores.push(t2);
-        }
+        var t2 = _buildTutorPayload(draft, 2, original);
+        if (t2) tutores.push(t2);
         return tutores.length > 0 ? tutores : null;
       }
 
       // Extract study data for the full /api/estudios/{id} PATCH (tutors + docs)
-      function _extractEstudioFullPayload(draft) {
+      function _extractEstudioFullPayload(draft, original) {
         var payload = {};
 
         // Core estudio fields
@@ -1757,11 +2175,13 @@
           payload.tuvo_silla_previa = draft.tuvo_silla_previa === "true";
           if (draft.tuvo_silla_previa === "true" && draft.como_obtuvo_silla) {
             payload.como_obtuvo_silla = draft.como_obtuvo_silla;
+          } else if (draft.tuvo_silla_previa !== "true") {
+            payload.como_obtuvo_silla = "";
           }
         }
 
         // Tutors
-        var tutores = _buildTutoresArray(draft);
+        var tutores = _buildTutoresArray(draft, original || {});
         if (tutores) payload.tutores = tutores;
 
         // Documents: include path/url if present in draft
@@ -1801,19 +2221,17 @@
       // Check if tutors or documents have changed from original
       function _hasTutorOrDocChanges() {
         var draft = state.editDraft.estudio || {};
-        var orig = state.editOriginal.estudio || {};
+        var orig = state.serverOriginal.estudio || {};
         var tutorDocKeys = [];
         // All tutor keys
         [1, 2].forEach(function (num) {
           var p = "tutor" + num + "_";
           ["nombres","apellido_paterno","apellido_materno","edad","nivel_estudios","estado_civil",
-           "num_hijos","vivienda","fuente_empleo","sin_empleo","antiguedad_anios","antiguedad_meses_extra",
-           "antiguedad_no_aplica","ingreso_mensual","otras_fuentes_aplica","otras_fuentes_ingreso",
-           "monto_otras_fuentes","imss","infonavit","email","tiene_email"].forEach(function (k) {
+           "num_hijos","vivienda","fuente_empleo","antiguedad_anios","antiguedad_meses_extra",
+           "ingreso_mensual","otras_fuentes_ingreso","monto_otras_fuentes","imss","infonavit","email"].forEach(function (k) {
             tutorDocKeys.push(p + k);
           });
         });
-        tutorDocKeys.push("agregar_tutor2");
         // Document keys
         ["credencial_path","credencial_url","comprobante_domicilio_path","comprobante_domicilio_url"].forEach(function (k) {
           tutorDocKeys.push(k);
@@ -1859,12 +2277,37 @@
         return fields;
       }
 
-      // Close edit modal
-      $("btn-close-edit").addEventListener("click", closeEditModal);
-      editOverlay.addEventListener("click", function (e) { if (e.target === editOverlay) closeEditModal(); });
-      function closeEditModal() {
+      // Close edit modal (only via X button — no outside click)
+      $("btn-close-edit").addEventListener("click", function () {
+        closeEditModal();
+      });
+      function closeEditModal(force) {
         _saveDraftFromForm(state.currentEditTab);
-        editOverlay.classList.add("hidden");
+        if (force) {
+          _confirmCloseEditModal();
+          return;
+        }
+        if (_hasUnsavedEditChanges()) {
+          _openUnsavedEditModal();
+          return;
+        }
+        _confirmCloseEditModal();
+      }
+
+      if (btnCloseUnsavedEdit) {
+        btnCloseUnsavedEdit.addEventListener("click", function () {
+          _closeUnsavedEditModal();
+        });
+      }
+      if (btnReturnUnsavedEdit) {
+        btnReturnUnsavedEdit.addEventListener("click", function () {
+          _closeUnsavedEditModal();
+        });
+      }
+      if (btnAcceptUnsavedEdit) {
+        btnAcceptUnsavedEdit.addEventListener("click", function () {
+          _confirmCloseEditModal();
+        });
       }
 
       // ═══════════════════════════════════════════════════════════════════════════
@@ -1887,12 +2330,7 @@
         state.deleteTargetId = null;
       });
 
-      $("delete-overlay").addEventListener("click", function (e) {
-        if (e.target === this) {
-          this.classList.add("hidden");
-          state.deleteTargetId = null;
-        }
-      });
+      // Delete confirmation overlay — close only via buttons, not outside click
 
       $("btn-confirm-delete").addEventListener("click", async function () {
         const benId = state.deleteTargetId;
