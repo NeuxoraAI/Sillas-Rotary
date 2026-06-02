@@ -46,6 +46,27 @@
     transform: translateX(4px);
     border-color: #1e3a8a40;
   }
+
+  /* Heatmap */
+  .heatmap-cell { width: 13px; height: 13px; border-radius: 2px; }
+  .heatmap-month { font-size: 10px; fill: #94a3b8; }
+  .heatmap-tooltip {
+    background: #1e293b; color: #fff; font-size: 11px;
+    padding: 4px 8px; border-radius: 4px; white-space: nowrap;
+    pointer-events: none; position: absolute; z-index: 50;
+    transform: translate(-50%, -100%); margin-top: -6px;
+  }
+  .heatmap-tooltip::after {
+    content: ''; position: absolute; top: 100%; left: 50%;
+    margin-left: -4px; border: 4px solid transparent;
+    border-top-color: #1e293b;
+  }
+  .modal-overlay {
+    background: rgba(0,0,0,0.5); backdrop-filter: blur(2px);
+  }
+  /* Tab active */
+  .tab-btn.active { color: #1e3a8a; border-bottom: 2px solid #1e3a8a; font-weight: 700; }
+  .tab-btn { color: #94a3b8; padding-bottom: 4px; }
 </style>
 </head>
 <body class="bg-slate-50 font-display min-h-screen flex flex-col">
@@ -106,7 +127,39 @@
             <span class="material-symbols-outlined text-xl">add_circle</span>
             <span>Nueva Captura</span>
           </button>
+          <button id="btn-editar-perfil" class="flex-1 sm:flex-none py-3 bg-white hover:bg-slate-50 active:scale-[0.98] text-slate-700 font-bold rounded-xl border-2 border-slate-200 shadow-lg transition-all flex items-center justify-center gap-2">
+            <span class="material-symbols-outlined text-xl">edit</span>
+            <span>Editar Perfil</span>
+          </button>
         </div>
+      </div>
+    </div>
+
+    <!-- Heatmap -->
+    <div class="bg-white rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.07)] border border-slate-100 overflow-hidden">
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
+        <span class="material-symbols-outlined text-ug-blue text-xl">calendar_month</span>
+        <h2 class="text-base font-semibold text-slate-800">Actividad</h2>
+        <span id="heatmap-count" class="text-xs font-bold text-ug-blue bg-ug-blue/10 rounded-full px-2.5 py-0.5 hidden">0</span>
+      </div>
+      <div id="heatmap-container" class="px-6 py-5 overflow-x-auto">
+        <div class="flex items-end gap-1">
+          <!-- week columns will be rendered by JS -->
+          <svg id="heatmap-svg" width="828" height="128" class="block mx-auto"></svg>
+        </div>
+        <div class="flex items-center gap-2 mt-4 text-xs text-slate-400 justify-end">
+          <span>Menos</span>
+          <span class="heatmap-cell inline-block bg-[#ebedf0]"></span>
+          <span class="heatmap-cell inline-block bg-[#9be9a8]"></span>
+          <span class="heatmap-cell inline-block bg-[#40c463]"></span>
+          <span class="heatmap-cell inline-block bg-[#30a14e]"></span>
+          <span class="heatmap-cell inline-block bg-[#216e39]"></span>
+          <span>Más</span>
+        </div>
+      </div>
+      <div id="heatmap-loading" class="px-6 py-8 text-center text-slate-400 text-sm">
+        <span class="material-symbols-outlined text-2xl block mb-1 animate-pulse">hourglass_empty</span>
+        Cargando actividad…
       </div>
     </div>
 
@@ -114,6 +167,41 @@
     <div id="error-banner" class="hidden bg-red-50 border border-red-200 rounded-xl px-5 py-4 flex items-start gap-3" role="alert">
       <span class="material-symbols-outlined text-red-400 text-xl mt-0.5 shrink-0">error</span>
       <p id="error-text" class="text-red-700 text-sm leading-relaxed"></p>
+    </div>
+
+    <!-- Edit Profile Modal -->
+    <div id="edit-modal" class="hidden fixed inset-0 z-50 modal-overlay flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-5">
+        <div class="flex items-center justify-between">
+          <h3 class="text-lg font-bold text-slate-900">Editar Perfil</h3>
+          <button id="btn-cerrar-modal" class="w-8 h-8 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-400">
+            <span class="material-symbols-outlined text-xl">close</span>
+          </button>
+        </div>
+        <div class="space-y-4">
+          <div class="space-y-2">
+            <label class="block text-sm font-semibold text-slate-700" for="edit-nombre">Nombre</label>
+            <input id="edit-nombre" type="text" maxlength="120" minlength="2"
+              class="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-ug-blue focus:outline-none text-sm" />
+          </div>
+          <div class="space-y-2">
+            <label class="block text-sm font-semibold text-slate-700" for="edit-email">Correo electrónico</label>
+            <input id="edit-email" type="email" maxlength="254"
+              class="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-ug-blue focus:outline-none text-sm" />
+          </div>
+          <div class="space-y-2">
+            <label class="block text-sm font-semibold text-slate-700" for="edit-telefono">Teléfono</label>
+            <input id="edit-telefono" type="tel" maxlength="10" pattern="[0-9]{0,10}"
+              class="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-ug-blue focus:outline-none text-sm" />
+          </div>
+        </div>
+        <p id="edit-error" class="hidden text-red-600 text-sm bg-red-50 rounded-lg px-4 py-2" role="alert"></p>
+        <p id="edit-success" class="hidden text-green-700 text-sm bg-green-50 rounded-lg px-4 py-2" role="status"></p>
+        <div class="flex gap-3 pt-2">
+          <button id="btn-cancelar-edit" class="flex-1 py-3 border-2 border-slate-200 rounded-xl font-semibold text-slate-600 hover:bg-slate-50 transition-all">Cancelar</button>
+          <button id="btn-guardar-edit" class="flex-1 py-3 bg-ug-blue hover:bg-ug-blue/90 text-white font-bold rounded-xl transition-all">Guardar</button>
+        </div>
+      </div>
     </div>
 
     <!-- Beneficiary List -->
@@ -136,6 +224,7 @@
           <p class="font-semibold text-slate-500">Aún no has registrado beneficiarios</p>
           <p class="text-sm text-slate-400 mt-1">Iniciá una nueva captura para comenzar.</p>
         </div>
+        <!-- Items will be rendered here -->
       </div>
     </div>
   </div>
@@ -178,37 +267,45 @@
 
   // ── Load profile data ──────────────────────────────────────────────────────
   loadProfile();
+  loadHeatmap();
 
   async function loadProfile() {
     try {
-      const res = await fetch('/api/me/capturas', {
-        headers: { 'Authorization': 'Bearer ' + session.token }
-      });
-      if (!res.ok) {
-        if (res.status === 401) { _clearAllStorage(); window.location.href = 'login.html'; return; }
-        throw new Error('HTTP ' + res.status);
-      }
-      const captures = await res.json();
+      const [perfilRes, beneRes] = await Promise.all([
+        fetch('/api/me/perfil', { headers: { 'Authorization': 'Bearer ' + session.token } }),
+        fetch('/api/me/beneficiarios', { headers: { 'Authorization': 'Bearer ' + session.token } }),
+      ]);
+      if (perfilRes.status === 401) { _clearAllStorage(); window.location.href = 'login.html'; return; }
+      if (!perfilRes.ok) throw new Error('HTTP ' + perfilRes.status);
 
-      const total    = captures.length;
-      const completados = captures.filter(c => c.status === 'completo').length;
-      document.getElementById('stat-capturas').textContent    = total;
-      document.getElementById('stat-completados').textContent = completados;
-      document.getElementById('count-capturas').textContent   = total;
+      const perfil = await perfilRes.json();
+      const captures = beneRes.ok ? await beneRes.json() : [];
 
+      // Perfil data
+      const u = perfil.usuario;
+      document.getElementById('user-nombre').textContent = u.nombre;
+      document.getElementById('user-nombre-header').textContent = u.nombre;
+      document.getElementById('user-rol').textContent = _formatRol(u.rol);
+
+      // Stats
+      const total = perfil.stats.total_capturas;
+      document.getElementById('stat-capturas').textContent = total;
+      document.getElementById('stat-completados').textContent = captures.filter(c => c.status === 'completo').length;
+      document.getElementById('count-capturas').textContent = captures.length;
+
+      // Beneficiary list
       const listEl   = document.getElementById('beneficiary-list');
       const loading  = document.getElementById('loading-state');
       const empty    = document.getElementById('empty-state');
 
       loading.classList.add('hidden');
 
-      if (total === 0) {
+      if (captures.length === 0) {
         empty.classList.remove('hidden');
         return;
       }
 
-      // Render list
-      const itemsHtml = captures.map(c => `
+      listEl.innerHTML = captures.map(c => `
         <div class="captura-card px-6 py-4 border-b border-slate-100 last:border-b-0">
           <div class="flex items-start justify-between gap-3">
             <div class="min-w-0 flex-1">
@@ -228,19 +325,195 @@
                 </span>
               </div>
             </div>
-            <span class="shrink-0 ${c.status === 'completo' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'} text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full">
-              ${c.status === 'completo' ? 'Completo' : c.status === 'borrador' ? 'Borrador' : _esc(c.status)}
-            </span>
+            <div class="flex items-center gap-2 shrink-0">
+              <a href="${_esc(c.edit_url)}" class="w-8 h-8 rounded-lg text-ug-blue hover:bg-ug-blue/10 flex items-center justify-center transition-all" title="Editar">
+                <span class="material-symbols-outlined text-lg">edit</span>
+              </a>
+              <span class="${c.status === 'completo' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'} text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full">
+                ${c.status === 'completo' ? 'Completo' : c.status === 'borrador' ? 'Borrador' : _esc(c.status)}
+              </span>
+            </div>
           </div>
         </div>
       `).join('');
 
-      // Remove loading/empty, prepend items
-      listEl.innerHTML = itemsHtml;
+      // Store current perfil data for edit modal
+      window._currentPerfil = u;
     } catch (_err) {
-      _showError('No se pudieron cargar tus capturas. Verificá tu conexión.');
+      _showError('No se pudieron cargar tus datos. Verificá tu conexión.');
     }
   }
+
+  // ── Heatmap ──────────────────────────────────────────────────────────────────
+  async function loadHeatmap() {
+    const container = document.getElementById('heatmap-container');
+    const loading   = document.getElementById('heatmap-loading');
+    const countEl   = document.getElementById('heatmap-count');
+    try {
+      const res = await fetch('/api/me/heatmap', {
+        headers: { 'Authorization': 'Bearer ' + session.token }
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json(); // [{date, count}, ...]
+
+      loading.classList.add('hidden');
+      container.classList.remove('hidden');
+
+      // Build lookup: dateStr -> count
+      const lookup = {};
+      let totalActivities = 0;
+      data.forEach(d => { lookup[d.date] = d.count; totalActivities += d.count; });
+      if (totalActivities > 0) {
+        countEl.textContent = totalActivities;
+        countEl.classList.remove('hidden');
+      }
+
+      // Generate last 365 days
+      const days = [];
+      const today = new Date();
+      for (let i = 364; i >= 0; i--) {
+        const d = new Date(today);
+        d.setDate(d.getDate() - i);
+        const dateStr = d.toISOString().slice(0, 10);
+        days.push({ date: d, dateStr, count: lookup[dateStr] || 0 });
+      }
+
+      // SVG dimensions
+      const cellSize = 13;
+      const cellGap = 3;
+      const step = cellSize + cellGap;
+      const cols = 53;
+      const svgW = cols * step + 30;
+      const svgH = 7 * step + 20;
+
+      let svg = `<svg width="${svgW}" height="${svgH}" xmlns="http://www.w3.org/2000/svg">`;
+
+      // Month labels
+      const months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+      let lastMonth = -1;
+      for (let i = 0; i < days.length; i++) {
+        const m = days[i].date.getMonth();
+        if (m !== lastMonth) {
+          lastMonth = m;
+          const col = Math.floor(i / 7);
+          const x = col * step + 2;
+          svg += `<text x="${x}" y="10" class="heatmap-month">${months[m]}</text>`;
+        }
+      }
+
+      // Day labels (Mon, Wed, Fri)
+      const dayLabels = ['', 'Lun', '', 'Mié', '', 'Vie', ''];
+      for (let row = 0; row < 7; row++) {
+        if (dayLabels[row]) {
+          svg += `<text x="0" y="${row * step + 22}" class="heatmap-month" text-anchor="end">${dayLabels[row]}</text>`;
+        }
+      }
+
+      // Cells
+      for (let i = 0; i < days.length; i++) {
+        const col = Math.floor(i / 7);
+        const row = i % 7;
+        const x = col * step + 2;
+        const y = row * step + 18;
+        const d = days[i];
+        const color = _heatColor(d.count);
+        const tooltip = `${d.dateStr}: ${d.count} captura${d.count !== 1 ? 's' : ''}`;
+
+        svg += `<rect x="${x}" y="${y}" width="${cellSize}" height="${cellSize}" rx="2" fill="${color}"
+          onmouseenter="showHeatmapTooltip(event,'${_esc(tooltip)}')"
+          onmouseleave="hideHeatmapTooltip()" style="cursor:pointer"/>`;
+      }
+
+      svg += '</svg>';
+      container.innerHTML = `<div class="flex items-end gap-1">${svg}</div>` + container.innerHTML.split('<div class="flex items-center gap-2 mt-4')[1];
+    } catch (_) {
+      loading.textContent = 'No se pudo cargar la actividad.';
+    }
+  }
+
+  function _heatColor(count) {
+    if (count === 0) return '#ebedf0';
+    if (count <= 2) return '#9be9a8';
+    if (count <= 5) return '#40c463';
+    if (count <= 9) return '#30a14e';
+    return '#216e39';
+  }
+
+  function showHeatmapTooltip(ev, text) {
+    let tip = document.getElementById('heatmap-tip');
+    if (!tip) {
+      tip = document.createElement('div');
+      tip.id = 'heatmap-tip';
+      tip.className = 'heatmap-tooltip';
+      document.body.appendChild(tip);
+    }
+    tip.textContent = text;
+    tip.style.left = ev.pageX + 'px';
+    tip.style.top = ev.pageY + 'px';
+    tip.style.display = 'block';
+  }
+  function hideHeatmapTooltip() {
+    const tip = document.getElementById('heatmap-tip');
+    if (tip) tip.style.display = 'none';
+  }
+
+  // ── Edit Profile Modal ─────────────────────────────────────────────────────
+  document.getElementById('btn-editar-perfil').addEventListener('click', function () {
+    const u = window._currentPerfil || {};
+    document.getElementById('edit-nombre').value = u.nombre || '';
+    document.getElementById('edit-email').value = u.email || '';
+    document.getElementById('edit-telefono').value = u.telefono || '';
+    _hideEl('edit-error');
+    _hideEl('edit-success');
+    document.getElementById('edit-modal').classList.remove('hidden');
+  });
+
+  function _closeEditModal() {
+    document.getElementById('edit-modal').classList.add('hidden');
+  }
+  document.getElementById('btn-cerrar-modal').addEventListener('click', _closeEditModal);
+  document.getElementById('btn-cancelar-edit').addEventListener('click', _closeEditModal);
+
+  document.getElementById('btn-guardar-edit').addEventListener('click', async function () {
+    const nombre = document.getElementById('edit-nombre').value.trim();
+    const email = document.getElementById('edit-email').value.trim();
+    const telefono = document.getElementById('edit-telefono').value.trim();
+    _hideEl('edit-error');
+    _hideEl('edit-success');
+
+    if (!nombre || nombre.length < 2) {
+      _showEl('edit-error', 'El nombre debe tener al menos 2 caracteres.');
+      return;
+    }
+
+    const body = { nombre };
+    if (email) body.email = email;
+    if (telefono) body.telefono = telefono;
+
+    try {
+      const res = await fetch('/api/me/perfil', {
+        method: 'PATCH',
+        headers: { 'Authorization': 'Bearer ' + session.token, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        _showEl('edit-error', data.detail || 'Error al actualizar.');
+        return;
+      }
+      _showEl('edit-success', 'Perfil actualizado correctamente.');
+      // Update displayed info
+      if (data.nombre) {
+        document.getElementById('user-nombre').textContent = data.nombre;
+        document.getElementById('user-nombre-header').textContent = data.nombre;
+        session.nombre = data.nombre;
+        localStorage.setItem('session', JSON.stringify(session));
+      }
+      setTimeout(_closeEditModal, 1500);
+    } catch (_) {
+      _showEl('edit-error', 'No se pudo conectar con el servidor.');
+    }
+  });
 
   // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -263,6 +536,16 @@
     const text   = document.getElementById('error-text');
     text.textContent = msg;
     banner.classList.remove('hidden');
+  }
+  function _showEl(id, msg) {
+    const el = document.getElementById(id);
+    el.textContent = msg || '';
+    el.classList.remove('hidden');
+  }
+  function _hideEl(id) {
+    const el = document.getElementById(id);
+    el.textContent = '';
+    el.classList.add('hidden');
   }
 
   function _clearAllStorage() {

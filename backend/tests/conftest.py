@@ -11,6 +11,7 @@ Strategy:
 """
 
 import os
+from pathlib import Path
 
 # Inject a test JWT secret BEFORE importing the app. Production code fails
 # fast if JWT_SECRET is missing or weak; tests need a deterministic strong
@@ -19,6 +20,25 @@ os.environ.setdefault(
     "JWT_SECRET",
     "test-secret-" + ("x" * 32),
 )
+
+# Load the project .env file early so that DB connection vars are available.
+# This mirrors what main.py does via env_bootstrap.load_root_env_if_needed().
+_env_path = Path(__file__).resolve().parent.parent.parent / ".env"
+if _env_path.exists():
+    with _env_path.open("r", encoding="utf-8") as _env_file:
+        for _raw_line in _env_file:
+            _line = _raw_line.strip()
+            if not _line or _line.startswith("#") or "=" not in _line:
+                continue
+            _key, _value = _line.split("=", 1)
+            _key = _key.strip()
+            _value = _value.strip().strip('"').strip("'")
+            if _key:
+                os.environ.setdefault(_key, _value)
+
+# Use a dedicated test schema to avoid data corruption in production tables.
+# The schema must already exist in the database (created via DDL migration).
+os.environ.setdefault("TEST_DB_SCHEMA", "testschema")
 
 import pytest
 import psycopg2
@@ -136,6 +156,7 @@ _TABLES_ORDER = [
     "region_counters",
     "regiones",
     "paises",
+    "organizaciones",
     "usuarios",
 ]
 
@@ -430,7 +451,9 @@ def sample_estudio(client, capturista_user, region_lon, pais_mx) -> dict:
         "tutores": [
             {
                 "numero_tutor": 1,
-                "nombre": "Tutor Test",
+                "nombres": "Tutor",
+                "apellido_paterno": "Test",
+                "apellido_materno": "Muestra",
                 "edad": 45,
                 "nivel_estudios": "LICENCIATURA",
                 "estado_civil": "CASADO",
@@ -457,3 +480,46 @@ def sample_estudio(client, capturista_user, region_lon, pais_mx) -> dict:
     res = client.post("/api/estudios", json=payload, headers=headers)
     assert res.status_code == 201, f"sample_estudio failed: {res.text}"
     return res.json()
+
+
+# ---------------------------------------------------------------------------
+# Organization fixtures (for perfiles tests)
+# ---------------------------------------------------------------------------
+
+@pytest.fixture
+def sample_org(admin_headers, _test_db_conn, request) -> dict:
+    """Create a sample organizacion for testing (admin only)."""
+    from main import app
+    from fastapi.testclient import TestClient
+    with TestClient(app) as c:
+        res = c.post(
+            "/api/organizaciones",
+            json={"nombre": "Rotary León Test", "direccion": "Centro León"},
+            headers=admin_headers,
+        )
+        assert res.status_code == 201, f"sample_org failed: {res.text}"
+    return res.json()
+
+
+@pytest.fixture
+def org_with_leader(admin_headers, _test_db_conn, request, capturista_user) -> dict:
+    """Create an org and assign a leader (capturista_user)."""
+    from main import app
+    from fastapi.testclient import TestClient
+    with TestClient(app) as c:
+        # Create org
+        res = c.post(
+            "/api/organizaciones",
+            json={"nombre": "Rotary Irapuato Test", "direccion": "Centro Irapuato"},
+            headers=admin_headers,
+        )
+        assert res.status_code == 201
+        org = res.json()
+        # Assign leader
+        res = c.patch(
+            f"/api/organizaciones/{org['id']}/lider",
+            json={"lider_usuario_id": capturista_user["id"]},
+            headers=admin_headers,
+        )
+        assert res.status_code == 200
+    return org

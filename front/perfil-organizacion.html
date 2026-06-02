@@ -46,6 +46,22 @@
     transform: translateX(4px);
     border-color: #1e3a8a40;
   }
+  .heatmap-cell { width: 13px; height: 13px; border-radius: 2px; }
+  .heatmap-tooltip {
+    background: #1e293b; color: #fff; font-size: 11px;
+    padding: 4px 8px; border-radius: 4px; white-space: nowrap;
+    pointer-events: none; position: absolute; z-index: 50;
+    transform: translate(-50%, -100%); margin-top: -6px;
+  }
+  .heatmap-tooltip::after {
+    content: ''; position: absolute; top: 100%; left: 50%;
+    margin-left: -4px; border: 4px solid transparent;
+    border-top-color: #1e293b;
+  }
+  .tab-btn { cursor: pointer; color: #94a3b8; padding-bottom: 4px; font-weight: 600; transition: all 0.2s; }
+  .tab-btn.active { color: #1e3a8a; border-bottom: 2px solid #1e3a8a; font-weight: 700; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
 </style>
 </head>
 <body class="bg-slate-50 font-display min-h-screen flex flex-col">
@@ -88,7 +104,7 @@
           </div>
         </div>
 
-        <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div class="bg-ug-blue/5 rounded-xl p-5 border border-ug-blue/10">
             <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Capturas totales</p>
             <p class="text-3xl font-bold text-ug-blue mt-1" id="stat-capturas">0</p>
@@ -97,7 +113,24 @@
             <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Completados</p>
             <p class="text-3xl font-bold text-green-600 mt-1" id="stat-completados">0</p>
           </div>
+          <div class="bg-amber-50 rounded-xl p-5 border border-amber-100">
+            <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Este mes</p>
+            <p class="text-3xl font-bold text-amber-600 mt-1" id="stat-this-month">0</p>
+          </div>
         </div>
+      </div>
+    </div>
+
+    <!-- Heatmap -->
+    <div class="bg-white rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.07)] border border-slate-100 overflow-hidden">
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
+        <span class="material-symbols-outlined text-ug-blue text-xl">calendar_month</span>
+        <h2 class="text-base font-semibold text-slate-800">Actividad de la organización</h2>
+      </div>
+      <div id="heatmap-container" class="px-6 py-5 overflow-x-auto hidden"></div>
+      <div id="heatmap-loading" class="px-6 py-8 text-center text-slate-400 text-sm">
+        <span class="material-symbols-outlined text-2xl block mb-1 animate-pulse">hourglass_empty</span>
+        Cargando actividad…
       </div>
     </div>
 
@@ -163,23 +196,44 @@
       <p id="error-text" class="text-red-700 text-sm leading-relaxed"></p>
     </div>
 
-    <!-- Captures List -->
+    <!-- Tabs: Beneficiarios / Voluntarios -->
     <div class="bg-white rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.07)] border border-slate-100 overflow-hidden">
-      <div class="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
-        <span class="material-symbols-outlined text-ug-blue text-xl">assignment</span>
-        <h2 class="text-base font-semibold text-slate-800">Capturas de la organización</h2>
-        <span id="count-capturas" class="text-xs font-bold text-ug-blue bg-ug-blue/10 rounded-full px-2.5 py-0.5">0</span>
+      <div class="px-6 py-3 border-b border-slate-100 flex items-center gap-6">
+        <button class="tab-btn active text-sm font-semibold" data-tab="tab-beneficiarios">Beneficiarios</button>
+        <button class="tab-btn text-sm font-semibold" data-tab="tab-voluntarios">Voluntarios</button>
       </div>
 
-      <div id="captura-list" class="divide-y divide-slate-100">
-        <div id="loading-state" class="px-6 py-10 text-center text-slate-400 text-sm">
-          <span class="material-symbols-outlined text-3xl block mb-2 animate-pulse">hourglass_empty</span>
-          Cargando capturas…
+      <!-- Beneficiarios tab -->
+      <div id="tab-beneficiarios" class="tab-content active">
+        <div class="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
+          <span class="material-symbols-outlined text-ug-blue text-xl">assignment</span>
+          <h2 class="text-base font-semibold text-slate-800">Capturas de la organización</h2>
+          <span id="count-capturas" class="text-xs font-bold text-ug-blue bg-ug-blue/10 rounded-full px-2.5 py-0.5">0</span>
         </div>
-        <div id="empty-state" class="hidden px-6 py-12 text-center">
-          <span class="material-symbols-outlined text-5xl block mb-3 text-slate-300">assignment_add</span>
-          <p class="font-semibold text-slate-500">No hay capturas registradas</p>
-          <p class="text-sm text-slate-400 mt-1">Ingresá un voluntario para comenzar.</p>
+        <div id="beneficiarios-list" class="divide-y divide-slate-100">
+          <div id="loading-state" class="px-6 py-10 text-center text-slate-400 text-sm">
+            <span class="material-symbols-outlined text-3xl block mb-2 animate-pulse">hourglass_empty</span>
+            Cargando capturas…
+          </div>
+          <div id="empty-state" class="hidden px-6 py-12 text-center">
+            <span class="material-symbols-outlined text-5xl block mb-3 text-slate-300">assignment_add</span>
+            <p class="font-semibold text-slate-500">No hay capturas registradas</p>
+            <p class="text-sm text-slate-400 mt-1">Ingresá un voluntario para comenzar.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Voluntarios tab -->
+      <div id="tab-voluntarios" class="tab-content">
+        <div class="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
+          <span class="material-symbols-outlined text-ug-blue text-xl">diversity_3</span>
+          <h2 class="text-base font-semibold text-slate-800">Voluntarios</h2>
+        </div>
+        <div id="voluntarios-body" class="divide-y divide-slate-100">
+          <div id="vol-loading" class="px-6 py-10 text-center text-slate-400 text-sm">
+            <span class="material-symbols-outlined text-2xl block mb-1 animate-pulse">hourglass_empty</span>
+            Cargando voluntarios…
+          </div>
         </div>
       </div>
     </div>
@@ -247,67 +301,191 @@
     window.location.href = 'seleccion-region.html';
   });
 
-  // ── Load captures ───────────────────────────────────────────────────────────
-  loadCapturas();
+  // ── Tab switching ───────────────────────────────────────────────────────────
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', function () {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      this.classList.add('active');
+      document.getElementById(this.dataset.tab).classList.add('active');
+    });
+  });
 
-  async function loadCapturas() {
+  // ── Load org data ───────────────────────────────────────────────────────────
+  loadOrgData();
+
+  async function loadOrgData() {
+    try {
+      // Fetch org detail first to get org_id from perfil
+      const perfilRes = await fetch('/api/me/perfil', {
+        headers: { 'Authorization': 'Bearer ' + session.token }
+      });
+      if (perfilRes.status === 401) { _clearAllStorage(); window.location.href = 'login.html'; return; }
+      if (!perfilRes.ok) throw new Error('HTTP ' + perfilRes.status);
+      const perfil = await perfilRes.json();
+
+      const u = perfil.usuario;
+
+      // We need the org ID. For org users, the user account IS the org.
+      // Fetch org list to find the org associated with this user.
+      // Since org users can't call admin endpoints, we need a different approach.
+      // For now, fetch /api/me/perfil data directly.
+      document.getElementById('org-nombre').textContent = u.nombre;
+      document.getElementById('user-nombre-header').textContent = u.nombre;
+      document.getElementById('stat-capturas').textContent = perfil.stats.total_capturas;
+      document.getElementById('stat-completados').textContent = '—';
+      document.getElementById('stat-this-month').textContent = perfil.stats.this_month;
+
+      // Load beneficiaries via the me endpoint
+      const beneRes = await fetch('/api/me/beneficiarios', {
+        headers: { 'Authorization': 'Bearer ' + session.token }
+      });
+      const captures = beneRes.ok ? await beneRes.json() : [];
+      document.getElementById('count-capturas').textContent = captures.length;
+
+      const listEl   = document.getElementById('beneficiarios-list');
+      const loading  = document.getElementById('loading-state');
+      const empty    = document.getElementById('empty-state');
+      loading.classList.add('hidden');
+
+      if (captures.length === 0) {
+        empty.classList.remove('hidden');
+      } else {
+        listEl.innerHTML = captures.map(c => `
+          <div class="captura-card px-6 py-4 border-b border-slate-100 last:border-b-0">
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0 flex-1">
+                <p class="font-semibold text-slate-900 truncate">${_esc(c.beneficiario_nombre)}</p>
+                <div class="flex flex-wrap gap-x-3 gap-y-1 mt-1 text-xs text-slate-500">
+                  <span class="inline-flex items-center gap-1"><span class="material-symbols-outlined text-xs">tag</span>${_esc(c.folio)}</span>
+                  <span class="inline-flex items-center gap-1"><span class="material-symbols-outlined text-xs">person</span>${_esc(c.elaboro_estudio)}</span>
+                  <span class="inline-flex items-center gap-1"><span class="material-symbols-outlined text-xs">calendar_today</span>${_esc(c.fecha_estudio)}</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-2 shrink-0">
+                <a href="${_esc(c.edit_url)}" class="w-8 h-8 rounded-lg text-ug-blue hover:bg-ug-blue/10 flex items-center justify-center" title="Editar">
+                  <span class="material-symbols-outlined text-lg">edit</span>
+                </a>
+                <span class="${c.status === 'completo' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'} text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full">
+                  ${c.status === 'completo' ? 'Completo' : c.status === 'borrador' ? 'Borrador' : _esc(c.status)}
+                </span>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      // Load heatmap
+      loadOrgHeatmap();
+
+      // Load voluntarios
+      loadVoluntarios();
+
+    } catch (_) {
+      _showError('No se pudieron cargar los datos de la organización.');
+    }
+  }
+
+  // ── Heatmap ──────────────────────────────────────────────────────────────────
+  async function loadOrgHeatmap() {
+    const container = document.getElementById('heatmap-container');
+    const loading   = document.getElementById('heatmap-loading');
+    try {
+      const res = await fetch('/api/me/heatmap', {
+        headers: { 'Authorization': 'Bearer ' + session.token }
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      loading.classList.add('hidden');
+      container.classList.remove('hidden');
+      container.innerHTML = _renderHeatmapSVG(data);
+    } catch (_) {
+      loading.textContent = 'No se pudo cargar la actividad.';
+    }
+  }
+
+  function _renderHeatmapSVG(data) {
+    const lookup = {};
+    data.forEach(d => { lookup[d.date] = d.count; });
+    const cellSize = 13, cellGap = 3, step = cellSize + cellGap, cols = 53;
+    const svgW = cols * step + 30, svgH = 7 * step + 20;
+    const today = new Date();
+    const days = [];
+    for (let i = 364; i >= 0; i--) {
+      const d = new Date(today); d.setDate(d.getDate() - i);
+      const dateStr = d.toISOString().slice(0, 10);
+      days.push({ date: d, dateStr, count: lookup[dateStr] || 0 });
+    }
+
+    const heatColors = ['#ebedf0','#9be9a8','#40c463','#30a14e','#216e39'];
+    let svg = `<svg width="${svgW}" height="${svgH}" xmlns="http://www.w3.org/2000/svg">`;
+    const months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    let lastMonth = -1;
+    for (let i = 0; i < days.length; i++) {
+      const m = days[i].date.getMonth();
+      if (m !== lastMonth) { lastMonth = m; svg += `<text x="${Math.floor(i/7)*step+2}" y="10" fill="#94a3b8" font-size="10">${months[m]}</text>`; }
+    }
+    for (let i = 0; i < days.length; i++) {
+      const col = Math.floor(i / 7), row = i % 7;
+      const x = col * step + 2, y = row * step + 18;
+      const count = days[i].count;
+      const color = count === 0 ? heatColors[0] : count <= 2 ? heatColors[1] : count <= 5 ? heatColors[2] : count <= 9 ? heatColors[3] : heatColors[4];
+      const tip = `${days[i].dateStr}: ${count} captura${count !== 1 ? 's' : ''}`;
+      svg += `<rect x="${x}" y="${y}" width="${cellSize}" height="${cellSize}" rx="2" fill="${color}"
+        onmouseenter="showTip(event,'${_esc(tip)}')" onmouseleave="hideTip()" style="cursor:pointer"/>`;
+    }
+    svg += '</svg>';
+    const legend = '<div class="flex items-center gap-2 mt-4 text-xs text-slate-400 justify-end"><span>Menos</span>' +
+      heatColors.map(c => `<span class="heatmap-cell inline-block" style="background:${c}"></span>`).join('') + '<span>Más</span></div>';
+    return svg + legend;
+  }
+
+  function showTip(ev, text) {
+    let tip = document.getElementById('htip');
+    if (!tip) { tip = document.createElement('div'); tip.id = 'htip'; tip.className = 'heatmap-tooltip'; document.body.appendChild(tip); }
+    tip.textContent = text; tip.style.left = ev.pageX + 'px'; tip.style.top = ev.pageY + 'px'; tip.style.display = 'block';
+  }
+  function hideTip() { const tip = document.getElementById('htip'); if (tip) tip.style.display = 'none'; }
+
+  // ── Voluntarios ─────────────────────────────────────────────────────────────
+  async function loadVoluntarios() {
+    const body = document.getElementById('voluntarios-body');
     try {
       const res = await fetch('/api/me/capturas', {
         headers: { 'Authorization': 'Bearer ' + session.token }
       });
-      if (!res.ok) {
-        if (res.status === 401) { _clearAllStorage(); window.location.href = 'login.html'; return; }
-        throw new Error('HTTP ' + res.status);
-      }
+      if (!res.ok) throw new Error('HTTP ' + res.status);
       const captures = await res.json();
 
-      const total    = captures.length;
-      const completados = captures.filter(c => c.status === 'completo').length;
-      document.getElementById('stat-capturas').textContent    = total;
-      document.getElementById('stat-completados').textContent = completados;
-      document.getElementById('count-capturas').textContent   = total;
+      // Group by elaboro_estudio
+      const groups = {};
+      captures.forEach(c => {
+        const name = c.elaboro_estudio || 'Sin nombre';
+        if (!groups[name]) groups[name] = { name, count: 0, lastDate: null };
+        groups[name].count++;
+        if (!groups[name].lastDate || c.fecha_estudio > groups[name].lastDate) groups[name].lastDate = c.fecha_estudio;
+      });
 
-      const listEl   = document.getElementById('captura-list');
-      const loading  = document.getElementById('loading-state');
-      const empty    = document.getElementById('empty-state');
+      const voluntarios = Object.values(groups).sort((a, b) => b.count - a.count);
+      document.getElementById('vol-loading').classList.add('hidden');
 
-      loading.classList.add('hidden');
-
-      if (total === 0) {
-        empty.classList.remove('hidden');
+      if (voluntarios.length === 0) {
+        body.innerHTML += '<div class="px-6 py-10 text-center text-slate-400 text-sm">No hay voluntarios registrados.</div>';
         return;
       }
 
-      const itemsHtml = captures.map(c => `
-        <div class="captura-card px-6 py-4 border-b border-slate-100 last:border-b-0">
-          <div class="flex items-start justify-between gap-3">
-            <div class="min-w-0 flex-1">
-              <p class="font-semibold text-slate-900 truncate">${_esc(c.beneficiario_nombre)}</p>
-              <div class="flex flex-wrap gap-x-3 gap-y-1 mt-1 text-xs text-slate-500">
-                <span class="inline-flex items-center gap-1">
-                  <span class="material-symbols-outlined text-xs">tag</span>
-                  ${_esc(c.folio)}
-                </span>
-                <span class="inline-flex items-center gap-1">
-                  <span class="material-symbols-outlined text-xs">person</span>
-                  Voluntario: ${_esc(c.elaboro_estudio)}
-                </span>
-                <span class="inline-flex items-center gap-1">
-                  <span class="material-symbols-outlined text-xs">calendar_today</span>
-                  ${_esc(c.fecha_estudio)}
-                </span>
-              </div>
-            </div>
-            <span class="shrink-0 ${c.status === 'completo' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'} text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full">
-              ${c.status === 'completo' ? 'Completo' : c.status === 'borrador' ? 'Borrador' : _esc(c.status)}
-            </span>
+      const html = voluntarios.map(v => `
+        <div class="px-6 py-4 flex items-center justify-between border-b border-slate-100">
+          <div>
+            <p class="font-semibold text-slate-900">${_esc(v.name)}</p>
+            <p class="text-xs text-slate-500">Última captura: ${v.lastDate || '—'}</p>
           </div>
+          <span class="bg-ug-blue/10 text-ug-blue text-xs font-bold px-3 py-1 rounded-full">${v.count} captura${v.count !== 1 ? 's' : ''}</span>
         </div>
       `).join('');
-
-      listEl.innerHTML = itemsHtml;
-    } catch (_err) {
-      _showError('No se pudieron cargar las capturas. Verificá tu conexión.');
+      body.innerHTML = html;
+    } catch (_) {
+      body.innerHTML = '<div class="px-6 py-8 text-center text-red-500 text-sm">Error al cargar voluntarios.</div>';
     }
   }
 

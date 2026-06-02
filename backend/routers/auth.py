@@ -160,15 +160,41 @@ def require_roles(*roles: str):
     return _require_roles
 
 
-def assert_resource_owner(row_user_id: int, user: CurrentUser) -> None:
-    """Allow admin access or enforce ownership by usuario_id."""
+def assert_resource_owner(
+    row_user_id: int,
+    user: CurrentUser,
+    db: _DBAdapter | None = None,
+    estudio_id: int | None = None,
+) -> None:
+    """Allow admin access, enforce ownership by usuario_id, or bypass for org leader.
+
+    When ``db`` and ``estudio_id`` are provided, checks if the current user
+    is the leader of the organization that owns the estudio's region.
+    """
     if user.rol == "admin":
         return
-    if row_user_id != user.usuario_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="No tiene permisos para este recurso",
-        )
+    if row_user_id == user.usuario_id:
+        return
+
+    # Leader bypass: check if user is leader of org that owns this study
+    if db is not None and estudio_id is not None:
+        # Find the estudio's usuario_id, then check if any org has that
+        # usuario_id AND this user as its lider_usuario_id
+        leader_check = db.execute(
+            """
+            SELECT 1 FROM organizaciones o
+            WHERE o.usuario_id = %s
+              AND o.lider_usuario_id = %s
+            """,
+            (row_user_id, user.usuario_id),
+        ).fetchone()
+        if leader_check:
+            return
+
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="No tiene permisos para este recurso",
+    )
 
 
 def require_tecnico_or_admin(

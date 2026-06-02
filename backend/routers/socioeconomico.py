@@ -627,7 +627,7 @@ def crear_estudio(
 def obtener_estudio(
     id: int,
     db: Annotated[_DBAdapter, Depends(get_db)],
-    usuario: Annotated[CurrentUser, Depends(require_roles("capturista", "admin"))],
+    usuario: Annotated[CurrentUser, Depends(require_roles("capturista", "admin", "organizacion"))],
 ) -> dict:
     """Retrieve a full estudio by ID. Only the owner or an admin may read it."""
     estudio_row = db.execute(
@@ -637,7 +637,7 @@ def obtener_estudio(
     if estudio_row is None:
         raise HTTPException(status_code=404, detail="Estudio no encontrado")
 
-    assert_resource_owner(estudio_row["usuario_id"], usuario)
+    assert_resource_owner(estudio_row["usuario_id"], usuario, db=db, estudio_id=id)
 
     beneficiario_row = db.execute(
         "SELECT * FROM beneficiarios WHERE id = %s",
@@ -710,7 +710,7 @@ def actualizar_estudio(
     if existing is None:
         raise HTTPException(status_code=404, detail="Estudio no encontrado")
 
-    assert_resource_owner(existing["usuario_id"], usuario)
+    assert_resource_owner(existing["usuario_id"], usuario, db=db, estudio_id=id)
 
     # Update beneficiario if provided (partial update of mutable fields only)
     if body.beneficiario is not None:

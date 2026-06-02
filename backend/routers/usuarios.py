@@ -59,6 +59,7 @@ class UsuarioResponse(BaseModel):
     email: str
     rol: str
     activo: bool
+    organizacion_id: int | None = None
 
 
 class UsuarioDeactivateResponse(BaseModel):
@@ -119,7 +120,13 @@ def list_usuarios(
 ) -> list[UsuarioResponse]:
     """List all users (active and inactive). Admin only."""
     rows = db.execute(
-        "SELECT id, nombre, email, rol, activo FROM usuarios ORDER BY id"
+        """
+        SELECT u.id, u.nombre, u.email, u.rol, u.activo,
+               o.id AS organizacion_id
+        FROM usuarios u
+        LEFT JOIN organizaciones o ON o.lider_usuario_id = u.id
+        ORDER BY u.id
+        """,
     ).fetchall()
 
     return [
@@ -129,6 +136,7 @@ def list_usuarios(
             email=row["email"],
             rol=row["rol"],
             activo=row["activo"],
+            organizacion_id=row["organizacion_id"],
         )
         for row in rows
     ]

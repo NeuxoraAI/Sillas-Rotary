@@ -150,6 +150,30 @@ DDL = [
     "CREATE INDEX IF NOT EXISTS idx_procesos_participantes_created_at ON procesos_tecnicos_participantes(created_at)",
     # DEPRECATED v1: legacy index on capturista_id — retained in live DB, not created by init_db.py
     # "CREATE INDEX IF NOT EXISTS idx_solicitudes_capturista ON solicitudes_tecnicas(capturista_id)",
+
+    # -----------------------------------------------------------------------
+    # Perfiles / GitHub-style profiles (v2)
+    # -----------------------------------------------------------------------
+    """
+    CREATE TABLE IF NOT EXISTS organizaciones (
+        id SERIAL PRIMARY KEY,
+        nombre TEXT NOT NULL,
+        descripcion TEXT,
+        direccion TEXT,
+        telefono TEXT,
+        email TEXT,
+        usuario_id INTEGER UNIQUE REFERENCES usuarios(id) ON DELETE RESTRICT,
+        lider_usuario_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
+        activo BOOLEAN NOT NULL DEFAULT TRUE,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+    """,
+    "CREATE INDEX IF NOT EXISTS idx_organizaciones_usuario_id ON organizaciones(usuario_id)",
+    "CREATE INDEX IF NOT EXISTS idx_organizaciones_lider ON organizaciones(lider_usuario_id)",
+    "CREATE INDEX IF NOT EXISTS idx_organizaciones_activo ON organizaciones(activo)",
+    "CREATE INDEX IF NOT EXISTS idx_estudios_usuario_created ON estudios_socioeconomicos(usuario_id, created_at)",
+    "ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS telefono TEXT",
 ]
 
 

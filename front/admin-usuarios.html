@@ -107,6 +107,10 @@
           <span class="material-symbols-outlined text-xl">public</span>
           Países y Regiones
         </a>
+        <a href="#" id="nav-organizaciones" class="nav-link">
+          <span class="material-symbols-outlined text-xl">groups</span>
+          Organizaciones
+        </a>
       </nav>
 
       <!-- User / logout -->
@@ -432,6 +436,101 @@
             </table>
           </div>
         </div>
+
+        <!-- ── Organizations Section ── -->
+        <div id="org-section" class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <span class="material-symbols-outlined text-ug-blue text-lg">groups</span>
+              <h2 class="text-base font-semibold text-slate-800">Organizaciones</h2>
+              <span id="count-orgs" class="hidden text-xs font-bold text-ug-blue bg-ug-blue/10 rounded-full px-2.5 py-0.5">0</span>
+            </div>
+            <div class="flex gap-2">
+              <button id="btn-refresh-orgs" class="w-9 h-9 rounded-lg text-slate-400 hover:text-ug-blue hover:bg-slate-100 transition-colors flex items-center justify-center" title="Recargar">
+                <span class="material-symbols-outlined text-xl">refresh</span>
+              </button>
+              <button id="btn-crear-org" class="px-4 py-2 bg-ug-blue hover:bg-ug-blue/90 text-white text-sm font-bold rounded-xl transition-all flex items-center gap-1">
+                <span class="material-symbols-outlined text-lg">add</span>
+                <span>Crear Org</span>
+              </button>
+            </div>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="bg-slate-50/60 text-left border-b border-slate-100">
+                  <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Nombre</th>
+                  <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Líder</th>
+                  <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Capturas</th>
+                  <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Estado</th>
+                  <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider text-right">Acción</th>
+                </tr>
+              </thead>
+              <tbody id="tabla-orgs" class="divide-y divide-slate-100">
+                <tr><td colspan="5" class="px-6 py-10 text-center text-slate-400 text-sm">
+                  <span class="material-symbols-outlined text-3xl block mb-2 animate-pulse">hourglass_empty</span>
+                  Cargando organizaciones…
+                </td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ── Create Org Modal ── -->
+        <div id="create-org-modal" class="hidden fixed inset-0 z-50" style="background:rgba(0,0,0,0.5);backdrop-filter:blur(2px);">
+          <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-5">
+              <div class="flex items-center justify-between">
+                <h3 class="text-lg font-bold text-slate-900">Crear Organización</h3>
+                <button id="btn-cerrar-crear-org" class="w-8 h-8 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-400">
+                  <span class="material-symbols-outlined text-xl">close</span>
+                </button>
+              </div>
+              <div class="space-y-4">
+                <div class="space-y-2">
+                  <label class="block text-sm font-semibold text-slate-700" for="new-org-nombre">Nombre</label>
+                  <input id="new-org-nombre" type="text" maxlength="200" minlength="2"
+                    class="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-ug-blue focus:outline-none text-sm" />
+                </div>
+                <div class="space-y-2">
+                  <label class="block text-sm font-semibold text-slate-700" for="new-org-direccion">Dirección</label>
+                  <input id="new-org-direccion" type="text"
+                    class="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-ug-blue focus:outline-none text-sm" />
+                </div>
+              </div>
+              <p id="create-org-error" class="hidden text-red-600 text-sm bg-red-50 rounded-lg px-4 py-2" role="alert"></p>
+              <button id="btn-confirmar-crear-org" class="w-full py-3 bg-ug-blue hover:bg-ug-blue/90 text-white font-bold rounded-xl transition-all">Crear</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Assign Leader Modal ── -->
+        <div id="assign-leader-modal" class="hidden fixed inset-0 z-50" style="background:rgba(0,0,0,0.5);backdrop-filter:blur(2px);">
+          <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-5">
+              <div class="flex items-center justify-between">
+                <h3 class="text-lg font-bold text-slate-900">Asignar Líder</h3>
+                <button id="btn-cerrar-asignar" class="w-8 h-8 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-400">
+                  <span class="material-symbols-outlined text-xl">close</span>
+                </button>
+              </div>
+              <p class="text-sm text-slate-600">Organización: <strong id="assign-org-name">—</strong></p>
+              <div class="space-y-2">
+                <label class="block text-sm font-semibold text-slate-700" for="assign-user-select">Seleccionar usuario</label>
+                <select id="assign-user-select"
+                  class="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-ug-blue focus:outline-none text-sm">
+                  <option value="">— Sin asignar —</option>
+                </select>
+              </div>
+              <p id="assign-error" class="hidden text-red-600 text-sm bg-red-50 rounded-lg px-4 py-2" role="alert"></p>
+              <div class="flex gap-3">
+                <button id="btn-remove-leader" class="flex-1 py-3 border-2 border-red-200 rounded-xl font-semibold text-red-600 hover:bg-red-50 transition-all">Quitar líder</button>
+                <button id="btn-confirmar-asignar" class="flex-1 py-3 bg-ug-blue hover:bg-ug-blue/90 text-white font-bold rounded-xl transition-all">Asignar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </main>
     </div>
 
@@ -635,6 +734,185 @@
             btnText.textContent = "Crear Usuario";
           }
         });
+
+      // ── Organizations ───────────────────────────────────────────────────────────
+      let _orgsData = [];
+
+      async function loadOrgs() {
+        const tbody = document.getElementById("tabla-orgs");
+        const countEl = document.getElementById("count-orgs");
+        try {
+          const res = await _authFetch("/api/organizaciones");
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          const orgs = await res.json();
+          _orgsData = orgs;
+
+          countEl.textContent = orgs.length;
+          countEl.classList.remove("hidden");
+
+          if (orgs.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-10 text-center text-slate-400">No hay organizaciones registradas.</td></tr>`;
+            return;
+          }
+
+          tbody.innerHTML = orgs.map(o => `
+            <tr class="hover:bg-slate-50/70 transition-colors">
+              <td class="px-6 py-4 font-semibold text-slate-900">${_esc(o.nombre)}</td>
+              <td class="px-6 py-4 text-slate-600">${o.lider_nombre ? _esc(o.lider_nombre) : '<span class="text-slate-400">Sin asignar</span>'}</td>
+              <td class="px-6 py-4">${o.total_capturas || 0}</td>
+              <td class="px-6 py-4">${o.activo ? '<span class="text-green-600 text-xs font-semibold">Activo</span>' : '<span class="text-slate-400 text-xs">Inactivo</span>'}</td>
+              <td class="px-6 py-4 text-right">
+                <button onclick="openAssignLeader(${o.id})" class="px-3 py-1.5 bg-ug-blue/10 text-ug-blue hover:bg-ug-blue/20 rounded-lg text-xs font-semibold transition-all">
+                  Asignar líder
+                </button>
+              </td>
+            </tr>
+          `).join("");
+        } catch (_) {
+          tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-10 text-center text-red-500">Error al cargar organizaciones.</td></tr>`;
+        }
+      }
+
+      // ── Create Org ──
+      document.getElementById("btn-crear-org").addEventListener("click", function () {
+        document.getElementById("new-org-nombre").value = "";
+        document.getElementById("new-org-direccion").value = "";
+        _hideEl("create-org-error");
+        document.getElementById("create-org-modal").classList.remove("hidden");
+      });
+
+      document.getElementById("btn-cerrar-crear-org").addEventListener("click", function () {
+        document.getElementById("create-org-modal").classList.add("hidden");
+      });
+
+      document.getElementById("btn-confirmar-crear-org").addEventListener("click", async function () {
+        const nombre = document.getElementById("new-org-nombre").value.trim();
+        const direccion = document.getElementById("new-org-direccion").value.trim();
+        _hideEl("create-org-error");
+
+        if (!nombre || nombre.length < 2) {
+          _showEl("create-org-error", "El nombre debe tener al menos 2 caracteres.");
+          return;
+        }
+
+        try {
+          const res = await _authFetch("/api/organizaciones", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ nombre, direccion }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            _showEl("create-org-error", data.detail || "Error al crear.");
+            return;
+          }
+          document.getElementById("create-org-modal").classList.add("hidden");
+          await loadOrgs();
+        } catch (_) {
+          _showEl("create-org-error", "Error de conexión.");
+        }
+      });
+
+      // ── Assign Leader ──
+      let _assignOrgId = null;
+
+      window.openAssignLeader = function (orgId) {
+        _assignOrgId = orgId;
+        const org = _orgsData.find(o => o.id === orgId);
+        document.getElementById("assign-org-name").textContent = org ? org.nombre : "—";
+        _hideEl("assign-error");
+        document.getElementById("assign-leader-modal").classList.remove("hidden");
+
+        // Populate user dropdown from loaded users
+        const select = document.getElementById("assign-user-select");
+        select.innerHTML = '<option value="">— Sin asignar —</option>';
+        // Get users from existing table data
+        const rows = document.querySelectorAll("#tabla-usuarios tr");
+        // We'll fetch users fresh for this
+        _fetchUsersForAssign(select, orgId);
+      };
+
+      async function _fetchUsersForAssign(select, orgId) {
+        try {
+          const res = await _authFetch("/api/usuarios");
+          const users = await res.json();
+          users.forEach(u => {
+            if (u.activo) {
+              const opt = document.createElement("option");
+              opt.value = u.usuario_id;
+              opt.textContent = `${u.nombre} (${u.rol})`;
+              select.appendChild(opt);
+            }
+          });
+          // Pre-select current leader
+          const org = _orgsData.find(o => o.id === orgId);
+          if (org && org.lider_usuario_id) {
+            select.value = String(org.lider_usuario_id);
+          }
+        } catch (_) { /* ignore */ }
+      }
+
+      document.getElementById("btn-cerrar-asignar").addEventListener("click", function () {
+        document.getElementById("assign-leader-modal").classList.add("hidden");
+      });
+
+      document.getElementById("btn-confirmar-asignar").addEventListener("click", async function () {
+        const lider_usuario_id = parseInt(document.getElementById("assign-user-select").value) || null;
+        _hideEl("assign-error");
+
+        try {
+          const res = await _authFetch(`/api/organizaciones/${_assignOrgId}/lider`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ lider_usuario_id }),
+          });
+          if (!res.ok) {
+            const data = await res.json().catch(() => ({}));
+            _showEl("assign-error", data.detail || "Error al asignar.");
+            return;
+          }
+          document.getElementById("assign-leader-modal").classList.add("hidden");
+          await loadOrgs();
+        } catch (_) {
+          _showEl("assign-error", "Error de conexión.");
+        }
+      });
+
+      document.getElementById("btn-remove-leader").addEventListener("click", async function () {
+        if (!confirm("¿Quitar el líder de esta organización?")) return;
+        _hideEl("assign-error");
+        try {
+          const res = await _authFetch(`/api/organizaciones/${_assignOrgId}/lider`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ lider_usuario_id: null }),
+          });
+          if (!res.ok) {
+            _showEl("assign-error", "Error al quitar líder.");
+            return;
+          }
+          document.getElementById("assign-leader-modal").classList.add("hidden");
+          await loadOrgs();
+        } catch (_) {
+          _showEl("assign-error", "Error de conexión.");
+        }
+      });
+
+      // ── Utils (reuse) ──
+      function _showEl(id, msg) {
+        const el = document.getElementById(id);
+        if (msg !== undefined) el.textContent = msg;
+        el.classList.remove("hidden");
+      }
+      function _hideEl(id) {
+        document.getElementById(id).classList.add("hidden");
+      }
+
+      // Refresh orgs
+      document.getElementById("btn-refresh-orgs").addEventListener("click", loadOrgs);
+
+      // Load orgs on init
+      loadOrgs();
 
       // ── Helpers ─────────────────────────────────────────────────────────────────
       function _esc(str) {

@@ -112,8 +112,13 @@
       <!-- END: Branding Header -->
       <form class="p-8 space-y-12" novalidate>
         <!-- PART 1: ESTUDIO SOCIOECONÓMICO -->
+        <div id="edit-banner" class="hidden bg-amber-50 border-b border-amber-200 px-6 py-3 flex items-center gap-2 -mx-8 -mt-8 mb-6">
+          <span class="material-symbols-outlined text-amber-600 text-lg">edit</span>
+          <span id="edit-banner-text" class="text-amber-800 text-sm font-semibold">Editando estudio</span>
+          <a id="btn-cancelar-edicion" href="perfil-capturista.html" class="ml-auto text-xs font-bold text-amber-700 hover:text-amber-900 underline">Cancelar</a>
+        </div>
         <header class="bg-slate-800 text-white p-6 -mx-8 -mt-8 mb-8">
-          <h1 class="text-2xl font-bold uppercase tracking-wider text-white">
+          <h1 class="text-2xl font-bold uppercase tracking-wider text-white" id="form-title">
             ESTUDIO SOCIOECONÓMICO
           </h1>
         </header>
@@ -2474,6 +2479,7 @@
       }
 
       async function submitEstudio(status) {
+        const session = JSON.parse(localStorage.getItem("session") || "null");
         const errorEl = document.getElementById("error-msg");
         errorEl.classList.add("hidden");
         errorEl.textContent = "";
@@ -2783,7 +2789,6 @@
           }
         }
 
-        const session = JSON.parse(localStorage.getItem("session") || "null");
         if (!session?.token) {
           window.location.href = "login.html";
           return;
@@ -3013,6 +3018,159 @@
         .addEventListener("click", () => {
           submitEstudio("borrador");
         });
+
+      // ── Edit mode (estudio_id query param) ───────────────────────────────────
+      const urlParams = new URLSearchParams(window.location.search);
+      const estudioId = urlParams.get("estudio_id");
+
+      if (estudioId) {
+        loadExistingEstudio(parseInt(estudioId));
+      }
+
+      async function loadExistingEstudio(id) {
+        const session = JSON.parse(localStorage.getItem("session") || "null");
+        if (!session?.token) return;
+
+        try {
+          const res = await fetch(`/api/estudios/${id}`, {
+            headers: { Authorization: "Bearer " + session.token },
+          });
+          if (!res.ok) {
+            if (res.status === 403) alert("No tienes permisos para editar este estudio.");
+            else alert("Error al cargar el estudio.");
+            window.location.href = "perfil-capturista.html";
+            return;
+          }
+          const data = await res.json();
+
+          // Show edit banner
+          document.getElementById("edit-banner").classList.remove("hidden");
+          document.getElementById("edit-banner-text").textContent = `Editando estudio #${data.folio || id}`;
+          document.getElementById("form-title").textContent = "EDITAR ESTUDIO SOCIOECONÓMICO";
+
+          // Pre-populate form fields from data
+          const b = data.beneficiario || {};
+          _setVal("nombres", b.nombres || "");
+          _setVal("apellido_paterno", b.apellido_paterno || "");
+          _setVal("apellido_materno", b.apellido_materno || "");
+          _setVal("fecha_nacimiento", b.fecha_nacimiento || "");
+          _setVal("diagnostico", b.diagnostico || "");
+          _setVal("calle", b.calle || "");
+          _setVal("num_ext", b.num_ext || "");
+          _setVal("colonia", b.colonia || "");
+          _setVal("telefonos", b.telefonos || "");
+          if (b.email) _setVal("email", b.email);
+
+          // Sexo radio
+          if (b.sexo) {
+            const radio = document.querySelector(`input[name="sexo"][value="${b.sexo}"]`);
+            if (radio) radio.checked = true;
+          }
+
+          // Estado + ciudad if available
+          if (b.estado_codigo) {
+            _setVal("estado_codigo", b.estado_codigo);
+            // Trigger ciudad load
+            const evt = new Event("change", { bubbles: true });
+            document.getElementById("estado_codigo")?.dispatchEvent(evt);
+            setTimeout(() => {
+              if (b.ciudad) _setVal("ciudad", b.ciudad);
+            }, 500);
+          }
+
+          // Tutores
+          const tutores = data.tutores || [];
+          tutores.forEach((t, idx) => {
+            const prefix = `tutor${t.numero_tutor}`;
+            _setVal(`${prefix}_nombres`, t.nombre?.split(" ")[0] || "");
+            _setVal(`${prefix}_apellido_paterno`, t.apellido_paterno || "");
+            _setVal(`${prefix}_apellido_materno`, t.apellido_materno || "");
+            if (t.edad) _setVal(`${prefix}_edad`, String(t.edad));
+            if (t.nivel_estudios) _setVal(`${prefix}_nivel_estudios`, t.nivel_estudios);
+            if (t.estado_civil) _setVal(`${prefix}_estado_civil`, t.estado_civil);
+            if (t.num_hijos !== undefined) _setVal(`${prefix}_num_hijos`, String(t.num_hijos));
+            if (t.vivienda) _setVal(`${prefix}_vivienda`, t.vivienda);
+            if (t.fuente_empleo) _setVal(`${prefix}_fuente_empleo`, t.fuente_empleo);
+            if (t.ingreso_mensual) _setVal(`${prefix}_ingreso_mensual`, String(t.ingreso_mensual));
+            if (t.imss_estatus) {
+              const imssRadio = document.querySelector(`input[name="${prefix}_imss"][value="${t.imss_estatus}"]`);
+              if (imssRadio) imssRadio.checked = true;
+            }
+            if (t.infonavit_estatus) {
+              const infRadio = document.querySelector(`input[name="${prefix}_infonavit"][value="${t.infonavit_estatus}"]`);
+              if (infRadio) infRadio.checked = true;
+            }
+          });
+
+          // Store estudio_id for PATCH submit
+          window._editEstudioId = id;
+
+          // Change submit button text
+          const submitBtn = document.querySelector('button[type="submit"]');
+          if (submitBtn) submitBtn.textContent = "ACTUALIZAR ESTUDIO";
+        } catch (_) {
+          alert("Error al cargar el estudio.");
+          window.location.href = "perfil-capturista.html";
+        }
+      }
+
+      function _setVal(name, value) {
+        const el = document.querySelector(`[name="${name}"]`);
+        if (el) el.value = value;
+      }
+
+      // ── Override submitEstudio for edit mode ──
+      const _origSubmit = window.submitEstudio;
+      window.submitEstudio = function (status) {
+        if (window._editEstudioId) {
+          _patchEstudio(status);
+        } else {
+          _origSubmit(status);
+        }
+      };
+
+      async function _patchEstudio(status) {
+        const session = JSON.parse(localStorage.getItem("session") || "null");
+        if (!session?.token) return;
+        const id = window._editEstudioId;
+        const errorMsg = document.getElementById("error-msg");
+
+        // Build patch body - only send mutable fields
+        const body = {
+          status,
+          elaboro_estudio: document.querySelector('[name="elaboro_estudio"]')?.value || session.nombre,
+          fecha_estudio: new Date().toISOString().slice(0, 10),
+        };
+
+        // Also update beneficiario mutable fields (telefonos, email)
+        body.beneficiario = {};
+        const tels = document.querySelector('[name="telefonos"]')?.value;
+        if (tels) body.beneficiario.telefonos = tels;
+
+        try {
+          const res = await fetch(`/api/estudios/${id}`, {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: "Bearer " + session.token,
+            },
+            body: JSON.stringify(body),
+          });
+          if (!res.ok) {
+            const data = await res.json().catch(() => ({}));
+            errorMsg.textContent = data.detail || "Error al actualizar.";
+            errorMsg.classList.remove("hidden");
+            return;
+          }
+          _showToast("Estudio actualizado correctamente");
+          setTimeout(() => {
+            window.location.href = "perfil-capturista.html";
+          }, 1500);
+        } catch (_) {
+          errorMsg.textContent = "Error de conexión.";
+          errorMsg.classList.remove("hidden");
+        }
+      }
 
       // Guardar Estudio (submit)
       document.querySelector("form").addEventListener("submit", (e) => {
