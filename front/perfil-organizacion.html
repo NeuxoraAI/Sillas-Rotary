@@ -134,14 +134,36 @@
       </div>
     </div>
 
+    <!-- Leaders card -->
+    <div id="org-leaders-card" class="bg-white rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.07)] border border-slate-100 overflow-hidden hidden">
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
+        <span class="material-symbols-outlined text-amber-600 text-xl">star</span>
+        <h2 class="text-base font-semibold text-slate-800">Líderes</h2>
+      </div>
+      <div id="leaders-list" class="divide-y divide-slate-100">
+        <div class="px-6 py-4 text-slate-400 text-sm">Cargando…</div>
+      </div>
+    </div>
+
+    <!-- Members card -->
+    <div id="org-members-card" class="bg-white rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.07)] border border-slate-100 overflow-hidden hidden">
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
+        <span class="material-symbols-outlined text-blue-600 text-xl">group</span>
+        <h2 class="text-base font-semibold text-slate-800">Miembros</h2>
+      </div>
+      <div id="members-list" class="divide-y divide-slate-100">
+        <div class="px-6 py-4 text-slate-400 text-sm">Cargando…</div>
+      </div>
+    </div>
+
     <!-- Info banner (for redirect from socioeconomico with missing guest_ctx) -->
     <div id="info-banner" class="hidden bg-blue-50 border border-blue-200 rounded-xl px-5 py-4 flex items-start gap-3" role="alert">
       <span class="material-symbols-outlined text-blue-400 text-xl mt-0.5 shrink-0">info</span>
       <p class="text-blue-700 text-sm leading-relaxed">Ingresá tu nombre para continuar con la captura.</p>
     </div>
 
-    <!-- Guest Volunteer Form -->
-    <div class="bg-white rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.07)] border border-slate-100 overflow-hidden">
+    <!-- Guest Volunteer Form — only visible when logged in as organizacion -->
+    <div id="guest-form-container" class="hidden bg-white rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.07)] border border-slate-100 overflow-hidden">
       <div class="px-6 py-5 border-b border-slate-100 flex items-center gap-3">
         <span class="material-symbols-outlined text-ug-blue text-xl">person_add</span>
         <h2 class="text-base font-semibold text-slate-800">Capturar como voluntario</h2>
@@ -255,13 +277,18 @@
 <script>
   // ── Auth guard ──────────────────────────────────────────────────────────────
   const session = _getSession();
-  if (!session?.token || session.rol !== 'organizacion') {
+  if (!session?.token) {
     window.location.replace('login.html');
   }
 
-  // Populate org info
-  document.getElementById('org-nombre').textContent      = session.nombre;
-  document.getElementById('user-nombre-header').textContent = session.nombre;
+  // Resolve org_id from URL or from user's profile
+  const urlParams = new URLSearchParams(window.location.search);
+  let orgIdFromUrl = urlParams.get('org_id') ? parseInt(urlParams.get('org_id'), 10) : null;
+
+  // Show guest form only for actual organizacion users (not for visitors viewing the org)
+  if (session?.rol === 'organizacion') {
+    document.getElementById('guest-form-container').classList.remove('hidden');
+  }
 
   // Show info banner if redirected due to missing guest_ctx
   if (window.location.search.includes('reason=missing_guest')) {
@@ -298,7 +325,7 @@
     }
 
     localStorage.setItem('guest_ctx', JSON.stringify(guestCtx));
-    window.location.href = 'seleccion-region.html';
+    window.location.href = 'Capturista-view/seleccion-region.html';
   });
 
   // ── Tab switching ───────────────────────────────────────────────────────────
@@ -316,82 +343,148 @@
 
   async function loadOrgData() {
     try {
-      // Fetch org detail first to get org_id from perfil
-      const perfilRes = await fetch('/api/me/perfil', {
+      // If no org_id in URL, resolve from user's profile (for organizacion users)
+      if (!orgIdFromUrl) {
+        const perfilRes = await fetch('/api/me/perfil', {
+          headers: { 'Authorization': 'Bearer ' + session.token }
+        });
+        if (perfilRes.status === 401) { _clearAllStorage(); window.location.href = 'login.html'; return; }
+        if (!perfilRes.ok) throw new Error('HTTP ' + perfilRes.status);
+        const perfil = await perfilRes.json();
+        const orgs = [...(perfil.organizaciones_lider || []), ...(perfil.organizaciones_miembro || [])];
+        if (orgs.length > 0) {
+          orgIdFromUrl = orgs[0].id;
+        } else {
+          _showError('No estás asociado a ninguna organización.');
+          return;
+        }
+      }
+
+      // Load organization detail
+      const orgRes = await fetch(`/api/organizaciones/${orgIdFromUrl}`, {
         headers: { 'Authorization': 'Bearer ' + session.token }
       });
-      if (perfilRes.status === 401) { _clearAllStorage(); window.location.href = 'login.html'; return; }
-      if (!perfilRes.ok) throw new Error('HTTP ' + perfilRes.status);
-      const perfil = await perfilRes.json();
+      if (orgRes.status === 401) { _clearAllStorage(); window.location.href = 'login.html'; return; }
+      if (orgRes.status === 404) { _showError('Organización no encontrada.'); return; }
+      if (!orgRes.ok) throw new Error('HTTP ' + orgRes.status);
+      const org = await orgRes.json();
 
-      const u = perfil.usuario;
-
-      // We need the org ID. For org users, the user account IS the org.
-      // Fetch org list to find the org associated with this user.
-      // Since org users can't call admin endpoints, we need a different approach.
-      // For now, fetch /api/me/perfil data directly.
-      document.getElementById('org-nombre').textContent = u.nombre;
-      document.getElementById('user-nombre-header').textContent = u.nombre;
-      document.getElementById('stat-capturas').textContent = perfil.stats.total_capturas;
+      // Populate org info
+      document.getElementById('org-nombre').textContent = org.nombre;
+      document.getElementById('user-nombre-header').textContent = org.nombre;
+      document.getElementById('stat-capturas').textContent = org.stats?.total_capturas || 0;
       document.getElementById('stat-completados').textContent = '—';
-      document.getElementById('stat-this-month').textContent = perfil.stats.this_month;
+      document.getElementById('stat-this-month').textContent = org.stats?.this_month || 0;
 
-      // Load beneficiaries via the me endpoint
-      const beneRes = await fetch('/api/me/beneficiarios', {
-        headers: { 'Authorization': 'Bearer ' + session.token }
-      });
-      const captures = beneRes.ok ? await beneRes.json() : [];
-      document.getElementById('count-capturas').textContent = captures.length;
-
+      // Load beneficiaries (hide loading, show empty for now — no per-org endpoint yet)
       const listEl   = document.getElementById('beneficiarios-list');
       const loading  = document.getElementById('loading-state');
       const empty    = document.getElementById('empty-state');
       loading.classList.add('hidden');
+      empty.classList.remove('hidden');
+      document.getElementById('count-capturas').textContent = '0';
 
-      if (captures.length === 0) {
-        empty.classList.remove('hidden');
-      } else {
-        listEl.innerHTML = captures.map(c => `
-          <div class="captura-card px-6 py-4 border-b border-slate-100 last:border-b-0">
-            <div class="flex items-start justify-between gap-3">
-              <div class="min-w-0 flex-1">
-                <p class="font-semibold text-slate-900 truncate">${_esc(c.beneficiario_nombre)}</p>
-                <div class="flex flex-wrap gap-x-3 gap-y-1 mt-1 text-xs text-slate-500">
-                  <span class="inline-flex items-center gap-1"><span class="material-symbols-outlined text-xs">tag</span>${_esc(c.folio)}</span>
-                  <span class="inline-flex items-center gap-1"><span class="material-symbols-outlined text-xs">person</span>${_esc(c.elaboro_estudio)}</span>
-                  <span class="inline-flex items-center gap-1"><span class="material-symbols-outlined text-xs">calendar_today</span>${_esc(c.fecha_estudio)}</span>
-                </div>
-              </div>
-              <div class="flex items-center gap-2 shrink-0">
-                <a href="${_esc(c.edit_url)}" class="w-8 h-8 rounded-lg text-ug-blue hover:bg-ug-blue/10 flex items-center justify-center" title="Editar">
-                  <span class="material-symbols-outlined text-lg">edit</span>
-                </a>
-                <span class="${c.status === 'completo' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'} text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full">
-                  ${c.status === 'completo' ? 'Completo' : c.status === 'borrador' ? 'Borrador' : _esc(c.status)}
-                </span>
-              </div>
+      // Render leaders
+      if (org.lideres && org.lideres.length > 0) {
+        document.getElementById('org-leaders-card').classList.remove('hidden');
+        document.getElementById('leaders-list').innerHTML = org.lideres.map(l => `
+          <div class="px-6 py-3 flex items-center gap-3">
+            <div class="w-9 h-9 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-sm shrink-0">
+              ${_initial(l.nombre)}
             </div>
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-semibold text-slate-900 truncate">${_esc(l.nombre)}</p>
+              <p class="text-xs text-slate-500 truncate">${_esc(l.email)}</p>
+            </div>
+            <span class="text-xs font-medium text-amber-700 bg-amber-50 rounded-full px-2.5 py-0.5">Líder</span>
           </div>
         `).join('');
       }
 
-      // Load heatmap
-      loadOrgHeatmap();
+      // Render members
+      if (org.miembros && org.miembros.length > 0) {
+        document.getElementById('org-members-card').classList.remove('hidden');
+        document.getElementById('members-list').innerHTML = org.miembros.map(m => `
+          <div class="px-6 py-3 flex items-center gap-3">
+            <div class="w-9 h-9 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm shrink-0">
+              ${_initial(m.nombre)}
+            </div>
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-semibold text-slate-900 truncate">${_esc(m.nombre)}</p>
+              <p class="text-xs text-slate-500 truncate">${_esc(m.email)}</p>
+            </div>
+            <span class="text-xs font-medium text-blue-700 bg-blue-50 rounded-full px-2.5 py-0.5">Miembro</span>
+          </div>
+        `).join('');
+      }
 
-      // Load voluntarios
-      loadVoluntarios();
+      // Load org-specific heatmap
+      loadOrgHeatmap(orgIdFromUrl);
+
+      // Load org-specific voluntarios
+      loadOrgVoluntarios(orgIdFromUrl);
 
     } catch (_) {
       _showError('No se pudieron cargar los datos de la organización.');
     }
   }
 
+  async function loadOrgDetail(orgId) {
+    try {
+      const res = await fetch(`/api/organizaciones/${orgId}`, {
+        headers: { 'Authorization': 'Bearer ' + session.token }
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const org = await res.json();
+
+      // Render leaders
+      const leaders = org.lideres || [];
+      if (leaders.length > 0) {
+        document.getElementById('org-leaders-card').classList.remove('hidden');
+        document.getElementById('leaders-list').innerHTML = leaders.map(l => `
+          <div class="px-6 py-3 flex items-center gap-3">
+            <div class="w-9 h-9 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-sm shrink-0">
+              ${_initial(l.nombre)}
+            </div>
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-semibold text-slate-900 truncate">${_esc(l.nombre)}</p>
+              <p class="text-xs text-slate-500 truncate">${_esc(l.email)}</p>
+            </div>
+            <span class="text-xs font-medium text-amber-700 bg-amber-50 rounded-full px-2.5 py-0.5">Líder</span>
+          </div>
+        `).join('');
+      }
+
+      // Render members
+      const members = org.miembros || [];
+      if (members.length > 0) {
+        document.getElementById('org-members-card').classList.remove('hidden');
+        document.getElementById('members-list').innerHTML = members.map(m => `
+          <div class="px-6 py-3 flex items-center gap-3">
+            <div class="w-9 h-9 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm shrink-0">
+              ${_initial(m.nombre)}
+            </div>
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-semibold text-slate-900 truncate">${_esc(m.nombre)}</p>
+              <p class="text-xs text-slate-500 truncate">${_esc(m.email)}</p>
+            </div>
+            <span class="text-xs font-medium text-blue-700 bg-blue-50 rounded-full px-2.5 py-0.5">Miembro</span>
+          </div>
+        `).join('');
+      }
+    } catch (_) {
+      // Silently fail — leaders/members are supplementary
+      console.error("Error loading org detail");
+    }
+  }
+
   // ── Heatmap ──────────────────────────────────────────────────────────────────
-  async function loadOrgHeatmap() {
+  async function loadOrgHeatmap(orgId) {
     const container = document.getElementById('heatmap-container');
     const loading   = document.getElementById('heatmap-loading');
+    if (!orgId) return;
     try {
-      const res = await fetch('/api/me/heatmap', {
+      const res = await fetch(`/api/organizaciones/${orgId}/heatmap`, {
         headers: { 'Authorization': 'Bearer ' + session.token }
       });
       if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -448,39 +541,32 @@
   function hideTip() { const tip = document.getElementById('htip'); if (tip) tip.style.display = 'none'; }
 
   // ── Voluntarios ─────────────────────────────────────────────────────────────
-  async function loadVoluntarios() {
+  async function loadOrgVoluntarios(orgId) {
     const body = document.getElementById('voluntarios-body');
+    if (!orgId) return;
     try {
-      const res = await fetch('/api/me/capturas', {
+      const res = await fetch(`/api/organizaciones/${orgId}/voluntarios`, {
         headers: { 'Authorization': 'Bearer ' + session.token }
       });
       if (!res.ok) throw new Error('HTTP ' + res.status);
-      const captures = await res.json();
-
-      // Group by elaboro_estudio
-      const groups = {};
-      captures.forEach(c => {
-        const name = c.elaboro_estudio || 'Sin nombre';
-        if (!groups[name]) groups[name] = { name, count: 0, lastDate: null };
-        groups[name].count++;
-        if (!groups[name].lastDate || c.fecha_estudio > groups[name].lastDate) groups[name].lastDate = c.fecha_estudio;
-      });
-
-      const voluntarios = Object.values(groups).sort((a, b) => b.count - a.count);
+      const voluntarios = await res.json();
       document.getElementById('vol-loading').classList.add('hidden');
 
       if (voluntarios.length === 0) {
-        body.innerHTML += '<div class="px-6 py-10 text-center text-slate-400 text-sm">No hay voluntarios registrados.</div>';
+        body.innerHTML = '<div class="px-6 py-10 text-center text-slate-400 text-sm">No hay voluntarios registrados.</div>';
         return;
       }
 
       const html = voluntarios.map(v => `
         <div class="px-6 py-4 flex items-center justify-between border-b border-slate-100">
           <div>
-            <p class="font-semibold text-slate-900">${_esc(v.name)}</p>
-            <p class="text-xs text-slate-500">Última captura: ${v.lastDate || '—'}</p>
+            <p class="font-semibold text-slate-900">${_esc(v.nombre)}</p>
+            <p class="text-xs text-slate-500">
+              ${v.capturas} captura${v.capturas !== 1 ? 's' : ''}
+              ${v.contacto ? '· ' + _esc(v.contacto) : ''}
+            </p>
           </div>
-          <span class="bg-ug-blue/10 text-ug-blue text-xs font-bold px-3 py-1 rounded-full">${v.count} captura${v.count !== 1 ? 's' : ''}</span>
+          <span class="bg-ug-blue/10 text-ug-blue text-xs font-bold px-3 py-1 rounded-full">${v.capturas}</span>
         </div>
       `).join('');
       body.innerHTML = html;
@@ -498,6 +584,12 @@
 
   function _esc(str) {
     return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function _initial(nombre) {
+    const s = String(nombre || '').trim();
+    if (!s) return '?';
+    return s.split(/\s+/).slice(0, 2).map(p => p.charAt(0).toUpperCase()).join('');
   }
 
   function _showGuestError(msg) {

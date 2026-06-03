@@ -104,6 +104,23 @@ def create_usuario(
     if row is None:
         raise HTTPException(status_code=500, detail="Error al crear el usuario")
 
+    # If creating an organization user, auto-create the organizaciones entry
+    # and add the user as a leader so /api/me/perfil resolves correctly
+    if body.rol == "organizacion":
+        db.execute(
+            """
+            INSERT INTO organizaciones (nombre, email, usuario_id)
+            VALUES (%s, %s, %s)
+            RETURNING id
+            """,
+            (body.nombre.strip(), body.email.lower(), row["id"]),
+        )
+        org_row = db.fetchone()
+        db.execute(
+            "INSERT INTO organizaciones_lideres (organizacion_id, usuario_id) VALUES (%s, %s)",
+            (org_row[0], row["id"]),
+        )
+
     return UsuarioResponse(
         usuario_id=row["id"],
         nombre=row["nombre"],

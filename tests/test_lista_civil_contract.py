@@ -11,7 +11,7 @@ sys.path.append(str(Path(__file__).resolve().parents[1] / "backend"))
 from routers.socioeconomico import ALLOWED_ESTADO_CIVIL, TutorIn  # noqa: E402
 
 
-FRONT_FILE = Path(__file__).resolve().parents[1] / "front" / "socioeconomico.html"
+FRONT_FILE = Path(__file__).resolve().parents[1] / "front" / "Capturista-view" / "socioeconomico.html"
 
 
 def test_estado_civil_catalog_constant_is_closed() -> None:

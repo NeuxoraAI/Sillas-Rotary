@@ -67,7 +67,7 @@
   <div class="px-5 py-6 border-b border-white/10">
     <div class="flex items-center gap-3">
       <div class="w-9 h-9 bg-white rounded-xl flex items-center justify-center overflow-hidden shrink-0">
-        <img src="assets/logo_vida_ug.png" alt="VIDA UG" class="w-4/5 h-4/5 object-contain"/>
+        <img src="../assets/logo_vida_ug.png" alt="VIDA UG" class="w-4/5 h-4/5 object-contain"/>
       </div>
       <div>
         <p class="text-white text-sm font-bold leading-none">Panel Admin</p>
@@ -255,7 +255,7 @@
   // ── Auth guard (admin only) ─────────────────────────────────────────────────
   const session = JSON.parse(localStorage.getItem('session') || 'null');
   if (!session?.token || session.rol !== 'admin') {
-    window.location.replace('login.html');
+    window.location.replace('../login.html');
   }
 
   document.getElementById('sidebar-nombre').textContent = session.nombre || '—';
@@ -269,7 +269,7 @@
   function _logout() {
     localStorage.removeItem('session');
     localStorage.removeItem('region_ctx');
-    window.location.href = 'login.html';
+    window.location.href = '../login.html';
   }
   document.getElementById('btn-logout').addEventListener('click', _logout);
   document.getElementById('btn-logout-mobile').addEventListener('click', _logout);

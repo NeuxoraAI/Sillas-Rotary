@@ -343,7 +343,7 @@
         <!-- END: Footer Actions -->
       </form>
     </main>
-    <script src="assets/js/validations.js"></script>
+    <script src="../assets/js/validations.js"></script>
     <script data-purpose="form-logic">
       const COMO_OBTUVO_SILLA_CATALOG = ["COMPRA", "DONACION"];
 
@@ -447,7 +447,7 @@
 
         const session = JSON.parse(localStorage.getItem("session") || "null");
         if (!session?.token) {
-          window.location.href = "login.html";
+          window.location.href = "../login.html";
           return;
         }
 
@@ -599,7 +599,7 @@
           localStorage.getItem("region_ctx") || "null",
         );
         if (!session?.token || !regionCtx?.region_id) {
-          window.location.href = "login.html";
+          window.location.href = "../login.html";
           return;
         }
 

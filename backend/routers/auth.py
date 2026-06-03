@@ -178,13 +178,12 @@ def assert_resource_owner(
 
     # Leader bypass: check if user is leader of org that owns this study
     if db is not None and estudio_id is not None:
-        # Find the estudio's usuario_id, then check if any org has that
-        # usuario_id AND this user as its lider_usuario_id
         leader_check = db.execute(
             """
             SELECT 1 FROM organizaciones o
+            JOIN organizaciones_lideres ol ON ol.organizacion_id = o.id
             WHERE o.usuario_id = %s
-              AND o.lider_usuario_id = %s
+              AND ol.usuario_id = %s
             """,
             (row_user_id, user.usuario_id),
         ).fetchone()

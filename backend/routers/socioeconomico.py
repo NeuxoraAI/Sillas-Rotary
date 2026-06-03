@@ -368,6 +368,7 @@ class EstudioIn(BaseModel):
     tuvo_silla_previa: bool
     como_obtuvo_silla: Optional[str] = None
     elaboro_estudio: Optional[str] = None
+    voluntario_contacto: Optional[str] = None
     ciudad_registro: Optional[str] = None
     fecha_estudio: str
     status: str = "borrador"
@@ -615,11 +616,55 @@ def crear_estudio(
         ),
     ).fetchone()["id"]
 
+    # 6. Upsert volunteer record for organizacion users
+    if usuario.rol == "organizacion" and estudio.elaboro_estudio:
+        _upsert_voluntario(
+            db, usuario.usuario_id, estudio.elaboro_estudio, estudio.voluntario_contacto
+        )
+
     return EstudioCreateResponse(
         estudio_id=estudio_id,
         beneficiario_id=beneficiario_id,
         folio=folio,
         status=estudio.status,
+    )
+
+
+def _upsert_voluntario(
+    db: _DBAdapter,
+    usuario_id: int,
+    nombre_voluntario: str,
+    contacto: Optional[str] = None,
+) -> None:
+    """Increment capture count for a volunteer associated with an organization."""
+    # Find the organization linked to this usuario_id
+    org_row = db.execute(
+        "SELECT id FROM organizaciones WHERE usuario_id = %s AND activo = TRUE",
+        (usuario_id,),
+    ).fetchone()
+    if org_row is None:
+        return
+    org_id = org_row["id"]
+
+    # Build the ON CONFLICT DO UPDATE clause dynamically
+    updates = [
+        "capturas_count = organizaciones_voluntarios.capturas_count + 1",
+        "ultima_captura = NOW()",
+    ]
+    params = [org_id, nombre_voluntario.strip()[:120]]
+    if contacto is not None:
+        updates.append("contacto = EXCLUDED.contacto")
+        params.append(contacto.strip()[:20])
+
+    db.execute(
+        f"""
+        INSERT INTO organizaciones_voluntarios (organizacion_id, nombre, contacto, capturas_count, ultima_captura)
+        VALUES (%s, %s, %s, 1, NOW())
+        ON CONFLICT (organizacion_id, nombre)
+        DO UPDATE SET
+            {', '.join(updates)}
+        """,
+        tuple(params),
     )
 
 

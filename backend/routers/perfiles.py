@@ -9,7 +9,11 @@ Endpoints:
 - GET    /api/organizaciones          — List all orgs (admin only)
 - POST   /api/organizaciones          — Create org (admin only)
 - GET    /api/organizaciones/{id}     — Org detail + stats + heatmap
-- PATCH  /api/organizaciones/{id}/lider — Assign leader (admin only)
+- PATCH  /api/organizaciones/{id}     — Update org details (admin only)
+- POST   /api/organizaciones/{id}/lider — Add leader (admin only)
+- DELETE /api/organizaciones/{id}/lider/{usuario_id} — Remove leader (admin only)
+- POST   /api/organizaciones/{id}/miembros — Add member (admin only)
+- DELETE /api/organizaciones/{id}/miembros/{usuario_id} — Remove member (admin only)
 - GET    /api/organizaciones/{id}/heatmap  — Org aggregate heatmap
 - GET    /api/organizaciones/{id}/voluntarios — Org volunteer list
 """
@@ -21,7 +25,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, EmailStr
 
 from database import get_db, _DBAdapter
-from routers.auth import CurrentUser, require_auth, require_admin, require_roles
+from routers.auth import CurrentUser, require_auth, require_admin, require_roles, _hash_password
 
 router = APIRouter()
 
@@ -38,11 +42,12 @@ class PerfilUpdateRequest(BaseModel):
 
 class OrganizacionCreateRequest(BaseModel):
     nombre: str
+    email: str | None = None
+    password: str | None = None
+    usuario_id: int | None = None
     descripcion: str | None = None
     direccion: str | None = None
     telefono: str | None = None
-    email: str | None = None
-    usuario_id: int | None = None
 
 
 class LiderAssignRequest(BaseModel):
@@ -92,7 +97,7 @@ def get_my_perfil(
     db: Annotated[_DBAdapter, Depends(get_db)],
     user: Annotated[CurrentUser, Depends(require_auth)],
 ) -> dict:
-    """Return current user profile with stats."""
+    """Return current user profile with stats and org leadership info."""
     usuario_row = db.execute(
         "SELECT id, nombre, email, telefono, rol FROM usuarios WHERE id = %s",
         (user.usuario_id,),
@@ -100,6 +105,28 @@ def get_my_perfil(
 
     stats = _get_user_stats(db, user.usuario_id)
     heatmap = _get_heatmap_data(db, user.usuario_id)
+
+    # Check orgs the user leads (via organizaciones_lideres)
+    leader_rows = db.execute(
+        """
+        SELECT o.id, o.nombre, o.descripcion, o.direccion, o.telefono, o.email
+        FROM organizaciones o
+        JOIN organizaciones_lideres ol ON ol.organizacion_id = o.id
+        WHERE ol.usuario_id = %s AND o.activo = TRUE
+        """,
+        (user.usuario_id,),
+    ).fetchall()
+
+    # Check orgs the user is a member of (via organizaciones_miembros)
+    member_rows = db.execute(
+        """
+        SELECT o.id, o.nombre, o.descripcion, o.direccion, o.telefono, o.email
+        FROM organizaciones o
+        JOIN organizaciones_miembros om ON om.organizacion_id = o.id
+        WHERE om.usuario_id = %s AND o.activo = TRUE
+        """,
+        (user.usuario_id,),
+    ).fetchall()
 
     return {
         "usuario": {
@@ -111,6 +138,8 @@ def get_my_perfil(
         },
         "stats": stats,
         "heatmap_data": heatmap,
+        "organizaciones_lider": [dict(r) for r in leader_rows],
+        "organizaciones_miembro": [dict(r) for r in member_rows],
         "can_edit": True,
     }
 
@@ -232,31 +261,69 @@ def get_my_beneficiarios(
 def list_organizaciones(
     db: Annotated[_DBAdapter, Depends(get_db)],
     _admin: Annotated[CurrentUser, Depends(require_admin)],
+    usuario_id: int | None = None,
 ) -> list[dict]:
-    """List all organizations (admin only)."""
-    rows = db.execute(
-        """
-        SELECT
-            o.id,
-            o.nombre,
-            o.descripcion,
-            o.direccion,
-            o.telefono,
-            o.email,
-            o.usuario_id,
-            o.lider_usuario_id,
-            o.activo,
-            o.created_at,
-            u.nombre AS lider_nombre
-        FROM organizaciones o
-        LEFT JOIN usuarios u ON u.id = o.lider_usuario_id
-        ORDER BY o.id
-        """,
-    ).fetchall()
+    """List all organizations (admin only). Optionally filter by usuario_id."""
+    if usuario_id is not None:
+        rows = db.execute(
+            """
+            SELECT
+                o.id,
+                o.nombre,
+                o.descripcion,
+                o.direccion,
+                o.telefono,
+                o.email,
+                o.usuario_id,
+                o.activo,
+                o.created_at
+            FROM organizaciones o
+            WHERE o.usuario_id = %s
+            ORDER BY o.id
+            """,
+            (usuario_id,),
+        ).fetchall()
+    else:
+        rows = db.execute(
+            """
+            SELECT
+                o.id,
+                o.nombre,
+                o.descripcion,
+                o.direccion,
+                o.telefono,
+                o.email,
+                o.usuario_id,
+                o.activo,
+                o.created_at
+            FROM organizaciones o
+            ORDER BY o.id
+            """,
+        ).fetchall()
 
     result = []
     for r in rows:
         org = dict(r)
+
+        # Get all leaders
+        leaders = db.execute(
+            """
+            SELECT u.id, u.nombre, u.email, u.rol
+            FROM usuarios u
+            JOIN organizaciones_lideres ol ON ol.usuario_id = u.id
+            WHERE ol.organizacion_id = %s AND u.activo = TRUE
+            """,
+            (org["id"],),
+        ).fetchall()
+        org["lideres"] = [dict(l) for l in leaders]
+
+        # Get member count
+        member_count = db.execute(
+            "SELECT COUNT(*) AS count FROM organizaciones_miembros WHERE organizacion_id = %s",
+            (org["id"],),
+        ).fetchone()["count"]
+        org["member_count"] = member_count
+
         # Get total capturas for this org
         if org.get("usuario_id"):
             stats_row = db.execute(
@@ -277,28 +344,59 @@ def create_organizacion(
     db: Annotated[_DBAdapter, Depends(get_db)],
     _admin: Annotated[CurrentUser, Depends(require_admin)],
 ) -> dict:
-    """Create a new organization (admin only)."""
+    """Create a new organization + optionally its user account (admin only).
+    
+    If usuario_id is provided, links to existing user instead of creating one.
+    """
     nombre = body.nombre.strip()
     if len(nombre) < 2 or len(nombre) > 200:
         raise HTTPException(status_code=422, detail="nombre debe tener entre 2 y 200 caracteres")
 
     # Check uniqueness
-    existing = db.execute(
+    existing_org = db.execute(
         "SELECT id FROM organizaciones WHERE nombre = %s", (nombre,),
     ).fetchone()
-    if existing is not None:
+    if existing_org is not None:
         raise HTTPException(status_code=409, detail="Ya existe una organización con ese nombre")
 
-    # Verify usuario_id if provided
     if body.usuario_id is not None:
+        # Link to existing user
         user_row = db.execute(
-            "SELECT id, activo FROM usuarios WHERE id = %s",
+            "SELECT id, email, activo FROM usuarios WHERE id = %s",
             (body.usuario_id,),
         ).fetchone()
         if user_row is None or not user_row["activo"]:
             raise HTTPException(status_code=400, detail="Usuario no encontrado o inactivo")
+        usuario_id = user_row["id"]
+        email = user_row["email"]
+    else:
+        # Create new user account
+        if not body.email or len(body.email.strip()) < 5:
+            raise HTTPException(status_code=422, detail="email inválido")
+        email = body.email.strip().lower()
 
-    row = db.execute(
+        if not body.password or len(body.password.strip()) < 8:
+            raise HTTPException(status_code=422, detail="contraseña debe tener al menos 8 caracteres")
+
+        existing_user = db.execute(
+            "SELECT id FROM usuarios WHERE email = %s", (email,),
+        ).fetchone()
+        if existing_user is not None:
+            raise HTTPException(status_code=409, detail="Ya existe un usuario con ese email")
+
+        password_hash = _hash_password(body.password.strip())
+        user_row = db.execute(
+            """
+            INSERT INTO usuarios (nombre, email, password_hash, rol)
+            VALUES (%s, %s, %s, 'organizacion')
+            RETURNING id
+            """,
+            (nombre, email, password_hash),
+        ).fetchone()
+        usuario_id = user_row["id"]
+
+    # Create the organization linked to the user
+    org_row = db.execute(
         """
         INSERT INTO organizaciones (nombre, descripcion, direccion, telefono, email, usuario_id)
         VALUES (%s, %s, %s, %s, %s, %s)
@@ -309,12 +407,17 @@ def create_organizacion(
             body.descripcion.strip() if body.descripcion else None,
             body.direccion.strip() if body.direccion else None,
             body.telefono.strip() if body.telefono else None,
-            body.email.strip() if body.email else None,
-            body.usuario_id,
+            email,
+            usuario_id,
         ),
     ).fetchone()
 
-    return {"id": row["id"], "nombre": row["nombre"]}
+    return {
+        "id": org_row["id"],
+        "nombre": org_row["nombre"],
+        "usuario_id": usuario_id,
+        "email": email,
+    }
 
 
 @router.get("/organizaciones/{org_id}")
@@ -334,11 +437,9 @@ def get_organizacion(
             o.telefono,
             o.email,
             o.usuario_id,
-            o.lider_usuario_id,
             o.activo,
-            u.nombre AS lider_nombre
+            o.created_at
         FROM organizaciones o
-        LEFT JOIN usuarios u ON u.id = o.lider_usuario_id
         WHERE o.id = %s
         """,
         (org_id,),
@@ -348,6 +449,30 @@ def get_organizacion(
         raise HTTPException(status_code=404, detail="Organización no encontrada")
 
     result = dict(org)
+
+    # Get all leaders
+    leaders = db.execute(
+        """
+        SELECT u.id, u.nombre, u.email, u.rol
+        FROM usuarios u
+        JOIN organizaciones_lideres ol ON ol.usuario_id = u.id
+        WHERE ol.organizacion_id = %s AND u.activo = TRUE
+        """,
+        (org_id,),
+    ).fetchall()
+    result["lideres"] = [dict(l) for l in leaders]
+
+    # Get all members
+    members = db.execute(
+        """
+        SELECT u.id, u.nombre, u.email, u.rol
+        FROM usuarios u
+        JOIN organizaciones_miembros om ON om.usuario_id = u.id
+        WHERE om.organizacion_id = %s AND u.activo = TRUE
+        """,
+        (org_id,),
+    ).fetchall()
+    result["miembros"] = [dict(m) for m in members]
 
     # Get stats and heatmap for the org's usuario_id
     if org["usuario_id"]:
@@ -360,14 +485,20 @@ def get_organizacion(
     return result
 
 
-@router.patch("/organizaciones/{org_id}/lider")
-def assign_org_lider(
+class OrganizacionUpdateRequest(BaseModel):
+    descripcion: str | None = None
+    direccion: str | None = None
+    telefono: str | None = None
+
+
+@router.patch("/organizaciones/{org_id}")
+def update_organizacion(
     org_id: int,
-    body: LiderAssignRequest,
+    body: OrganizacionUpdateRequest,
     db: Annotated[_DBAdapter, Depends(get_db)],
     _admin: Annotated[CurrentUser, Depends(require_admin)],
 ) -> dict:
-    """Assign or unassign an organization leader (admin only)."""
+    """Update organization details (admin only)."""
     org = db.execute(
         "SELECT id FROM organizaciones WHERE id = %s",
         (org_id,),
@@ -375,29 +506,142 @@ def assign_org_lider(
     if org is None:
         raise HTTPException(status_code=404, detail="Organización no encontrada")
 
-    if body.lider_usuario_id is not None:
-        # Verify user exists and is active
-        user = db.execute(
-            "SELECT id, activo FROM usuarios WHERE id = %s",
-            (body.lider_usuario_id,),
-        ).fetchone()
-        if user is None or not user["activo"]:
-            raise HTTPException(status_code=400, detail="Usuario no encontrado o inactivo")
+    updates = {}
+    if body.descripcion is not None:
+        updates["descripcion"] = body.descripcion.strip()
+    if body.direccion is not None:
+        updates["direccion"] = body.direccion.strip()
+    if body.telefono is not None:
+        updates["telefono"] = body.telefono.strip()
 
-        # Check user is not already a leader of another org
-        existing_leader = db.execute(
-            "SELECT id FROM organizaciones WHERE lider_usuario_id = %s AND id != %s",
-            (body.lider_usuario_id, org_id),
-        ).fetchone()
-        if existing_leader is not None:
-            raise HTTPException(status_code=400, detail="El usuario ya es líder de otra organización")
+    if updates:
+        set_clause = ", ".join(f"{k} = %s" for k in updates)
+        values = list(updates.values())
+        values.append(org_id)
+        db.execute(
+            f"UPDATE organizaciones SET {set_clause} WHERE id = %s",
+            values,
+        )
+
+    return {"id": org_id, "message": "Organización actualizada"}
+
+
+@router.post("/organizaciones/{org_id}/lider")
+def add_org_lider(
+    org_id: int,
+    body: LiderAssignRequest,
+    db: Annotated[_DBAdapter, Depends(get_db)],
+    _admin: Annotated[CurrentUser, Depends(require_admin)],
+) -> dict:
+    """Add a leader to an organization (admin only). Ignores duplicates."""
+    org = db.execute(
+        "SELECT id FROM organizaciones WHERE id = %s",
+        (org_id,),
+    ).fetchone()
+    if org is None:
+        raise HTTPException(status_code=404, detail="Organización no encontrada")
+
+    if body.lider_usuario_id is None:
+        raise HTTPException(status_code=400, detail="lider_usuario_id es requerido")
+
+    # Verify user exists and is active
+    user = db.execute(
+        "SELECT id, activo FROM usuarios WHERE id = %s",
+        (body.lider_usuario_id,),
+    ).fetchone()
+    if user is None or not user["activo"]:
+        raise HTTPException(status_code=400, detail="Usuario no encontrado o inactivo")
 
     db.execute(
-        "UPDATE organizaciones SET lider_usuario_id = %s, updated_at = NOW() WHERE id = %s",
-        (body.lider_usuario_id, org_id),
+        """
+        INSERT INTO organizaciones_lideres (organizacion_id, usuario_id)
+        VALUES (%s, %s)
+        ON CONFLICT DO NOTHING
+        """,
+        (org_id, body.lider_usuario_id),
     )
 
-    return {"id": org_id, "lider_usuario_id": body.lider_usuario_id}
+    return {"message": "Líder agregado"}
+
+
+@router.delete("/organizaciones/{org_id}/lider/{usuario_id}")
+def remove_org_lider(
+    org_id: int,
+    usuario_id: int,
+    db: Annotated[_DBAdapter, Depends(get_db)],
+    _admin: Annotated[CurrentUser, Depends(require_admin)],
+) -> dict:
+    """Remove a leader from an organization (admin only)."""
+    org = db.execute(
+        "SELECT id FROM organizaciones WHERE id = %s",
+        (org_id,),
+    ).fetchone()
+    if org is None:
+        raise HTTPException(status_code=404, detail="Organización no encontrada")
+
+    db.execute(
+        "DELETE FROM organizaciones_lideres WHERE organizacion_id = %s AND usuario_id = %s",
+        (org_id, usuario_id),
+    )
+    return {"message": "Líder eliminado"}
+
+
+@router.post("/organizaciones/{org_id}/miembros")
+def add_org_member(
+    org_id: int,
+    body: LiderAssignRequest,
+    db: Annotated[_DBAdapter, Depends(get_db)],
+    _admin: Annotated[CurrentUser, Depends(require_admin)],
+) -> dict:
+    """Add a member to an organization (admin only). Ignores duplicates."""
+    org = db.execute(
+        "SELECT id FROM organizaciones WHERE id = %s",
+        (org_id,),
+    ).fetchone()
+    if org is None:
+        raise HTTPException(status_code=404, detail="Organización no encontrada")
+
+    if body.lider_usuario_id is None:
+        raise HTTPException(status_code=400, detail="usuario_id es requerido")
+
+    user = db.execute(
+        "SELECT id, activo FROM usuarios WHERE id = %s",
+        (body.lider_usuario_id,),
+    ).fetchone()
+    if user is None or not user["activo"]:
+        raise HTTPException(status_code=400, detail="Usuario no encontrado o inactivo")
+
+    db.execute(
+        """
+        INSERT INTO organizaciones_miembros (organizacion_id, usuario_id)
+        VALUES (%s, %s)
+        ON CONFLICT DO NOTHING
+        """,
+        (org_id, body.lider_usuario_id),
+    )
+    return {"message": "Miembro agregado"}
+
+
+@router.delete("/organizaciones/{org_id}/miembros/{usuario_id}")
+def remove_org_member(
+    org_id: int,
+    usuario_id: int,
+    db: Annotated[_DBAdapter, Depends(get_db)],
+    _admin: Annotated[CurrentUser, Depends(require_admin)],
+) -> dict:
+    """Remove a member from an organization (admin only)."""
+    org = db.execute(
+        "SELECT id FROM organizaciones WHERE id = %s",
+        (org_id,),
+    ).fetchone()
+    if org is None:
+        raise HTTPException(status_code=404, detail="Organización no encontrada")
+
+    db.execute(
+        "DELETE FROM organizaciones_miembros WHERE organizacion_id = %s AND usuario_id = %s",
+        (org_id, usuario_id),
+    )
+    return {"message": "Miembro eliminado"}
 
 
 @router.get("/organizaciones/{org_id}/heatmap")
@@ -426,23 +670,29 @@ def get_org_voluntarios(
 ) -> list[dict]:
     """Return volunteer list with capture counts for an organization."""
     org = db.execute(
-        "SELECT usuario_id FROM organizaciones WHERE id = %s",
+        "SELECT id FROM organizaciones WHERE id = %s AND activo = TRUE",
         (org_id,),
     ).fetchone()
     if org is None:
         raise HTTPException(status_code=404, detail="Organización no encontrada")
-    if org["usuario_id"] is None:
-        return []
 
     rows = db.execute(
         """
-        SELECT elaboro_estudio, COUNT(*) AS capturas
-        FROM estudios_socioeconomicos
-        WHERE usuario_id = %s
-        GROUP BY elaboro_estudio
-        ORDER BY capturas DESC
+        SELECT nombre, contacto, capturas_count, ultima_captura, created_at
+        FROM organizaciones_voluntarios
+        WHERE organizacion_id = %s
+        ORDER BY capturas_count DESC, ultima_captura DESC
         """,
-        (org["usuario_id"],),
+        (org_id,),
     ).fetchall()
 
-    return [{"elaboro_estudio": r["elaboro_estudio"], "capturas": r["capturas"]} for r in rows]
+    return [
+        {
+            "nombre": r["nombre"],
+            "contacto": r["contacto"],
+            "capturas": r["capturas_count"],
+            "ultima_captura": r["ultima_captura"].isoformat() if r["ultima_captura"] else None,
+            "registrado": r["created_at"].isoformat() if r["created_at"] else None,
+        }
+        for r in rows
+    ]

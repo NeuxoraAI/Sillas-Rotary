@@ -1032,7 +1032,7 @@
         </div>
       </div>
     </div>
-    <script src="assets/js/validations.js"></script>
+    <script src="../assets/js/validations.js"></script>
     <script data-purpose="form-logic">
       const NIVEL_ESTUDIOS_CATALOG = [
         "NINGUNO", "PRIMARIA", "SECUNDARIA", "BACHILLERATO",
@@ -2093,7 +2093,7 @@
           localStorage.getItem("region_ctx") || "null",
         );
         if (!session?.token || !regionCtx?.region_id) {
-          window.location.href = "login.html";
+          window.location.href = "../login.html";
           return;
         }
 
@@ -2101,7 +2101,7 @@
         if (session?.rol === 'organizacion') {
           const guestCtx = JSON.parse(localStorage.getItem('guest_ctx') || 'null');
           if (!guestCtx?.nombre) {
-            window.location.href = 'perfil-organizacion.html?reason=missing_guest';
+            window.location.href = '../perfil-organizacion.html?reason=missing_guest';
             return;
           }
         }
@@ -2339,7 +2339,7 @@
             localStorage.removeItem("estudio_id");
             localStorage.removeItem("solicitud_id");
             localStorage.removeItem("guest_ctx");
-            window.location.href = "login.html";
+            window.location.href = "../login.html";
           }
         });
 
@@ -2353,6 +2353,12 @@
         const guestCtx = JSON.parse(
           localStorage.getItem("guest_ctx") || "null",
         );
+        // DEBUG: Log guest context for organizacion users
+        if (session?.rol === 'organizacion') {
+          console.log('[DEBUG] session.rol:', session.rol);
+          console.log('[DEBUG] guestCtx:', guestCtx);
+          console.log('[DEBUG] guestCtx?.nombre:', guestCtx?.nombre);
+        }
         const f = document.querySelector("form");
         const fd = new FormData(f);
         const get = (name) => fd.get(name) || "";
@@ -2446,7 +2452,10 @@
             tuvo_silla_previa: false,
             como_obtuvo_silla: null,
             elaboro_estudio: (session?.rol === 'organizacion' && guestCtx?.nombre) ? guestCtx.nombre : null,
+            voluntario_contacto: (session?.rol === 'organizacion' && guestCtx?.contacto) ? guestCtx.contacto : null,
             fecha_estudio: new Date().toISOString().split("T")[0],
+            // DEBUG: Log what we're setting for elaboro_estudio
+            ...(session?.rol === 'organizacion' && console.log('[DEBUG] Setting elaboro_estudio to:', guestCtx?.nombre || 'NULL')),
             credencial_path: documentRefs?.credencial?.path || null,
             credencial_url: documentRefs?.credencial?.url || null,
             comprobante_domicilio_path:
@@ -2790,7 +2799,7 @@
         }
 
         if (!session?.token) {
-          window.location.href = "login.html";
+          window.location.href = "../login.html";
           return;
         }
 
@@ -2881,6 +2890,7 @@
           } else {
             // POST new estudio
             const payload = getFormData(status, documentRefs);
+            console.log('[DEBUG] Payload being sent:', JSON.stringify(payload, null, 2));
 
             res = await fetch("/api/estudios", {
               method: "POST",
@@ -2893,6 +2903,7 @@
 
             if (!res.ok) {
               const errData = await res.json().catch(() => ({}));
+              console.error('[DEBUG] Backend error:', errData);
               errorEl.textContent = SR_Validations.formatBackendError(
                 errData,
                 "Error al guardar el estudio. Intente de nuevo.",
