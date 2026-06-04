@@ -72,8 +72,9 @@ def _make_test_conn():
 class _TestDBAdapter:
     """Test adapter wrapping a real psycopg2 cursor (auto-commit mode)."""
 
-    def __init__(self, cursor) -> None:
+    def __init__(self, cursor, connection=None) -> None:
         self._cur = cursor
+        self._conn = connection
 
     def execute(self, sql: str, params: tuple = ()) -> "_TestDBAdapter":
         self._cur.execute(sql, params)
@@ -84,6 +85,14 @@ class _TestDBAdapter:
 
     def fetchall(self) -> list[dict]:
         return self._cur.fetchall()
+
+    def commit(self) -> None:
+        if self._conn is not None:
+            self._conn.commit()
+
+    def rollback(self) -> None:
+        if self._conn is not None:
+            self._conn.rollback()
 
 
 # ---------------------------------------------------------------------------
@@ -103,6 +112,17 @@ def _test_db_conn():
         pytest.skip("No safe test database target configured — set TEST_DATABASE_URL or TEST_DB_SCHEMA")
         return  # unreachable, but helps type checkers
     conn.autocommit = False
+
+    # Ensure all DDL tables exist in the test schema (idempotent CREATE IF NOT EXISTS).
+    # This keeps the test schema in sync with init_db.py even when new tables
+    # are added to the codebase.
+    from init_db import DDL
+    with conn.cursor() as cur:
+        for ddl_stmt in DDL:
+            stmt = ddl_stmt.strip()
+            if stmt and stmt.upper().startswith("CREATE"):
+                cur.execute(stmt)
+    conn.commit()
 
     # Clean any residual data from previous runs at session start.
     # This prevents UniqueViolation errors when fixtures try to insert
@@ -130,7 +150,7 @@ def override_db(_test_db_conn):
     from database import get_db
 
     cur = _test_db_conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    adapter = _TestDBAdapter(cur)
+    adapter = _TestDBAdapter(cur, connection=_test_db_conn)
 
     def _test_get_db():
         yield adapter
@@ -149,6 +169,7 @@ def override_db(_test_db_conn):
 # This ensures FK constraints are respected when deleting.
 _TABLES_ORDER = [
     "historial_estados",
+    "organizaciones_lideres",
     "solicitudes_tecnicas",
     "estudios_socioeconomicos",
     "tutores",
@@ -226,6 +247,11 @@ def clean_db(request):
         return
 
     _test_db_conn = request.getfixturevalue("_test_db_conn")
+
+    # Rollback any failed transaction from the previous test before truncating.
+    # If the previous test left the connection in an aborted transaction block,
+    # the TRUNCATE would fail with "current transaction is aborted".
+    _test_db_conn.rollback()
 
     # Truncate all tables before each test for reliable isolation
     with _test_db_conn.cursor() as cur:

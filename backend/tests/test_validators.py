@@ -27,7 +27,7 @@ class TestValidateObservacionesPosturales:
         """Valid text with letters, numbers, spaces, and allowed punctuation passes."""
         from validators import validate_observaciones_posturales
 
-       !result = validate_observaciones_posturales("Paciente con escoliosis leve.")
+        result = validate_observaciones_posturales("Paciente con escoliosis leve.")
         assert result == "Paciente con escoliosis leve."
 
     def test_pasa_con_tildes_y_enie(self):

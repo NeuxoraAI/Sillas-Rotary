@@ -387,6 +387,19 @@ class TutorUpdateIn(BaseModel):
     imss_estatus: Optional[str] = None
     infonavit_estatus: Optional[str] = None
 
+    @model_validator(mode="before")
+    @classmethod
+    def backward_compat_imss_infonavit(cls, data: dict) -> dict:
+        """Map legacy boolean tiene_imss/tiene_infonavit to new imss_estatus/infonavit_estatus."""
+        if isinstance(data, dict):
+            if "imss_estatus" not in data and "tiene_imss" in data:
+                raw = data.pop("tiene_imss")
+                data["imss_estatus"] = "SI" if raw in (True, 1) else "NO" if raw in (False, 0) else None
+            if "infonavit_estatus" not in data and "tiene_infonavit" in data:
+                raw = data.pop("tiene_infonavit")
+                data["infonavit_estatus"] = "SI" if raw in (True, 1) else "NO" if raw in (False, 0) else None
+        return data
+
     @field_validator("nombres", "apellido_paterno", "apellido_materno",
                       "nivel_estudios", "fuente_empleo", "otras_fuentes_ingreso",
                       "imss_estatus", "infonavit_estatus", mode="before")
@@ -519,6 +532,8 @@ class EstudioCreateResponse(BaseModel):
 class EstudioUpdateRequest(BaseModel):
     tuvo_silla_previa: Optional[bool] = None
     como_obtuvo_silla: Optional[str] = None
+    otras_fuentes_ingreso: Optional[str] = None
+    monto_otras_fuentes: Optional[float] = None
     elaboro_estudio: Optional[str] = None
     ciudad_registro: Optional[str] = None
     fecha_estudio: Optional[str] = None

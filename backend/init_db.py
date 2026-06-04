@@ -176,6 +176,14 @@ DDL = [
     "CREATE INDEX IF NOT EXISTS idx_organizaciones_usuario_id ON organizaciones(usuario_id)",
     "CREATE INDEX IF NOT EXISTS idx_organizaciones_lider ON organizaciones(lider_usuario_id)",
     "CREATE INDEX IF NOT EXISTS idx_organizaciones_activo ON organizaciones(activo)",
+    """
+    CREATE TABLE IF NOT EXISTS organizaciones_lideres (
+        organizacion_id  INTEGER NOT NULL REFERENCES organizaciones(id) ON DELETE CASCADE,
+        usuario_id       INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+        created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        PRIMARY KEY (organizacion_id, usuario_id)
+    )
+    """,
     "CREATE INDEX IF NOT EXISTS idx_estudios_usuario_created ON estudios_socioeconomicos(usuario_id, created_at)",
     "ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS telefono TEXT",
 ]

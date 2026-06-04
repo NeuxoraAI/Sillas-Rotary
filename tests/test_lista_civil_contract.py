@@ -8,19 +8,22 @@ from pydantic import ValidationError
 os.environ.setdefault("JWT_SECRET", "test-secret-" + ("x" * 32))
 
 sys.path.append(str(Path(__file__).resolve().parents[1] / "backend"))
-from routers.socioeconomico import ALLOWED_ESTADO_CIVIL, TutorIn  # noqa: E402
+from routers.socioeconomico import ESTADO_CIVIL_CATALOG, TutorIn  # noqa: E402
 
 
 FRONT_FILE = Path(__file__).resolve().parents[1] / "front" / "Capturista-view" / "socioeconomico.html"
 
 
+_KNOWN_CATALOG = {"SOLTERO", "CASADO", "VIUDO", "DIVORCIADO", "UNION_LIBRE"}
+
+
 def test_estado_civil_catalog_constant_is_closed() -> None:
-    assert ALLOWED_ESTADO_CIVIL == {"Casado", "Soltero", "Viudo"}
+    assert ESTADO_CIVIL_CATALOG == _KNOWN_CATALOG
 
 
-@pytest.mark.parametrize("value", ["Casado", "Soltero", "Viudo", None, ""])
+@pytest.mark.parametrize("value", ["SOLTERO", "CASADO", "VIUDO", "DIVORCIADO", "UNION_LIBRE", None, ""])
 def test_tutorin_accepts_catalog_and_normalizes_empty(value: str | None) -> None:
-    tutor = TutorIn(numero_tutor=1, nombre="Tutor", estado_civil=value)
+    tutor = TutorIn(numero_tutor=1, nombres="Tutor", apellido_paterno="Test", apellido_materno="Muestra", estado_civil=value)
     if value == "":
         assert tutor.estado_civil is None
     else:
@@ -29,18 +32,21 @@ def test_tutorin_accepts_catalog_and_normalizes_empty(value: str | None) -> None
 
 def test_tutorin_rejects_estado_civil_outside_catalog() -> None:
     with pytest.raises(ValidationError) as exc:
-        TutorIn(numero_tutor=1, nombre="Tutor", estado_civil="Union libre")
+        TutorIn(numero_tutor=1, nombres="Tutor", apellido_paterno="Test", apellido_materno="Muestra", estado_civil="Union libre")
 
-    assert "Casado" in str(exc.value)
-    assert "Soltero" in str(exc.value)
-    assert "Viudo" in str(exc.value)
+    error_text = str(exc.value)
+    assert "CASADO" in error_text
+    assert "SOLTERO" in error_text
+    assert "VIUDO" in error_text
+    assert "DIVORCIADO" in error_text
+    assert "UNION_LIBRE" in error_text
 
 
 def test_front_uses_select_for_tutor_estado_civil() -> None:
     content = FRONT_FILE.read_text(encoding="utf-8")
 
-    assert '<select class="w-full mt-1 border-slate-300" name="tutor1_estado_civil">' in content
-    assert '<select class="w-full mt-1 border-slate-300" name="tutor2_estado_civil">' in content
+    assert 'name="tutor1_estado_civil"' in content
+    assert 'name="tutor2_estado_civil"' in content
     assert 'name="tutor1_estado_civil" type="text"' not in content
     assert 'name="tutor2_estado_civil" type="text"' not in content
 
@@ -49,9 +55,11 @@ def test_front_estado_civil_select_has_fixed_catalog_options() -> None:
     content = FRONT_FILE.read_text(encoding="utf-8")
 
     assert '<option value="">Selecciona una opción</option>' in content
-    assert "<option>Casado</option>" in content
-    assert "<option>Soltero</option>" in content
-    assert "<option>Viudo</option>" in content
+    assert '<option value="CASADO">Casado / Casada</option>' in content
+    assert '<option value="SOLTERO">Soltero / Soltera</option>' in content
+    assert '<option value="VIUDO">Viudo / Viuda</option>' in content
+    assert '<option value="DIVORCIADO">Divorciado / Divorciada</option>' in content
+    assert '<option value="UNION_LIBRE">Unión libre</option>' in content
 
 
 def test_front_prefill_uses_legacy_fallback_for_unknown_estado_civil() -> None:

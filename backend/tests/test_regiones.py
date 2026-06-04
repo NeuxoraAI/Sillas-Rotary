@@ -159,41 +159,48 @@ class TestFolioGeneration:
 # ---------------------------------------------------------------------------
 
 def _estudio_payload(region_id: int, nombre: str, tel: str = "4621234567") -> dict:
-    """Build a minimal complete estudio payload."""
+    """Build a minimal complete estudio payload matching current API contract."""
     return {
         "region_id": region_id,
         "sede": "León sede Forum",
+        "ciudad_registro": "LEON, GTO",
         "beneficiario": {
-            "nombre": nombre,
+            "nombres": nombre,
+            "apellido_paterno": "TEST",
+            "apellido_materno": "MUESTRA",
             "fecha_nacimiento": "2000-01-15",
-            "diagnostico": "Parálisis cerebral",
-            "calle": "Calle Test 123",
-            "colonia": "Centro",
-            "ciudad": "León",
+            "diagnostico": "PARALISIS CEREBRAL",
+            "calle": "CALLE TEST 123",
+            "num_ext": "12A",
+            "colonia": "CENTRO",
+            "ciudad": "LEON",
+            "estado_codigo": "11",
+            "sexo": "M",
             "telefonos": tel,
         },
         "tutores": [
             {
                 "numero_tutor": 1,
-                "nombre": "Tutor Test",
+                "nombres": "TUTOR",
+                "apellido_paterno": "TEST",
+                "apellido_materno": "MUESTRA",
                 "edad": 45,
-                "nivel_estudios": "Licenciatura",
-                "estado_civil": "Casado",
+                "nivel_estudios": "LICENCIATURA",
+                "estado_civil": "CASADO",
                 "num_hijos": 2,
-                "vivienda": "Propia",
-                "fuente_empleo": "Empleado",
-                "antiguedad": "10 años",
-                "ingreso_mensual": 12000.0,
+                "vivienda": "PROPIA",
+                "fuente_empleo": "EMPLEADO",
+                "ingreso_mensual": 12000,
                 "tiene_imss": True,
                 "tiene_infonavit": False,
             }
         ],
         "estudio": {
-            "otras_fuentes_ingreso": "Ninguna",
+            "otras_fuentes_ingreso": "NINGUNA",
             "monto_otras_fuentes": None,
             "tuvo_silla_previa": False,
             "como_obtuvo_silla": None,
-            "elaboro_estudio": "Capturista Test",
+            "elaboro_estudio": "CAPTURISTA TEST",
             "fecha_estudio": "2026-04-18",
             "status": "completo",
         },
