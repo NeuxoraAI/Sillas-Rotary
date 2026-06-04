@@ -285,7 +285,7 @@
                 <img
                   alt="Guía clínica de referencia para toma de medidas"
                   class="rounded-lg shadow-md mb-4"
-                  src="../assets/guia_clinica.jpeg"
+                  src="../assets/guia_medidas_postural.jpeg"
                 />
                 <p class="text-xs text-slate-600 font-medium">
                   Diagrama de referencia: Tome medidas con el paciente sentado
@@ -637,7 +637,7 @@
         </div>
       </div>
     </div>
-    <!-- Image zoom modal for guia_clinica.jpeg -->
+    <!-- Image zoom modal for guia_medidas_postural.jpeg -->
     <div
       id="image-zoom-modal"
       class="hidden fixed inset-0 z-50 bg-slate-950/85 px-4 py-6"
@@ -660,8 +660,8 @@
           <div class="mt-4 flex h-[70vh] items-center justify-center rounded-lg bg-slate-100 p-4">
             <img
               id="image-zoom-content"
-              src="../assets/guia_clinica.jpeg"
-              alt="Guía clínica de referencia ampliada"
+              src="../assets/guia_medidas_postural.jpeg"
+              alt="Guía de medidas posturales ampliada"
               class="max-h-full max-w-full object-contain"
             />
           </div>
@@ -1473,7 +1473,7 @@
         const modal = document.getElementById("image-zoom-modal");
         const closeBtn = document.getElementById("image-zoom-close");
         const guideImg = document.querySelector(
-          "[data-purpose='technical-measurements-visual'] img[src*='guia_clinica']"
+          "[data-purpose='technical-measurements-visual'] img[src*='guia_medidas_postural']"
         );
 
         if (!modal || !closeBtn || !guideImg) return;

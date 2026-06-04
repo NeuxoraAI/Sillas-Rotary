@@ -79,7 +79,7 @@ Sillas-Rotary/
 │       ├── logo_hope_haven.png    # Logo Hope Haven
 │       ├── Logo_rotary_200.png     # Logo Rotary 200
 │       ├── logo_vida_ug.png        # Logo Ecosistema VIDA UG
-│       ├── guia_clinica.png        # Diagrama de referencia — toma de medidas
+│       ├── guia_medidas_postural.jpeg        # Diagrama de referencia — toma de medidas
 │       └── iconografia_silla.png   # Ícono de silla de ruedas
 │
 ├── backend/                        # API REST — FastAPI + Supabase/PostgreSQL
