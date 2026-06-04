@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="front/assets/Logo_ug.png" height="80" alt="Universidad de Guanajuato"/>
+<img src="front/assets/logo_hope_haven.png" height="80" alt="Hope Haven"/>
 &nbsp;&nbsp;&nbsp;&nbsp;
 <img src="front/assets/Logo_rotary_200.png" height="80" alt="Rotary 200"/>
 &nbsp;&nbsp;&nbsp;&nbsp;
@@ -76,7 +76,7 @@ Sillas-Rotary/
 │   ├── socioeconomico.html         # Módulo 2 — Estudio socioeconómico
 │   ├── tecnica.html                # Módulo 3 — Solicitud técnica + medidas + foto
 │   └── assets/                     # Recursos estáticos locales
-│       ├── Logo_ug.png             # Logo Universidad de Guanajuato
+│       ├── logo_hope_haven.png    # Logo Hope Haven
 │       ├── Logo_rotary_200.png     # Logo Rotary 200
 │       ├── logo_vida_ug.png        # Logo Ecosistema VIDA UG
 │       ├── guia_clinica.png        # Diagrama de referencia — toma de medidas
