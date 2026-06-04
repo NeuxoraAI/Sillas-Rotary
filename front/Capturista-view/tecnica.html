@@ -1298,6 +1298,15 @@
         }, 1800);
       }
 
+      let solicitudSubmitInProgress = false;
+
+      function setSolicitudSubmitState(isSubmitting) {
+        const submitBtn = document.querySelector('button[type="submit"]');
+        if (!submitBtn) return;
+        submitBtn.disabled = isSubmitting;
+        submitBtn.textContent = isSubmitting ? "Guardando..." : "GUARDAR SOLICITUD";
+      }
+
       async function submitSolicitud(status) {
         const errorEl = document.getElementById("error-msg");
         errorEl.classList.add("hidden");
@@ -1435,6 +1444,7 @@
             if (status === "completo") {
               // Keep estudio_id and solicitud_id for gestion.html to close the full flow
               showSuccessToast("Solicitud guardada correctamente", "gestion.html");
+              return true;
             } else {
               showSuccessToast("Borrador guardado correctamente", null);
             }
@@ -1469,6 +1479,7 @@
             if (status === "completo") {
               // Keep estudio_id and solicitud_id for gestion.html to close the full flow
               showSuccessToast("Solicitud guardada correctamente", "gestion.html");
+              return true;
             } else {
               showSuccessToast("Borrador guardado correctamente", null);
             }
@@ -1538,9 +1549,20 @@
       });
 
       // Guardar Solicitud (submit)
-      document.querySelector("form").addEventListener("submit", (e) => {
+      document.querySelector("form").addEventListener("submit", async (e) => {
         e.preventDefault();
-        submitSolicitud("completo");
+        if (solicitudSubmitInProgress) return;
+        solicitudSubmitInProgress = true;
+        setSolicitudSubmitState(true);
+        let keepDisabled = false;
+        try {
+          keepDisabled = await submitSolicitud("completo") === true;
+        } finally {
+          if (!keepDisabled) {
+            solicitudSubmitInProgress = false;
+            setSolicitudSubmitState(false);
+          }
+        }
       });
     </script>
     <!-- END: Script for Interactivity -->

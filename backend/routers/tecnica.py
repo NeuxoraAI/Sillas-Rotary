@@ -1356,6 +1356,20 @@ def crear_solicitud(
     usuario: Annotated[CurrentUser, Depends(require_roles("capturista", "tecnico", "admin", "organizacion"))],
 ) -> SolicitudCreateResponse:
     body = _normalize_medidas(body)
+    existing = db.execute(
+        """
+        SELECT id FROM solicitudes_tecnicas
+        WHERE beneficiario_id = %s AND usuario_id = %s
+        LIMIT 1
+        """,
+        (body.beneficiario_id, usuario.usuario_id),
+    ).fetchone()
+    if existing is not None:
+        raise HTTPException(
+            status_code=409,
+            detail="Ya existe una solicitud técnica para este beneficiario y usuario",
+        )
+
     resolved_foto_path, resolved_foto_url = _resolve_foto_refs(
         foto_path=body.foto_path,
         foto_url=body.foto_url,
