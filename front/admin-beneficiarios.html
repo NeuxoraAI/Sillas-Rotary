@@ -1,0 +1,2394 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Beneficiarios | Admin — Ecosistema VIDA UG</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block" rel="stylesheet"/>
+    <script src="assets/js/validations.js"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              "ug-blue": "#1e3a8a",
+              "ug-yellow": "#facc15",
+              "ug-yellow-light": "#fef08a",
+              "sidebar": "#0f2461",
+            },
+            fontFamily: { display: ["Public Sans"] },
+          },
+        },
+      };
+    </script>
+    <style>
+      body { font-family: "Public Sans", sans-serif; }
+      .nav-link {
+        display: flex; align-items: center; gap: 0.75rem;
+        padding: 0.75rem 1rem; border-radius: 0.75rem;
+        color: rgb(255 255 255 / 0.7); font-size: 0.875rem;
+        font-weight: 500; transition: all 0.2s; text-decoration: none;
+      }
+      .nav-link:hover { color: #fff; background-color: rgb(255 255 255 / 0.1); }
+      .nav-link.active { background-color: rgb(255 255 255 / 0.15); color: #fff; }
+      .material-symbols-outlined {
+        font-family: "Material Symbols Outlined"; font-weight: normal;
+        font-style: normal; line-height: 1; letter-spacing: normal;
+        text-transform: none; display: inline-block; white-space: nowrap;
+        word-wrap: normal; direction: ltr;
+        -webkit-font-feature-settings: "liga"; -webkit-font-smoothing: antialiased;
+        font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+      }
+      /* Filter panel */
+      .filter-panel { transition: max-height 0.3s ease, opacity 0.2s ease; max-height: 0; opacity: 0; overflow: hidden; }
+      .filter-panel.open { max-height: 800px; opacity: 1; overflow: visible; }
+      /* Modal animations */
+      @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+      .animate-fade-in { animation: fadeIn 0.2s ease-out; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      .animate-spin { animation: spin 1s linear infinite; }
+      /* Badges */
+      .badge-sin_iniciar { background: #f1f5f9; color: #475569; }
+      .badge-en_proceso { background: #dbeafe; color: #1d4ed8; }
+      .badge-finalizado { background: #dcfce7; color: #15803d; }
+      .field-modified { border-color: #ef4444 !important; background-color: #fef2f2 !important; }
+      .badge-revision_pendiente { background: #fef3c7; color: #b45309; }
+      .modal-body::-webkit-scrollbar { width: 4px; }
+      .modal-body::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+      /* Delete animations */
+      @keyframes slideOutRight {
+        from { opacity: 1; transform: translateX(0); }
+        to { opacity: 0; transform: translateX(100%); }
+      }
+      .deleting-row {
+        animation: slideOutRight 0.5s ease-in forwards;
+        background-color: #fef2f2 !important;
+        border-color: #ef4444 !important;
+      }
+      .btn-loading {
+        position: relative;
+        color: transparent !important;
+      }
+      .btn-loading::after {
+        content: "";
+        position: absolute;
+        width: 1rem;
+        height: 1rem;
+        top: 50%;
+        left: 50%;
+        margin-left: -0.5rem;
+        margin-top: -0.5rem;
+        border: 2px solid rgba(255,255,255,0.3);
+        border-radius: 50%;
+        border-top-color: #fff;
+        animation: spin 0.8s linear infinite;
+      }
+    </style>
+  </head>
+  <body class="bg-slate-100 font-display min-h-screen flex">
+    <!-- Sidebar -->
+    <aside class="w-60 min-h-screen bg-sidebar flex flex-col shrink-0 hidden md:flex">
+      <div class="px-5 py-6 border-b border-white/10">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 bg-white rounded-xl flex items-center justify-center overflow-hidden shrink-0">
+            <img src="assets/logo_vida_ug.png" alt="VIDA UG" class="w-4/5 h-4/5 object-contain"/>
+          </div>
+          <div>
+            <p class="text-white text-sm font-bold leading-none">Panel Admin</p>
+            <p class="text-white/40 text-[10px] mt-0.5">Sillas Rotary v7</p>
+          </div>
+        </div>
+      </div>
+      <nav class="flex-1 px-3 py-5 space-y-1">
+        <a href="admin-beneficiarios.html" class="nav-link active">
+          <span class="material-symbols-outlined text-xl">people</span>
+          Beneficiarios
+        </a>
+        <a href="admin-usuarios.html" class="nav-link">
+          <span class="material-symbols-outlined text-xl">group</span>
+          Usuarios
+        </a>
+        <a href="admin-regiones.html" class="nav-link">
+          <span class="material-symbols-outlined text-xl">public</span>
+          Países y Regiones
+        </a>
+      </nav>
+      <div class="px-3 py-4 border-t border-white/10">
+        <div class="flex items-center gap-3 px-2">
+          <div class="w-8 h-8 rounded-full bg-ug-yellow flex items-center justify-center shrink-0">
+            <span class="material-symbols-outlined text-sm text-ug-blue">person</span>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p id="sidebar-nombre" class="text-white text-xs font-semibold truncate">—</p>
+            <p class="text-white/40 text-[10px]">Administrador</p>
+          </div>
+          <button id="btn-logout" title="Cerrar sesión" class="text-white/40 hover:text-white transition-colors">
+            <span class="material-symbols-outlined text-lg">logout</span>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <div class="flex-1 flex flex-col min-w-0">
+      <header class="md:hidden bg-sidebar px-4 py-3 flex items-center justify-between">
+        <p class="text-white font-bold text-sm">Panel Admin — Beneficiarios</p>
+        <button id="btn-logout-mobile" class="text-white/60 hover:text-white">
+          <span class="material-symbols-outlined">logout</span>
+        </button>
+      </header>
+
+      <!-- Search + Filter Bar -->
+      <div class="bg-white border-b border-slate-200 sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 py-3">
+          <div class="flex items-center gap-2">
+            <div class="relative flex-1">
+              <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg pointer-events-none">search</span>
+              <input id="input-search" type="search" autocomplete="off" placeholder="Buscar por nombre, folio, ciudad, región, país…"
+                class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-ug-blue focus:outline-none transition-colors text-sm"/>
+            </div>
+            <button id="btn-toggle-filters" title="Filtros"
+              class="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 border-2 border-slate-200 flex items-center justify-center text-slate-500 hover:text-ug-blue transition-all shrink-0">
+              <span class="material-symbols-outlined text-xl">tune</span>
+            </button>
+          </div>
+
+          <div id="filter-panel" class="filter-panel mt-3">
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+              <div class="space-y-1">
+                <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">País</label>
+                <select id="filter-pais" class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 focus:border-ug-blue focus:outline-none py-2">
+                  <option value="">Todos</option>
+                </select>
+              </div>
+              <div class="space-y-1">
+                <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Región</label>
+                <select id="filter-region" class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 focus:border-ug-blue focus:outline-none py-2" disabled>
+                  <option value="">Todos</option>
+                </select>
+              </div>
+              <div class="space-y-1">
+                <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Ciudad</label>
+                <input id="filter-ciudad" type="text" autocomplete="off" placeholder="Ej: León"
+                  class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 focus:border-ug-blue focus:outline-none py-2 px-3"/>
+              </div>
+              <div class="space-y-1">
+                <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Sede</label>
+                <input id="filter-sede" type="text" autocomplete="off" placeholder="Ej: Hospital"
+                  class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 focus:border-ug-blue focus:outline-none py-2 px-3"/>
+              </div>
+              <div class="space-y-1">
+                <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Fase</label>
+                <select id="filter-estado" class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 focus:border-ug-blue focus:outline-none py-2">
+                  <option value="">Todos</option>
+                  <option value="sin_iniciar">Sin iniciar</option>
+                  <option value="en_proceso">En proceso</option>
+                  <option value="finalizado">Finalizado</option>
+                  <option value="revision_pendiente">Revisión pendiente</option>
+                </select>
+              </div>
+              <div class="space-y-1">
+                <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Peso mínimo (lb)</label>
+                <input id="filter-peso-min" type="number" min="0" max="300" step="0.1" placeholder="0"
+                  class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 focus:border-ug-blue focus:outline-none py-2 px-3"/>
+              </div>
+              <div class="space-y-1">
+                <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Peso máximo (lb)</label>
+                <input id="filter-peso-max" type="number" min="0" max="300" step="0.1" placeholder="300"
+                  class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 focus:border-ug-blue focus:outline-none py-2 px-3"/>
+              </div>
+              <div class="space-y-1">
+                <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Altura mín (in)</label>
+                <input id="filter-altura-min" type="number" min="0" max="120" step="0.1" placeholder="0"
+                  class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 focus:border-ug-blue focus:outline-none py-2 px-3"/>
+              </div>
+              <div class="space-y-1">
+                <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Altura máx (in)</label>
+                <input id="filter-altura-max" type="number" min="0" max="120" step="0.1" placeholder="120"
+                  class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 focus:border-ug-blue focus:outline-none py-2 px-3"/>
+              </div>
+              <div class="space-y-1">
+                <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Foto</label>
+                <select id="filter-foto" class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 focus:border-ug-blue focus:outline-none py-2">
+                  <option value="">Todos</option>
+                  <option value="true">Con foto</option>
+                  <option value="false">Sin foto</option>
+                </select>
+              </div>
+            </div>
+            <div class="flex items-center justify-end gap-3 mt-3 pt-3 border-t border-slate-100">
+              <span id="filter-count" class="text-xs text-slate-400"></span>
+              <button id="btn-clear-filters" class="text-xs font-semibold text-slate-500 hover:text-red-600 transition-colors px-3 py-1.5 rounded-lg hover:bg-red-50">Limpiar filtros</button>
+              <button id="btn-export-excel" class="text-xs font-bold text-white bg-green-600 hover:bg-green-700 px-4 py-1.5 rounded-lg transition-colors flex items-center gap-1">
+                <span class="material-symbols-outlined text-sm">download</span>Exportar Excel
+              </button>
+              <button id="btn-apply-filters" class="text-xs font-bold text-white bg-ug-blue hover:bg-ug-blue/90 px-4 py-1.5 rounded-lg transition-colors">Aplicar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <main class="flex-1 max-w-7xl mx-auto w-full px-4 py-6">
+        <!-- Loading -->
+        <div id="state-loading" class="hidden flex flex-col items-center justify-center py-20">
+          <div class="w-10 h-10 border-4 border-ug-blue/20 border-t-ug-blue rounded-full animate-spin"></div>
+          <p class="text-slate-500 text-sm mt-4 font-medium">Cargando beneficiarios…</p>
+        </div>
+
+        <!-- Error -->
+        <div id="state-error" class="hidden flex flex-col items-center justify-center py-20">
+          <div class="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mb-4">
+            <span class="material-symbols-outlined text-red-400 text-3xl">error_outline</span>
+          </div>
+          <p id="error-message" class="text-slate-700 text-sm font-medium text-center max-w-xs">Error al cargar los datos.</p>
+          <button id="btn-retry" class="mt-4 px-6 py-2 bg-ug-blue text-white text-sm font-bold rounded-xl hover:bg-ug-blue/90 transition-colors">Reintentar</button>
+        </div>
+
+        <!-- Empty -->
+        <div id="state-empty" class="hidden flex flex-col items-center justify-center py-20">
+          <div class="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mb-4">
+            <span class="material-symbols-outlined text-slate-400 text-3xl">person_search</span>
+          </div>
+          <p class="text-slate-700 text-sm font-semibold">No se encontraron beneficiarios</p>
+          <p class="text-slate-400 text-xs mt-1">Intente modificar los filtros o la búsqueda.</p>
+          <button id="btn-empty-clear" class="mt-4 px-6 py-2 bg-slate-200 text-slate-700 text-sm font-bold rounded-xl hover:bg-slate-300 transition-colors">Limpiar filtros</button>
+        </div>
+
+        <!-- Selection toolbar -->
+        <div id="selection-toolbar" class="hidden flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4 pb-4 border-b border-slate-200">
+          <div class="flex items-center gap-3">
+            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Seleccionados: <span id="selection-count" class="text-ug-blue font-bold">0</span></span>
+            <button id="btn-export-selected" class="text-xs font-bold text-white bg-green-600 hover:bg-green-700 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed">
+              <span class="material-symbols-outlined text-sm">download</span>Exportar seleccionados
+            </button>
+            <button id="btn-clear-selection" class="text-xs font-semibold text-slate-500 hover:text-red-600 transition-colors px-2 py-1.5 rounded-lg hover:bg-red-50">Limpiar selección</button>
+          </div>
+        </div>
+
+        <div id="list-container" class="space-y-3"></div>
+
+        <!-- Pagination -->
+        <div id="pagination" class="hidden flex items-center justify-between mt-6 pt-4 border-t border-slate-200">
+          <button id="btn-prev" class="flex items-center gap-1 px-4 py-2 text-sm font-semibold text-slate-600 bg-white border-2 border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+            <span class="material-symbols-outlined text-base">chevron_left</span>Anterior
+          </button>
+          <span id="page-indicator" class="text-sm text-slate-500 font-medium">Página 1 de 1</span>
+          <button id="btn-next" class="flex items-center gap-1 px-4 py-2 text-sm font-semibold text-slate-600 bg-white border-2 border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+            Siguiente<span class="material-symbols-outlined text-base">chevron_right</span>
+          </button>
+        </div>
+      </main>
+
+      <!-- Detail Modal (Read-only) -->
+      <div id="modal-overlay" class="hidden fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div id="modal-container" class="animate-fade-in bg-white w-full sm:max-w-lg sm:rounded-2xl sm:max-h-[90vh] flex flex-col shadow-2xl sm:mx-auto max-h-[92vh] rounded-t-2xl">
+          <div class="flex items-center justify-between px-5 py-4 border-b border-slate-200 shrink-0">
+            <div class="min-w-0">
+              <h2 id="modal-title" class="text-base font-bold text-slate-900 truncate">—</h2>
+              <p id="modal-folio" class="text-xs text-slate-500 font-medium">—</p>
+            </div>
+            <button id="btn-close-modal" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-700 transition-all shrink-0 ml-2">
+              <span class="material-symbols-outlined text-lg">close</span>
+            </button>
+          </div>
+          <div id="modal-body" class="modal-body flex-1 overflow-y-auto px-5 py-4 space-y-6">
+            <div id="modal-loading" class="flex items-center justify-center py-12">
+              <div class="w-8 h-8 border-4 border-ug-blue/20 border-t-ug-blue rounded-full animate-spin"></div>
+            </div>
+            <div id="modal-content" class="hidden space-y-6"></div>
+          </div>
+          <div id="modal-footer" class="hidden px-5 py-4 border-t border-slate-200 shrink-0 flex items-center justify-end gap-3">
+            <button id="btn-edit" class="px-4 py-2 text-sm font-bold text-white bg-ug-blue hover:bg-ug-blue/90 rounded-xl transition-colors flex items-center gap-1">
+              <span class="material-symbols-outlined text-base">edit</span>Editar
+            </button>
+            <button id="btn-delete" class="px-4 py-2 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-colors flex items-center gap-1">
+              <span class="material-symbols-outlined text-base">delete</span>Eliminar
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Edit Modal with tabs -->
+      <div id="edit-overlay" class="hidden fixed inset-0 z-[60] bg-black/40 flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div id="edit-container" class="animate-fade-in bg-white w-full sm:max-w-2xl sm:rounded-2xl sm:max-h-[90vh] flex flex-col shadow-2xl sm:mx-auto max-h-[92vh] rounded-t-2xl">
+          <div class="flex items-center justify-between px-5 py-4 border-b border-slate-200 shrink-0">
+            <h2 class="text-base font-bold text-slate-900">Editar Beneficiario</h2>
+            <button id="btn-close-edit" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-700 transition-all shrink-0 ml-2">
+              <span class="material-symbols-outlined text-lg">close</span>
+            </button>
+          </div>
+          <!-- Tabs -->
+          <div class="flex border-b border-slate-200 shrink-0">
+            <button data-tab="estudio" class="edit-tab flex-1 py-3 text-sm font-semibold text-slate-500 border-b-2 border-transparent hover:text-ug-blue transition-colors tab-active text-ug-blue border-ug-blue">Estudio Socioeconómico</button>
+            <button data-tab="tecnica" class="edit-tab flex-1 py-3 text-sm font-semibold text-slate-500 border-b-2 border-transparent hover:text-ug-blue transition-colors">Solicitud Técnica</button>
+            <button data-tab="gestion" class="edit-tab flex-1 py-3 text-sm font-semibold text-slate-500 border-b-2 border-transparent hover:text-ug-blue transition-colors">Gestión de Donación</button>
+          </div>
+          <div id="edit-body" class="modal-body flex-1 overflow-y-auto px-5 py-4">
+            <div id="edit-content" class="space-y-6"></div>
+          </div>
+          <div class="px-5 py-4 border-t border-slate-200 shrink-0 flex items-center justify-end gap-3">
+            <p id="edit-error" class="hidden text-red-600 text-xs bg-red-50 border border-red-200 rounded-lg px-3 py-2 flex-1 mr-auto" role="alert"></p>
+            <button id="btn-save-tab" class="px-4 py-2 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-colors flex items-center gap-1">
+              <span class="material-symbols-outlined text-base">save</span>Guardar pestaña
+            </button>
+            <button id="btn-save-all" class="px-4 py-2 text-sm font-bold text-white bg-ug-blue hover:bg-ug-blue/90 rounded-xl transition-colors flex items-center gap-1">
+              <span class="material-symbols-outlined text-base">check_circle</span>Guardar todo
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Unsaved Changes Modal -->
+      <div id="unsaved-edit-overlay" class="hidden fixed inset-0 z-[70] bg-black/40 flex items-center justify-center p-4">
+        <div class="animate-fade-in bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 relative">
+          <button id="btn-close-unsaved-edit" class="absolute right-3 top-3 w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-700 transition-all shrink-0" aria-label="Cerrar aviso">
+            <span class="material-symbols-outlined text-lg">close</span>
+          </button>
+          <div class="text-center mb-5">
+            <div class="w-14 h-14 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-3">
+              <span class="material-symbols-outlined text-amber-600 text-3xl">warning</span>
+            </div>
+            <h3 class="text-lg font-bold text-slate-900">Cambios sin guardar</h3>
+            <p class="text-sm text-slate-500 mt-1">Tienes cambios pendientes en este formulario.</p>
+          </div>
+          <p class="text-sm text-slate-600 mb-5">Si cierras ahora, perderás las modificaciones no guardadas.</p>
+          <div class="flex items-center justify-end gap-3">
+            <button id="btn-return-unsaved-edit" class="px-4 py-2 text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors">Regresar</button>
+            <button id="btn-accept-unsaved-edit" class="px-4 py-2 text-sm font-bold text-white bg-ug-blue hover:bg-ug-blue/90 rounded-xl transition-colors">Aceptar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Save Confirmation Modal -->
+      <div id="save-confirm-overlay" class="hidden fixed inset-0 z-[70] bg-black/40 flex items-center justify-center p-4">
+        <div class="animate-fade-in bg-white w-full max-w-md rounded-2xl shadow-2xl p-6">
+          <div class="text-center mb-4">
+            <div class="w-14 h-14 bg-ug-blue/10 rounded-full flex items-center justify-center mx-auto mb-3">
+              <span class="material-symbols-outlined text-ug-blue text-3xl">warning</span>
+            </div>
+            <h3 id="save-confirm-title" class="text-lg font-bold text-slate-900">Confirmar guardado</h3>
+            <p id="save-confirm-message" class="text-sm text-slate-500 mt-1">Revise los cambios antes de continuar.</p>
+          </div>
+          <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
+            <p id="save-confirm-summary" class="text-sm text-amber-900 font-semibold mb-2">Hay campos opcionales que tenían datos y ahora están vacíos.</p>
+            <ul id="save-confirm-list" class="text-sm text-amber-800 list-disc pl-5 space-y-1"></ul>
+          </div>
+          <div class="flex items-center justify-end gap-3">
+            <button id="btn-cancel-save" class="px-4 py-2 text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors">Regresar a editar</button>
+            <button id="btn-confirm-save" class="px-4 py-2 text-sm font-bold text-white bg-ug-blue hover:bg-ug-blue/90 rounded-xl transition-colors">Confirmar y guardar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tutor 2 Delete Confirmation Modal -->
+      <div id="tutor2-delete-overlay" class="hidden fixed inset-0 z-[75] bg-black/40 flex items-center justify-center p-4">
+        <div class="animate-fade-in bg-white w-full max-w-md rounded-2xl shadow-2xl p-6">
+          <div class="text-center mb-4">
+            <div class="w-14 h-14 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-3">
+              <span class="material-symbols-outlined text-amber-600 text-3xl">warning</span>
+            </div>
+            <h3 class="text-lg font-bold text-slate-900">Eliminar Tutor 2</h3>
+            <p class="text-sm text-slate-500 mt-1">Se borrarán los datos capturados del segundo tutor en este formulario.</p>
+          </div>
+          <p class="text-sm text-slate-600 mb-5">Esta acción solo limpia el formulario actual. Podrás volver a agregar Tutor 2 después si es necesario.</p>
+          <div class="flex items-center justify-end gap-3">
+            <button id="btn-cancel-tutor2-delete" class="px-4 py-2 text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors">Cancelar</button>
+            <button id="btn-confirm-tutor2-delete" class="px-4 py-2 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-colors">Eliminar Tutor 2</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Delete Confirmation Modal -->
+      <div id="delete-overlay" class="hidden fixed inset-0 z-[70] bg-black/40 flex items-center justify-center p-4">
+        <div class="animate-fade-in bg-white w-full max-w-md rounded-2xl shadow-2xl p-6">
+          <div class="text-center mb-4">
+            <div class="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
+              <span class="material-symbols-outlined text-red-600 text-3xl">warning</span>
+            </div>
+            <h3 class="text-lg font-bold text-slate-900">Eliminar beneficiario</h3>
+            <p class="text-sm text-slate-500 mt-1" id="delete-ben-name">¿Está seguro?</p>
+          </div>
+          <p class="text-sm text-slate-600 mb-4">Esta acción es <strong>irreversible</strong>. Se eliminará el beneficiario y todos sus registros asociados (estudio, solicitud, tutores, procesos).</p>
+          <p class="text-xs font-semibold text-slate-500 mb-3">Escriba <span class="text-red-600 font-bold">ELIMINAR</span> para confirmar.</p>
+          <input id="delete-confirm-input" type="text" autocomplete="off" placeholder="ELIMINAR" class="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-red-500 focus:outline-none text-sm font-bold text-red-600 placeholder:text-slate-400 mb-4"/>
+          <div class="flex items-center justify-end gap-3">
+            <button id="btn-cancel-delete" class="px-4 py-2 text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors">Cancelar</button>
+            <button id="btn-confirm-delete" class="px-4 py-2 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed" disabled>Confirmar eliminación</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Toast -->
+      <div id="toast-container" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[80] flex flex-col items-center gap-2 pointer-events-none"></div>
+    </div>
+
+    <script>
+      // ═══════════════════════════════════════════════════════════════════════════
+      // CATALOGS (from socioeconomico.html)
+      // ═══════════════════════════════════════════════════════════════════════════
+      const NIVEL_ESTUDIOS_LABELS = {
+        "NINGUNO": "Sin estudios", "PRIMARIA": "Primaria", "SECUNDARIA": "Secundaria",
+        "BACHILLERATO": "Bachillerato / Preparatoria", "TECNICO": "Carrera Técnica / TSU",
+        "LICENCIATURA": "Licenciatura / Ingeniería", "MAESTRIA": "Maestría", "DOCTORADO": "Doctorado"
+      };
+      const ESTADO_CIVIL_LABELS = {
+        "SOLTERO": "Soltero / Soltera", "CASADO": "Casado / Casada", "VIUDO": "Viudo / Viuda",
+        "DIVORCIADO": "Divorciado / Divorciada", "UNION_LIBRE": "Unión libre"
+      };
+      const VIVIENDA_LABELS = {
+        "PROPIA": "Propia", "RENTADA": "Rentada", "PRESTADA": "Prestada",
+        "FAMILIAR": "Con familiares", "INFORMAL": "En albergue / institución"
+      };
+      const MONETARY_FIELD_IDS = ["tutor1_ingreso_mensual","tutor1_monto_otras_fuentes","tutor2_ingreso_mensual","tutor2_monto_otras_fuentes"];
+      const ESTADOS_INEGI = [["01","AGUASCALIENTES"],["02","BAJA CALIFORNIA"],["03","BAJA CALIFORNIA SUR"],["04","CAMPECHE"],["05","COAHUILA"],["06","COLIMA"],["07","CHIAPAS"],["08","CHIHUAHUA"],["09","CIUDAD DE MEXICO"],["10","DURANGO"],["11","GUANAJUATO"],["12","GUERRERO"],["13","HIDALGO"],["14","JALISCO"],["15","ESTADO DE MEXICO"],["16","MICHOACAN"],["17","MORELOS"],["18","NAYARIT"],["19","NUEVO LEON"],["20","OAXACA"],["21","PUEBLA"],["22","QUERETARO"],["23","QUINTANA ROO"],["24","SAN LUIS POTOSI"],["25","SINALOA"],["26","SONORA"],["27","TABASCO"],["28","TAMAULIPAS"],["29","TLAXCALA"],["30","VERACRUZ"],["31","YUCATAN"],["32","ZACATECAS"]];
+
+      // ═══════════════════════════════════════════════════════════════════════════
+      // HELPERS
+      // ═══════════════════════════════════════════════════════════════════════════
+      function _getSession() {
+        try { return JSON.parse(localStorage.getItem("session") || "null"); } catch (_) { return null; }
+      }
+      function _authFetch(url, opts) {
+        opts = opts || {};
+        opts.headers = Object.assign({ Authorization: "Bearer " + _getSession().token }, opts.headers || {});
+        // Prevent browser caching for GET requests
+        if (!opts.method || opts.method === "GET") {
+          opts.cache = "no-store";
+        }
+        return fetch(url, opts);
+      }
+      function _escapeHtml(str) {
+        if (str == null) return "";
+        const d = document.createElement("div"); d.textContent = str; return d.innerHTML;
+      }
+      function _valOrNaHtml(val) {
+        return val != null && val !== "" ? _escapeHtml(String(val)) : '<span class="text-slate-300 italic">No capturado</span>';
+      }
+      function _formatEstado(estado) {
+        const map = { sin_iniciar: "Sin iniciar", en_proceso: "En proceso", finalizado: "Finalizado", revision_pendiente: "Revisión pendiente" };
+        return map[estado] || estado || "—";
+      }
+      function _formatDate(iso) {
+        if (!iso) return "—";
+        try {
+          const d = new Date(iso);
+          if (isNaN(d.getTime())) return iso;
+          return d.toLocaleDateString("es-MX", { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" });
+        } catch (_) { return iso; }
+      }
+      function _debounce(fn, ms) {
+        let timer;
+        return function (...args) { clearTimeout(timer); timer = setTimeout(() => fn.apply(this, args), ms); };
+      }
+      function _parseIntSafe(val, fallback) { const n = parseInt(val, 10); return isNaN(n) ? fallback : n; }
+      function _parseFloatSafe(val, fallback) { if (val === "" || val == null) return fallback; const n = parseFloat(val); return isNaN(n) ? fallback : n; }
+      function _getBoolFilter(val) { if (val === "true") return true; if (val === "false") return false; return undefined; }
+      function _getInitials(name) {
+        if (!name) return "??";
+        const parts = name.trim().split(/\s+/);
+        return parts.length === 1 ? parts[0].substring(0, 2).toUpperCase() : (parts[0][0] + parts[1][0]).toUpperCase();
+      }
+
+      // ═══════════════════════════════════════════════════════════════════════════
+      // AUTH BOOT
+      // ═══════════════════════════════════════════════════════════════════════════
+      const session = _getSession();
+      if (!session?.token || session.rol !== "admin") { window.location.replace("login.html"); }
+      document.getElementById("sidebar-nombre").textContent = session.nombre || "—";
+
+      function _logout() {
+        localStorage.removeItem("session"); localStorage.removeItem("region_ctx");
+        window.location.href = "login.html";
+      }
+      document.getElementById("btn-logout").addEventListener("click", _logout);
+      document.getElementById("btn-logout-mobile")?.addEventListener("click", _logout);
+
+      // ═══════════════════════════════════════════════════════════════════════════
+      // STATE
+      // ═══════════════════════════════════════════════════════════════════════════
+      const state = {
+        items: [], total: 0, page: 1, perPage: 20, loading: false,
+        paisesCache: [], regionesCache: {}, selectedIds: new Set(),
+        currentDetail: null, currentEditTab: "estudio",
+        pendingSave: null,
+        serverOriginal: { estudio: {}, tecnica: {}, gestion: {} },
+        editDraft: { estudio: {}, tecnica: {}, gestion: {} },
+        editOriginal: { estudio: {}, tecnica: {}, gestion: {} },
+      };
+
+      // DOM refs
+      const $ = (id) => document.getElementById(id);
+      const inputSearch = $("input-search");
+      const filterPanel = $("filter-panel");
+      const filterPais = $("filter-pais");
+      const filterRegion = $("filter-region");
+      const filterCiudad = $("filter-ciudad");
+      const filterSede = $("filter-sede");
+      const filterEstado = $("filter-estado");
+      const filterPesoMin = $("filter-peso-min");
+      const filterPesoMax = $("filter-peso-max");
+      const filterAlturaMin = $("filter-altura-min");
+      const filterAlturaMax = $("filter-altura-max");
+      const filterFoto = $("filter-foto");
+      const listContainer = $("list-container");
+      const pagination = $("pagination");
+      const pageIndicator = $("page-indicator");
+      const modalOverlay = $("modal-overlay");
+      const modalContent = $("modal-content");
+      const modalLoading = $("modal-loading");
+      const modalFooter = $("modal-footer");
+      const modalTitle = $("modal-title");
+      const modalFolio = $("modal-folio");
+      const selectionToolbar = $("selection-toolbar");
+      const selectionCount = $("selection-count");
+      const filterCount = $("filter-count");
+      const toastContainer = $("toast-container");
+      const editOverlay = $("edit-overlay");
+      const editContent = $("edit-content");
+      const editError = $("edit-error");
+      const saveConfirmOverlay = $("save-confirm-overlay");
+      const saveConfirmTitle = $("save-confirm-title");
+      const saveConfirmMessage = $("save-confirm-message");
+      const saveConfirmSummary = $("save-confirm-summary");
+      const saveConfirmList = $("save-confirm-list");
+      const unsavedEditOverlay = $("unsaved-edit-overlay");
+      const btnCloseUnsavedEdit = $("btn-close-unsaved-edit");
+      const btnReturnUnsavedEdit = $("btn-return-unsaved-edit");
+      const btnAcceptUnsavedEdit = $("btn-accept-unsaved-edit");
+      const tutor2DeleteOverlay = $("tutor2-delete-overlay");
+      const btnCancelTutor2Delete = $("btn-cancel-tutor2-delete");
+      const btnConfirmTutor2Delete = $("btn-confirm-tutor2-delete");
+      let pendingTutor2DeleteAction = null;
+
+      // ═══════════════════════════════════════════════════════════════════════════
+      // TOAST
+      // ═══════════════════════════════════════════════════════════════════════════
+      function showToast(msg, type) {
+        const el = document.createElement("div");
+        const isSuccess = type === "success";
+        el.className = `pointer-events-auto animate-fade-in px-4 py-3 rounded-xl shadow-lg text-sm font-semibold ${isSuccess ? "bg-emerald-600 text-white" : "bg-red-600 text-white"}`;
+        el.textContent = msg;
+        toastContainer.appendChild(el);
+        setTimeout(() => { el.style.opacity = "0"; el.style.transition = "opacity 0.3s"; setTimeout(() => el.remove(), 300); }, 3500);
+      }
+
+      // ═══════════════════════════════════════════════════════════════════════════
+      // FILTER PANEL
+      // ═══════════════════════════════════════════════════════════════════════════
+      $("btn-toggle-filters").addEventListener("click", function () {
+        filterPanel.classList.toggle("open");
+        this.classList.toggle("border-ug-blue"); this.classList.toggle("text-ug-blue");
+      });
+
+      filterPais.addEventListener("change", async function () {
+        const paisId = this.value;
+        filterRegion.innerHTML = '<option value="">Todos</option>';
+        filterRegion.disabled = true;
+        if (!paisId) return;
+        if (state.regionesCache[paisId]) { populateRegionDropdown(state.regionesCache[paisId]); return; }
+        try {
+          const res = await _authFetch("/api/regiones?pais_id=" + paisId);
+          if (!res.ok) throw new Error();
+          const regiones = await res.json();
+          state.regionesCache[paisId] = regiones;
+          populateRegionDropdown(regiones);
+        } catch (_) {}
+      });
+
+      async function loadPaisesDropdown() {
+        try {
+          const res = await _authFetch("/api/paises");
+          if (!res.ok) throw new Error();
+          const paises = await res.json();
+          state.paisesCache = paises;
+          filterPais.innerHTML = '<option value="">Todos</option>';
+          paises.forEach(function (p) {
+            const opt = document.createElement("option");
+            opt.value = p.pais_id; opt.textContent = p.nombre + " (" + p.codigo + ")";
+            filterPais.appendChild(opt);
+          });
+        } catch (_) {}
+      }
+
+      function populateRegionDropdown(regiones) {
+        filterRegion.innerHTML = '<option value="">Todos</option>';
+        if (regiones.length === 0) { filterRegion.disabled = true; return; }
+        regiones.forEach(function (r) {
+          const opt = document.createElement("option");
+          opt.value = r.region_id; opt.textContent = r.nombre + " (" + r.codigo + ")";
+          filterRegion.appendChild(opt);
+        });
+        filterRegion.disabled = false;
+      }
+
+      function clearAllFilters() {
+        inputSearch.value = "";
+        filterPais.value = ""; filterRegion.innerHTML = '<option value="">Todos</option>'; filterRegion.disabled = true;
+        filterCiudad.value = ""; filterSede.value = ""; filterEstado.value = "";
+        filterPesoMin.value = ""; filterPesoMax.value = ""; filterAlturaMin.value = ""; filterAlturaMax.value = ""; filterFoto.value = "";
+        state.page = 1; updateFilterCount(); loadBeneficiarios();
+      }
+
+      $("btn-clear-filters").addEventListener("click", clearAllFilters);
+      $("btn-empty-clear")?.addEventListener("click", clearAllFilters);
+      $("btn-apply-filters").addEventListener("click", function () { state.page = 1; loadBeneficiarios(); });
+      $("btn-clear-selection").addEventListener("click", function () { state.selectedIds.clear(); renderList(); _updateSelectionUI(); });
+
+      function updateFilterCount() {
+        let count = 0;
+        if (inputSearch.value.trim()) count++;
+        if (filterPais.value) count++;
+        if (filterRegion.value) count++;
+        if (filterCiudad.value.trim()) count++;
+        if (filterSede.value.trim()) count++;
+        if (filterEstado.value) count++;
+        if (filterPesoMin.value || filterPesoMax.value) count++;
+        if (filterAlturaMin.value || filterAlturaMax.value) count++;
+        if (filterFoto.value) count++;
+        filterCount.textContent = count > 0 ? count + " filtro(s) activo(s)" : "";
+      }
+
+      function readFilters() {
+        updateFilterCount();
+        return {
+          q: inputSearch.value.trim() || undefined,
+          pais_id: filterPais.value ? _parseIntSafe(filterPais.value, undefined) : undefined,
+          region_id: filterRegion.value ? _parseIntSafe(filterRegion.value, undefined) : undefined,
+          ciudad: filterCiudad.value.trim() || undefined,
+          sede: filterSede.value.trim() || undefined,
+          estado: filterEstado.value || undefined,
+          peso_kg_min: filterPesoMin.value ? _parseFloatSafe(filterPesoMin.value, undefined) : undefined,
+          peso_kg_max: filterPesoMax.value ? _parseFloatSafe(filterPesoMax.value, undefined) : undefined,
+          altura_in_min: filterAlturaMin.value ? _parseFloatSafe(filterAlturaMin.value, undefined) : undefined,
+          altura_in_max: filterAlturaMax.value ? _parseFloatSafe(filterAlturaMax.value, undefined) : undefined,
+          tiene_foto: _getBoolFilter(filterFoto.value),
+          page: state.page,
+          per_page: state.perPage,
+        };
+      }
+
+      // ═══════════════════════════════════════════════════════════════════════════
+      // DATA LOADING
+      // ═══════════════════════════════════════════════════════════════════════════
+      async function loadBeneficiarios() {
+        state.loading = true;
+        _showState("loading");
+        try {
+          const filters = readFilters();
+          const params = new URLSearchParams();
+          Object.entries(filters).forEach(function ([k, v]) {
+            if (v !== undefined && v !== null && v !== "") params.set(k, String(v));
+          });
+          const res = await _authFetch("/api/admin/beneficiarios?" + params.toString());
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          const data = await res.json();
+          state.items = data.items || []; state.total = data.total || 0;
+          if (state.items.length === 0) { _showState("empty"); }
+          else { _showState("content"); renderList(); }
+          _updatePagination();
+        } catch (err) {
+          $("error-message").textContent = "Error al cargar los beneficiarios: " + err.message;
+          _showState("error");
+        } finally {
+          state.loading = false;
+        }
+      }
+
+      function _showState(s) {
+        $("state-loading").classList.toggle("hidden", s !== "loading");
+        $("state-error").classList.toggle("hidden", s !== "error");
+        $("state-empty").classList.toggle("hidden", s !== "empty");
+        listContainer.classList.toggle("hidden", s !== "content");
+        pagination.classList.toggle("hidden", s !== "content");
+        if (s !== "content") selectionToolbar.classList.add("hidden");
+      }
+
+      $("btn-retry").addEventListener("click", loadBeneficiarios);
+
+      // ═══════════════════════════════════════════════════════════════════════════
+      // LIST RENDERING
+      // ═══════════════════════════════════════════════════════════════════════════
+      function renderList() {
+        listContainer.innerHTML = state.items.map(function (item) {
+          const isSelected = state.selectedIds.has(item.beneficiario_id);
+          const estado = item.estado || "sin_iniciar";
+          const estadoLabel = _formatEstado(estado);
+          const paisRegion = (item.pais_nombre || "") + " / " + (item.region_nombre || "");
+          const fotoUrl = item.foto_url ? _resolveFotoUrl(item.foto_url) : null;
+          return `<div class="bg-white rounded-2xl shadow-sm border ${isSelected ? 'border-ug-blue ring-1 ring-ug-blue' : 'border-slate-200'} p-4 flex items-start gap-3 hover:shadow-md transition-shadow cursor-pointer" data-id="${item.beneficiario_id}">
+            <input type="checkbox" class="select-checkbox mt-1 w-4 h-4 rounded border-slate-300 text-ug-blue focus:ring-ug-blue" ${isSelected ? "checked" : ""} data-id="${item.beneficiario_id}"/>
+            <div class="flex-1 min-w-0" data-action="detail" data-id="${item.beneficiario_id}">
+              <div class="flex items-start justify-between gap-2">
+                <div class="min-w-0">
+                  <p class="font-semibold text-slate-900 text-sm truncate">${_escapeHtml(item.nombre)}</p>
+                  <p class="text-xs text-slate-500 mt-0.5">${_escapeHtml(item.folio || 'Sin folio')}</p>
+                </div>
+                <span class="badge-${estado} text-xs font-bold px-2.5 py-0.5 rounded-full shrink-0">${estadoLabel}</span>
+              </div>
+              <div class="flex flex-wrap gap-2 mt-2 text-[11px] text-slate-500">
+                <span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">location_on</span>${_escapeHtml(item.ciudad || '—')}</span>
+                ${item.sede ? `<span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">domain</span>${_escapeHtml(item.sede)}</span>` : ''}
+                ${paisRegion ? `<span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">public</span>${_escapeHtml(paisRegion)}</span>` : ''}
+                ${item.telefonos ? `<span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">call</span>${_escapeHtml(item.telefonos)}</span>` : ''}
+              </div>
+            </div>
+          </div>`;
+        }).join("");
+
+        // Checkbox handlers
+        listContainer.querySelectorAll(".select-checkbox").forEach(function (cb) {
+          cb.addEventListener("change", function (e) {
+            e.stopPropagation();
+            const id = _parseIntSafe(this.dataset.id, 0);
+            if (this.checked) state.selectedIds.add(id); else state.selectedIds.delete(id);
+            _updateSelectionUI();
+            // Update card border
+            const card = this.closest("[data-id]");
+            if (card) card.classList.toggle("border-ug-blue", this.checked);
+          });
+        });
+
+        // Detail click handlers
+        listContainer.querySelectorAll("[data-action='detail']").forEach(function (el) {
+          el.addEventListener("click", function (e) {
+            const id = _parseIntSafe(this.dataset.id, 0);
+            openDetailModal(id);
+          });
+        });
+      }
+
+      function _resolveFotoUrl(raw) {
+        if (!raw) return null;
+        if (raw.startsWith("http")) return raw;
+        if (raw.startsWith("storage://")) return raw;
+        return raw;
+      }
+
+      function _updateSelectionUI() {
+        const count = state.selectedIds.size;
+        selectionToolbar.classList.toggle("hidden", count === 0);
+        selectionCount.textContent = String(count);
+        $("btn-export-selected").disabled = count === 0;
+      }
+
+      // ═══════════════════════════════════════════════════════════════════════════
+      // PAGINATION
+      // ═══════════════════════════════════════════════════════════════════════════
+      function _updatePagination() {
+        const totalPages = Math.max(1, Math.ceil(state.total / state.perPage));
+        pageIndicator.textContent = `Página ${state.page} de ${totalPages}`;
+        $("btn-prev").disabled = state.page <= 1;
+        $("btn-next").disabled = state.page >= totalPages;
+      }
+
+      $("btn-prev").addEventListener("click", function () {
+        if (state.page > 1) { state.page--; loadBeneficiarios(); }
+      });
+      $("btn-next").addEventListener("click", function () {
+        state.page++; loadBeneficiarios();
+      });
+
+      // ═══════════════════════════════════════════════════════════════════════════
+      // EXPORT
+      // ═══════════════════════════════════════════════════════════════════════════
+      async function doExportExcel(idsArray, btnEl) {
+        const originalHtml = btnEl.innerHTML;
+        btnEl.disabled = true; btnEl.classList.add("opacity-60", "cursor-not-allowed");
+        try {
+          const filters = idsArray && idsArray.length > 0 ? {} : readFilters();
+          const params = new URLSearchParams();
+          Object.entries(filters).forEach(function ([k, v]) {
+            if (v !== undefined && v !== null && v !== "") params.set(k, String(v));
+          });
+          if (idsArray && idsArray.length > 0) params.set("ids", idsArray.join(","));
+          btnEl.innerHTML = '<span class="material-symbols-outlined text-sm animate-spin">progress_activity</span> Exportando...';
+          const res = await _authFetch("/api/admin/beneficiarios/export?" + params.toString());
+          if (!res.ok) throw new Error("No se pudo exportar el Excel");
+          const blob = await res.blob();
+          const downloadUrl = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          const disposition = res.headers.get("Content-Disposition") || "";
+          const match = disposition.match(/filename="([^"]+)"/);
+          link.href = downloadUrl;
+          link.download = match ? match[1] : "beneficiarios_admin.xlsx";
+          document.body.appendChild(link); link.click(); link.remove();
+          URL.revokeObjectURL(downloadUrl);
+          state.selectedIds.clear(); _updateSelectionUI();
+          showToast("Excel exportado correctamente", "success");
+        } catch (err) {
+          showToast(err.message || "No se pudo exportar el Excel", "error");
+        } finally {
+          btnEl.disabled = false; btnEl.classList.remove("opacity-60", "cursor-not-allowed");
+          btnEl.innerHTML = originalHtml;
+        }
+      }
+
+      $("btn-export-excel").addEventListener("click", async function () { await doExportExcel([], this); });
+      $("btn-export-selected").addEventListener("click", async function () {
+        const ids = Array.from(state.selectedIds);
+        if (ids.length === 0) return;
+        await doExportExcel(ids, this);
+        state.selectedIds.clear(); renderList(); _updateSelectionUI();
+      });
+
+      // ═══════════════════════════════════════════════════════════════════════════
+      // DETAIL MODAL (read-only)
+      // ═══════════════════════════════════════════════════════════════════════════
+      async function openDetailModal(beneficiarioId) {
+        modalOverlay.classList.remove("hidden");
+        modalContent.classList.add("hidden");
+        modalFooter.classList.add("hidden");
+        modalLoading.classList.remove("hidden");
+        modalTitle.textContent = "—"; modalFolio.textContent = "—";
+
+        try {
+          const res = await _authFetch("/api/admin/beneficiarios/" + beneficiarioId + "?_ts=" + Date.now());
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          const data = await res.json();
+          state.currentDetail = data;
+          renderDetailContent(data);
+          modalLoading.classList.add("hidden");
+          modalContent.classList.remove("hidden");
+          modalFooter.classList.remove("hidden");
+          modalTitle.textContent = data.beneficiario?.nombre || "—";
+          modalFolio.textContent = "Folio: " + (data.beneficiario?.folio || "—");
+        } catch (err) {
+          modalLoading.classList.add("hidden");
+          modalContent.innerHTML = '<p class="text-red-500 text-center py-8">Error al cargar el detalle.</p>';
+          modalContent.classList.remove("hidden");
+        }
+      }
+
+      function renderDetailContent(data) {
+        const b = data.beneficiario || {};
+        const e = data.estudio || {};
+        const s = data.solicitud || {};
+        const tutores = data.tutores || [];
+        const proceso = data.proceso_tecnico || {};
+        const participantes = data.participantes || [];
+
+        // Helper: render a field row
+        function _fd(label, value) {
+          var display = value != null && value !== "" ? _escapeHtml(String(value)) : '<span class="text-slate-300 italic text-xs">No capturado</span>';
+          return '<div><span class="text-slate-400 text-[11px] uppercase tracking-wide">' + label + '</span><p class="font-medium text-slate-800 text-sm mt-0.5">' + display + '</p></div>';
+        }
+        // Helper: render a section
+        function _sec(title, content) {
+          return '<section class="border-t border-slate-100 pt-4 mt-4 first:border-0 first:pt-0 first:mt-0"><h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">' + title + '</h3>' + content + '</section>';
+        }
+        // Helper: boolean display
+        function _bool(val) { return val ? '<span class="text-emerald-600 font-semibold">Sí</span>' : '<span class="text-slate-400">No</span>'; }
+
+        // ── Tutores ──
+        var tutoresHtml = "";
+        if (tutores.length === 0) {
+          tutoresHtml = '<p class="text-slate-300 italic text-sm">Sin tutores registrados</p>';
+        } else {
+          tutores.forEach(function (t) {
+            var imss = t.imss_estatus || (t.tiene_imss === 1 ? 'Sí' : t.tiene_imss === 0 ? 'No' : '—');
+            var infonavit = t.infonavit_estatus || (t.tiene_infonavit === 1 ? 'Sí' : t.tiene_infonavit === 0 ? 'No' : '—');
+            var sinEmp = t.sin_empleo === 1 || t.sin_empleo === true;
+            var antAplica = t.antiguedad_aplica === 1 || t.antiguedad_aplica === true;
+            var otrasAplica = t.otras_fuentes_aplica === 1 || t.otras_fuentes_aplica === true;
+            tutoresHtml += '<div class="bg-slate-50 rounded-xl p-3 mb-2 border border-slate-100">' +
+              '<p class="text-xs font-bold text-slate-700 mb-2">Tutor ' + (t.numero_tutor || '?') + '</p>' +
+              '<div class="grid grid-cols-2 md:grid-cols-3 gap-3">' +
+                _fd("Nombre", t.nombre) +
+                _fd("Edad", t.edad) +
+                _fd("Estudios", t.nivel_estudios) +
+                _fd("Estado civil", t.estado_civil) +
+                _fd("No. Hijos", t.num_hijos) +
+                _fd("Vivienda", t.vivienda) +
+                _fd("Sin empleo", sinEmp ? "Sí" : "No") +
+                _fd("Fuente empleo", sinEmp ? null : t.fuente_empleo) +
+                _fd("Ingreso mensual", t.ingreso_mensual != null ? "$" + Number(t.ingreso_mensual).toLocaleString("es-MX") : null) +
+                _fd("Antigüedad aplica", antAplica ? "Sí" : "No aplica") +
+                _fd("Antigüedad", antAplica ? (t.antiguedad || "—") : null) +
+                _fd("Otras fuentes", otrasAplica ? "Sí" : "No") +
+                _fd("Otra fuente", otrasAplica ? t.otras_fuentes_ingreso : null) +
+                _fd("Monto adicional", otrasAplica && t.monto_otras_fuentes ? "$" + Number(t.monto_otras_fuentes).toLocaleString("es-MX") : null) +
+                _fd("IMSS", imss) +
+                _fd("INFONAVIT", infonavit) +
+                _fd("Email", t.email) +
+              '</div></div>';
+          });
+        }
+
+        // ── Documentos ──
+        var docsHtml = '<div class="grid grid-cols-2 gap-3">';
+        if (e.credencial_url_resolved) {
+          docsHtml += '<div class="bg-slate-50 rounded-xl p-3 border border-slate-100"><p class="text-[11px] font-bold text-slate-500 uppercase mb-1">Credencial</p><a href="' + _escapeHtml(e.credencial_url_resolved) + '" target="_blank" rel="noopener" class="text-sm text-ug-blue underline hover:text-ug-blue/80 break-all">Ver documento</a></div>';
+        } else { docsHtml += _fd("Credencial", null); }
+        if (e.comprobante_domicilio_url_resolved) {
+          docsHtml += '<div class="bg-slate-50 rounded-xl p-3 border border-slate-100"><p class="text-[11px] font-bold text-slate-500 uppercase mb-1">Comprobante domicilio</p><a href="' + _escapeHtml(e.comprobante_domicilio_url_resolved) + '" target="_blank" rel="noopener" class="text-sm text-ug-blue underline hover:text-ug-blue/80 break-all">Ver documento</a></div>';
+        } else { docsHtml += _fd("Comprobante domicilio", null); }
+        docsHtml += '</div>';
+
+        // ── Medidas técnicas ──
+        var medidasHtml = '<div class="grid grid-cols-2 md:grid-cols-3 gap-3">' +
+          _fd("Altura total (in)", s.altura_total_in) +
+          _fd("Peso (lb)", s.peso_kg) +
+          _fd("Cabeza-Asiento (in)", s.medida_cabeza_asiento) +
+          _fd("Hombro-Asiento (in)", s.medida_hombro_asiento) +
+          _fd("Prof. Asiento (in)", s.medida_prof_asiento) +
+          _fd("Rodilla-Talón (in)", s.medida_rodilla_talon) +
+          _fd("Ancho Cadera (in)", s.medida_ancho_cadera) +
+          _fd("Unidad captura", s.unidad_captura || s.unidad_medida) +
+        '</div>';
+
+        // ── Participantes ──
+        var partHtml = "";
+        if (participantes.length === 0) {
+          partHtml = '<p class="text-slate-300 italic text-sm">Sin participantes registrados</p>';
+        } else {
+          partHtml = '<div class="space-y-2">';
+          participantes.forEach(function (p) {
+            partHtml += '<div class="flex items-center gap-2 text-sm"><span class="w-2 h-2 rounded-full bg-ug-blue"></span><span class="font-medium text-slate-700">' + _escapeHtml(p.nombre || "—") + '</span><span class="text-slate-400 text-xs">' + _escapeHtml(p.accion || "—") + '</span><span class="text-slate-300 text-xs">' + _formatDate(p.created_at) + '</span></div>';
+          });
+          partHtml += '</div>';
+        }
+
+        modalContent.innerHTML =
+          // 1. Identificación
+          _sec("Identificación",
+            '<div class="grid grid-cols-2 md:grid-cols-3 gap-3">' +
+              _fd("Nombres", b.nombres) +
+              _fd("Apellido Paterno", b.apellido_paterno) +
+              _fd("Apellido Materno", b.apellido_materno) +
+              _fd("Fecha nacimiento", _formatDate(b.fecha_nacimiento)) +
+              _fd("Sexo", b.sexo) +
+              _fd("Diagnóstico", b.diagnostico) +
+            '</div>') +
+          // 2. Contacto y Dirección
+          _sec("Contacto y Dirección",
+          '<div class="grid grid-cols-2 md:grid-cols-3 gap-3">' +
+              _fd("Teléfono", b.telefonos) +
+              _fd("Calle", b.calle) +
+              _fd("Núm. Ext.", b.num_ext) +
+              _fd("Núm. Int.", b.num_int) +
+              _fd("Colonia", b.colonia) +
+              _fd("Ciudad", b.ciudad) +
+              _fd("Estado", b.estado_nombre ? (b.estado_nombre + " (" + (b.estado_codigo || "") + ")") : null) +
+            '</div>') +
+          // 3. Tutores
+          _sec("Tutores", tutoresHtml) +
+          // 4. Documentos de Soporte
+          _sec("Documentos de Soporte", docsHtml) +
+          // 5. Estudio Socioeconómico
+          _sec("Estudio Socioeconómico",
+            '<div class="grid grid-cols-2 md:grid-cols-3 gap-3">' +
+              _fd("Sede", e.sede) +
+              _fd("Fecha estudio", _formatDate(e.fecha_estudio)) +
+              _fd("Ciudad registro", e.ciudad_registro) +
+              _fd("Tuvo silla previa", e.tuvo_silla_previa != null ? (e.tuvo_silla_previa ? "Sí" : "No") : null) +
+              _fd("Cómo obtuvo silla", e.como_obtuvo_silla) +
+              _fd("Elaboró estudio", e.elaboro_estudio) +
+              _fd("Status", e.status) +
+            '</div>') +
+          // 6. Datos Técnicos — Controles
+          _sec("Datos Técnicos — Controles",
+            '<div class="grid grid-cols-2 md:grid-cols-3 gap-3">' +
+              _fd("Entorno", s.entorno) +
+              _fd("Control tronco", s.control_tronco) +
+              _fd("Control cabeza", s.control_cabeza) +
+              _fd("Control piernas", s.control_de_piernas) +
+              _fd("Observaciones posturales", s.observaciones_posturales) +
+            '</div>') +
+          // 7. Datos Técnicos — Medidas
+          _sec("Datos Técnicos — Medidas Antropométricas", medidasHtml) +
+          // 8. Gestión de Donación
+          _sec("Gestión de Donación",
+            '<div class="grid grid-cols-2 md:grid-cols-3 gap-3">' +
+              _fd("Entidad solicitante", s.entidad_solicitante) +
+              _fd("Prioridad", s.prioridad) +
+              _fd("Justificación", s.justificacion) +
+              _fd("Status técnico", s.status) +
+            '</div>') +
+          // 9. Fotografía
+          _sec("Fotografía Técnica",
+            s.foto_url_resolved ? '<img src="' + _escapeHtml(s.foto_url_resolved) + '" alt="Foto técnica" class="w-full max-w-xs rounded-xl border border-slate-200"/>' : '<p class="text-slate-300 italic text-sm">Sin fotografía</p>') +
+          // 10. Proceso Técnico
+          _sec("Proceso Técnico",
+            '<div class="flex items-center gap-2 mb-3"><span class="badge-' + (proceso.estado || 'sin_iniciar') + ' text-xs font-bold px-2.5 py-0.5 rounded-full">' + _formatEstado(proceso.estado || 'sin_iniciar') + '</span>' +
+            (proceso.revision_pendiente ? '<span class="ml-2 text-xs font-bold text-amber-700 bg-amber-100 rounded-full px-2.5 py-0.5">Revisión pendiente</span>' : '') + '</div>' +
+            '<div class="grid grid-cols-2 gap-3 text-sm mb-3">' +
+              _fd("Responsable actual", proceso.responsable_nombre) +
+              _fd("Técnico inicio", proceso.tecnico_nombre) +
+              _fd("Fecha inicio", _formatDate(proceso.fecha_inicio)) +
+              _fd("Último movimiento", _formatDate(proceso.fecha_ultimo_movimiento)) +
+            '</div>' +
+            '<p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Participantes</p>' + partHtml);
+      }
+
+      // Modal close (only via X button — no outside click)
+      $("btn-close-modal").addEventListener("click", closeDetailModal);
+      function closeDetailModal() {
+        modalOverlay.classList.add("hidden"); state.currentDetail = null;
+      }
+
+      // Edit button
+      $("btn-edit").addEventListener("click", function () {
+        if (!state.currentDetail) return;
+        const detail = state.currentDetail;
+        closeDetailModal();
+        openEditModal(detail);
+      });
+
+      // Delete button
+      $("btn-delete").addEventListener("click", function () {
+        if (!state.currentDetail) return;
+        const detail = state.currentDetail;
+        closeDetailModal();
+        openDeleteModal(detail);
+      });
+
+      // ═══════════════════════════════════════════════════════════════════════════
+      // EDIT MODAL WITH TABS
+      // ═══════════════════════════════════════════════════════════════════════════
+      function openEditModal(detail) {
+        state.currentDetail = detail;
+        state.editDraft = {
+          estudio: _extractEstudioFields(detail),
+          tecnica: _extractTecnicaFields(detail),
+          gestion: _extractGestionFields(detail),
+        };
+        state.editOriginal = {
+          estudio: JSON.parse(JSON.stringify(_extractEstudioFields(detail))),
+          tecnica: JSON.parse(JSON.stringify(_extractTecnicaFields(detail))),
+          gestion: JSON.parse(JSON.stringify(_extractGestionFields(detail))),
+        };
+        state.serverOriginal = {
+          estudio: JSON.parse(JSON.stringify(_extractEstudioFields(detail))),
+          tecnica: JSON.parse(JSON.stringify(_extractTecnicaFields(detail))),
+          gestion: JSON.parse(JSON.stringify(_extractGestionFields(detail))),
+        };
+        state.currentEditTab = "estudio";
+        editOverlay.classList.remove("hidden");
+        _updateEditTabs();
+        _renderEditTab("estudio");
+      }
+
+      function _extractEstudioFields(detail) {
+        const b = detail.beneficiario || {};
+        const e = detail.estudio || {};
+        const tutores = detail.tutores || [];
+
+        // Helper: extract tutor data from detail response
+        function _extractTutor(t, num) {
+          if (!t) return {};
+          const prefix = "tutor" + num + "_";
+          const r = {};
+          // Structured names (from _build_snapshot — raw DB; nombre is composed)
+          if (t.nombres != null && t.nombres !== "") {
+            r[prefix + "nombres"] = t.nombres || "";
+            r[prefix + "apellido_paterno"] = t.apellido_paterno || "";
+            r[prefix + "apellido_materno"] = t.apellido_materno || "";
+          } else if (t.nombre) {
+            const parts = (t.nombre || "").trim().split(/\s+/).filter(Boolean);
+            if (parts.length === 1) {
+              r[prefix + "nombres"] = parts[0];
+            } else if (parts.length === 2) {
+              r[prefix + "nombres"] = parts[0];
+              r[prefix + "apellido_paterno"] = parts[1];
+            } else if (parts.length >= 3) {
+              r[prefix + "apellido_materno"] = parts.pop();
+              r[prefix + "apellido_paterno"] = parts.pop();
+              r[prefix + "nombres"] = parts.join(" ");
+            }
+          }
+          r[prefix + "edad"] = t.edad != null ? String(t.edad) : "";
+          r[prefix + "nivel_estudios"] = t.nivel_estudios || "";
+          r[prefix + "estado_civil"] = t.estado_civil || "";
+          r[prefix + "num_hijos"] = t.num_hijos != null ? String(t.num_hijos) : "";
+          r[prefix + "vivienda"] = t.vivienda || "";
+          r[prefix + "fuente_empleo"] = t.fuente_empleo || "";
+          r[prefix + "antiguedad_anios"] = t.antiguedad_anios != null ? String(t.antiguedad_anios) : "";
+          r[prefix + "antiguedad_meses_extra"] = t.antiguedad_meses_extra != null ? String(t.antiguedad_meses_extra) : "";
+          r[prefix + "ingreso_mensual"] = t.ingreso_mensual != null ? String(t.ingreso_mensual) : "";
+          r[prefix + "otras_fuentes_ingreso"] = t.otras_fuentes_ingreso || "";
+          r[prefix + "monto_otras_fuentes"] = t.monto_otras_fuentes != null ? String(t.monto_otras_fuentes) : "";
+          // IMSS/INFONAVIT: from raw DB (tiene_imss int) or mapped (imss_estatus string)
+          if (t.imss_estatus != null) { r[prefix + "imss"] = t.imss_estatus; }
+          else if (t.tiene_imss === 1 || t.tiene_imss === true) { r[prefix + "imss"] = "SI"; }
+          else { r[prefix + "imss"] = "NO"; }
+          if (t.infonavit_estatus != null) { r[prefix + "infonavit"] = t.infonavit_estatus; }
+          else if (t.tiene_infonavit === 1 || t.tiene_infonavit === true) { r[prefix + "infonavit"] = "SI"; }
+          else { r[prefix + "infonavit"] = "NO"; }
+          r[prefix + "email"] = t.email || "";
+          return r;
+        }
+
+        // Find tutor 1 and tutor 2
+        const t1 = tutores.find(function (t) { return t.numero_tutor === 1; });
+        const t2 = tutores.find(function (t) { return t.numero_tutor === 2; });
+        // Document fields
+        const docFields = {
+          credencial_path: e.credencial_path || "",
+          credencial_url: e.credencial_url || "",
+          credencial_url_resolved: e.credencial_url_resolved || "",
+          comprobante_domicilio_path: e.comprobante_domicilio_path || "",
+          comprobante_domicilio_url: e.comprobante_domicilio_url || "",
+          comprobante_domicilio_url_resolved: e.comprobante_domicilio_url_resolved || "",
+        };
+
+        return Object.assign({
+          // Beneficiario fields
+          nombres: b.nombres || "", apellido_paterno: b.apellido_paterno || "", apellido_materno: b.apellido_materno || "",
+          fecha_nacimiento: b.fecha_nacimiento || "", sexo: b.sexo || "M", diagnostico: b.diagnostico || "",
+          calle: b.calle || "", num_ext: b.num_ext || "", num_int: b.num_int || "",
+          colonia: b.colonia || "", ciudad: b.ciudad || "",
+          estado_codigo: b.estado_codigo || "11", estado_nombre: b.estado_nombre || "",
+          telefonos: b.telefonos || "",
+          // Estudio fields
+          estudio_id: e.id || 0,
+          sede: e.sede || "", fecha_estudio: e.fecha_estudio || "",
+          ciudad_registro: e.ciudad_registro || "",
+          tuvo_silla_previa: e.tuvo_silla_previa ? "true" : "false",
+          como_obtuvo_silla: e.como_obtuvo_silla || "",
+          status: e.status || "borrador",
+          // Document fields
+        }, docFields, _extractTutor(t1, 1), _extractTutor(t2, 2));
+      }
+
+      function _extractTecnicaFields(detail) {
+        const s = detail.solicitud || {};
+        return {
+          entorno: s.entorno || "Urbano / Interiores",
+          control_tronco: s.control_tronco || "Completo",
+          control_cabeza: s.control_cabeza || "Independiente",
+          control_de_piernas: s.control_de_piernas || "Parcial",
+          observaciones_posturales: s.observaciones_posturales || "",
+          altura_total_in: s.altura_total_in != null ? String(s.altura_total_in) : "",
+          peso_kg: s.peso_kg != null ? String(s.peso_kg) : "",
+          medida_cabeza_asiento: s.medida_cabeza_asiento != null ? String(s.medida_cabeza_asiento) : "",
+          medida_hombro_asiento: s.medida_hombro_asiento != null ? String(s.medida_hombro_asiento) : "",
+          medida_prof_asiento: s.medida_prof_asiento != null ? String(s.medida_prof_asiento) : "",
+          medida_rodilla_talon: s.medida_rodilla_talon != null ? String(s.medida_rodilla_talon) : "",
+          medida_ancho_cadera: s.medida_ancho_cadera != null ? String(s.medida_ancho_cadera) : "",
+          unidad_medida: s.unidad_captura || "in",
+          unidad_peso_captura: "lb",
+          status: s.status || "borrador",
+        };
+      }
+
+      function _extractGestionFields(detail) {
+        const e = detail.estudio || {};
+        const s = detail.solicitud || {};
+        return {
+          // Estudio readonly display fields
+          sede_ro: e.sede || "—",
+          fecha_estudio_ro: _formatDate(e.fecha_estudio),
+          status_estudio: e.status || "borrador",
+          // Solicitud fields
+          entidad_solicitante: s.entidad_solicitante || "",
+          prioridad: s.prioridad || "",
+          justificacion: s.justificacion || "",
+        };
+      }
+
+      function _renderEditTab(tab) {
+        const draft = state.editDraft[tab] || {};
+        if (tab === "estudio") {
+          editContent.innerHTML = _renderEstudioForm(draft);
+          _populateFields(draft);
+          _setupSillaPreviaConditionalField();
+          _setupEstudioValidations();
+          _setupMunicipiosCatalog();
+          const delTutor2Btn = document.getElementById("btn-delete-tutor2");
+          if (delTutor2Btn) {
+            delTutor2Btn.addEventListener("click", function () {
+              openTutor2DeleteModal(function () {
+                _clearTutorDraft(2);
+                _renderEditTab("estudio");
+                showToast("Tutor 2 eliminado del formulario", "warning");
+              });
+            });
+          }
+          _highlightModifiedFields();
+          return;
+        }
+        if (tab === "tecnica") {
+          editContent.innerHTML = _renderTecnicaForm(draft);
+          _setupTecnicaValidations();
+        } else if (tab === "gestion") {
+          editContent.innerHTML = _renderGestionForm(draft);
+          _setupGestionValidations();
+        }
+        _populateFields(draft);
+        _highlightModifiedFields();
+      }
+
+      let municipiosPorEstado = null;
+      async function _loadMunicipiosCatalog() {
+        if (municipiosPorEstado) return municipiosPorEstado;
+        const response = await fetch("/assets/municipios_por_estado.json", { cache: "no-store" });
+        if (!response.ok) throw new Error("No se pudo cargar el catálogo de municipios.");
+        municipiosPorEstado = await response.json();
+        return municipiosPorEstado;
+      }
+      function _normalizeMunicipioValue(value) {
+        return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim().toUpperCase();
+      }
+      function _renderMunicipiosSelect(estadoCodigo, municipioSeleccionado) {
+        const ciudadSelect = document.getElementById("field-ciudad");
+        if (!ciudadSelect) return;
+        if (!estadoCodigo) {
+          ciudadSelect.innerHTML = '<option value="">Selecciona un estado primero</option>';
+          ciudadSelect.disabled = true; return;
+        }
+        const municipios = municipiosPorEstado?.[estadoCodigo] || [];
+        ciudadSelect.disabled = false;
+        ciudadSelect.innerHTML = '<option value="">Selecciona un municipio</option>';
+        municipios.forEach(function (municipio) {
+          const option = document.createElement("option");
+          option.value = municipio; option.textContent = municipio;
+          ciudadSelect.appendChild(option);
+        });
+        if (municipioSeleccionado) {
+          const normalizedTarget = _normalizeMunicipioValue(municipioSeleccionado);
+          const matchingMunicipio = municipios.find(function (m) { return _normalizeMunicipioValue(m) === normalizedTarget; });
+          if (matchingMunicipio) { ciudadSelect.value = matchingMunicipio; return; }
+          if (!municipios.includes(municipioSeleccionado)) {
+            const option = document.createElement("option");
+            option.value = municipioSeleccionado;
+            option.textContent = municipioSeleccionado + " (registro previo)";
+            ciudadSelect.appendChild(option);
+          }
+          ciudadSelect.value = municipioSeleccionado;
+        }
+      }
+
+      function _clearTutorDraft(num) {
+        const p = "tutor" + num + "_";
+        Object.keys(state.editDraft.estudio || {}).forEach(function (key) {
+          if (key.indexOf(p) === 0) {
+            state.editDraft.estudio[key] = "";
+          }
+        });
+      }
+
+      function _setupSillaPreviaConditionalField() {
+        const sillaPrevia = document.querySelector('[name="tuvo_silla_previa"]');
+        const comoObtuvo = document.querySelector('[name="como_obtuvo_silla"]');
+        if (!sillaPrevia || !comoObtuvo) return;
+
+        const apply = function () {
+          const hasPreviousChair = sillaPrevia.value === "true";
+          SR_Validations.setFieldDisabled(comoObtuvo, !hasPreviousChair);
+          comoObtuvo.required = hasPreviousChair;
+          if (!hasPreviousChair) {
+            comoObtuvo.value = "";
+            SR_Validations.clearFieldError("como_obtuvo_silla");
+          }
+        };
+
+        sillaPrevia.addEventListener("change", apply);
+        apply();
+      }
+
+      function _hasUnsavedEditChanges() {
+        return ["estudio", "tecnica", "gestion"].some(function (tab) {
+          const draft = state.editDraft[tab] || {};
+          const orig = state.editOriginal[tab] || {};
+          const keys = new Set(Object.keys(draft).concat(Object.keys(orig)));
+          for (const key of keys) {
+            if (String(draft[key] ?? "") !== String(orig[key] ?? "")) return true;
+          }
+          return false;
+        });
+      }
+
+      function _openUnsavedEditModal() {
+        unsavedEditOverlay.classList.remove("hidden");
+      }
+
+      function _closeUnsavedEditModal() {
+        unsavedEditOverlay.classList.add("hidden");
+      }
+
+      function _confirmCloseEditModal() {
+        _hideSaveWarningModal();
+        _closeUnsavedEditModal();
+        editOverlay.classList.add("hidden");
+      }
+
+      function openTutor2DeleteModal(onConfirm) {
+        pendingTutor2DeleteAction = typeof onConfirm === "function" ? onConfirm : null;
+        tutor2DeleteOverlay.classList.remove("hidden");
+      }
+
+      function closeTutor2DeleteModal() {
+        tutor2DeleteOverlay.classList.add("hidden");
+        pendingTutor2DeleteAction = null;
+      }
+
+      if (btnCancelTutor2Delete) {
+        btnCancelTutor2Delete.addEventListener("click", closeTutor2DeleteModal);
+      }
+      if (btnConfirmTutor2Delete) {
+        btnConfirmTutor2Delete.addEventListener("click", function () {
+          const action = pendingTutor2DeleteAction;
+          closeTutor2DeleteModal();
+          if (typeof action === "function") action();
+        });
+      }
+      async function _setupMunicipiosCatalog() {
+        await _loadMunicipiosCatalog();
+        const estadoSelect = document.getElementById("field-estado_codigo");
+        const ciudadSelect = document.getElementById("field-ciudad");
+        if (!estadoSelect || !ciudadSelect) return;
+        estadoSelect.addEventListener("change", function () {
+          _renderMunicipiosSelect(estadoSelect.value, "");
+        });
+        const draftCiudad = state.editDraft.estudio?.ciudad || "";
+        _renderMunicipiosSelect(estadoSelect.value || state.editDraft.estudio?.estado_codigo || "", draftCiudad);
+      }
+
+      function _renderEstudioForm(draft) {
+        const sexoChecked = draft.sexo === "F" ? "F" : "M";
+        const nivOpts = Object.keys(NIVEL_ESTUDIOS_LABELS).map(function (v) { return '<option value="' + v + '">' + NIVEL_ESTUDIOS_LABELS[v] + '</option>'; }).join("");
+        const ecOpts = Object.keys(ESTADO_CIVIL_LABELS).map(function (v) { return '<option value="' + v + '">' + ESTADO_CIVIL_LABELS[v] + '</option>'; }).join("");
+        const vivOpts = Object.keys(VIVIENDA_LABELS).map(function (v) { return '<option value="' + v + '">' + VIVIENDA_LABELS[v] + '</option>'; }).join("");
+        const estOpts = ESTADOS_INEGI.map(function (e) { return '<option value="' + e[0] + '">' + e[1] + ' (' + e[0] + ')</option>'; }).join("");
+
+        // Helper: build a tutor card
+        function _tutorCard(num) {
+          const p = "tutor" + num + "_";
+          const v = function (k) { return draft[p + k] || ""; };
+          const hasTutor2Data = num === 2 && Object.keys(draft).some(function (k) {
+            return k.indexOf("tutor2_") === 0 && !_isEmptyValue(draft[k]);
+          });
+          const imssSI = v("imss") === "SI" ? "checked" : "";
+          const imssNO = v("imss") === "NO" ? "checked" : "";
+          const infSI = v("infonavit") === "SI" ? "checked" : "";
+          const infNO = v("infonavit") === "NO" ? "checked" : "";
+
+          return '<div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">' +
+            '<div class="flex items-center justify-between gap-3 border-b border-slate-200 pb-2"><h4 class="font-bold text-slate-800 text-sm">Tutor ' + num + '</h4>' +
+            (hasTutor2Data ? '<button type="button" id="btn-delete-tutor2" class="text-xs font-bold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg">Eliminar Tutor 2</button>' : '') +
+            '</div>' +
+            '<div class="grid grid-cols-3 gap-3">' +
+            _field(p + "nombres", "Nombre(s)", "text", { maxlength: 60, required: true }) +
+            _field(p + "apellido_paterno", "Apellido Paterno", "text", { maxlength: 40, required: true }) +
+            _field(p + "apellido_materno", "Apellido Materno", "text", { maxlength: 40 }) +
+            '</div>' +
+            '<div class="grid grid-cols-2 gap-3">' +
+            _field(p + "edad", "Edad", "number", { min: 0, max: 99, required: true }) +
+            '<div class="space-y-1"><label class="text-xs font-semibold text-slate-500">Estudios</label><select id="field-' + p + 'nivel_estudios" name="' + p + 'nivel_estudios" class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 py-2 px-3" required>' + nivOpts + '</select></div>' +
+            '</div>' +
+            '<div class="grid grid-cols-2 gap-3">' +
+            '<div class="space-y-1"><label class="text-xs font-semibold text-slate-500">Edo. Civil</label><select id="field-' + p + 'estado_civil" name="' + p + 'estado_civil" class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 py-2 px-3" required>' + ecOpts + '</select></div>' +
+            _field(p + "num_hijos", "No. Hijos", "number", { min: 0, max: 30 }) +
+            '</div>' +
+            '<div class="space-y-1"><label class="text-xs font-semibold text-slate-500">Vivienda</label><select id="field-' + p + 'vivienda" name="' + p + 'vivienda" class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 py-2 px-3" required>' + vivOpts + '</select></div>' +
+            '<div class="space-y-2">' +
+            _field(p + "fuente_empleo", "Fuente Empleo", "text", { maxlength: 80 }) +
+            '</div>' +
+            '<div class="grid grid-cols-2 gap-3">' +
+            _field(p + "antiguedad_anios", "Antigüedad (años)", "number", { min: 0, max: 50 }) +
+            _field(p + "antiguedad_meses_extra", "Antigüedad (meses)", "number", { min: 0, max: 11 }) +
+            '</div>' +
+            '<div class="space-y-1">' +
+            '<label class="text-xs font-semibold text-slate-500">Ingreso Mensual ($)</label>' +
+            '<input id="field-' + p + 'ingreso_mensual" name="' + p + 'ingreso_mensual" type="text" class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 py-2 px-3" />' +
+            '</div>' +
+            '<div class="grid grid-cols-2 gap-3">' +
+            _field(p + "otras_fuentes_ingreso", "Otra fuente", "text", { maxlength: 100 }) +
+            '<div class="space-y-1"><label class="text-xs font-semibold text-slate-500">Monto adicional ($)</label><input id="field-' + p + 'monto_otras_fuentes" name="' + p + 'monto_otras_fuentes" type="text" class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 py-2 px-3" /></div>' +
+            '</div>' +
+            '<fieldset class="mt-3"><legend class="text-xs font-bold text-slate-500 uppercase">IMSS</legend><div class="flex gap-4 mt-1">' +
+            '<label class="inline-flex items-center gap-1"><input type="radio" name="' + p + 'imss" value="SI" class="text-ug-blue"' + (imssSI ? " checked" : "") + ' /> Sí</label>' +
+            '<label class="inline-flex items-center gap-1"><input type="radio" name="' + p + 'imss" value="NO" class="text-ug-blue"' + (imssNO ? " checked" : "") + ' /> No</label>' +
+            '</div></fieldset>' +
+            '<fieldset class="mt-3"><legend class="text-xs font-bold text-slate-500 uppercase">INFONAVIT</legend><div class="flex gap-4 mt-1">' +
+            '<label class="inline-flex items-center gap-1"><input type="radio" name="' + p + 'infonavit" value="SI" class="text-ug-blue"' + (infSI ? " checked" : "") + ' /> Sí</label>' +
+            '<label class="inline-flex items-center gap-1"><input type="radio" name="' + p + 'infonavit" value="NO" class="text-ug-blue"' + (infNO ? " checked" : "") + ' /> No</label>' +
+            '</div></fieldset>' +
+            _field(p + "email", "Correo electrónico", "email", { maxlength: 254 }) +
+          '</div>';
+        }
+
+        // Document section: show existing URLs + upload input
+        function _docCard(docKey, label) {
+          const pathVal = draft[docKey + "_path"] || "";
+          const urlResolved = draft[docKey + "_url_resolved"] || "";
+          const hasExisting = !!urlResolved;
+          return '<div class="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-4">' +
+            '<label class="block text-sm font-semibold text-slate-700">' + label + '</label>' +
+            (hasExisting ? '<div class="mb-2"><p class="text-xs text-slate-500">Documento actual:</p><a href="' + _escapeHtml(urlResolved) + '" target="_blank" rel="noopener" class="text-xs text-ug-blue underline hover:text-ug-blue/80 break-all">' + _escapeHtml(pathVal || urlResolved) + '</a></div>' : '<p class="text-xs text-slate-400 mb-2">Sin documento cargado</p>') +
+            '<input id="field-' + docKey + '_file" name="' + docKey + '_file" type="file" accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf" class="w-full border-slate-300 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-ug-blue file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white hover:file:bg-ug-blue/90"/>' +
+            '<p class="text-xs text-slate-400">JPG, PNG o PDF. Máximo 10MB.</p>' +
+            '<p id="' + docKey + '-status" class="text-xs text-slate-500"></p>' +
+            '</div>';
+        }
+
+        return '' +
+          '<h3 class="text-sm font-bold text-slate-700 mb-3">Datos del Beneficiario</h3>' +
+          '<div class="grid grid-cols-2 gap-3">' +
+          _field("nombres", "Nombres", "text", { maxlength: 60, required: true }) +
+          _field("apellido_paterno", "Apellido Paterno", "text", { maxlength: 40, required: true }) +
+          _field("apellido_materno", "Apellido Materno", "text", { maxlength: 40 }) +
+          _field("fecha_nacimiento", "Fecha de Nacimiento", "date") +
+          '<div class="space-y-1"><label class="text-xs font-semibold text-slate-500">Sexo</label><select id="field-sexo" name="sexo" class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 py-2 px-3"><option value="M" ' + (sexoChecked === "M" ? "selected" : "") + '>Masculino</option><option value="F" ' + (sexoChecked === "F" ? "selected" : "") + '>Femenino</option></select></div>' +
+          _fieldArea("diagnostico", "Diagnóstico", { maxlength: 160 }) +
+          _field("calle", "Calle", "text", { maxlength: 120 }) +
+          _field("num_ext", "Núm. Ext.", "text", { maxlength: 10 }) +
+          _field("num_int", "Núm. Int.", "text", { maxlength: 10 }) +
+          _field("colonia", "Colonia", "text", { maxlength: 120 }) +
+          '<div class="space-y-1"><label class="text-xs font-semibold text-slate-500">Estado</label><select id="field-estado_codigo" name="estado_codigo" class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 py-2 px-3">' + estOpts + '</select></div>' +
+          '<div class="space-y-1"><label class="text-xs font-semibold text-slate-500">Ciudad / Municipio</label><select id="field-ciudad" name="ciudad" class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 py-2 px-3" disabled><option value="">Selecciona un estado primero</option></select></div>' +
+          _field("telefonos", "Teléfono (10 dígitos)", "tel", { maxlength: 10 }) +
+          '' +
+          '</div>' +
+          '<h3 class="text-sm font-bold text-slate-700 mb-3 mt-4 pt-4 border-t border-slate-100">Tutores</h3>' +
+          _tutorCard(1) +
+          _tutorCard(2) +
+          '<h3 class="text-sm font-bold text-slate-700 mb-3 mt-4 pt-4 border-t border-slate-100">Documentos de Soporte</h3>' +
+          '<div class="grid grid-cols-1 md:grid-cols-2 gap-4">' +
+          _docCard("credencial", "Credencial") +
+          _docCard("comprobante_domicilio", "Comprobante de domicilio") +
+          '</div>' +
+          '<h3 class="text-sm font-bold text-slate-700 mb-3 mt-4 pt-4 border-t border-slate-100">Datos del Estudio</h3>' +
+          '<div class="grid grid-cols-2 gap-3">' +
+          _field("sede", "Sede", "text", { maxlength: 80, required: true }) +
+          _field("fecha_estudio", "Fecha de Estudio", "date", { required: true }) +
+          _field("ciudad_registro", "Ciudad de Registro", "text", { maxlength: 80, required: true }) +
+          '<div class="space-y-1"><label class="text-xs font-semibold text-slate-500">¿Tuvo silla previa?</label><select id="field-tuvo_silla_previa" name="tuvo_silla_previa" class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 py-2 px-3"><option value="false" ' + (draft.tuvo_silla_previa === "false" ? "selected" : "") + '>No</option><option value="true" ' + (draft.tuvo_silla_previa === "true" ? "selected" : "") + '>Sí</option></select></div>' +
+          '<div class="space-y-1"><label class="text-xs font-semibold text-slate-500">Cómo obtuvo silla</label><select id="field-como_obtuvo_silla" name="como_obtuvo_silla" class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 py-2 px-3"><option value="">Selecciona una opción</option><option value="COMPRA">Compra</option><option value="DONACION">Donación</option></select></div>' +
+          '<div class="space-y-1"><label class="text-xs font-semibold text-slate-500">Status</label><select id="field-status" name="status" class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 py-2 px-3"><option value="borrador">Borrador</option><option value="completo">Completo</option></select></div>' +
+          '</div>';
+      }
+
+      function _renderTecnicaForm(draft) {
+        const entornos = ["Urbano / Interiores", "Rural / Terreno irregular", "Mixto"];
+        const troncos = ["Completo", "Parcial / Requiere apoyo lateral", "Nulo / Requiere soporte total"];
+        const cabezas = ["Independiente", "No posee / Requiere cabezal"];
+        const piernas = ["Parcial", "Nulo"];
+        const prioridades = ["Alta", "Media"];
+        return `
+          <h3 class="text-sm font-bold text-slate-700 mb-3">Datos Técnicos</h3>
+          <div class="grid grid-cols-2 gap-3">
+            ${_select("entorno", "Entorno", entornos)}
+            ${_select("control_tronco", "Control Tronco", troncos)}
+            ${_select("control_cabeza", "Control Cabeza", cabezas)}
+            ${_select("control_de_piernas", "Control de Piernas", piernas)}
+            ${_field("altura_total_in", "Altura Total (in)", "text", { pattern: "[0-9]+(\\\\.[0-9]{1,3})?" })}
+            ${_field("peso_kg", "Peso (lb)", "text", { pattern: "[0-9]+(\\\\.[0-9]{1,3})?" })}
+            ${_field("medida_cabeza_asiento", "Cabeza-Asiento (in)", "text", { pattern: "[0-9]+(\\\\.[0-9]{1,3})?" })}
+            ${_field("medida_hombro_asiento", "Hombro-Asiento (in)", "text", { pattern: "[0-9]+(\\\\.[0-9]{1,3})?" })}
+            ${_field("medida_prof_asiento", "Prof. Asiento (in)", "text", { pattern: "[0-9]+(\\\\.[0-9]{1,3})?" })}
+            ${_field("medida_rodilla_talon", "Rodilla-Talón (in)", "text", { pattern: "[0-9]+(\\\\.[0-9]{1,3})?" })}
+            ${_field("medida_ancho_cadera", "Ancho Cadera (in)", "text", { pattern: "[0-9]+(\\\\.[0-9]{1,3})?" })}
+            ${_fieldArea("observaciones_posturales", "Observaciones Posturales", { maxlength: 500 })}
+            <div class="space-y-1 col-span-2">
+              <label class="text-xs font-semibold text-slate-500">Status</label>
+              <select id="field-status-tecnica" name="status" class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 py-2 px-3">
+                <option value="borrador">Borrador</option>
+                <option value="completo">Completo</option>
+              </select>
+            </div>
+          </div>`;
+      }
+
+      function _renderGestionForm(draft) {
+        const prioridades = ["Alta", "Media"];
+        return `
+          <h3 class="text-sm font-bold text-slate-700 mb-3">Datos del Estudio (solo lectura)</h3>
+          <div class="grid grid-cols-2 gap-3 mb-4 bg-slate-50 rounded-xl p-4">
+            ${_fieldReadonly("Sede", draft.sede_ro)}
+            ${_fieldReadonly("Fecha Estudio", draft.fecha_estudio_ro)}
+            ${_fieldReadonly("Status", draft.status_estudio || "—")}
+          </div>
+          <h3 class="text-sm font-bold text-slate-700 mb-3">Gestión de Donación</h3>
+          <div class="grid grid-cols-2 gap-3">
+            ${_field("entidad_solicitante", "Entidad Solicitante", "text", { maxlength: 64 })}
+            ${_select("prioridad", "Prioridad", prioridades)}
+            ${_fieldArea("justificacion", "Justificación", { maxlength: 500 })}
+          </div>`;
+      }
+
+      function _field(name, label, type, attrs) {
+        attrs = attrs || {};
+        var extraParts = [];
+        Object.keys(attrs).forEach(function(k) {
+          var v = attrs[k];
+          if (v === true || v === "true") { extraParts.push(k); }
+          else if (v !== false && v !== "false" && v != null) { extraParts.push(k + '="' + v + '"'); }
+        });
+        var extra = extraParts.join(" ");
+        return '<div class="space-y-1"><label class="text-xs font-semibold text-slate-500">' + label + '</label><input id="field-' + name + '" name="' + name + '" type="' + type + '" ' + extra + ' class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 py-2 px-3 focus:border-ug-blue focus:outline-none"/><span data-error-for="' + name + '" class="field-error hidden text-red-500 text-[11px]"></span></div>';
+      }
+      function _fieldArea(name, label, attrs) {
+        attrs = attrs || {};
+        const extra = Object.keys(attrs).map(k => `${k}="${attrs[k]}"`).join(" ");
+        return `<div class="space-y-1 col-span-2"><label class="text-xs font-semibold text-slate-500">${label}</label><textarea id="field-${name}" name="${name}" rows="3" ${extra} class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 py-2 px-3 focus:border-ug-blue focus:outline-none resize-y"></textarea><span data-error-for="${name}" class="field-error hidden text-red-500 text-[11px]"></span></div>`;
+      }
+      function _select(name, label, options) {
+        const opts = options.map(o => `<option value="${o}">${o}</option>`).join("");
+        return `<div class="space-y-1"><label class="text-xs font-semibold text-slate-500">${label}</label><select id="field-${name}" name="${name}" class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 py-2 px-3">${opts}</select></div>`;
+      }
+      function _fieldReadonly(label, value) {
+        return `<div><span class="text-xs text-slate-400">${label}</span><p class="text-sm font-medium text-slate-700">${_escapeHtml(value)}</p></div>`;
+      }
+
+      function _populateFields(draft) {
+        Object.keys(draft).forEach(function (key) {
+          // Try field- prefix first
+          var el = document.getElementById("field-" + key);
+          // Special case: selects without field- prefix (tutor selects)
+          if (!el && key.indexOf("tutor") === 0) {
+            el = document.querySelector('[name="' + key + '"]');
+          }
+          // Also check file inputs
+          if (!el) {
+            el = document.querySelector('[name="' + key + '"]');
+            if (el && el.type === "file") return; // skip file inputs
+          }
+          if (!el) return;
+          if (el.type === "checkbox") {
+            el.checked = draft[key] === "true" || draft[key] === true;
+          } else if (el.type === "radio") {
+            var radio = document.querySelector('[name="' + key + '"][value="' + draft[key] + '"]');
+            if (radio) radio.checked = true;
+          } else if (el.tagName === "SELECT") {
+            el.value = draft[key];
+          } else if (el.tagName === "TEXTAREA") {
+            el.textContent = draft[key];
+          } else {
+            if (MONETARY_FIELD_IDS.indexOf(key) !== -1) {
+              el.value = key.indexOf("ingreso_mensual") !== -1
+                ? SR_Validations.formatIntegerDisplay(draft[key])
+                : SR_Validations.formatIntegerDisplay(draft[key]);
+            } else {
+              el.value = draft[key] != null ? draft[key] : "";
+            }
+          }
+        });
+        // After populating, run validations only (no conditional field toggles for admin)
+      }
+
+      function _highlightModifiedFields() {
+        editContent.querySelectorAll(".field-modified").forEach(function (el) { el.classList.remove("field-modified"); });
+        ["estudio", "tecnica", "gestion"].forEach(function (tab) {
+          const draft = state.editDraft[tab] || {};
+          const orig = state.editOriginal[tab] || {};
+          Object.keys(draft).forEach(function (key) {
+            if (draft[key] !== orig[key]) {
+              var el = document.getElementById("field-" + key);
+              if (!el) el = document.querySelector('[name="' + key + '"]');
+              if (el && (el.tagName === "INPUT" || el.tagName === "SELECT" || el.tagName === "TEXTAREA")) {
+                el.classList.add("field-modified");
+              }
+            }
+          });
+        });
+      }
+
+      function _setupEstudioValidations() {
+        if (typeof SR_Validations === "undefined") return;
+        ["nombres", "apellido_paterno", "apellido_materno"].forEach(function (id) {
+          SR_Validations.setupNameField(document.getElementById("field-" + id));
+        });
+        SR_Validations.setupWhitelistField(document.getElementById("field-diagnostico"), SR_Validations.DIAGNOSTICO_RE, SR_Validations.LIMITS.DIAGNOSTICO_MAX);
+        SR_Validations.setupWhitelistField(document.getElementById("field-calle"), SR_Validations.CALLE_RE, SR_Validations.LIMITS.CALLE_MAX);
+        SR_Validations.setupWhitelistField(document.getElementById("field-colonia"), SR_Validations.COLONIA_RE, SR_Validations.LIMITS.COLONIA_MAX);
+        SR_Validations.setupTelefonoField(document.getElementById("field-telefonos"));
+        ["num_ext", "num_int"].forEach(function (id) {
+          SR_Validations.setupTextField(document.getElementById("field-" + id), SR_Validations.NUM_DOMICILIO_RE);
+        });
+        // Tutor field validations
+        [1, 2].forEach(function (num) {
+          var p = "tutor" + num + "_";
+          ["nombres", "apellido_paterno", "apellido_materno"].forEach(function (suffix) {
+            SR_Validations.setupNameField(document.querySelector('[name="' + p + suffix + '"]'));
+          });
+          [p + "fuente_empleo", p + "otras_fuentes_ingreso"].forEach(function (name) {
+            var el = document.querySelector('[name="' + name + '"]');
+            if (!el) return;
+            var max = name.includes("fuente_empleo")
+              ? SR_Validations.LIMITS.FUENTE_EMPLEO_MAX
+              : SR_Validations.LIMITS.OTRAS_FUENTES_INGRESO_MAX;
+            SR_Validations.setupWhitelistField(el, SR_Validations.DIAGNOSTICO_RE, max);
+          });
+          [p + "edad", p + "num_hijos", p + "antiguedad_anios", p + "antiguedad_meses_extra"].forEach(function (name) {
+            var el = document.querySelector('[name="' + name + '"]');
+            if (!el) return;
+            var suffix = name.replace(p, "");
+            var limits = {
+              edad: [0, 99],
+              num_hijos: [0, 30],
+              antiguedad_anios: [0, 50],
+              antiguedad_meses_extra: [0, 11],
+            }[suffix];
+            if (!limits) return;
+            SR_Validations.setupIntegerField(el, limits[0], limits[1]);
+          });
+          [p + "ingreso_mensual", p + "monto_otras_fuentes"].forEach(function (name) {
+            var el = document.querySelector('[name="' + name + '"]');
+            if (!el) return;
+            var max = name.includes("ingreso") ? SR_Validations.LIMITS.INGRESO_MENSUAL_MAX : SR_Validations.LIMITS.MONTO_OTRAS_FUENTES_MAX;
+            SR_Validations.setupMoneyFieldWithFormatting(el, max);
+          });
+          var emailEl = document.querySelector('[name="' + p + 'email"]');
+          if (emailEl) SR_Validations.setupEmailField(emailEl);
+        });
+      }
+
+      function _setupTecnicaValidations() {
+        if (typeof SR_Validations === "undefined") return;
+        ["altura_total_in", "peso_kg", "medida_cabeza_asiento", "medida_hombro_asiento",
+         "medida_prof_asiento", "medida_rodilla_talon", "medida_ancho_cadera"].forEach(function (id) {
+          SR_Validations.setupMeasureField(document.getElementById("field-" + id));
+        });
+        SR_Validations.setupWhitelistField(
+          document.getElementById("field-observaciones_posturales"),
+          SR_Validations.OBS_WHITELIST_RE, SR_Validations.LIMITS.OBS_MAX
+        );
+      }
+
+      function _setupGestionValidations() {
+        if (typeof SR_Validations === "undefined") return;
+        SR_Validations.setupWhitelistField(
+          document.getElementById("field-entidad_solicitante"),
+          SR_Validations.ENTIDAD_WHITELIST_RE, SR_Validations.LIMITS.ENTIDAD_MAX
+        );
+        SR_Validations.setupWhitelistField(
+          document.getElementById("field-justificacion"),
+          SR_Validations.OBS_WHITELIST_RE, SR_Validations.LIMITS.JUST_MAX
+        );
+      }
+
+      const EDIT_FIELD_RULES = {
+        estudio: [
+          { key: "nombres", label: "Nombres", required: true },
+          { key: "apellido_paterno", label: "Apellido Paterno", required: true },
+          { key: "apellido_materno", label: "Apellido Materno", required: true },
+          { key: "fecha_nacimiento", label: "Fecha de Nacimiento", required: true },
+          { key: "diagnostico", label: "Diagnóstico", required: true },
+          { key: "calle", label: "Calle", required: true },
+          { key: "colonia", label: "Colonia", required: true },
+          { key: "ciudad", label: "Ciudad / Municipio", required: true },
+          { key: "estado_codigo", label: "Estado", required: true },
+          { key: "sexo", label: "Sexo", required: true },
+          { key: "telefonos", label: "Teléfono", required: true },
+          { key: "num_ext", label: "Núm. Ext.", required: true },
+          { key: "num_int", label: "Núm. Int." },
+          { key: "sede", label: "Sede", required: true },
+          { key: "fecha_estudio", label: "Fecha de Estudio", required: true },
+          { key: "ciudad_registro", label: "Ciudad de Registro", required: true },
+          { key: "tuvo_silla_previa", label: "¿Tuvo silla previa?", required: true },
+          { key: "como_obtuvo_silla", label: "Cómo obtuvo silla", requiredIf: function (draft) { return draft.tuvo_silla_previa === "true"; } },
+          { key: "status", label: "Status", required: true },
+          { key: "tutor1_nombres", label: "Tutor 1 - Nombre(s)", required: true },
+          { key: "tutor1_apellido_paterno", label: "Tutor 1 - Apellido Paterno", required: true },
+          { key: "tutor1_apellido_materno", label: "Tutor 1 - Apellido Materno", required: true },
+          { key: "tutor1_edad", label: "Tutor 1 - Edad", required: true },
+          { key: "tutor1_nivel_estudios", label: "Tutor 1 - Estudios", required: true },
+          { key: "tutor1_estado_civil", label: "Tutor 1 - Edo. Civil", required: true },
+          { key: "tutor1_num_hijos", label: "Tutor 1 - No. Hijos", required: true },
+          { key: "tutor1_vivienda", label: "Tutor 1 - Vivienda", required: true },
+          { key: "tutor1_fuente_empleo", label: "Tutor 1 - Fuente Empleo" },
+          { key: "tutor1_antiguedad_anios", label: "Tutor 1 - Antigüedad (años)" },
+          { key: "tutor1_antiguedad_meses_extra", label: "Tutor 1 - Antigüedad (meses)" },
+          { key: "tutor1_ingreso_mensual", label: "Tutor 1 - Ingreso Mensual" },
+          { key: "tutor1_otras_fuentes_ingreso", label: "Tutor 1 - Otra fuente" },
+          { key: "tutor1_monto_otras_fuentes", label: "Tutor 1 - Monto adicional" },
+          { key: "tutor1_imss", label: "Tutor 1 - IMSS", required: true },
+          { key: "tutor1_infonavit", label: "Tutor 1 - INFONAVIT", required: true },
+          { key: "tutor1_email", label: "Tutor 1 - Correo electrónico" },
+          { key: "tutor2_nombres", label: "Tutor 2 - Nombre(s)" },
+          { key: "tutor2_apellido_paterno", label: "Tutor 2 - Apellido Paterno" },
+          { key: "tutor2_apellido_materno", label: "Tutor 2 - Apellido Materno" },
+          { key: "tutor2_edad", label: "Tutor 2 - Edad" },
+          { key: "tutor2_nivel_estudios", label: "Tutor 2 - Estudios" },
+          { key: "tutor2_estado_civil", label: "Tutor 2 - Edo. Civil" },
+          { key: "tutor2_num_hijos", label: "Tutor 2 - No. Hijos" },
+          { key: "tutor2_vivienda", label: "Tutor 2 - Vivienda" },
+          { key: "tutor2_fuente_empleo", label: "Tutor 2 - Fuente Empleo" },
+          { key: "tutor2_antiguedad_anios", label: "Tutor 2 - Antigüedad (años)" },
+          { key: "tutor2_antiguedad_meses_extra", label: "Tutor 2 - Antigüedad (meses)" },
+          { key: "tutor2_ingreso_mensual", label: "Tutor 2 - Ingreso Mensual" },
+          { key: "tutor2_otras_fuentes_ingreso", label: "Tutor 2 - Otra fuente" },
+          { key: "tutor2_monto_otras_fuentes", label: "Tutor 2 - Monto adicional" },
+          { key: "tutor2_imss", label: "Tutor 2 - IMSS" },
+          { key: "tutor2_infonavit", label: "Tutor 2 - INFONAVIT" },
+          { key: "tutor2_email", label: "Tutor 2 - Correo electrónico" },
+        ],
+        tecnica: [
+          { key: "entorno", label: "Entorno", requiredIf: function (draft) { return draft.status === "completo"; } },
+          { key: "control_tronco", label: "Control Tronco", requiredIf: function (draft) { return draft.status === "completo"; } },
+          { key: "control_cabeza", label: "Control Cabeza", requiredIf: function (draft) { return draft.status === "completo"; } },
+          { key: "control_de_piernas", label: "Control de Piernas", required: true },
+          { key: "altura_total_in", label: "Altura Total (in)", requiredIf: function (draft) { return draft.status === "completo"; } },
+          { key: "peso_kg", label: "Peso (lb)", requiredIf: function (draft) { return draft.status === "completo"; } },
+          { key: "medida_cabeza_asiento", label: "Cabeza-Asiento (in)", requiredIf: function (draft) { return draft.status === "completo"; } },
+          { key: "medida_hombro_asiento", label: "Hombro-Asiento (in)", requiredIf: function (draft) { return draft.status === "completo"; } },
+          { key: "medida_prof_asiento", label: "Prof. Asiento (in)", requiredIf: function (draft) { return draft.status === "completo"; } },
+          { key: "medida_rodilla_talon", label: "Rodilla-Talón (in)", requiredIf: function (draft) { return draft.status === "completo"; } },
+          { key: "medida_ancho_cadera", label: "Ancho Cadera (in)", requiredIf: function (draft) { return draft.status === "completo"; } },
+          { key: "observaciones_posturales", label: "Observaciones Posturales" },
+          { key: "status", label: "Status", required: true },
+        ],
+        gestion: [
+          { key: "entidad_solicitante", label: "Entidad Solicitante", required: true },
+          { key: "prioridad", label: "Prioridad", required: true },
+          { key: "justificacion", label: "Justificación" },
+        ],
+      };
+
+      function _isEmptyValue(value) {
+        return value === undefined || value === null || String(value).trim() === "";
+      }
+
+      function _ruleApplies(rule, draft) {
+        if (typeof rule.requiredIf === "function") return !!rule.requiredIf(draft || {});
+        return !!rule.required;
+      }
+
+      function _getRuleElement(key) {
+        return document.querySelector('[name="' + key + '"]') || document.getElementById("field-" + key);
+      }
+
+      function _getRuleElements(key) {
+        var nodes = editContent.querySelectorAll('[name="' + key + '"]');
+        if (nodes && nodes.length) return Array.from(nodes);
+        var el = document.getElementById("field-" + key);
+        return el ? [el] : [];
+      }
+
+      function _clearValidationMarks() {
+        editContent.querySelectorAll("[data-validation-state]").forEach(function (el) {
+          el.style.borderColor = "";
+          el.style.backgroundColor = "";
+          el.style.outline = "";
+          el.style.outlineOffset = "";
+          delete el.dataset.validationState;
+        });
+        _hide(editError);
+      }
+
+      function _markValidation(key, mode) {
+        _getRuleElements(key).forEach(function (el) {
+          el.dataset.validationState = mode;
+          if (mode === "error") {
+            el.style.borderColor = "#f87171";
+            el.style.backgroundColor = "#fef2f2";
+            el.style.outline = "2px solid #f87171";
+            el.style.outlineOffset = "2px";
+          } else if (mode === "warning") {
+            el.style.borderColor = "#f59e0b";
+            el.style.backgroundColor = "#fffbeb";
+            el.style.outline = "2px solid #f59e0b";
+            el.style.outlineOffset = "2px";
+          }
+        });
+      }
+
+      function _showValidationErrors(items) {
+        if (!items.length) return _hide(editError);
+        editError.innerHTML = '<strong>Corrige los siguientes campos:</strong><br>' + items.map(function (item) {
+          return '• ' + _escapeHtml(item.label);
+        }).join('<br>');
+        editError.classList.remove("hidden");
+      }
+
+      function _collectMissingRequiredFields(tabs) {
+        var items = [];
+        tabs.forEach(function (tab) {
+          var draft = state.editDraft[tab] || {};
+          (EDIT_FIELD_RULES[tab] || []).forEach(function (rule) {
+            if (!_ruleApplies(rule, draft)) return;
+            if (_isEmptyValue(draft[rule.key])) items.push({ tab: tab, key: rule.key, label: rule.label });
+          });
+        });
+        return items;
+      }
+
+      function _collectClearedOptionalFields(tabs) {
+        var items = [];
+        tabs.forEach(function (tab) {
+          var draft = state.editDraft[tab] || {};
+          var orig = state.editOriginal[tab] || {};
+          (EDIT_FIELD_RULES[tab] || []).forEach(function (rule) {
+            if (_ruleApplies(rule, draft)) return;
+            if (!_isEmptyValue(orig[rule.key]) && _isEmptyValue(draft[rule.key])) {
+              items.push({ tab: tab, key: rule.key, label: rule.label });
+            }
+          });
+        });
+        return items;
+      }
+
+      function _renderSaveWarningModal(title, message, items, onConfirm) {
+        state.pendingSave = onConfirm;
+        saveConfirmTitle.textContent = title;
+        saveConfirmMessage.textContent = message;
+        saveConfirmSummary.textContent = items.length ? "Hay campos opcionales que tenían datos y ahora están vacíos." : "Los cambios se guardarán en la base de datos.";
+        saveConfirmList.innerHTML = items.length ? items.map(function (item) {
+          return '<li>' + _escapeHtml(item.label) + '</li>';
+        }).join("") : '';
+        saveConfirmOverlay.classList.remove("hidden");
+      }
+
+      function _hideSaveWarningModal() {
+        saveConfirmOverlay.classList.add("hidden");
+        state.pendingSave = null;
+        saveConfirmList.innerHTML = "";
+        saveConfirmSummary.textContent = "";
+      }
+
+      function _currentDraftTabs() {
+        return ["estudio", "tecnica", "gestion"];
+      }
+
+      function _runAdminValidation(tabs) {
+        _clearValidationMarks();
+        var missing = _collectMissingRequiredFields(tabs);
+        missing.forEach(function (item) { _markValidation(item.key, "error"); });
+        if (missing.length) {
+          _showValidationErrors(missing);
+          return { ok: false, missing: missing, cleared: [] };
+        }
+        var cleared = _collectClearedOptionalFields(tabs);
+        cleared.forEach(function (item) { _markValidation(item.key, "warning"); });
+        if (cleared.length) {
+          return { ok: false, missing: [], cleared: cleared };
+        }
+        return { ok: true, missing: [], cleared: [] };
+      }
+
+      // Tab switching
+      document.querySelectorAll(".edit-tab").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          // Save draft for current tab first
+          _saveDraftFromForm(state.currentEditTab);
+          state.currentEditTab = this.dataset.tab;
+          _updateEditTabs();
+          _renderEditTab(state.currentEditTab);
+        });
+      });
+
+      function _updateEditTabs() {
+        document.querySelectorAll(".edit-tab").forEach(function (btn) {
+          const isActive = btn.dataset.tab === state.currentEditTab;
+          btn.classList.toggle("text-ug-blue", isActive);
+          btn.classList.toggle("border-ug-blue", isActive);
+          btn.classList.toggle("text-slate-500", !isActive);
+          btn.classList.toggle("border-transparent", !isActive);
+        });
+      }
+
+      function _saveDraftFromForm(tab) {
+        var draft = {};
+        editContent.querySelectorAll("input, select, textarea").forEach(function (el) {
+          if (!el.name) return;
+          if (el.type === "file") return; // skip file inputs
+          if (el.type === "checkbox") {
+            draft[el.name] = el.checked ? "true" : "false";
+          } else if (el.type === "radio") {
+            if (el.checked) draft[el.name] = el.value;
+          } else {
+            if (MONETARY_FIELD_IDS.indexOf(el.name) !== -1) {
+              draft[el.name] = String(SR_Validations.toIntegerOrNull(el.value) ?? "");
+            } else {
+              draft[el.name] = el.value;
+            }
+          }
+        });
+        state.editDraft[tab] = Object.assign({}, state.editDraft[tab], draft);
+      }
+
+      function _saveCurrentTabLocally() {
+        const tab = state.currentEditTab;
+        const key = "admin_edit_draft_" + tab + "_" + (state.currentDetail?.beneficiario?.id || "0");
+        localStorage.setItem(key, JSON.stringify(state.editDraft[tab]));
+        state.editOriginal[tab] = JSON.parse(JSON.stringify(state.editDraft[tab]));
+        _highlightModifiedFields();
+      }
+
+      async function _runGlobalSave() {
+        const benId = state.currentDetail?.beneficiario?.id;
+        const estudioId = state.editDraft.estudio?.estudio_id;
+        if (!benId) return;
+
+        _hide(editError);
+        let errors = [];
+
+        try {
+          // 0. Upload documents first (if any pending)
+          var credUpload = null, compUpload = null;
+          try {
+            if (_hasPendingDocuments()) {
+              credUpload = await _uploadDocumento("credencial", "field-credencial_file");
+              compUpload = await _uploadDocumento("comprobante_domicilio", "field-comprobante_domicilio_file");
+              if (credUpload) {
+                state.editDraft.estudio.credencial_path = credUpload.path;
+                state.editDraft.estudio.credencial_url = credUpload.url;
+              }
+              if (compUpload) {
+                state.editDraft.estudio.comprobante_domicilio_path = compUpload.path;
+                state.editDraft.estudio.comprobante_domicilio_url = compUpload.url;
+              }
+            }
+          } catch (docErr) {
+            errors.push("Documentos: " + docErr.message);
+          }
+
+          // 1. Save beneficiario
+          const benFields = _extractBeneficiarioPayload(state.editDraft.estudio, state.serverOriginal.estudio);
+          if (Object.keys(benFields).length > 0) {
+            const res = await _authFetch("/api/admin/beneficiarios/" + benId, {
+              method: "PATCH", headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(benFields),
+            });
+            if (!res.ok) { const err = await res.json().catch(() => ({})); errors.push("Beneficiario: " + (err.detail || res.status)); }
+          }
+
+          // 2. Save estudio core fields (admin PATCH — no tutors/docs)
+          const estFields = _extractEstudioPayload(state.editDraft.estudio, state.serverOriginal.estudio);
+          if (Object.keys(estFields).length > 0) {
+            const res = await _authFetch("/api/admin/beneficiarios/" + benId + "/estudio", {
+              method: "PATCH", headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(estFields),
+            });
+            if (!res.ok) { const err = await res.json().catch(() => ({})); errors.push("Estudio: " + (err.detail || res.status)); }
+          }
+
+          // 3. Save tutors + documents via /api/estudios/{id} (regular endpoint, admin-allowed)
+          if (estudioId && _hasTutorOrDocChanges()) {
+            const fullPayload = _extractEstudioFullPayload(state.editDraft.estudio, state.serverOriginal.estudio);
+            if (fullPayload) {
+              const res = await _authFetch("/api/estudios/" + estudioId, {
+                method: "PATCH", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(fullPayload),
+              });
+              if (!res.ok) {
+                const errData = await res.json().catch(() => ({}));
+                var errMsg = errData.detail;
+                if (Array.isArray(errMsg)) {
+                  errMsg = errMsg.map(function (d) { return (d.loc ? d.loc.join(".") : "") + ": " + (d.msg || ""); }).join(" | ");
+                }
+                errors.push("Tutores/Documentos: " + (errMsg || res.status));
+              }
+            }
+          }
+
+          // 4. Save solicitud
+          const solFields = _extractSolicitudPayload(state.editDraft.tecnica, state.serverOriginal.tecnica);
+          if (Object.keys(solFields).length > 0) {
+            const res = await _authFetch("/api/admin/beneficiarios/" + benId + "/solicitud", {
+              method: "PATCH", headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(solFields),
+            });
+            if (!res.ok) { const err = await res.json().catch(() => ({})); errors.push("Solicitud: " + (err.detail || res.status)); }
+          }
+
+          // 5. Save gestion
+          const gesFields = _extractGestionPayload(state.editDraft.gestion, state.serverOriginal.gestion);
+          if (Object.keys(gesFields).length > 0) {
+            const res = await _authFetch("/api/admin/beneficiarios/" + benId + "/gestion", {
+              method: "PATCH", headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(gesFields),
+            });
+            if (!res.ok) { const err = await res.json().catch(() => ({})); errors.push("Gestión: " + (err.detail || res.status)); }
+          }
+
+          if (errors.length > 0) {
+            _show(editError, errors.join(" | "));
+          } else {
+            showToast("Todos los cambios guardados correctamente", "success");
+            closeEditModal(true);
+            await new Promise(function (resolve) { setTimeout(resolve, 250); });
+            await openDetailModal(benId);
+            loadBeneficiarios();
+          }
+        } catch (err) {
+          _show(editError, "Error de conexión al guardar.");
+        }
+      }
+
+      // Save current tab (draft to localStorage)
+      $("btn-save-tab").addEventListener("click", function () {
+        _saveDraftFromForm(state.currentEditTab);
+        const check = _runAdminValidation([state.currentEditTab]);
+        if (!check.ok) {
+          if (check.cleared.length) {
+            _renderSaveWarningModal(
+              "Campos opcionales vaciados",
+              "Revisa los campos que tenían datos y ahora están vacíos.",
+              check.cleared,
+              async function () {
+                _hideSaveWarningModal();
+                _saveCurrentTabLocally();
+                showToast("Pestaña guardada localmente", "success");
+              }
+            );
+          }
+          return;
+        }
+        _saveCurrentTabLocally();
+        showToast("Pestaña guardada localmente", "success");
+      });
+
+      // Save confirmation modal handlers
+      $("btn-save-all").addEventListener("click", async function () {
+        _saveDraftFromForm(state.currentEditTab);
+        const check = _runAdminValidation(_currentDraftTabs());
+        if (!check.ok && !check.cleared.length) {
+          return;
+        }
+        _renderSaveWarningModal(
+          check.cleared.length ? "Campos opcionales vaciados" : "Confirmar guardado",
+          check.cleared.length ? "Revisa los campos que tenían datos y ahora están vacíos antes de guardar todo." : "¿Desea guardar los cambios realizados?",
+          check.cleared,
+          async function () {
+            _hideSaveWarningModal();
+            await _runGlobalSave();
+          }
+        );
+      });
+
+      $("btn-cancel-save").addEventListener("click", function () {
+        _hideSaveWarningModal();
+        _highlightModifiedFields();
+        showToast("Revisa los cambios antes de guardar.", "warning");
+      });
+
+      $("btn-confirm-save").addEventListener("click", async function () {
+        if (typeof state.pendingSave === "function") {
+          var action = state.pendingSave;
+          _hideSaveWarningModal();
+          _clearValidationMarks();
+          await action();
+        }
+      });
+
+      function _extractBeneficiarioPayload(draft, original) {
+        original = original || {};
+        const fields = {};
+        const keys = ["nombres", "apellido_paterno", "apellido_materno", "fecha_nacimiento",
+                       "sexo", "diagnostico", "calle", "num_ext", "num_int", "colonia", "ciudad",
+                       "estado_codigo", "telefonos"];
+        keys.forEach(function (k) {
+          var hasValue = draft[k] !== undefined && draft[k] !== "";
+          var wasEmpty = !original[k] || original[k] === "";
+          if (hasValue) {
+            fields[k] = draft[k];
+          } else if (!wasEmpty) {
+            // Field was cleared: send empty string to override DB value
+            fields[k] = "";
+          }
+        });
+        // Derive estado_nombre from estado_codigo
+        if (fields.estado_codigo !== undefined) {
+          const found = ESTADOS_INEGI.find(function (e) { return e[0] === fields.estado_codigo; });
+          fields.estado_nombre = found ? found[1] : "";
+        }
+        return fields;
+      }
+
+      function _extractEstudioPayload(draft, original) {
+        original = original || {};
+        const fields = {};
+        const keys = ["sede", "fecha_estudio", "ciudad_registro", "status"];
+        keys.forEach(function (k) {
+          var hasValue = draft[k] !== undefined && draft[k] !== "";
+          var wasEmpty = !original[k] || original[k] === "";
+          if (hasValue) {
+            fields[k] = draft[k];
+          } else if (!wasEmpty) {
+            fields[k] = "";
+          }
+        });
+        if (draft.tuvo_silla_previa !== undefined) {
+          fields["tuvo_silla_previa"] = draft.tuvo_silla_previa === "true";
+          if (draft.tuvo_silla_previa === "true" && draft.como_obtuvo_silla) {
+            fields["como_obtuvo_silla"] = draft.como_obtuvo_silla;
+          } else if (draft.tuvo_silla_previa !== "true" && original.como_obtuvo_silla) {
+            // Clear como_obtuvo_silla when tuvo_silla_previa is false
+            fields["como_obtuvo_silla"] = "";
+          } else if (draft.tuvo_silla_previa !== "true") {
+            fields["como_obtuvo_silla"] = "";
+          }
+        }
+        return fields;
+      }
+
+      // Build tutor payload for PATCH /api/estudios/{id} (the regular endpoint supports tutors)
+      function _buildTutorPayload(draft, num, original) {
+        var p = "tutor" + num + "_";
+        original = original || {};
+        var getVal = function (k) { return draft[p + k] || ""; };
+        var getValInt = function (k) { var v = draft[p + k]; return (v != null && v !== "") ? parseInt(v, 10) : null; };
+        var getValFloat = function (k) { var v = draft[p + k]; return (v != null && v !== "") ? parseFloat(v) : null; };
+        var originalHasData = ["nombres","apellido_paterno","apellido_materno","edad","nivel_estudios","estado_civil","num_hijos","vivienda","fuente_empleo","antiguedad_anios","antiguedad_meses_extra","ingreso_mensual","otras_fuentes_ingreso","monto_otras_fuentes","imss","infonavit","email"].some(function (k) {
+          return !_isEmptyValue(original[p + k]);
+        });
+        var draftHasData = ["nombres","apellido_paterno","apellido_materno","edad","nivel_estudios","estado_civil","num_hijos","vivienda","fuente_empleo","antiguedad_anios","antiguedad_meses_extra","ingreso_mensual","otras_fuentes_ingreso","monto_otras_fuentes","imss","infonavit","email"].some(function (k) {
+          return !_isEmptyValue(draft[p + k]);
+        });
+        if (num === 1 && _isEmptyValue(getVal("nombres"))) return null;
+        if (num === 2 && !draftHasData && !originalHasData) return null;
+        return {
+          numero_tutor: num,
+          nombres: getVal("nombres").trim(),
+          apellido_paterno: getVal("apellido_paterno").trim(),
+          apellido_materno: getVal("apellido_materno").trim(),
+          email: _isEmptyValue(draft[p + "email"]) ? null : getVal("email"),
+          edad: getValInt("edad"),
+          nivel_estudios: getVal("nivel_estudios") || null,
+          estado_civil: getVal("estado_civil") || null,
+          num_hijos: getValInt("num_hijos"),
+          vivienda: getVal("vivienda") || null,
+          fuente_empleo: getVal("fuente_empleo") || null,
+          sin_empleo: _isEmptyValue(draft[p + "fuente_empleo"]) && _isEmptyValue(draft[p + "ingreso_mensual"]),
+          antiguedad_anios: getValInt("antiguedad_anios"),
+          antiguedad_meses_extra: getValInt("antiguedad_meses_extra"),
+          antiguedad_aplica: !(_isEmptyValue(draft[p + "antiguedad_anios"]) && _isEmptyValue(draft[p + "antiguedad_meses_extra"])),
+          ingreso_mensual: getValInt("ingreso_mensual"),
+          otras_fuentes_aplica: !(_isEmptyValue(draft[p + "otras_fuentes_ingreso"]) && _isEmptyValue(draft[p + "monto_otras_fuentes"])),
+          otras_fuentes_ingreso: getVal("otras_fuentes_ingreso") || null,
+          monto_otras_fuentes: getValFloat("monto_otras_fuentes"),
+          imss_estatus: getVal("imss") || null,
+          infonavit_estatus: getVal("infonavit") || null,
+        };
+      }
+
+      function _buildTutoresArray(draft, original) {
+        var tutores = [];
+        var t1 = _buildTutorPayload(draft, 1, original);
+        if (t1) tutores.push(t1);
+        var t2 = _buildTutorPayload(draft, 2, original);
+        if (t2) tutores.push(t2);
+        return tutores.length > 0 ? tutores : null;
+      }
+
+      // Extract study data for the full /api/estudios/{id} PATCH (tutors + docs)
+      function _extractEstudioFullPayload(draft, original) {
+        var payload = {};
+
+        // Core estudio fields
+        if (draft.fecha_estudio) payload.fecha_estudio = draft.fecha_estudio;
+        if (draft.tuvo_silla_previa !== undefined) {
+          payload.tuvo_silla_previa = draft.tuvo_silla_previa === "true";
+          if (draft.tuvo_silla_previa === "true" && draft.como_obtuvo_silla) {
+            payload.como_obtuvo_silla = draft.como_obtuvo_silla;
+          } else if (draft.tuvo_silla_previa !== "true") {
+            payload.como_obtuvo_silla = "";
+          }
+        }
+
+        // Tutors
+        var tutores = _buildTutoresArray(draft, original || {});
+        if (tutores) payload.tutores = tutores;
+
+        // Documents: include path/url if present in draft
+        if (draft.credencial_path) payload.credencial_path = draft.credencial_path;
+        if (draft.credencial_url) payload.credencial_url = draft.credencial_url;
+        if (draft.comprobante_domicilio_path) payload.comprobante_domicilio_path = draft.comprobante_domicilio_path;
+        if (draft.comprobante_domicilio_url) payload.comprobante_domicilio_url = draft.comprobante_domicilio_url;
+
+        return Object.keys(payload).length > 0 ? payload : null;
+      }
+
+      // Upload a document file and return { path, url }
+      async function _uploadDocumento(tipo, fileInputId) {
+        var fileInput = document.getElementById(fileInputId);
+        if (!fileInput || !fileInput.files || !fileInput.files[0]) return null;
+        var file = fileInput.files[0];
+        var formData = new FormData();
+        formData.append("tipo", tipo);
+        formData.append("archivo", file);
+        var res = await _authFetch("/api/upload-documento", { method: "POST", body: formData });
+        if (!res.ok) {
+          var errData = await res.json().catch(function () { return {}; });
+          throw new Error(errData.detail || "Error al subir " + tipo);
+        }
+        var data = await res.json();
+        return { path: data.documento_path, url: data.documento_url };
+      }
+
+      // Check if any document file is pending upload
+      function _hasPendingDocuments() {
+        var credFile = document.getElementById("field-credencial_file");
+        var compFile = document.getElementById("field-comprobante_domicilio_file");
+        return !!(credFile && credFile.files && credFile.files[0]) ||
+               !!(compFile && compFile.files && compFile.files[0]);
+      }
+
+      // Check if tutors or documents have changed from original
+      function _hasTutorOrDocChanges() {
+        var draft = state.editDraft.estudio || {};
+        var orig = state.serverOriginal.estudio || {};
+        var tutorDocKeys = [];
+        // All tutor keys
+        [1, 2].forEach(function (num) {
+          var p = "tutor" + num + "_";
+          ["nombres","apellido_paterno","apellido_materno","edad","nivel_estudios","estado_civil",
+           "num_hijos","vivienda","fuente_empleo","antiguedad_anios","antiguedad_meses_extra",
+           "ingreso_mensual","otras_fuentes_ingreso","monto_otras_fuentes","imss","infonavit","email"].forEach(function (k) {
+            tutorDocKeys.push(p + k);
+          });
+        });
+        // Document keys
+        ["credencial_path","credencial_url","comprobante_domicilio_path","comprobante_domicilio_url"].forEach(function (k) {
+          tutorDocKeys.push(k);
+        });
+        return tutorDocKeys.some(function (k) {
+          return draft[k] !== orig[k];
+        }) || _hasPendingDocuments();
+      }
+
+      function _extractSolicitudPayload(draft, original) {
+        original = original || {};
+        const fields = {};
+        const keys = ["entorno", "control_tronco", "control_cabeza", "control_de_piernas",
+                       "observaciones_posturales", "altura_total_in", "peso_kg",
+                       "medida_cabeza_asiento", "medida_hombro_asiento", "medida_prof_asiento",
+                       "medida_rodilla_talon", "medida_ancho_cadera",
+                       "unidad_medida", "unidad_peso_captura", "status"];
+        keys.forEach(function (k) {
+          var hasValue = draft[k] !== undefined && draft[k] !== "";
+          var wasEmpty = !original[k] || original[k] === "";
+          if (hasValue) {
+            fields[k] = draft[k];
+          } else if (!wasEmpty) {
+            fields[k] = "";
+          }
+        });
+        return fields;
+      }
+
+      function _extractGestionPayload(draft, original) {
+        original = original || {};
+        const fields = {};
+        var keys = ["entidad_solicitante", "prioridad", "justificacion"];
+        keys.forEach(function (k) {
+          var hasValue = draft[k] !== undefined && draft[k] !== "";
+          var wasEmpty = !original[k] || original[k] === "";
+          if (hasValue) {
+            fields[k] = draft[k];
+          } else if (!wasEmpty) {
+            fields[k] = "";
+          }
+        });
+        return fields;
+      }
+
+      // Close edit modal (only via X button — no outside click)
+      $("btn-close-edit").addEventListener("click", function () {
+        closeEditModal();
+      });
+      function closeEditModal(force) {
+        _saveDraftFromForm(state.currentEditTab);
+        if (force) {
+          _confirmCloseEditModal();
+          return;
+        }
+        if (_hasUnsavedEditChanges()) {
+          _openUnsavedEditModal();
+          return;
+        }
+        _confirmCloseEditModal();
+      }
+
+      if (btnCloseUnsavedEdit) {
+        btnCloseUnsavedEdit.addEventListener("click", function () {
+          _closeUnsavedEditModal();
+        });
+      }
+      if (btnReturnUnsavedEdit) {
+        btnReturnUnsavedEdit.addEventListener("click", function () {
+          _closeUnsavedEditModal();
+        });
+      }
+      if (btnAcceptUnsavedEdit) {
+        btnAcceptUnsavedEdit.addEventListener("click", function () {
+          _confirmCloseEditModal();
+        });
+      }
+
+      // ═══════════════════════════════════════════════════════════════════════════
+      // DELETE
+      // ═══════════════════════════════════════════════════════════════════════════
+      function openDeleteModal(detail) {
+        state.deleteTargetId = detail.beneficiario?.id || null;
+        $("delete-ben-name").textContent = "¿Eliminar a " + (detail.beneficiario?.nombre || "este beneficiario") + "?";
+        $("delete-confirm-input").value = "";
+        $("btn-confirm-delete").disabled = true;
+        $("delete-overlay").classList.remove("hidden");
+      }
+
+      $("delete-confirm-input").addEventListener("input", function () {
+        $("btn-confirm-delete").disabled = this.value.trim() !== "ELIMINAR";
+      });
+
+      $("btn-cancel-delete").addEventListener("click", function () {
+        $("delete-overlay").classList.add("hidden");
+        state.deleteTargetId = null;
+      });
+
+      // Delete confirmation overlay — close only via buttons, not outside click
+
+      $("btn-confirm-delete").addEventListener("click", async function () {
+        const benId = state.deleteTargetId;
+        if (!benId) return;
+
+        // Find the row in the list for visual feedback
+        const row = listContainer.querySelector('[data-id="' + benId + '"]');
+
+        this.disabled = true;
+        this.classList.add("btn-loading");
+
+        try {
+          const res = await _authFetch("/api/admin/beneficiarios/" + benId, { method: "DELETE" });
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          const data = await res.json();
+
+          // Visual feedback: animate row deletion
+          if (row) row.classList.add("deleting-row");
+
+          // Close modals
+          $("delete-overlay").classList.add("hidden");
+          closeDetailModal();
+
+          showToast(
+            "Beneficiario eliminado correctamente (" + data.total_eliminados + " registros eliminados)",
+            "success"
+          );
+
+          state.currentDetail = null;
+          state.deleteTargetId = null;
+
+          // Wait for animation then reload list
+          setTimeout(function () {
+            loadBeneficiarios();
+          }, row ? 500 : 0);
+        } catch (err) {
+          showToast("Error al eliminar: " + err.message, "error");
+          if (row) row.classList.remove("deleting-row");
+        } finally {
+          this.disabled = false;
+          this.classList.remove("btn-loading");
+        }
+      });
+
+      // ═══════════════════════════════════════════════════════════════════════════
+      // UTILS
+      // ═══════════════════════════════════════════════════════════════════════════
+      function _show(el, msg) { el.textContent = msg; el.classList.remove("hidden"); }
+      function _hide(el) { el.textContent = ""; el.classList.add("hidden"); }
+
+      // ═══════════════════════════════════════════════════════════════════════════
+      // INIT
+      // ═══════════════════════════════════════════════════════════════════════════
+      loadPaisesDropdown();
+      loadBeneficiarios();
+
+      // Search debounce
+      inputSearch.addEventListener("input", _debounce(function () { state.page = 1; loadBeneficiarios(); }, 400));
+    </script>
+  </body>
+</html>

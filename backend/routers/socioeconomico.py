@@ -364,6 +364,107 @@ class TutorIn(BaseModel):
         return validate_monto_otras_fuentes(v)
 
 
+class TutorUpdateIn(BaseModel):
+    numero_tutor: int
+    nombres: Optional[str] = None
+    apellido_paterno: Optional[str] = None
+    apellido_materno: Optional[str] = None
+    email: Optional[str] = None
+    edad: Optional[int] = None
+    nivel_estudios: Optional[str] = None
+    estado_civil: Optional[str] = None
+    num_hijos: Optional[int] = None
+    vivienda: Optional[str] = None
+    fuente_empleo: Optional[str] = None
+    antiguedad_anios: Optional[int] = None
+    antiguedad_meses_extra: Optional[int] = None
+    antiguedad_aplica: Optional[bool] = None
+    ingreso_mensual: Optional[int] = None
+    sin_empleo: Optional[bool] = None
+    otras_fuentes_aplica: Optional[bool] = None
+    otras_fuentes_ingreso: Optional[str] = None
+    monto_otras_fuentes: Optional[float] = None
+    imss_estatus: Optional[str] = None
+    infonavit_estatus: Optional[str] = None
+
+    @field_validator("nombres", "apellido_paterno", "apellido_materno",
+                      "nivel_estudios", "fuente_empleo", "otras_fuentes_ingreso",
+                      "imss_estatus", "infonavit_estatus", mode="before")
+    @classmethod
+    def _normalizar_textos_tutor_update(cls, v: Optional[str]) -> Optional[str]:
+        if v in (None, ""):
+            return None
+        return normalize_text(v)
+
+    @field_validator("email", mode="before")
+    @classmethod
+    def _email_valido_update(cls, v: Optional[str]) -> Optional[str]:
+        if v in (None, ""):
+            return None
+        return validate_email_format(v)
+
+    @field_validator("numero_tutor")
+    @classmethod
+    def _numero_tutor_valido(cls, v: int) -> int:
+        return validate_numero_tutor(v)
+
+    @field_validator("edad")
+    @classmethod
+    def _edad_valida(cls, v: Optional[int]) -> Optional[int]:
+        return validate_edad_tutor(v)
+
+    @field_validator("nivel_estudios")
+    @classmethod
+    def _nivel_estudios_valido(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return None
+        return validate_catalog(v, NIVEL_ESTUDIOS_CATALOG, "nivel_estudios")
+
+    @field_validator("estado_civil")
+    @classmethod
+    def _estado_civil_valido(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return None
+        return validate_catalog(v, ESTADO_CIVIL_CATALOG, "estado_civil")
+
+    @field_validator("vivienda")
+    @classmethod
+    def _vivienda_valida(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return None
+        return validate_catalog(v, VIVIENDA_CATALOG, "vivienda")
+
+    @field_validator("fuente_empleo")
+    @classmethod
+    def _fuente_empleo_valida(cls, v: Optional[str]) -> Optional[str]:
+        return validate_fuente_empleo(v)
+
+    @field_validator("ingreso_mensual")
+    @classmethod
+    def _ingreso_mensual_valido(cls, v: Optional[int]) -> Optional[int]:
+        return validate_ingreso_mensual(v)
+
+    @field_validator("antiguedad_anios")
+    @classmethod
+    def _antiguedad_anios_valida(cls, v: Optional[int]) -> Optional[int]:
+        return validate_antiguedad_anios(v)
+
+    @field_validator("antiguedad_meses_extra")
+    @classmethod
+    def _antiguedad_meses_valida(cls, v: Optional[int]) -> Optional[int]:
+        return validate_antiguedad_meses(v)
+
+    @field_validator("otras_fuentes_ingreso")
+    @classmethod
+    def _otras_fuentes_ingreso_valida(cls, v: Optional[str]) -> Optional[str]:
+        return validate_otras_fuentes_ingreso(v)
+
+    @field_validator("monto_otras_fuentes")
+    @classmethod
+    def _monto_otras_fuentes_valido(cls, v: Optional[float]) -> Optional[float]:
+        return validate_monto_otras_fuentes(v)
+
+
 class EstudioIn(BaseModel):
     tuvo_silla_previa: bool
     como_obtuvo_silla: Optional[str] = None
@@ -422,7 +523,7 @@ class EstudioUpdateRequest(BaseModel):
     fecha_estudio: Optional[str] = None
     status: Optional[str] = None
     beneficiario: Optional[BeneficiarioIn] = None
-    tutores: Optional[list[TutorIn]] = None
+    tutores: Optional[list[TutorUpdateIn]] = None
     credencial_path: Optional[str] = None
     credencial_url: Optional[str] = None
     comprobante_domicilio_path: Optional[str] = None
@@ -694,9 +795,11 @@ def actualizar_estudio(
             )
 
     if body.tutores is not None:
-        _validar_tutores(body.tutores)
+        _validar_tutores_update(body.tutores)
+        tutores_a_insertar = [t for t in body.tutores if t.numero_tutor == 1 or _tutor_tiene_datos(t)]
         db.execute("DELETE FROM tutores WHERE beneficiario_id = %s", (existing["beneficiario_id"],))
-        _insertar_tutores(db, existing["beneficiario_id"], body.tutores)
+        if tutores_a_insertar:
+            _insertar_tutores(db, existing["beneficiario_id"], tutores_a_insertar)
 
     fields = body.model_dump(exclude_none=True, exclude={"tutores", "elaboro_estudio", "ciudad_registro", "beneficiario"})
     fields["elaboro_estudio"] = usuario.nombre
@@ -740,6 +843,7 @@ def actualizar_estudio(
         f"UPDATE estudios_socioeconomicos SET {set_clause}, updated_at = NOW() WHERE id = %s",
         values,
     )
+    db.commit()
 
     row = db.execute(
         "SELECT id, status, updated_at FROM estudios_socioeconomicos WHERE id = %s",
@@ -876,9 +980,70 @@ def _validar_tutores(tutores: list[TutorIn]) -> None:
             )
 
 
+def _validar_tutores_update(tutores: list[TutorUpdateIn]) -> None:
+    if not tutores:
+        raise HTTPException(status_code=400, detail="Se requiere al menos un tutor")
+
+    numeros = [t.numero_tutor for t in tutores]
+    if len(numeros) != len(set(numeros)):
+        raise HTTPException(status_code=400, detail="No se pueden repetir los números de tutor")
+    for num in numeros:
+        if num not in (1, 2):
+            raise HTTPException(status_code=400, detail=f"numero_tutor inválido: {num}")
+
+    tutor1 = next((t for t in tutores if t.numero_tutor == 1), None)
+    if tutor1 is None:
+        return
+
+    missing: list[str] = []
+    if tutor1.edad is None:
+        missing.append("edad")
+    if not tutor1.nivel_estudios:
+        missing.append("nivel_estudios")
+    if not tutor1.estado_civil:
+        missing.append("estado_civil")
+    if not tutor1.vivienda:
+        missing.append("vivienda")
+    if not tutor1.imss_estatus:
+        missing.append("imss_estatus")
+    if not tutor1.infonavit_estatus:
+        missing.append("infonavit_estatus")
+
+    if missing:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Campos obligatorios de Tutor 1 faltantes: {', '.join(missing)}",
+        )
+
+
+def _tutor_tiene_datos(tutor: TutorUpdateIn | TutorIn) -> bool:
+    campos = [
+        getattr(tutor, "nombres", None),
+        getattr(tutor, "apellido_paterno", None),
+        getattr(tutor, "apellido_materno", None),
+        getattr(tutor, "email", None),
+        getattr(tutor, "edad", None),
+        getattr(tutor, "nivel_estudios", None),
+        getattr(tutor, "estado_civil", None),
+        getattr(tutor, "num_hijos", None),
+        getattr(tutor, "vivienda", None),
+        getattr(tutor, "fuente_empleo", None),
+        getattr(tutor, "antiguedad_anios", None),
+        getattr(tutor, "antiguedad_meses_extra", None),
+        getattr(tutor, "ingreso_mensual", None),
+        getattr(tutor, "otras_fuentes_ingreso", None),
+        getattr(tutor, "monto_otras_fuentes", None),
+        getattr(tutor, "imss_estatus", None),
+        getattr(tutor, "infonavit_estatus", None),
+    ]
+    return any(v not in (None, "") for v in campos)
+
+
 def _insertar_tutores(db: _DBAdapter, beneficiario_id: int, tutores: list[TutorIn]) -> None:
     for tutor in tutores:
-        nombre_compuesto = f"{tutor.nombres} {tutor.apellido_paterno} {tutor.apellido_materno}".strip()
+        nombre_compuesto = " ".join(
+            part for part in [tutor.nombres, tutor.apellido_paterno, tutor.apellido_materno] if part
+        ).strip()
         db.execute(
             """
             INSERT INTO tutores
@@ -905,9 +1070,9 @@ def _insertar_tutores(db: _DBAdapter, beneficiario_id: int, tutores: list[TutorI
                 _mapear_a_db(tutor.imss_estatus),
                 _mapear_a_db(tutor.infonavit_estatus),
                 _calc_antiguedad_meses(tutor),
-                int(tutor.antiguedad_aplica),
-                int(tutor.sin_empleo),
-                int(tutor.otras_fuentes_aplica),
+                int(bool(tutor.antiguedad_aplica)),
+                int(bool(tutor.sin_empleo)),
+                int(bool(tutor.otras_fuentes_aplica)),
                 tutor.otras_fuentes_ingreso if tutor.otras_fuentes_aplica else None,
                 tutor.monto_otras_fuentes if tutor.otras_fuentes_aplica else None,
             ),
