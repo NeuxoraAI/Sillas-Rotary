@@ -16,11 +16,11 @@
         theme: {
           extend: {
             colors: {
-              primary: "#003366", // UG Dark Blue
-              secondary: "#eab308", // Yellow for highlight
+              primary: "#51274b",
+              secondary: "#B9844D",
               ug: {
-                blue: "#003366",
-                lightBlue: "#0056b3",
+                blue: "#51274b",
+                lightBlue: "#3d1d39",
                 gray: "#f8fafc",
               },
             },
@@ -35,49 +35,7 @@
       };
     </script>
     <!-- END: Tailwind CSS & Plugins -->
-    <!-- BEGIN: Custom Styling -->
-    <style data-purpose="layout-customizations">
-      body {
-        font-family: "Public Sans", sans-serif;
-      }
-      input,
-      select,
-      textarea {
-        border-radius: 0.5rem !important;
-      }
-      button {
-        border-radius: 0.5rem !important;
-      }
-      .section-divider {
-        border-top: 2px solid #e2e8f0;
-        margin-top: 3rem;
-        padding-top: 3rem;
-      }
-      @keyframes toastIn {
-        0% { transform: scale(0.8) translateY(-20px); opacity: 0; }
-        60% { transform: scale(1.05) translateY(0); opacity: 1; }
-        100% { transform: scale(1) translateY(0); opacity: 1; }
-      }
-      @keyframes toastOut {
-        0% { transform: scale(1); opacity: 1; }
-        100% { transform: scale(0.9); opacity: 0; }
-      }
-      .success-toast {
-        animation: toastIn 0.4s ease-out forwards;
-      }
-      .success-toast.hiding {
-        animation: toastOut 0.3s ease-in forwards;
-      }
-    </style>
-    <style data-purpose="typography">
-      h1,
-      h2,
-      h3 {
-        color: #0f172a;
-        font-weight: 700;
-      }
-    </style>
-    <!-- END: Custom Styling -->
+    <link href="assets/css/socioeconomico.css" rel="stylesheet" />
   </head>
   <body class="bg-slate-100 min-h-screen py-10 px-4 flex flex-col items-center">
     <main

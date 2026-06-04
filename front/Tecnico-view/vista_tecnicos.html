@@ -19,10 +19,13 @@
         theme: {
           extend: {
             colors: {
-              "ug-blue": "#1e3a8a",
-              "ug-yellow": "#facc15",
-              "ug-yellow-light": "#fef08a",
-              primary: "#ec5b13",
+              "ug-blue": "#51274b",
+              "ug-blue-shadow": "#3d1d39",
+              "ug-blue-deep": "#2f162c",
+              "ug-yellow": "#B9844D",
+              "ug-yellow-shadow": "#8f6338",
+              "ug-yellow-light": "#d6ae80",
+              primary: "#51274b",
             },
             fontFamily: { display: ["Public Sans"] },
             borderRadius: {
@@ -36,97 +39,7 @@
         },
       };
     </script>
-    <style>
-      body {
-        font-family: "Public Sans", sans-serif;
-      }
-      .material-symbols-outlined {
-        font-family: "Material Symbols Outlined";
-        font-weight: normal;
-        font-style: normal;
-        line-height: 1;
-        letter-spacing: normal;
-        text-transform: none;
-        display: inline-block;
-        white-space: nowrap;
-        word-wrap: normal;
-        direction: ltr;
-        -webkit-font-feature-settings: "liga";
-        -webkit-font-smoothing: antialiased;
-        font-variation-settings:
-          "FILL" 0,
-          "wght" 400,
-          "GRAD" 0,
-          "opsz" 24;
-      }
-
-      /* Loading spinner animation */
-      @keyframes spin {
-        to {
-          transform: rotate(360deg);
-        }
-      }
-      .animate-spin {
-        animation: spin 1s linear infinite;
-      }
-
-      /* Fade-in for modal */
-      @keyframes fadeIn {
-        from {
-          opacity: 0;
-          transform: scale(0.95);
-        }
-        to {
-          opacity: 1;
-          transform: scale(1);
-        }
-      }
-      .animate-fade-in {
-        animation: fadeIn 0.2s ease-out;
-      }
-
-      /* Estado badge colors */
-      .badge-sin_iniciar {
-        background: #f1f5f9;
-        color: #475569;
-      }
-      .badge-en_proceso {
-        background: #dbeafe;
-        color: #1d4ed8;
-      }
-      .badge-finalizado {
-        background: #dcfce7;
-        color: #15803d;
-      }
-      .badge-revision_pendiente {
-        background: #fef3c7;
-        color: #b45309;
-      }
-
-      /* Filter panel transition */
-      .filter-panel {
-        transition:
-          max-height 0.3s ease,
-          opacity 0.2s ease;
-        max-height: 0;
-        opacity: 0;
-        overflow: hidden;
-      }
-      .filter-panel.open {
-        max-height: 800px;
-        opacity: 1;
-        overflow: visible;
-      }
-
-      /* Scrollbar styling */
-      .modal-body::-webkit-scrollbar {
-        width: 4px;
-      }
-      .modal-body::-webkit-scrollbar-thumb {
-        background: #cbd5e1;
-        border-radius: 4px;
-      }
-    </style>
+    <link href="assets/css/vista-tecnicos.css" rel="stylesheet" />
   </head>
   <body class="bg-slate-50 font-display min-h-screen flex flex-col">
     <!-- ── Header ──────────────────────────────────────────────────────────── -->
