@@ -4,7 +4,7 @@
   <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>Estudio Socioeconómico | ecosistema VIDA UG</title>
+    <title>Estudio Socioeconómico | Capturista — Ecosistema VIDA UG</title>
     <!-- BEGIN: Tailwind CSS & Plugins -->
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link
@@ -18,11 +18,12 @@
             colors: {
               primary: "#51274b",
               secondary: "#B9844D",
-              ug: {
-                blue: "#51274b",
-                lightBlue: "#3d1d39",
-                gray: "#f8fafc",
-              },
+              "ug-blue": "#51274b",
+              "ug-blue-shadow": "#3d1d39",
+              "ug-blue-deep": "#2f162c",
+              "ug-yellow": "#B9844D",
+              "ug-yellow-shadow": "#8f6338",
+              "ug-yellow-light": "#d6ae80",
             },
             fontFamily: {
               sans: ['"Public Sans"', "sans-serif"],
@@ -37,37 +38,31 @@
     <!-- END: Tailwind CSS & Plugins -->
     <link href="../assets/css/socioeconomico.css" rel="stylesheet" />
   </head>
-  <body class="bg-slate-100 min-h-screen py-10 px-4 flex flex-col items-center">
+  <body class="bg-slate-50 min-h-screen py-10 px-4 flex flex-col items-center font-sans">
     <main
       class="max-w-5xl w-full bg-white shadow-2xl rounded-lg overflow-hidden border border-slate-200"
     >
-      <!-- BEGIN: Branding Header -->
-      <div
-        class="bg-slate-50 px-8 py-3 border-b border-slate-200 flex justify-between items-center"
-      >
-        <div class="flex items-center gap-2">
-          <span class="text-primary font-bold text-xl tracking-tighter"
-            >UG <span class="text-slate-400 font-light mx-1">|</span>
-            <span class="text-primary/80 font-medium"
-              >ecosistema VIDA UG</span
-            ></span
-          >
+      <header class="bg-ug-blue px-6 py-4 text-white">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-white/60">Captura de campo</p>
+            <h1 class="text-2xl font-bold tracking-tight">Estudio Socioeconómico</h1>
+          </div>
+          <div class="flex items-center justify-between gap-4 sm:justify-end">
+            <div class="text-right">
+              <p id="user-nombre" class="text-sm font-semibold leading-none">—</p>
+              <p id="user-rol" class="mt-1 text-[10px] font-bold uppercase tracking-wider text-white/55">Capturista</p>
+            </div>
+            <button
+              id="btn-cambiar-capturista"
+              type="button"
+              class="rounded-xl bg-white/10 px-3 py-2 text-xs font-bold uppercase tracking-wider text-white/80 transition-colors hover:bg-white/20 hover:text-white"
+            >
+              Salir
+            </button>
+          </div>
         </div>
-        <div class="flex items-center gap-4">
-          <span
-            class="text-[10px] uppercase tracking-widest text-slate-500 font-semibold"
-            >Sistema Integral de Gestión</span
-          >
-          <button
-            id="btn-cambiar-capturista"
-            type="button"
-            class="text-[10px] uppercase tracking-widest text-red-500 font-semibold border border-red-200 rounded px-2 py-1 hover:bg-red-50 transition-colors"
-          >
-            Cambiar capturista
-          </button>
-        </div>
-      </div>
-      <!-- END: Branding Header -->
+      </header>
       <form class="p-8 space-y-12" novalidate>
         <!-- PART 1: ESTUDIO SOCIOECONÓMICO -->
         <div id="edit-banner" class="hidden bg-amber-50 border-b border-amber-200 px-6 py-3 flex items-center gap-2 -mx-8 -mt-8 mb-6">
@@ -75,11 +70,19 @@
           <span id="edit-banner-text" class="text-amber-800 text-sm font-semibold">Editando estudio</span>
           <a id="btn-cancelar-edicion" href="perfil-capturista.html" class="ml-auto text-xs font-bold text-amber-700 hover:text-amber-900 underline">Cancelar</a>
         </div>
-        <header class="bg-slate-800 text-white p-6 -mx-8 -mt-8 mb-8">
-          <h1 class="text-2xl font-bold uppercase tracking-wider text-white" id="form-title">
-            ESTUDIO SOCIOECONÓMICO
-          </h1>
-        </header>
+        <div class="-mx-8 -mt-8 mb-8 border-b border-slate-200 bg-ug-blue/5 px-8 py-5">
+          <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 class="text-xl font-bold text-slate-900" id="form-title">Estudio Socioeconómico</h2>
+              <p class="mt-1 text-sm text-slate-500">Paso 1 de 3 · Datos del beneficiario y tutores.</p>
+            </div>
+            <div class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500">
+              <span class="rounded-full bg-ug-blue px-3 py-1 text-white">Estudio</span>
+              <span class="rounded-full bg-slate-100 px-3 py-1">Técnica</span>
+              <span class="rounded-full bg-slate-100 px-3 py-1">Gestión</span>
+            </div>
+          </div>
+        </div>
         <!-- Datos del Beneficiario -->
         <section data-purpose="beneficiary-data">
           <h2
@@ -811,7 +814,7 @@
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-4">
               <label class="block text-sm font-semibold text-slate-700" for="credencial-file">Subir Credencial</label>
-              <input id="credencial-file" name="credencial_file" class="w-full border-slate-300 text-sm file:mr-4 file:rounded-md file:border-0 file:bg-primary file:px-4 file:py-2 file:font-semibold file:text-white hover:file:bg-ug-lightBlue" type="file" accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf"/>
+              <input id="credencial-file" name="credencial_file" class="w-full border-slate-300 text-sm file:mr-4 file:rounded-md file:border-0 file:bg-primary file:px-4 file:py-2 file:font-semibold file:text-white hover:file:bg-primary/90" type="file" accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf"/>
               <label class="block text-sm font-semibold text-slate-700 mt-4">Tomar foto de Credencial</label>
               <button type="button" data-camera-target="credencial" class="inline-flex cursor-pointer items-center rounded-md bg-slate-700 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">Tomar foto</button>
               <p class="text-xs text-slate-500">Acepta JPG, PNG o PDF. Máximo 10MB.</p>
@@ -826,7 +829,7 @@
             </div>
             <div class="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-4">
               <label class="block text-sm font-semibold text-slate-700" for="comprobante-domicilio-file">Subir Comprobante de domicilio</label>
-              <input id="comprobante-domicilio-file" name="comprobante_domicilio_file" class="w-full border-slate-300 text-sm file:mr-4 file:rounded-md file:border-0 file:bg-primary file:px-4 file:py-2 file:font-semibold file:text-white hover:file:bg-ug-lightBlue" type="file" accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf"/>
+              <input id="comprobante-domicilio-file" name="comprobante_domicilio_file" class="w-full border-slate-300 text-sm file:mr-4 file:rounded-md file:border-0 file:bg-primary file:px-4 file:py-2 file:font-semibold file:text-white hover:file:bg-primary/90" type="file" accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf"/>
               <label class="block text-sm font-semibold text-slate-700 mt-4">Tomar foto de Comprobante de domicilio</label>
               <button type="button" data-camera-target="comprobante_domicilio" class="inline-flex cursor-pointer items-center rounded-md bg-slate-700 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">Tomar foto</button>
               <p class="text-xs text-slate-500">Acepta JPG, PNG o PDF. Máximo 10MB.</p>
@@ -873,7 +876,7 @@
                 Guardar Borrador
               </button>
               <button
-                class="px-10 py-3 bg-secondary text-slate-900 font-bold shadow-lg hover:bg-yellow-500 transition-all uppercase text-sm tracking-wide active:scale-95"
+                class="px-10 py-3 bg-primary text-white font-bold shadow-lg hover:bg-primary/90 transition-all uppercase text-sm tracking-wide active:scale-95"
                 type="submit"
               >
                 GUARDAR ESTUDIO
@@ -881,17 +884,9 @@
             </div>
           </div>
           <p id="error-msg" class="hidden text-red-500 text-sm mt-2"></p>
-          <!-- UG Footer Branding -->
-          <div
-            class="mt-12 pt-6 border-t border-slate-100 flex flex-col items-center gap-2"
-          >
-            <span
-              class="text-[11px] font-bold text-slate-400 tracking-[0.2em] uppercase text-center"
-              >DESARROLLADO POR C-MED</span
-            >
-            <span class="text-[10px] text-slate-300 font-medium uppercase"
-              >Plataforma de Control Técnica v2.0 - ecosistema VIDA UG</span
-            >
+          <div class="mt-12 pt-6 border-t border-slate-100 flex flex-col items-center gap-2 text-center sm:flex-row sm:justify-between">
+            <span class="text-xs font-medium text-slate-500">Desarrollado por <strong class="font-bold text-ug-blue">NEUXORA</strong> · León, Gto.</span>
+            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Ecosistema VIDA UG</span>
           </div>
         </footer>
       </form>
@@ -945,7 +940,7 @@
               <button
                 id="camera-capture"
                 type="button"
-                class="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-ug-lightBlue"
+                class="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90"
               >
                 Tomar foto
               </button>
@@ -2054,6 +2049,11 @@
           window.location.href = "../login.html";
           return;
         }
+
+        const userNombreEl = document.getElementById("user-nombre");
+        const userRolEl = document.getElementById("user-rol");
+        if (userNombreEl) userNombreEl.textContent = session.nombre || "—";
+        if (userRolEl) userRolEl.textContent = (session.rol || "capturista").toUpperCase();
 
         // organizacion must have guest_ctx set before capturing
         if (session?.rol === 'organizacion') {

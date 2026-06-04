@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Sistema Integral de Gestión Social y Técnica** — a digital data collection system for a wheelchair donation program (Ecosistema VIDA UG, developed by C-MED). Replaces paper-based field registration with a mobile-first web app used by non-technical field workers ("capturistas") and technical staff.
+**Sistema Integral de Gestión Social y Técnica** — a digital data collection system for a wheelchair donation program (Ecosistema VIDA UG). Replaces paper-based field registration with a mobile-first web app used by non-technical field workers ("capturistas") and technical staff.
 
 The project is in **active implementation** (Fase 7 Frontend complete). The `PRD.md` file is the source of truth for requirements.
 

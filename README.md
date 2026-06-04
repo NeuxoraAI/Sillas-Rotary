@@ -471,14 +471,12 @@ León, Guanajuato, México &nbsp;·&nbsp; Lun–Sab 9:00–20:00
 | | |
 |---|---|
 | 📞 Teléfono / WhatsApp | [+52 462 272 2089](https://wa.me/524622722089) |
-| 📧 Email | [cmed.beta@gmail.com](mailto:cmed.beta@gmail.com) |
 | 🌐 Web | [andreraz.github.io](https://andreraz.github.io/) |
 
 <br/>
 
 | Departamento | Especialidad |
 |---|---|
-| **C-MED** | Apps médicas, expedientes clínicos, dispositivos personalizados con trazabilidad |
 | **EDU-IA** | Plataformas educativas adaptativas con IA y analítica en tiempo real |
 | **Investigación** | Modelos ML/DL, visión por computadora, simulaciones científicas |
 
