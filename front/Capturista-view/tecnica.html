@@ -331,7 +331,7 @@
                 <img
                   alt="Guía clínica de referencia para toma de medidas"
                   class="rounded-lg shadow-md mb-4"
-                  src="assets/guia_clinica.jpeg"
+                  src="../assets/guia_clinica.jpeg"
                 />
                 <p class="text-xs text-slate-600 font-medium">
                   Diagrama de referencia: Tome medidas con el paciente sentado
@@ -706,7 +706,7 @@
           <div class="mt-4 flex h-[70vh] items-center justify-center rounded-lg bg-slate-100 p-4">
             <img
               id="image-zoom-content"
-              src="assets/guia_clinica.jpeg"
+              src="../assets/guia_clinica.jpeg"
               alt="Guía clínica de referencia ampliada"
               class="max-h-full max-w-full object-contain"
             />
@@ -742,7 +742,7 @@
       </div>
     </div>
     <!-- BEGIN: Script for Interactivity -->
-    <script src="assets/js/validations.js"></script>
+    <script src="../assets/js/validations.js"></script>
     <script data-purpose="form-logic">
       // Auth guard + Draft Resume
       (async function () {
@@ -858,7 +858,7 @@
 
         // Standard auth check for new submissions
         if (!session?.token || !beneficiarioIdRaw || isNaN(beneficiarioIdRaw)) {
-          window.location.href = "login.html";
+          window.location.href = "../login.html";
         }
       })();
 
@@ -1305,7 +1305,7 @@
 
         const session = JSON.parse(localStorage.getItem("session") || "null");
         if (!session?.token) {
-          window.location.href = "login.html";
+          window.location.href = "../login.html";
           return;
         }
 

@@ -34,6 +34,10 @@ backend/uploads/*
 .DS_Store
 Thumbs.db
 
+# Log files
+*.log
+backend/server.log
+
 # Local tool metadata (Claude Code, SDD/Atlassian)
 .atl/
 .claude/

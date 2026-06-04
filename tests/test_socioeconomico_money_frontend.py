@@ -5,7 +5,7 @@ from pathlib import Path
 
 def _load_socioeconomico_html() -> str:
     root = Path(__file__).resolve().parents[1]
-    return (root / "front" / "socioeconomico.html").read_text(encoding="utf-8")
+    return (root / "front" / "Capturista-view" / "socioeconomico.html").read_text(encoding="utf-8")
 
 
 def test_declares_shared_monetary_field_ids_constant() -> None:

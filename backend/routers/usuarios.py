@@ -17,7 +17,7 @@ from routers.auth import CurrentUser, require_admin, _hash_password
 
 router = APIRouter()
 
-_VALID_ROLES = {"admin", "capturista", "tecnico"}
+_VALID_ROLES = {"admin", "capturista", "tecnico", "organizacion"}
 
 
 # ---------------------------------------------------------------------------
@@ -59,6 +59,7 @@ class UsuarioResponse(BaseModel):
     email: str
     rol: str
     activo: bool
+    organizacion_id: int | None = None
 
 
 class UsuarioDeactivateResponse(BaseModel):
@@ -103,6 +104,23 @@ def create_usuario(
     if row is None:
         raise HTTPException(status_code=500, detail="Error al crear el usuario")
 
+    # If creating an organization user, auto-create the organizaciones entry
+    # and add the user as a leader so /api/me/perfil resolves correctly
+    if body.rol == "organizacion":
+        db.execute(
+            """
+            INSERT INTO organizaciones (nombre, email, usuario_id)
+            VALUES (%s, %s, %s)
+            RETURNING id
+            """,
+            (body.nombre.strip(), body.email.lower(), row["id"]),
+        )
+        org_row = db.fetchone()
+        db.execute(
+            "INSERT INTO organizaciones_lideres (organizacion_id, usuario_id) VALUES (%s, %s)",
+            (org_row[0], row["id"]),
+        )
+
     return UsuarioResponse(
         usuario_id=row["id"],
         nombre=row["nombre"],
@@ -119,7 +137,13 @@ def list_usuarios(
 ) -> list[UsuarioResponse]:
     """List all users (active and inactive). Admin only."""
     rows = db.execute(
-        "SELECT id, nombre, email, rol, activo FROM usuarios ORDER BY id"
+        """
+        SELECT u.id, u.nombre, u.email, u.rol, u.activo,
+               o.id AS organizacion_id
+        FROM usuarios u
+        LEFT JOIN organizaciones o ON o.lider_usuario_id = u.id
+        ORDER BY u.id
+        """,
     ).fetchall()
 
     return [
@@ -129,6 +153,7 @@ def list_usuarios(
             email=row["email"],
             rol=row["rol"],
             activo=row["activo"],
+            organizacion_id=row["organizacion_id"],
         )
         for row in rows
     ]

@@ -140,7 +140,7 @@
             <img
               alt="UG"
               class="w-4/5 h-4/5 object-contain"
-              src="assets/Logo_ug.png"
+              src="../assets/Logo_ug.png"
             />
           </div>
           <div class="min-w-0">
@@ -757,7 +757,7 @@
       (function boot() {
         const session = _getSession();
         if (!session?.token) {
-          window.location.replace("login.html");
+          window.location.replace("../login.html");
           return;
         }
 
@@ -783,7 +783,7 @@
         $("btn-logout").addEventListener("click", function () {
           localStorage.removeItem("session");
           localStorage.removeItem("region_ctx");
-          window.location.href = "login.html";
+          window.location.href = "../login.html";
         });
       })();
 

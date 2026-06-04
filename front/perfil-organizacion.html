@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Perfil Organización | Ecosistema VIDA UG</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block" rel="stylesheet"/>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          "ug-blue":         "#1e3a8a",
+          "ug-yellow":       "#facc15",
+          "ug-yellow-light": "#fef08a",
+          "primary":         "#ec5b13",
+        },
+        fontFamily: { "display": ["Public Sans"] },
+      },
+    },
+  }
+</script>
+<style>
+  body { font-family: 'Public Sans', sans-serif; }
+  .material-symbols-outlined {
+    font-family: 'Material Symbols Outlined';
+    font-weight: normal;
+    font-style: normal;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    display: inline-block;
+    white-space: nowrap;
+    word-wrap: normal;
+    direction: ltr;
+    -webkit-font-feature-settings: 'liga';
+    -webkit-font-smoothing: antialiased;
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  }
+  .captura-card {
+    transition: all 0.2s;
+  }
+  .captura-card:hover {
+    transform: translateX(4px);
+    border-color: #1e3a8a40;
+  }
+  .heatmap-cell { width: 13px; height: 13px; border-radius: 2px; }
+  .heatmap-tooltip {
+    background: #1e293b; color: #fff; font-size: 11px;
+    padding: 4px 8px; border-radius: 4px; white-space: nowrap;
+    pointer-events: none; position: absolute; z-index: 50;
+    transform: translate(-50%, -100%); margin-top: -6px;
+  }
+  .heatmap-tooltip::after {
+    content: ''; position: absolute; top: 100%; left: 50%;
+    margin-left: -4px; border: 4px solid transparent;
+    border-top-color: #1e293b;
+  }
+  .tab-btn { cursor: pointer; color: #94a3b8; padding-bottom: 4px; font-weight: 600; transition: all 0.2s; }
+  .tab-btn.active { color: #1e3a8a; border-bottom: 2px solid #1e3a8a; font-weight: 700; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+</style>
+</head>
+<body class="bg-slate-50 font-display min-h-screen flex flex-col">
+
+<!-- Header -->
+<header class="w-full bg-ug-blue py-4 px-6 shadow-lg">
+  <div class="max-w-5xl mx-auto flex items-center justify-between gap-4">
+    <div class="flex items-center gap-4">
+      <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow overflow-hidden">
+        <img alt="VIDA UG" class="w-4/5 h-4/5 object-contain" src="assets/logo_vida_ug.png"/>
+      </div>
+      <div class="hidden sm:block">
+        <p class="text-white text-sm font-bold tracking-tight" id="user-nombre-header">Organización</p>
+        <p class="text-white/50 text-[10px] uppercase tracking-wider">Organización</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <span id="user-rol-badge" class="text-white/60 text-xs hidden sm:block">Organización</span>
+      <button id="btn-logout" title="Cerrar sesión" class="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/70 hover:text-white transition-all">
+        <span class="material-symbols-outlined text-base">logout</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- Main -->
+<main class="flex-1 px-4 py-8">
+  <div class="max-w-3xl mx-auto space-y-6">
+
+    <!-- Organization Card -->
+    <div class="bg-white rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.07)] border border-slate-100 overflow-hidden">
+      <div class="px-6 py-6 sm:px-8 sm:py-8">
+        <div class="flex items-start gap-4">
+          <div class="w-14 h-14 bg-ug-blue/10 rounded-2xl flex items-center justify-center shrink-0">
+            <span class="material-symbols-outlined text-ug-blue text-3xl">groups</span>
+          </div>
+          <div>
+            <h1 class="text-xl font-bold text-slate-900" id="org-nombre">—</h1>
+            <p class="text-sm text-slate-500">Organización</p>
+          </div>
+        </div>
+
+        <div class="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div class="bg-ug-blue/5 rounded-xl p-5 border border-ug-blue/10">
+            <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Capturas totales</p>
+            <p class="text-3xl font-bold text-ug-blue mt-1" id="stat-capturas">0</p>
+          </div>
+          <div class="bg-green-50 rounded-xl p-5 border border-green-100">
+            <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Completados</p>
+            <p class="text-3xl font-bold text-green-600 mt-1" id="stat-completados">0</p>
+          </div>
+          <div class="bg-amber-50 rounded-xl p-5 border border-amber-100">
+            <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Este mes</p>
+            <p class="text-3xl font-bold text-amber-600 mt-1" id="stat-this-month">0</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Heatmap -->
+    <div class="bg-white rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.07)] border border-slate-100 overflow-hidden">
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
+        <span class="material-symbols-outlined text-ug-blue text-xl">calendar_month</span>
+        <h2 class="text-base font-semibold text-slate-800">Actividad de la organización</h2>
+      </div>
+      <div id="heatmap-container" class="px-6 py-5 overflow-x-auto hidden"></div>
+      <div id="heatmap-loading" class="px-6 py-8 text-center text-slate-400 text-sm">
+        <span class="material-symbols-outlined text-2xl block mb-1 animate-pulse">hourglass_empty</span>
+        Cargando actividad…
+      </div>
+    </div>
+
+    <!-- Leaders card -->
+    <div id="org-leaders-card" class="bg-white rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.07)] border border-slate-100 overflow-hidden hidden">
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
+        <span class="material-symbols-outlined text-amber-600 text-xl">star</span>
+        <h2 class="text-base font-semibold text-slate-800">Líderes</h2>
+      </div>
+      <div id="leaders-list" class="divide-y divide-slate-100">
+        <div class="px-6 py-4 text-slate-400 text-sm">Cargando…</div>
+      </div>
+    </div>
+
+    <!-- Members card -->
+    <div id="org-members-card" class="bg-white rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.07)] border border-slate-100 overflow-hidden hidden">
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
+        <span class="material-symbols-outlined text-blue-600 text-xl">group</span>
+        <h2 class="text-base font-semibold text-slate-800">Miembros</h2>
+      </div>
+      <div id="members-list" class="divide-y divide-slate-100">
+        <div class="px-6 py-4 text-slate-400 text-sm">Cargando…</div>
+      </div>
+    </div>
+
+    <!-- Info banner (for redirect from socioeconomico with missing guest_ctx) -->
+    <div id="info-banner" class="hidden bg-blue-50 border border-blue-200 rounded-xl px-5 py-4 flex items-start gap-3" role="alert">
+      <span class="material-symbols-outlined text-blue-400 text-xl mt-0.5 shrink-0">info</span>
+      <p class="text-blue-700 text-sm leading-relaxed">Ingresá tu nombre para continuar con la captura.</p>
+    </div>
+
+    <!-- Guest Volunteer Form — only visible when logged in as organizacion -->
+    <div id="guest-form-container" class="hidden bg-white rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.07)] border border-slate-100 overflow-hidden">
+      <div class="px-6 py-5 border-b border-slate-100 flex items-center gap-3">
+        <span class="material-symbols-outlined text-ug-blue text-xl">person_add</span>
+        <h2 class="text-base font-semibold text-slate-800">Capturar como voluntario</h2>
+      </div>
+      <form id="guest-form" class="px-6 py-5 space-y-4" novalidate>
+        <div class="space-y-2">
+          <label class="block text-sm font-semibold text-slate-700" for="guest-nombre">
+            Nombre del voluntario <span class="text-red-400">*</span>
+          </label>
+          <div class="relative">
+            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl pointer-events-none">badge</span>
+            <input
+              id="guest-nombre" name="guest-nombre" type="text" autocomplete="off"
+              placeholder="Ej: María López"
+              minlength="2" maxlength="120"
+              class="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-ug-blue focus:outline-none transition-colors text-slate-900 placeholder:text-slate-400 text-sm"
+            />
+          </div>
+          <p id="guest-nombre-error" class="hidden text-red-600 text-sm" role="alert"></p>
+        </div>
+
+        <div class="space-y-2">
+          <label class="block text-sm font-semibold text-slate-700" for="guest-contacto">
+            Teléfono de contacto <span class="text-slate-400 text-xs">(opcional)</span>
+          </label>
+          <div class="relative">
+            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl pointer-events-none">call</span>
+            <input
+              id="guest-contacto" name="guest-contacto" type="tel" autocomplete="off"
+              placeholder="4771234567"
+              maxlength="10" pattern="[0-9]{10}"
+              class="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-ug-blue focus:outline-none transition-colors text-slate-900 placeholder:text-slate-400 text-sm"
+            />
+          </div>
+        </div>
+
+        <div id="guest-form-error" class="hidden text-red-600 text-sm bg-red-50 border border-red-200 rounded-lg px-4 py-3" role="alert"></div>
+
+        <button
+          id="btn-continuar-captura" type="submit"
+          class="w-full py-4 bg-ug-blue hover:bg-ug-blue/90 active:scale-[0.98] text-white font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 group disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          <span class="material-symbols-outlined text-xl group-hover:translate-x-1 transition-transform">arrow_forward</span>
+          <span>Comenzar Captura</span>
+        </button>
+      </form>
+    </div>
+
+    <!-- Error banner for API -->
+    <div id="error-banner" class="hidden bg-red-50 border border-red-200 rounded-xl px-5 py-4 flex items-start gap-3" role="alert">
+      <span class="material-symbols-outlined text-red-400 text-xl mt-0.5 shrink-0">error</span>
+      <p id="error-text" class="text-red-700 text-sm leading-relaxed"></p>
+    </div>
+
+    <!-- Tabs: Beneficiarios / Voluntarios -->
+    <div class="bg-white rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.07)] border border-slate-100 overflow-hidden">
+      <div class="px-6 py-3 border-b border-slate-100 flex items-center gap-6">
+        <button class="tab-btn active text-sm font-semibold" data-tab="tab-beneficiarios">Beneficiarios</button>
+        <button class="tab-btn text-sm font-semibold" data-tab="tab-voluntarios">Voluntarios</button>
+      </div>
+
+      <!-- Beneficiarios tab -->
+      <div id="tab-beneficiarios" class="tab-content active">
+        <div class="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
+          <span class="material-symbols-outlined text-ug-blue text-xl">assignment</span>
+          <h2 class="text-base font-semibold text-slate-800">Capturas de la organización</h2>
+          <span id="count-capturas" class="text-xs font-bold text-ug-blue bg-ug-blue/10 rounded-full px-2.5 py-0.5">0</span>
+        </div>
+        <div id="beneficiarios-list" class="divide-y divide-slate-100">
+          <div id="loading-state" class="px-6 py-10 text-center text-slate-400 text-sm">
+            <span class="material-symbols-outlined text-3xl block mb-2 animate-pulse">hourglass_empty</span>
+            Cargando capturas…
+          </div>
+          <div id="empty-state" class="hidden px-6 py-12 text-center">
+            <span class="material-symbols-outlined text-5xl block mb-3 text-slate-300">assignment_add</span>
+            <p class="font-semibold text-slate-500">No hay capturas registradas</p>
+            <p class="text-sm text-slate-400 mt-1">Ingresá un voluntario para comenzar.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Voluntarios tab -->
+      <div id="tab-voluntarios" class="tab-content">
+        <div class="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
+          <span class="material-symbols-outlined text-ug-blue text-xl">diversity_3</span>
+          <h2 class="text-base font-semibold text-slate-800">Voluntarios</h2>
+        </div>
+        <div id="voluntarios-body" class="divide-y divide-slate-100">
+          <div id="vol-loading" class="px-6 py-10 text-center text-slate-400 text-sm">
+            <span class="material-symbols-outlined text-2xl block mb-1 animate-pulse">hourglass_empty</span>
+            Cargando voluntarios…
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Footer -->
+<footer class="w-full bg-gradient-to-b from-ug-yellow via-ug-yellow to-ug-yellow-light">
+  <div class="py-4 px-6">
+    <div class="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div class="flex items-center gap-2 text-ug-blue/70">
+        <span class="material-symbols-outlined text-base">code</span>
+        <span class="text-xs font-medium">Desarrollado por <strong class="text-ug-blue font-bold">NEUXORA - C-MED</strong> · León, Gto.</span>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // ── Auth guard ──────────────────────────────────────────────────────────────
+  const session = _getSession();
+  if (!session?.token) {
+    window.location.replace('login.html');
+  }
+
+  // Resolve org_id from URL or from user's profile
+  const urlParams = new URLSearchParams(window.location.search);
+  let orgIdFromUrl = urlParams.get('org_id') ? parseInt(urlParams.get('org_id'), 10) : null;
+
+  // Show guest form only for actual organizacion users (not for visitors viewing the org)
+  if (session?.rol === 'organizacion') {
+    document.getElementById('guest-form-container').classList.remove('hidden');
+  }
+
+  // Show info banner if redirected due to missing guest_ctx
+  if (window.location.search.includes('reason=missing_guest')) {
+    document.getElementById('info-banner').classList.remove('hidden');
+    document.getElementById('guest-nombre').focus();
+  }
+
+  // ── Logout ──────────────────────────────────────────────────────────────────
+  document.getElementById('btn-logout').addEventListener('click', function () {
+    _clearAllStorage();
+    window.location.href = 'login.html';
+  });
+
+  // ── Guest form ──────────────────────────────────────────────────────────────
+  document.getElementById('guest-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    _clearGuestError();
+
+    const nombre   = document.getElementById('guest-nombre').value.trim();
+    const contacto = document.getElementById('guest-contacto').value.trim();
+
+    if (!nombre || nombre.length < 2) {
+      _showGuestError('El nombre del voluntario es obligatorio (mínimo 2 caracteres).');
+      return;
+    }
+    if (nombre.length > 120) {
+      _showGuestError('El nombre del voluntario no puede exceder 120 caracteres.');
+      return;
+    }
+
+    const guestCtx = { nombre };
+    if (contacto) {
+      guestCtx.contacto = contacto;
+    }
+
+    localStorage.setItem('guest_ctx', JSON.stringify(guestCtx));
+    window.location.href = 'Capturista-view/seleccion-region.html';
+  });
+
+  // ── Tab switching ───────────────────────────────────────────────────────────
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', function () {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      this.classList.add('active');
+      document.getElementById(this.dataset.tab).classList.add('active');
+    });
+  });
+
+  // ── Load org data ───────────────────────────────────────────────────────────
+  loadOrgData();
+
+  async function loadOrgData() {
+    try {
+      // If no org_id in URL, resolve from user's profile (for organizacion users)
+      if (!orgIdFromUrl) {
+        const perfilRes = await fetch('/api/me/perfil', {
+          headers: { 'Authorization': 'Bearer ' + session.token }
+        });
+        if (perfilRes.status === 401) { _clearAllStorage(); window.location.href = 'login.html'; return; }
+        if (!perfilRes.ok) throw new Error('HTTP ' + perfilRes.status);
+        const perfil = await perfilRes.json();
+        const orgs = [...(perfil.organizaciones_lider || []), ...(perfil.organizaciones_miembro || [])];
+        if (orgs.length > 0) {
+          orgIdFromUrl = orgs[0].id;
+        } else {
+          _showError('No estás asociado a ninguna organización.');
+          return;
+        }
+      }
+
+      // Load organization detail
+      const orgRes = await fetch(`/api/organizaciones/${orgIdFromUrl}`, {
+        headers: { 'Authorization': 'Bearer ' + session.token }
+      });
+      if (orgRes.status === 401) { _clearAllStorage(); window.location.href = 'login.html'; return; }
+      if (orgRes.status === 404) { _showError('Organización no encontrada.'); return; }
+      if (!orgRes.ok) throw new Error('HTTP ' + orgRes.status);
+      const org = await orgRes.json();
+
+      // Populate org info
+      document.getElementById('org-nombre').textContent = org.nombre;
+      document.getElementById('user-nombre-header').textContent = org.nombre;
+      document.getElementById('stat-capturas').textContent = org.stats?.total_capturas || 0;
+      document.getElementById('stat-completados').textContent = '—';
+      document.getElementById('stat-this-month').textContent = org.stats?.this_month || 0;
+
+      // Load beneficiaries (hide loading, show empty for now — no per-org endpoint yet)
+      const listEl   = document.getElementById('beneficiarios-list');
+      const loading  = document.getElementById('loading-state');
+      const empty    = document.getElementById('empty-state');
+      loading.classList.add('hidden');
+      empty.classList.remove('hidden');
+      document.getElementById('count-capturas').textContent = '0';
+
+      // Render leaders
+      if (org.lideres && org.lideres.length > 0) {
+        document.getElementById('org-leaders-card').classList.remove('hidden');
+        document.getElementById('leaders-list').innerHTML = org.lideres.map(l => `
+          <div class="px-6 py-3 flex items-center gap-3">
+            <div class="w-9 h-9 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-sm shrink-0">
+              ${_initial(l.nombre)}
+            </div>
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-semibold text-slate-900 truncate">${_esc(l.nombre)}</p>
+              <p class="text-xs text-slate-500 truncate">${_esc(l.email)}</p>
+            </div>
+            <span class="text-xs font-medium text-amber-700 bg-amber-50 rounded-full px-2.5 py-0.5">Líder</span>
+          </div>
+        `).join('');
+      }
+
+      // Render members
+      if (org.miembros && org.miembros.length > 0) {
+        document.getElementById('org-members-card').classList.remove('hidden');
+        document.getElementById('members-list').innerHTML = org.miembros.map(m => `
+          <div class="px-6 py-3 flex items-center gap-3">
+            <div class="w-9 h-9 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm shrink-0">
+              ${_initial(m.nombre)}
+            </div>
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-semibold text-slate-900 truncate">${_esc(m.nombre)}</p>
+              <p class="text-xs text-slate-500 truncate">${_esc(m.email)}</p>
+            </div>
+            <span class="text-xs font-medium text-blue-700 bg-blue-50 rounded-full px-2.5 py-0.5">Miembro</span>
+          </div>
+        `).join('');
+      }
+
+      // Load org-specific heatmap
+      loadOrgHeatmap(orgIdFromUrl);
+
+      // Load org-specific voluntarios
+      loadOrgVoluntarios(orgIdFromUrl);
+
+    } catch (_) {
+      _showError('No se pudieron cargar los datos de la organización.');
+    }
+  }
+
+  async function loadOrgDetail(orgId) {
+    try {
+      const res = await fetch(`/api/organizaciones/${orgId}`, {
+        headers: { 'Authorization': 'Bearer ' + session.token }
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const org = await res.json();
+
+      // Render leaders
+      const leaders = org.lideres || [];
+      if (leaders.length > 0) {
+        document.getElementById('org-leaders-card').classList.remove('hidden');
+        document.getElementById('leaders-list').innerHTML = leaders.map(l => `
+          <div class="px-6 py-3 flex items-center gap-3">
+            <div class="w-9 h-9 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-sm shrink-0">
+              ${_initial(l.nombre)}
+            </div>
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-semibold text-slate-900 truncate">${_esc(l.nombre)}</p>
+              <p class="text-xs text-slate-500 truncate">${_esc(l.email)}</p>
+            </div>
+            <span class="text-xs font-medium text-amber-700 bg-amber-50 rounded-full px-2.5 py-0.5">Líder</span>
+          </div>
+        `).join('');
+      }
+
+      // Render members
+      const members = org.miembros || [];
+      if (members.length > 0) {
+        document.getElementById('org-members-card').classList.remove('hidden');
+        document.getElementById('members-list').innerHTML = members.map(m => `
+          <div class="px-6 py-3 flex items-center gap-3">
+            <div class="w-9 h-9 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm shrink-0">
+              ${_initial(m.nombre)}
+            </div>
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-semibold text-slate-900 truncate">${_esc(m.nombre)}</p>
+              <p class="text-xs text-slate-500 truncate">${_esc(m.email)}</p>
+            </div>
+            <span class="text-xs font-medium text-blue-700 bg-blue-50 rounded-full px-2.5 py-0.5">Miembro</span>
+          </div>
+        `).join('');
+      }
+    } catch (_) {
+      // Silently fail — leaders/members are supplementary
+      console.error("Error loading org detail");
+    }
+  }
+
+  // ── Heatmap ──────────────────────────────────────────────────────────────────
+  async function loadOrgHeatmap(orgId) {
+    const container = document.getElementById('heatmap-container');
+    const loading   = document.getElementById('heatmap-loading');
+    if (!orgId) return;
+    try {
+      const res = await fetch(`/api/organizaciones/${orgId}/heatmap`, {
+        headers: { 'Authorization': 'Bearer ' + session.token }
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      loading.classList.add('hidden');
+      container.classList.remove('hidden');
+      container.innerHTML = _renderHeatmapSVG(data);
+    } catch (_) {
+      loading.textContent = 'No se pudo cargar la actividad.';
+    }
+  }
+
+  function _renderHeatmapSVG(data) {
+    const lookup = {};
+    data.forEach(d => { lookup[d.date] = d.count; });
+    const cellSize = 13, cellGap = 3, step = cellSize + cellGap, cols = 53;
+    const svgW = cols * step + 30, svgH = 7 * step + 20;
+    const today = new Date();
+    const days = [];
+    for (let i = 364; i >= 0; i--) {
+      const d = new Date(today); d.setDate(d.getDate() - i);
+      const dateStr = d.toISOString().slice(0, 10);
+      days.push({ date: d, dateStr, count: lookup[dateStr] || 0 });
+    }
+
+    const heatColors = ['#ebedf0','#9be9a8','#40c463','#30a14e','#216e39'];
+    let svg = `<svg width="${svgW}" height="${svgH}" xmlns="http://www.w3.org/2000/svg">`;
+    const months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    let lastMonth = -1;
+    for (let i = 0; i < days.length; i++) {
+      const m = days[i].date.getMonth();
+      if (m !== lastMonth) { lastMonth = m; svg += `<text x="${Math.floor(i/7)*step+2}" y="10" fill="#94a3b8" font-size="10">${months[m]}</text>`; }
+    }
+    for (let i = 0; i < days.length; i++) {
+      const col = Math.floor(i / 7), row = i % 7;
+      const x = col * step + 2, y = row * step + 18;
+      const count = days[i].count;
+      const color = count === 0 ? heatColors[0] : count <= 2 ? heatColors[1] : count <= 5 ? heatColors[2] : count <= 9 ? heatColors[3] : heatColors[4];
+      const tip = `${days[i].dateStr}: ${count} captura${count !== 1 ? 's' : ''}`;
+      svg += `<rect x="${x}" y="${y}" width="${cellSize}" height="${cellSize}" rx="2" fill="${color}"
+        onmouseenter="showTip(event,'${_esc(tip)}')" onmouseleave="hideTip()" style="cursor:pointer"/>`;
+    }
+    svg += '</svg>';
+    const legend = '<div class="flex items-center gap-2 mt-4 text-xs text-slate-400 justify-end"><span>Menos</span>' +
+      heatColors.map(c => `<span class="heatmap-cell inline-block" style="background:${c}"></span>`).join('') + '<span>Más</span></div>';
+    return svg + legend;
+  }
+
+  function showTip(ev, text) {
+    let tip = document.getElementById('htip');
+    if (!tip) { tip = document.createElement('div'); tip.id = 'htip'; tip.className = 'heatmap-tooltip'; document.body.appendChild(tip); }
+    tip.textContent = text; tip.style.left = ev.pageX + 'px'; tip.style.top = ev.pageY + 'px'; tip.style.display = 'block';
+  }
+  function hideTip() { const tip = document.getElementById('htip'); if (tip) tip.style.display = 'none'; }
+
+  // ── Voluntarios ─────────────────────────────────────────────────────────────
+  async function loadOrgVoluntarios(orgId) {
+    const body = document.getElementById('voluntarios-body');
+    if (!orgId) return;
+    try {
+      const res = await fetch(`/api/organizaciones/${orgId}/voluntarios`, {
+        headers: { 'Authorization': 'Bearer ' + session.token }
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const voluntarios = await res.json();
+      document.getElementById('vol-loading').classList.add('hidden');
+
+      if (voluntarios.length === 0) {
+        body.innerHTML = '<div class="px-6 py-10 text-center text-slate-400 text-sm">No hay voluntarios registrados.</div>';
+        return;
+      }
+
+      const html = voluntarios.map(v => `
+        <div class="px-6 py-4 flex items-center justify-between border-b border-slate-100">
+          <div>
+            <p class="font-semibold text-slate-900">${_esc(v.nombre)}</p>
+            <p class="text-xs text-slate-500">
+              ${v.capturas} captura${v.capturas !== 1 ? 's' : ''}
+              ${v.contacto ? '· ' + _esc(v.contacto) : ''}
+            </p>
+          </div>
+          <span class="bg-ug-blue/10 text-ug-blue text-xs font-bold px-3 py-1 rounded-full">${v.capturas}</span>
+        </div>
+      `).join('');
+      body.innerHTML = html;
+    } catch (_) {
+      body.innerHTML = '<div class="px-6 py-8 text-center text-red-500 text-sm">Error al cargar voluntarios.</div>';
+    }
+  }
+
+  // ── Helpers ─────────────────────────────────────────────────────────────────
+
+  function _getSession() {
+    try { return JSON.parse(localStorage.getItem('session') || 'null'); }
+    catch (_) { return null; }
+  }
+
+  function _esc(str) {
+    return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function _initial(nombre) {
+    const s = String(nombre || '').trim();
+    if (!s) return '?';
+    return s.split(/\s+/).slice(0, 2).map(p => p.charAt(0).toUpperCase()).join('');
+  }
+
+  function _showGuestError(msg) {
+    const el = document.getElementById('guest-nombre-error');
+    el.textContent = msg;
+    el.classList.remove('hidden');
+    document.getElementById('guest-nombre').classList.add('border-red-400');
+  }
+
+  function _clearGuestError() {
+    document.getElementById('guest-nombre-error').classList.add('hidden');
+    document.getElementById('guest-nombre').classList.remove('border-red-400');
+    document.getElementById('guest-form-error').classList.add('hidden');
+  }
+
+  function _showError(msg) {
+    const banner = document.getElementById('error-banner');
+    const text   = document.getElementById('error-text');
+    text.textContent = msg;
+    banner.classList.remove('hidden');
+  }
+
+  function _clearAllStorage() {
+    localStorage.removeItem('session');
+    localStorage.removeItem('region_ctx');
+    localStorage.removeItem('estudio_id');
+    localStorage.removeItem('beneficiario_id');
+    localStorage.removeItem('solicitud_id');
+    localStorage.removeItem('guest_ctx');
+  }
+</script>
+</body>
+</html>

@@ -55,13 +55,13 @@
     <!-- Logos (compact) -->
     <div class="flex items-center gap-4">
       <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow overflow-hidden">
-        <img alt="UG" class="w-4/5 h-4/5 object-contain" src="assets/Logo_ug.png"/>
+        <img alt="UG" class="w-4/5 h-4/5 object-contain" src="../assets/Logo_ug.png"/>
       </div>
       <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow overflow-hidden">
-        <img alt="Rotary" class="w-4/5 h-4/5 object-contain" src="assets/Logo_rotary_200.png"/>
+        <img alt="Rotary" class="w-4/5 h-4/5 object-contain" src="../assets/Logo_rotary_200.png"/>
       </div>
       <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow overflow-hidden">
-        <img alt="VIDA UG" class="w-4/5 h-4/5 object-contain" src="assets/logo_vida_ug.png"/>
+        <img alt="VIDA UG" class="w-4/5 h-4/5 object-contain" src="../assets/logo_vida_ug.png"/>
       </div>
     </div>
 
@@ -205,7 +205,7 @@
   // ── Auth guard ──────────────────────────────────────────────────────────────
   const session = _getSession();
   if (!session?.token) {
-    window.location.replace('login.html');
+    window.location.replace('../login.html');
   }
 
   // Populate header user info
@@ -216,7 +216,7 @@
   document.getElementById('btn-logout').addEventListener('click', function () {
     localStorage.removeItem('session');
     localStorage.removeItem('region_ctx');
-    window.location.href = 'login.html';
+    window.location.href = '../login.html';
   });
 
   // ── Load países on page load ────────────────────────────────────────────────
@@ -317,10 +317,18 @@
       sede,
     }));
 
-    // Route by role: tecnico goes to technical exam, capturista to socioeconomic
+    // Route by role
     if (session.rol === 'tecnico') {
       localStorage.removeItem('beneficiario_id');
-      window.location.href = 'vista_tecnicos.html';
+      window.location.href = '../Tecnico-view/vista_tecnicos.html';
+    } else if (session.rol === 'organizacion') {
+      // Must have guest_ctx to proceed
+      const guestCtx = JSON.parse(localStorage.getItem('guest_ctx') || 'null');
+      if (!guestCtx?.nombre) {
+        window.location.href = '../perfil-organizacion.html?reason=missing_guest';
+        return;
+      }
+      window.location.href = 'socioeconomico.html';
     } else {
       window.location.href = 'socioeconomico.html';
     }
@@ -340,7 +348,7 @@
   }
 
   function _formatRol(rol) {
-    const map = { admin: 'Administrador', capturista: 'Capturista', tecnico: 'Técnico' };
+    const map = { admin: 'Administrador', capturista: 'Capturista', tecnico: 'Técnico', organizacion: 'Organización' };
     return map[rol] || rol || '—';
   }
 

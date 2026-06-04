@@ -4,9 +4,9 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-TECNICA_FILE = ROOT / "front" / "tecnica.html"
-ADMIN_USERS_FILE = ROOT / "front" / "admin-usuarios.html"
-REGION_FILE = ROOT / "front" / "seleccion-region.html"
+TECNICA_FILE = ROOT / "front" / "Tecnico-view" / "vista_tecnicos.html"
+ADMIN_USERS_FILE = ROOT / "front" / "Admin-view" / "admin-usuarios.html"
+REGION_FILE = ROOT / "front" / "Capturista-view" / "seleccion-region.html"
 
 
 def _read(path: Path) -> str:
@@ -63,5 +63,5 @@ def test_region_flow_routes_tecnico_to_workbench_without_beneficiario_dependency
     html = _read(REGION_FILE)
 
     assert "if (session.rol === 'tecnico')" in html
-    assert "window.location.href = 'tecnica.html';" in html
+    assert "window.location.href = '../Tecnico-view/vista_tecnicos.html';" in html
     assert "localStorage.removeItem('beneficiario_id');" in html

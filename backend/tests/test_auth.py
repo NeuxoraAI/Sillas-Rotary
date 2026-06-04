@@ -92,6 +92,20 @@ class TestLogin:
         assert res.status_code == 200
         assert res.json()["rol"] == "capturista"
 
+    def test_login_organizacion_returns_organizacion_rol(self, client, organizacion_user):
+        """Organización login returns correct rol."""
+        res = client.post("/api/auth/login", json={
+            "email": "org@test.mx",
+            "password": "orgpass123",
+        })
+
+        assert res.status_code == 200
+        data = res.json()
+        assert data["rol"] == "organizacion"
+        assert data["nombre"] == "Organización Test"
+        assert "usuario_id" in data
+        assert "access_token" in data
+
 
 class TestGetMe:
     """GET /api/auth/me scenarios."""

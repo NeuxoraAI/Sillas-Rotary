@@ -239,10 +239,14 @@
     if (rol === 'admin') {
       window.location.href = 'admin-beneficiarios.html';
     } else if (rol === 'tecnico') {
-      window.location.href = 'vista_tecnicos.html';
+      window.location.href = 'Tecnico-view/vista_tecnicos.html';
+    } else if (rol === 'organizacion') {
+      window.location.href = 'perfil-organizacion.html';
+    } else if (rol === 'capturista') {
+      // capturista goes to their profile first, then can start capturing
+      window.location.href = 'Capturista-view/perfil-capturista.html';
     } else {
-      // capturista needs to select region before their form
-      window.location.href = 'seleccion-region.html';
+      window.location.href = 'Capturista-view/seleccion-region.html';
     }
   }
 
