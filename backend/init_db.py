@@ -62,6 +62,7 @@ DDL = [
     CREATE TABLE IF NOT EXISTS estudios_socioeconomicos (
         id                      SERIAL PRIMARY KEY,
         beneficiario_id         INTEGER NOT NULL REFERENCES beneficiarios(id) ON DELETE RESTRICT,
+        usuario_id              INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE RESTRICT,
         -- DEPRECATED v1: capturista_id column retained in live DB for backward
         -- compatibility.  New code uses usuario_id (managed by Supabase migrations).
         -- capturista_id       INTEGER REFERENCES capturistas(id) ON DELETE RESTRICT,
@@ -79,13 +80,15 @@ DDL = [
         comprobante_domicilio_url  TEXT,
         status                  TEXT    NOT NULL DEFAULT 'borrador' CHECK(status IN ('borrador', 'completo')),
         created_at              TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-        updated_at              TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        updated_at              TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        CONSTRAINT uq_estudio_beneficiario_usuario UNIQUE (beneficiario_id, usuario_id)
     )
     """,
     """
     CREATE TABLE IF NOT EXISTS solicitudes_tecnicas (
         id                          SERIAL PRIMARY KEY,
         beneficiario_id             INTEGER NOT NULL REFERENCES beneficiarios(id) ON DELETE RESTRICT,
+        usuario_id                  INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE RESTRICT,
         -- DEPRECATED v1: capturista_id column retained in live DB for backward
         -- compatibility.  New code uses usuario_id (managed by Supabase migrations).
         -- capturista_id           INTEGER REFERENCES capturistas(id) ON DELETE RESTRICT,
@@ -109,7 +112,8 @@ DDL = [
         justificacion               TEXT,
         status                      TEXT    NOT NULL DEFAULT 'borrador' CHECK(status IN ('borrador', 'completo')),
         created_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-        updated_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        updated_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        CONSTRAINT uq_solicitud_beneficiario_usuario UNIQUE (beneficiario_id, usuario_id)
     )
     """,
     """

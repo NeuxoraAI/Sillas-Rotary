@@ -2456,6 +2456,15 @@
         }, 1800);
       }
 
+      let estudioSubmitInProgress = false;
+
+      function setEstudioSubmitState(isSubmitting) {
+        const submitBtn = document.querySelector('button[type="submit"]');
+        if (!submitBtn) return;
+        submitBtn.disabled = isSubmitting;
+        submitBtn.textContent = isSubmitting ? "Guardando..." : "GUARDAR ESTUDIO";
+      }
+
       async function submitEstudio(status) {
         const errorEl = document.getElementById("error-msg");
         errorEl.classList.add("hidden");
@@ -2853,6 +2862,7 @@
             // for gestion.html to close the full flow; keep beneficiario_id for tecnica.html
             if (status === "completo") {
               showSuccessToast("Estudio guardado correctamente", "tecnica.html");
+              return true;
             } else {
               showSuccessToast("Borrador guardado correctamente", null);
             }
@@ -2923,6 +2933,7 @@
               // Estudio completed — keep estudio_id for gestion.html
               // keep beneficiario_id for tecnica.html
               showSuccessToast("Estudio guardado correctamente", "tecnica.html");
+              return true;
             } else {
               // Borrador saved — keep both IDs for later resumption
               showSuccessToast("Borrador guardado correctamente", null);
@@ -2998,9 +3009,20 @@
         });
 
       // Guardar Estudio (submit)
-      document.querySelector("form").addEventListener("submit", (e) => {
+      document.querySelector("form").addEventListener("submit", async (e) => {
         e.preventDefault();
-        submitEstudio("completo");
+        if (estudioSubmitInProgress) return;
+        estudioSubmitInProgress = true;
+        setEstudioSubmitState(true);
+        let keepDisabled = false;
+        try {
+          keepDisabled = await submitEstudio("completo") === true;
+        } finally {
+          if (!keepDisabled) {
+            estudioSubmitInProgress = false;
+            setEstudioSubmitState(false);
+          }
+        }
       });
     </script>
 
