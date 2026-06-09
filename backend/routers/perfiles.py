@@ -222,14 +222,45 @@ def get_my_beneficiarios(
     rows = db.execute(
         """
         SELECT
-            e.id         AS estudio_id,
-            b.folio,
-            b.nombre     AS beneficiario_nombre,
-            b.ciudad,
+            e.id                      AS estudio_id,
+            e.beneficiario_id,
+            e.usuario_id,
+            e.otras_fuentes_ingreso,
+            e.monto_otras_fuentes,
+            e.tuvo_silla_previa,
+            e.como_obtuvo_silla,
             e.elaboro_estudio,
             e.fecha_estudio,
+            e.sede,
+            e.ciudad_registro,
+            e.credencial_path,
+            e.credencial_url,
+            e.comprobante_domicilio_path,
+            e.comprobante_domicilio_url,
             e.status,
-            e.created_at
+            e.finalizado_at,
+            e.created_at,
+            e.updated_at,
+            b.id                      AS beneficiario_id,
+            b.nombre                  AS beneficiario_nombre,
+            b.nombres,
+            b.apellido_paterno,
+            b.apellido_materno,
+            b.fecha_nacimiento,
+            b.diagnostico,
+            b.calle,
+            b.num_ext,
+            b.num_int,
+            b.colonia,
+            b.ciudad,
+            b.estado_codigo,
+            b.estado_nombre,
+            b.sexo,
+            b.telefonos,
+            b.email,
+            b.folio,
+            b.region_id,
+            b.created_at              AS beneficiario_created_at
         FROM estudios_socioeconomicos e
         JOIN beneficiarios b ON b.id = e.beneficiario_id
         WHERE e.usuario_id = %s
@@ -238,19 +269,60 @@ def get_my_beneficiarios(
         (user.usuario_id,),
     ).fetchall()
 
-    return [
-        {
-            "estudio_id": r["estudio_id"],
-            "folio": r["folio"],
-            "beneficiario_nombre": r["beneficiario_nombre"],
+    # Get all tutors for these beneficiaries in one query
+    beneficiario_ids = list({r["beneficiario_id"] for r in rows})
+    tutors_by_beneficiario: dict[int, list[dict]] = {}
+    if beneficiario_ids:
+        placeholders = ",".join(["%s"] * len(beneficiario_ids))
+        tutor_rows = db.execute(
+            f"""
+            SELECT * FROM tutores
+            WHERE beneficiario_id IN ({placeholders})
+            ORDER BY numero_tutor
+            """,
+            tuple(beneficiario_ids),
+        ).fetchall()
+        for t in tutor_rows:
+            bid = t["beneficiario_id"]
+            tutors_by_beneficiario.setdefault(bid, []).append(dict(t))
+
+    result = []
+    for r in rows:
+        estudio = dict(r)
+        # Remove duplicated columns
+        estudio.pop("beneficiario_id", None)
+        estudio["beneficiario"] = {
+            "id": r["beneficiario_id"],
+            "nombre": r["beneficiario_nombre"],
+            "nombres": r["nombres"],
+            "apellido_paterno": r["apellido_paterno"],
+            "apellido_materno": r["apellido_materno"],
+            "fecha_nacimiento": str(r["fecha_nacimiento"]) if r["fecha_nacimiento"] else None,
+            "diagnostico": r["diagnostico"],
+            "calle": r["calle"],
+            "num_ext": r["num_ext"],
+            "num_int": r["num_int"],
+            "colonia": r["colonia"],
             "ciudad": r["ciudad"],
-            "elaboro_estudio": r["elaboro_estudio"],
-            "fecha_estudio": str(r["fecha_estudio"]) if r["fecha_estudio"] else None,
-            "status": r["status"],
-            "edit_url": f"socioeconomico.html?estudio_id={r['estudio_id']}",
+            "estado_codigo": r["estado_codigo"],
+            "estado_nombre": r["estado_nombre"],
+            "telefonos": r["telefonos"],
+            "email": r["email"],
+            "sexo": r["sexo"],
+            "folio": r["folio"],
+            "region_id": r["region_id"],
         }
-        for r in rows
-    ]
+        estudio["tutores"] = tutors_by_beneficiario.get(r["beneficiario_id"], [])
+        estudio["edit_url"] = f"socioeconomico.html?estudio_id={r['estudio_id']}"
+        # Clean up FastAPI serialization issues
+        for key in list(estudio.keys()):
+            if estudio[key] is None:
+                continue
+            if hasattr(estudio[key], "isoformat"):
+                estudio[key] = estudio[key].isoformat()
+        result.append(estudio)
+
+    return result
 
 
 # ---------------------------------------------------------------------------
