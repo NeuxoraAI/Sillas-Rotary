@@ -867,19 +867,18 @@
             </div>
             <div class="flex flex-col sm:flex-row gap-4">
               <button
-                id="btn-guardar-borrador-estudio"
-                class="hidden px-6 py-3 border border-slate-300 text-slate-700 font-bold hover:bg-slate-50 transition-all uppercase text-sm tracking-wide"
+                id="btn-guardar-borrador"
+                class="px-6 py-3 border border-amber-500 text-amber-700 font-bold hover:bg-amber-50 transition-all uppercase text-sm tracking-wide"
                 type="button"
-                disabled
-                aria-hidden="true"
               >
                 Guardar Borrador
               </button>
               <button
+                id="btn-continuar-estudio"
                 class="px-10 py-3 bg-primary text-white font-bold shadow-lg hover:bg-primary/90 transition-all uppercase text-sm tracking-wide active:scale-95"
-                type="submit"
+                type="button"
               >
-                GUARDAR ESTUDIO
+                CONTINUAR
               </button>
             </div>
           </div>
@@ -2045,7 +2044,16 @@
         const regionCtx = JSON.parse(
           localStorage.getItem("region_ctx") || "null",
         );
-        if (!session?.token || !regionCtx?.region_id) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const isEditMode = urlParams.get("estudio_id");
+        
+        if (!session?.token) {
+          window.location.href = "../login.html";
+          return;
+        }
+        
+        // Allow edit mode without region_ctx (we'll load it from the estudio)
+        if (!isEditMode && !regionCtx?.region_id) {
           window.location.href = "../login.html";
           return;
         }
@@ -2284,6 +2292,7 @@
             console.error("Error loading draft:", err);
           }
         }
+
       })();
 
       // Cambiar capturista / cerrar sesión
@@ -2297,6 +2306,9 @@
             localStorage.removeItem("estudio_id");
             localStorage.removeItem("solicitud_id");
             localStorage.removeItem("guest_ctx");
+            localStorage.removeItem("draft_socioeconomico");
+            localStorage.removeItem("draft_tecnica");
+            localStorage.removeItem("draft_gestion");
             window.location.href = "../login.html";
           }
         });
@@ -2425,6 +2437,407 @@
         };
       }
 
+      // -- Guardar Borrador Maestro (todos los formularios) --
+      async function guardarBorradorMaster() {
+        const btn = document.getElementById("btn-guardar-borrador");
+        const originalText = btn?.textContent || "Guardar Borrador";
+        if (btn) {
+          btn.disabled = true;
+          btn.textContent = "Guardando...";
+        }
+
+        try {
+          const session = JSON.parse(localStorage.getItem("session") || "null");
+          if (!session?.token) {
+            alert("Debes iniciar sesión para guardar el borrador.");
+            return;
+          }
+
+          // 1. Recolectar datos del formulario socioeconómico actual
+          const socioData = getFormData("borrador", {});
+
+          // 2. Mergear con localStorage de otros formularios
+          const draftTecnicaRaw = localStorage.getItem("draft_tecnica");
+          const draftGestionRaw = localStorage.getItem("draft_gestion");
+          const draftTecnica = draftTecnicaRaw ? JSON.parse(draftTecnicaRaw) : {};
+          const draftGestion = draftGestionRaw ? JSON.parse(draftGestionRaw) : {};
+
+          // 3. Armar payload para el backend
+          const estudioId = localStorage.getItem("estudio_id");
+          const solicitudId = localStorage.getItem("solicitud_id");
+          const beneficiarioId = localStorage.getItem("beneficiario_id");
+
+          const payload = {
+            // IDs para UPDATE
+            estudio_id: estudioId ? parseInt(estudioId, 10) : null,
+            solicitud_id: solicitudId ? parseInt(solicitudId, 10) : null,
+            beneficiario_id: beneficiarioId ? parseInt(beneficiarioId, 10) : null,
+            // Region context
+            region_id: socioData.region_id,
+            sede: socioData.sede,
+            ciudad_registro: socioData.ciudad_registro,
+            // Beneficiario
+            nombres: socioData.beneficiario?.nombres || null,
+            apellido_paterno: socioData.beneficiario?.apellido_paterno || null,
+            apellido_materno: socioData.beneficiario?.apellido_materno || null,
+            fecha_nacimiento: socioData.beneficiario?.fecha_nacimiento || null,
+            diagnostico: socioData.beneficiario?.diagnostico || null,
+            calle: socioData.beneficiario?.calle || null,
+            num_ext: socioData.beneficiario?.num_ext || null,
+            num_int: socioData.beneficiario?.num_int || null,
+            colonia: socioData.beneficiario?.colonia || null,
+            ciudad: socioData.beneficiario?.ciudad || null,
+            estado_codigo: socioData.beneficiario?.estado_codigo || null,
+            sexo: socioData.beneficiario?.sexo || null,
+            telefonos: socioData.beneficiario?.telefonos || null,
+            email: socioData.beneficiario?.email || null,
+            // Estudio
+            tuvo_silla_previa: socioData.estudio?.tuvo_silla_previa || null,
+            como_obtuvo_silla: socioData.estudio?.como_obtuvo_silla || null,
+            elaboro_estudio: socioData.estudio?.elaboro_estudio || null,
+            fecha_estudio: socioData.estudio?.fecha_estudio || null,
+            status: "borrador",
+            // Solicitud (técnica)
+            entorno: draftTecnica.entorno || null,
+            control_tronco: draftTecnica.control_tronco || null,
+            control_cabeza: draftTecnica.control_cabeza || null,
+            control_de_piernas: draftTecnica.control_de_piernas || null,
+            observaciones_posturales: draftTecnica.observaciones_posturales || null,
+            altura_total_in: draftTecnica.altura_total_in || null,
+            peso_kg: draftTecnica.peso_kg || null,
+            medida_cabeza_asiento: draftTecnica.medida_cabeza_asiento || null,
+            medida_hombro_asiento: draftTecnica.medida_hombro_asiento || null,
+            medida_prof_asiento: draftTecnica.medida_prof_asiento || null,
+            medida_rodilla_talon: draftTecnica.medida_rodilla_talon || null,
+            medida_ancho_cadera: draftTecnica.medida_ancho_cadera || null,
+            unidad_medida: draftTecnica.unidad_medida || null,
+            // Gestion
+            entidad_solicitante: draftGestion.entidad_solicitante || null,
+            prioridad: draftGestion.prioridad || null,
+            justificacion: draftGestion.justificacion || null,
+          };
+
+          // 4. Llamar al endpoint
+          const res = await fetch("/api/guardar-borrador", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: "Bearer " + session.token,
+            },
+            body: JSON.stringify(payload),
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            // Guardar IDs en localStorage
+            if (data.estudio_id) localStorage.setItem("estudio_id", data.estudio_id);
+            if (data.solicitud_id) localStorage.setItem("solicitud_id", data.solicitud_id);
+            if (data.beneficiario_id) localStorage.setItem("beneficiario_id", data.beneficiario_id);
+            alert("El borrador ha sido guardado con éxito.");
+          } else {
+            const errData = await res.json().catch(() => ({}));
+            if (res.status === 422 && errData.detail) {
+              const errors = Array.isArray(errData.detail)
+                ? errData.detail.map((e) => e.msg || e.message || JSON.stringify(e)).join("; ")
+                : errData.detail;
+              alert("No se pudo guardar el borrador. Verifica los campos: " + errors);
+            } else {
+              alert("Ocurrió un error al guardar el borrador. Intenta nuevamente más tarde.");
+            }
+          }
+        } catch (err) {
+          console.error("Error guardando borrador:", err);
+          alert("Ocurrió un error al guardar el borrador. Intenta nuevamente más tarde.");
+        } finally {
+          if (btn) {
+            btn.disabled = false;
+            btn.textContent = originalText;
+          }
+        }
+      }
+
+      // -- Validación del formulario socioeconómico (extraída de submitEstudio) --
+      function validarFormularioSocioeconomico() {
+        const form = document.querySelector("form");
+        const errorEl = document.getElementById("error-msg");
+        errorEl.classList.add("hidden");
+        errorEl.textContent = "";
+        SR_Validations.clearAllFieldErrors(form);
+
+        // ── Validar campos obligatorios del beneficiario ──
+        const beneficiarioMissing = [];
+        const personalFields = [
+          { id: "nombres", label: "Nombre(s)" },
+          { id: "apellido_paterno", label: "Apellido Paterno" },
+          { id: "apellido_materno", label: "Apellido Materno" },
+          { id: "fecha_nacimiento", label: "Fecha de nacimiento" },
+        ];
+        for (const { id, label } of personalFields) {
+          const el = form.querySelector(`[name="${id}"]`);
+          if (!el || !(el.value || "").trim()) {
+            SR_Validations.showFieldError(id, `${label} es obligatorio`);
+            beneficiarioMissing.push({ id, label });
+          }
+        }
+        if (!form.querySelector('[name="sexo"]:checked')) {
+          SR_Validations.showFieldError("sexo", "Sexo es obligatorio");
+          beneficiarioMissing.push({ id: "sexo", label: "Sexo" });
+        }
+        if (!((form.querySelector('[name="diagnostico"]')?.value || "").trim())) {
+          SR_Validations.showFieldError("diagnostico", "Diagnóstico es obligatorio");
+          beneficiarioMissing.push({ id: "diagnostico", label: "Diagnóstico" });
+        }
+        const domicilioFields = [
+          { id: "calle", label: "Calle" },
+          { id: "num_ext", label: "Número exterior" },
+          { id: "colonia", label: "Colonia" },
+          { id: "ciudad", label: "Ciudad" },
+          { id: "estado_codigo", label: "Estado" },
+        ];
+        for (const { id, label } of domicilioFields) {
+          const el = form.querySelector(`[name="${id}"]`);
+          if (!el || !(el.value || "").trim()) {
+            SR_Validations.showFieldError(id, `${label} es obligatorio`);
+            beneficiarioMissing.push({ id, label });
+          }
+        }
+        const telefonoInput = form.querySelector('[name="telefonos"]');
+        if (telefonoInput) {
+          telefonoInput.value = SR_Validations.sanitizeIntegerInput(telefonoInput.value);
+          if (!SR_Validations.TELEFONO_RE.test(telefonoInput.value.trim())) {
+            SR_Validations.showFieldError("telefonos", "El teléfono debe contener exactamente 10 dígitos numéricos");
+            beneficiarioMissing.push({ id: "telefonos", label: "Teléfono" });
+          }
+        }
+        if (beneficiarioMissing.length > 0) {
+          errorEl.textContent = "Complete los campos obligatorios del beneficiario: " + beneficiarioMissing.map(m => m.label).join(", ");
+          errorEl.classList.remove("hidden");
+          return false;
+        }
+
+        // ── Validar Tutor 1 ──
+        const tutor1Missing = [];
+        const tutor1StaticFields = [
+          { id: "tutor1_edad", label: "Edad del Tutor 1" },
+          { id: "tutor1_nivel_estudios", label: "Nivel de estudios del Tutor 1" },
+          { id: "tutor1_estado_civil", label: "Estado civil del Tutor 1" },
+          { id: "tutor1_num_hijos", label: "Número de hijos del Tutor 1" },
+          { id: "tutor1_vivienda", label: "Vivienda del Tutor 1" },
+        ];
+        for (const { id, label } of tutor1StaticFields) {
+          const el = form.querySelector(`[name="${id}"]`);
+          const val = (el?.value || "").trim();
+          if (!val) {
+            SR_Validations.showFieldError(id, `${label} es obligatorio`);
+            tutor1Missing.push(label);
+          }
+        }
+        const tutor1EdadVal = parseInt((form.querySelector('[name="tutor1_edad"]')?.value || "").trim(), 10);
+        if (!isNaN(tutor1EdadVal) && tutor1EdadVal < 18) {
+          SR_Validations.showFieldError("tutor1_edad", "El tutor debe tener al menos 18 años");
+          tutor1Missing.push("Edad del Tutor 1 (mínimo 18 años)");
+        }
+        if (!form.querySelector('[name="tutor1_imss"]:checked')) {
+          SR_Validations.showFieldError("tutor1_imss", "IMSS del Tutor 1 es obligatorio");
+          tutor1Missing.push("IMSS del Tutor 1");
+        }
+        if (!form.querySelector('[name="tutor1_infonavit"]:checked')) {
+          SR_Validations.showFieldError("tutor1_infonavit", "INFONAVIT del Tutor 1 es obligatorio");
+          tutor1Missing.push("INFONAVIT del Tutor 1");
+        }
+        const tutor1SinEmpleo = form.querySelector('[name="tutor1_sin_empleo"]');
+        if (!tutor1SinEmpleo?.checked) {
+          const fuente = (form.querySelector('[name="tutor1_fuente_empleo"]')?.value || "").trim();
+          if (!fuente) {
+            SR_Validations.showFieldError("tutor1_fuente_empleo", "Fuente de empleo del Tutor 1 es obligatoria");
+            tutor1Missing.push("Fuente de empleo del Tutor 1");
+          }
+          const ingreso = (form.querySelector('[name="tutor1_ingreso_mensual"]')?.value || "").trim();
+          if (!ingreso) {
+            SR_Validations.showFieldError("tutor1_ingreso_mensual", "Ingreso mensual del Tutor 1 es obligatorio");
+            tutor1Missing.push("Ingreso mensual del Tutor 1");
+          }
+        }
+        const tutor1AntiguedadNoAplica = form.querySelector('[name="tutor1_antiguedad_no_aplica"]');
+        if (!tutor1AntiguedadNoAplica?.checked && !tutor1SinEmpleo?.checked) {
+          const anios = (form.querySelector('[name="tutor1_antiguedad_anios"]')?.value || "").trim();
+          const meses = (form.querySelector('[name="tutor1_antiguedad_meses_extra"]')?.value || "").trim();
+          if (!anios && !meses) {
+            SR_Validations.showFieldError("tutor1_antiguedad_anios", "Antigüedad del Tutor 1 es obligatoria");
+            tutor1Missing.push("Antigüedad del Tutor 1");
+          }
+        }
+        const tutor1OtrasAplica = form.querySelector('[name="tutor1_otras_fuentes_aplica"]');
+        if (tutor1OtrasAplica?.checked) {
+          const otrasFuente = (form.querySelector('[name="tutor1_otras_fuentes_ingreso"]')?.value || "").trim();
+          if (!otrasFuente) {
+            SR_Validations.showFieldError("tutor1_otras_fuentes_ingreso", "Otra fuente de ingreso del Tutor 1 es obligatoria");
+            tutor1Missing.push("Otra fuente de ingreso del Tutor 1");
+          }
+          const otrasMonto = (form.querySelector('[name="tutor1_monto_otras_fuentes"]')?.value || "").trim();
+          if (!otrasMonto) {
+            SR_Validations.showFieldError("tutor1_monto_otras_fuentes", "Monto de otras fuentes del Tutor 1 es obligatorio");
+            tutor1Missing.push("Monto de otras fuentes del Tutor 1");
+          }
+        }
+        if (tutor1Missing.length > 0) {
+          errorEl.textContent = "Complete los campos obligatorios del Tutor 1: " + tutor1Missing.join(", ");
+          errorEl.classList.remove("hidden");
+          return false;
+        }
+
+        // ── Validar Tutor 2 ──
+        const agregarTutor2Chk = form.querySelector('[name="agregar_tutor2"]');
+        if (agregarTutor2Chk?.checked) {
+          const tutor2Missing = [];
+          const tutor2StaticFields = [
+            { id: "tutor2_edad", label: "Edad del Tutor 2" },
+            { id: "tutor2_nivel_estudios", label: "Nivel de estudios del Tutor 2" },
+            { id: "tutor2_estado_civil", label: "Estado civil del Tutor 2" },
+            { id: "tutor2_num_hijos", label: "Número de hijos del Tutor 2" },
+            { id: "tutor2_vivienda", label: "Vivienda del Tutor 2" },
+          ];
+          for (const { id, label } of tutor2StaticFields) {
+            const el = form.querySelector(`[name="${id}"]`);
+            const val = (el?.value || "").trim();
+            if (!val) {
+              SR_Validations.showFieldError(id, `${label} es obligatorio`);
+              tutor2Missing.push(label);
+            }
+          }
+          const tutor2EdadVal = parseInt((form.querySelector('[name="tutor2_edad"]')?.value || "").trim(), 10);
+          if (!isNaN(tutor2EdadVal) && tutor2EdadVal < 18) {
+            SR_Validations.showFieldError("tutor2_edad", "El tutor debe tener al menos 18 años");
+            tutor2Missing.push("Edad del Tutor 2 (mínimo 18 años)");
+          }
+          if (!form.querySelector('[name="tutor2_imss"]:checked')) {
+            SR_Validations.showFieldError("tutor2_imss", "IMSS del Tutor 2 es obligatorio");
+            tutor2Missing.push("IMSS del Tutor 2");
+          }
+          if (!form.querySelector('[name="tutor2_infonavit"]:checked')) {
+            SR_Validations.showFieldError("tutor2_infonavit", "INFONAVIT del Tutor 2 es obligatorio");
+            tutor2Missing.push("INFONAVIT del Tutor 2");
+          }
+          const tutor2SinEmpleo = form.querySelector('[name="tutor2_sin_empleo"]');
+          if (!tutor2SinEmpleo?.checked) {
+            const fuente = (form.querySelector('[name="tutor2_fuente_empleo"]')?.value || "").trim();
+            if (!fuente) {
+              SR_Validations.showFieldError("tutor2_fuente_empleo", "Fuente de empleo del Tutor 2 es obligatoria");
+              tutor2Missing.push("Fuente de empleo del Tutor 2");
+            }
+            const ingreso = (form.querySelector('[name="tutor2_ingreso_mensual"]')?.value || "").trim();
+            if (!ingreso) {
+              SR_Validations.showFieldError("tutor2_ingreso_mensual", "Ingreso mensual del Tutor 2 es obligatorio");
+              tutor2Missing.push("Ingreso mensual del Tutor 2");
+            }
+          }
+          const tutor2AntiguedadNoAplica = form.querySelector('[name="tutor2_antiguedad_no_aplica"]');
+          if (!tutor2AntiguedadNoAplica?.checked && !tutor2SinEmpleo?.checked) {
+            const anios = (form.querySelector('[name="tutor2_antiguedad_anios"]')?.value || "").trim();
+            const meses = (form.querySelector('[name="tutor2_antiguedad_meses_extra"]')?.value || "").trim();
+            if (!anios && !meses) {
+              SR_Validations.showFieldError("tutor2_antiguedad_anios", "Antigüedad del Tutor 2 es obligatoria");
+              tutor2Missing.push("Antigüedad del Tutor 2");
+            }
+          }
+          const tutor2OtrasAplica = form.querySelector('[name="tutor2_otras_fuentes_aplica"]');
+          if (tutor2OtrasAplica?.checked) {
+            const otrasFuente = (form.querySelector('[name="tutor2_otras_fuentes_ingreso"]')?.value || "").trim();
+            if (!otrasFuente) {
+              SR_Validations.showFieldError("tutor2_otras_fuentes_ingreso", "Otra fuente de ingreso del Tutor 2 es obligatoria");
+              tutor2Missing.push("Otra fuente de ingreso del Tutor 2");
+            }
+            const otrasMonto = (form.querySelector('[name="tutor2_monto_otras_fuentes"]')?.value || "").trim();
+            if (!otrasMonto) {
+              SR_Validations.showFieldError("tutor2_monto_otras_fuentes", "Monto de otras fuentes del Tutor 2 es obligatorio");
+              tutor2Missing.push("Monto de otras fuentes del Tutor 2");
+            }
+          }
+          if (tutor2Missing.length > 0) {
+            errorEl.textContent = "Complete los campos obligatorios del Tutor 2: " + tutor2Missing.join(", ");
+            errorEl.classList.remove("hidden");
+            return false;
+          }
+        }
+
+        // ── Validar constraints HTML5 ──
+        const constraintErrors = SR_Validations.validateHTML5Constraints(form);
+        if (constraintErrors.length > 0) {
+          constraintErrors.forEach(({ id, message }) => {
+            SR_Validations.showFieldError(id, message);
+          });
+          errorEl.textContent = "Revise los campos con formato incorrecto";
+          errorEl.classList.remove("hidden");
+          return false;
+        }
+
+        // ── Validar rango de campos monetarios ──
+        const monetaryFields = [
+          { name: "tutor1_ingreso_mensual", label: "Ingreso mensual del Tutor 1" },
+          { name: "tutor1_monto_otras_fuentes", label: "Monto de otras fuentes del Tutor 1" },
+          { name: "tutor2_ingreso_mensual", label: "Ingreso mensual del Tutor 2" },
+          { name: "tutor2_monto_otras_fuentes", label: "Monto de otras fuentes del Tutor 2" },
+        ];
+        const MAX_MONETARY = SR_Validations.LIMITS.INGRESO_MENSUAL_MAX;
+        const rangeErrors = [];
+        for (const { name, label } of monetaryFields) {
+          const input = form.querySelector(`[name="${name}"]`);
+          if (!input || input.disabled) continue;
+          const raw = input.value.trim();
+          if (!raw) continue;
+          const num = SR_Validations.toIntegerOrNull(raw);
+          if (num !== null && (num < 0 || num > MAX_MONETARY)) {
+            SR_Validations.showFieldError(name, `${label} debe estar entre $0 y $999,999,999`);
+            rangeErrors.push(label);
+          }
+        }
+        if (rangeErrors.length > 0) {
+          errorEl.textContent = "Revise los montos monetarios: " + rangeErrors.join(", ");
+          errorEl.classList.remove("hidden");
+          return false;
+        }
+
+        // ── Validar formato de correos electrónicos ──
+        const emailErrors = [];
+        [1, 2].forEach((num) => {
+          const tieneEmail = form.querySelector(`[name="tutor${num}_tiene_email"]`)?.checked;
+          const emailInput = form.querySelector(`[name="tutor${num}_email"]`);
+          if (tieneEmail && emailInput && emailInput.value.trim()) {
+            const val = emailInput.value.trim().toLowerCase();
+            if (!SR_Validations.EMAIL_RE.test(val)) {
+              SR_Validations.showFieldError(`tutor${num}_email`, "El correo electrónico no es válido");
+              emailErrors.push(`Correo electrónico del Tutor ${num}`);
+            }
+            if (val.length > SR_Validations.LIMITS.EMAIL_MAX) {
+              SR_Validations.showFieldError(`tutor${num}_email`, "El correo electrónico excede 254 caracteres");
+              emailErrors.push(`Correo electrónico del Tutor ${num}`);
+            }
+          }
+        });
+        if (emailErrors.length > 0) {
+          errorEl.textContent = "Revise los correos electrónicos: " + emailErrors.join(", ");
+          errorEl.classList.remove("hidden");
+          return false;
+        }
+
+        return true;
+      }
+
+      // -- Handler: CONTINUAR (nuevo flujo offline-first) --
+      function continuarEstudioSocioeconomico() {
+        // Validate
+        if (!validarFormularioSocioeconomico()) return;
+
+        // Collect form data
+        const formData = getFormData("borrador", {});
+
+        // Save to localStorage
+        localStorage.setItem("draft_socioeconomico", JSON.stringify(formData));
+
+        // Redirect to tecnica.html
+        window.location.href = "tecnica.html";
+      }
+
       // -- Toast de éxito ---------------------------------------------------
       function showSuccessToast(message, redirectUrl) {
         const toast = document.getElementById("success-toast");
@@ -2448,10 +2861,10 @@
       let estudioSubmitInProgress = false;
 
       function setEstudioSubmitState(isSubmitting) {
-        const submitBtn = document.querySelector('button[type="submit"]');
-        if (!submitBtn) return;
-        submitBtn.disabled = isSubmitting;
-        submitBtn.textContent = isSubmitting ? "Guardando..." : "GUARDAR ESTUDIO";
+        const btn = document.getElementById("btn-continuar-estudio");
+        if (!btn) return;
+        btn.disabled = isSubmitting;
+        btn.textContent = isSubmitting ? "Guardando..." : (window._editEstudioId ? "ACTUALIZAR ESTUDIO" : "CONTINUAR");
       }
 
       async function submitEstudio(status) {
@@ -2953,6 +3366,9 @@
       setupEstadosCatalog();
       setupMunicipiosCatalog().catch((err) => {
         console.error("Error cargando catálogo de municipios:", err);
+      }).then(() => {
+        // After catalogs are loaded, restore localStorage draft
+        restoreLocalStorageDraft();
       });
       setupTutorConditionalFields();
       setupTutor2Toggle();
@@ -2993,11 +3409,20 @@
         });
       });
 
-      document
-        .querySelector('button[type="button"]')
-        .addEventListener("click", () => {
-          submitEstudio("borrador");
-        });
+      // CONTINUAR button: validate + save to localStorage + navigate (new record)
+      // or submit to backend (edit mode via form submit)
+      document.getElementById("btn-continuar-estudio")?.addEventListener("click", () => {
+        if (window._editEstudioId) {
+          // Edit mode: trigger form submit to PATCH backend
+          document.querySelector("form").requestSubmit();
+        } else {
+          // New record: validate + save locally + navigate
+          continuarEstudioSocioeconomico();
+        }
+      });
+
+      // GUARDAR BORRADOR button: save all 3 forms to backend (format validation only)
+      document.getElementById("btn-guardar-borrador")?.addEventListener("click", guardarBorradorMaster);
 
       // ── Edit mode (estudio_id query param) ───────────────────────────────────
       const urlParams = new URLSearchParams(window.location.search);
@@ -3007,90 +3432,232 @@
         loadExistingEstudio(parseInt(estudioId));
       }
 
+      function populateFormWithData(data) {
+        // Show edit banner
+        document.getElementById("edit-banner").classList.remove("hidden");
+        document.getElementById("edit-banner-text").textContent = `Editando estudio #${data.folio || data.estudio_id}`;
+        document.getElementById("form-title").textContent = "EDITAR ESTUDIO SOCIOECONÓMICO";
+
+        // Reconstruct region_ctx if missing (edit mode from profile)
+        const b = data.beneficiario || {};
+        const existingRegionCtx = JSON.parse(localStorage.getItem("region_ctx") || "null");
+        if (!existingRegionCtx && (b.region_id || data.sede)) {
+          localStorage.setItem("region_ctx", JSON.stringify({
+            region_id: b.region_id,
+            sede: data.sede || "",
+            region_nombre: data.ciudad_registro || "",
+          }));
+        }
+
+        // Pre-populate BENEFICIARIO fields
+        const _setVal = (name, val) => {
+          const el = document.querySelector(`[name="${name}"]`);
+          if (el && val != null) el.value = val;
+        };
+        _setVal("nombres", b.nombres || b.nombre || "");
+        _setVal("apellido_paterno", b.apellido_paterno || "");
+        _setVal("apellido_materno", b.apellido_materno || "");
+        _setVal("fecha_nacimiento", b.fecha_nacimiento || "");
+        _setVal("diagnostico", b.diagnostico || "");
+        _setVal("calle", b.calle || "");
+        _setVal("num_ext", b.num_ext || "");
+        _setVal("colonia", b.colonia || "");
+        _setVal("telefonos", b.telefonos || "");
+        _setVal("email", b.email || "");
+        if (b.sexo) {
+          const sexoRadio = document.querySelector(`[name="sexo"][value="${b.sexo}"]`);
+          if (sexoRadio) sexoRadio.checked = true;
+        }
+        if (b.num_int) {
+          const numIntCheckbox = document.querySelector('[name="tiene_num_interior"]');
+          if (numIntCheckbox) {
+            numIntCheckbox.checked = true;
+            numIntCheckbox.dispatchEvent(new Event("change"));
+          }
+          _setVal("num_int", b.num_int);
+        }
+        if (b.estado_codigo) {
+          _setVal("estado_codigo", b.estado_codigo);
+          const evt = new Event("change", { bubbles: true });
+          document.getElementById("estado_codigo")?.dispatchEvent(evt);
+          setTimeout(() => {
+            if (b.ciudad) _setVal("ciudad", b.ciudad);
+          }, 500);
+        }
+
+        // Pre-populate ESTUDIO fields (silla previa, etc.)
+        if (data.tuvo_silla_previa != null) {
+          const sillaRadio = document.querySelector(`[name="silla_previa"][value="${data.tuvo_silla_previa ? '1' : '0'}"]`);
+          if (sillaRadio) {
+            sillaRadio.checked = true;
+            sillaRadio.dispatchEvent(new Event("change"));
+          }
+        }
+        if (data.como_obtuvo_silla) {
+          _setVal("como_obtuvo_silla", data.como_obtuvo_silla);
+        }
+        if (data.elaboro_estudio) {
+          _setVal("elaboro_estudio", data.elaboro_estudio);
+        }
+        if (data.fecha_estudio) {
+          _setVal("fecha_estudio", data.fecha_estudio);
+        }
+        if (data.voluntario_contacto) {
+          _setVal("voluntario_contacto", data.voluntario_contacto);
+        }
+
+        // Pre-populate TUTORES
+        const tutores = data.tutores || [];
+        tutores.forEach((t) => {
+          const num = t.numero_tutor;
+          const prefix = `tutor${num}`;
+          _setVal(`${prefix}_nombres`, t.nombres || t.nombre || "");
+          _setVal(`${prefix}_apellido_paterno`, t.apellido_paterno || "");
+          _setVal(`${prefix}_apellido_materno`, t.apellido_materno || "");
+          if (t.edad != null) _setVal(`${prefix}_edad`, String(t.edad));
+          if (t.nivel_estudios) _setVal(`${prefix}_nivel_estudios`, t.nivel_estudios);
+          if (t.estado_civil) _setVal(`${prefix}_estado_civil`, t.estado_civil);
+          if (t.num_hijos != null) _setVal(`${prefix}_num_hijos`, String(t.num_hijos));
+          if (t.vivienda) _setVal(`${prefix}_vivienda`, t.vivienda);
+          if (t.fuente_empleo) _setVal(`${prefix}_fuente_empleo`, t.fuente_empleo);
+          if (t.antiguedad_anios != null && t.antiguedad_anios > 0) _setVal(`${prefix}_antiguedad_anios`, String(t.antiguedad_anios));
+          if (t.antiguedad_meses_extra != null && t.antiguedad_meses_extra > 0) _setVal(`${prefix}_antiguedad_meses_extra`, String(t.antiguedad_meses_extra));
+          if (t.ingreso_mensual != null) _setVal(`${prefix}_ingreso_mensual`, SR_Validations.formatIntegerDisplay(String(t.ingreso_mensual)));
+          if (t.sin_empleo) {
+            const sinEmpChk = document.querySelector(`[name="${prefix}_sin_empleo"]`);
+            if (sinEmpChk) { sinEmpChk.checked = true; sinEmpChk.dispatchEvent(new Event("change")); }
+          }
+          if (t.imss_estatus) {
+            const imssRadio = document.querySelector(`[name="${prefix}_imss"][value="${t.imss_estatus}"]`);
+            if (imssRadio) imssRadio.checked = true;
+          }
+          if (t.infonavit_estatus) {
+            const infRadio = document.querySelector(`[name="${prefix}_infonavit"][value="${t.infonavit_estatus}"]`);
+            if (infRadio) infRadio.checked = true;
+          }
+          if (t.email) {
+            const emailChk = document.querySelector(`[name="${prefix}_tiene_email"]`);
+            if (emailChk) { emailChk.checked = true; emailChk.dispatchEvent(new Event("change")); }
+            _setVal(`${prefix}_email`, t.email);
+          }
+          if (t.otras_fuentes_aplica) {
+            const otrasChk = document.querySelector(`[name="${prefix}_otras_fuentes_aplica"]`);
+            if (otrasChk) { otrasChk.checked = true; otrasChk.dispatchEvent(new Event("change")); }
+          }
+          if (t.otras_fuentes_ingreso) _setVal(`${prefix}_otras_fuentes_ingreso`, t.otras_fuentes_ingreso);
+          if (t.monto_otras_fuentes != null) _setVal(`${prefix}_monto_otras_fuentes`, SR_Validations.formatMoneyDisplay(String(t.monto_otras_fuentes)));
+          if (t.antiguedad_aplica === false) {
+            const antNoChk = document.querySelector(`[name="${prefix}_antiguedad_no_aplica"]`);
+            if (antNoChk) { antNoChk.checked = true; antNoChk.dispatchEvent(new Event("change")); }
+          }
+          if (num === 2) {
+            const agregarChk = document.querySelector('[name="agregar_tutor2"]');
+            if (agregarChk) { agregarChk.checked = true; agregarChk.dispatchEvent(new Event("change")); }
+          }
+        });
+
+        // Store estudio_id for PATCH submit and change button text
+        window._editEstudioId = data.estudio_id;
+        const continueBtn = document.getElementById("btn-continuar-estudio");
+        if (continueBtn) continueBtn.textContent = "ACTUALIZAR ESTUDIO";
+      }
+
       async function loadExistingEstudio(id) {
-        const session = JSON.parse(localStorage.getItem("session") || "null");
-        if (!session?.token) return;
+        console.log("=== LOAD EXISTING ESTUDIO ===");
+        console.log("Looking for localStorage key: estudio_edit_data_" + id);
+        
+        // First try to load from localStorage (passed from profile)
+        const savedData = localStorage.getItem("estudio_edit_data_" + id);
+        console.log("Saved data found:", !!savedData);
+        
+        if (savedData) {
+          try {
+            const parsed = JSON.parse(savedData);
+            console.log("Using cached estudio data from localStorage for id", id);
+            console.log("Data keys:", Object.keys(parsed));
+            populateFormWithData(parsed);
+            localStorage.removeItem("estudio_edit_data_" + id);
+            return;
+          } catch (e) {
+            console.error("Error parsing saved data:", e);
+            localStorage.removeItem("estudio_edit_data_" + id);
+          }
+        }
+
+        const sessionData = JSON.parse(localStorage.getItem("session") || "null");
+        if (!sessionData?.token) {
+          console.error("No session token found");
+          return;
+        }
 
         try {
+          console.log(`Loading estudio ${id}...`);
+          // Load from /api/estudios/{id} (works in browser)
           const res = await fetch(`/api/estudios/${id}`, {
-            headers: { Authorization: "Bearer " + session.token },
+            headers: { Authorization: "Bearer " + sessionData.token },
           });
+          console.log(`Response status: ${res.status}`);
           if (!res.ok) {
+            const errorText = await res.text();
+            console.error(`Error response: ${errorText}`);
             if (res.status === 403) alert("No tienes permisos para editar este estudio.");
             else alert("Error al cargar el estudio.");
             window.location.href = "perfil-capturista.html";
             return;
           }
           const data = await res.json();
-
-          // Show edit banner
-          document.getElementById("edit-banner").classList.remove("hidden");
-          document.getElementById("edit-banner-text").textContent = `Editando estudio #${data.folio || id}`;
-          document.getElementById("form-title").textContent = "EDITAR ESTUDIO SOCIOECONÓMICO";
-
-          // Pre-populate form fields from data
-          const b = data.beneficiario || {};
-          _setVal("nombres", b.nombres || "");
-          _setVal("apellido_paterno", b.apellido_paterno || "");
-          _setVal("apellido_materno", b.apellido_materno || "");
-          _setVal("fecha_nacimiento", b.fecha_nacimiento || "");
-          _setVal("diagnostico", b.diagnostico || "");
-          _setVal("calle", b.calle || "");
-          _setVal("num_ext", b.num_ext || "");
-          _setVal("colonia", b.colonia || "");
-          _setVal("telefonos", b.telefonos || "");
-          if (b.email) _setVal("email", b.email);
-
-          // Sexo radio
-          if (b.sexo) {
-            const radio = document.querySelector(`input[name="sexo"][value="${b.sexo}"]`);
-            if (radio) radio.checked = true;
+          console.log("Estudio data loaded:", data);
+          
+          // Also fetch solicitud data if available
+          try {
+            const solicitudRes = await fetch(`/api/solicitudes?beneficiario_id=${data.beneficiario_id}`, {
+              headers: { Authorization: "Bearer " + sessionData.token },
+            });
+            if (solicitudRes.ok) {
+              const solicitudData = await solicitudRes.json();
+              if (solicitudData && solicitudData.length > 0) {
+                const s = solicitudData[0];
+                localStorage.setItem("solicitud_id", s.id);
+                localStorage.setItem("draft_tecnica", JSON.stringify({
+                  entorno: s.entorno || null,
+                  control_tronco: s.control_tronco || null,
+                  control_cabeza: s.control_cabeza || null,
+                  control_de_piernas: s.control_de_piernas || null,
+                  observaciones_posturales: s.observaciones_posturales || null,
+                  altura_total_in: s.altura_total_in || null,
+                  peso_kg: s.peso_kg || null,
+                  medida_cabeza_asiento: s.medida_cabeza_asiento || null,
+                  medida_hombro_asiento: s.medida_hombro_asiento || null,
+                  medida_prof_asiento: s.medida_prof_asiento || null,
+                  medida_rodilla_talon: s.medida_rodilla_talon || null,
+                  medida_ancho_cadera: s.medida_ancho_cadera || null,
+                  unidad_medida: s.unidad_captura || null,
+                }));
+                if (s.entidad_solicitante || s.prioridad || s.justificacion) {
+                  localStorage.setItem("draft_gestion", JSON.stringify({
+                    entidad_solicitante: s.entidad_solicitante || null,
+                    prioridad: s.prioridad || null,
+                    justificacion: s.justificacion || null,
+                  }));
+                }
+              }
+            }
+          } catch (e) {
+            console.error("Error loading solicitud:", e);
           }
 
-          // Estado + ciudad if available
-          if (b.estado_codigo) {
-            _setVal("estado_codigo", b.estado_codigo);
-            // Trigger ciudad load
-            const evt = new Event("change", { bubbles: true });
-            document.getElementById("estado_codigo")?.dispatchEvent(evt);
-            setTimeout(() => {
-              if (b.ciudad) _setVal("ciudad", b.ciudad);
-            }, 500);
+          populateFormWithData(data);
+        } catch (err) {
+          console.error("Error in loadExistingEstudio:", err);
+          const errorBanner = document.getElementById("edit-banner");
+          if (errorBanner) {
+            errorBanner.classList.remove("hidden");
+            errorBanner.classList.replace("bg-amber-50", "bg-red-50");
+            errorBanner.classList.replace("border-amber-200", "border-red-200");
+            document.getElementById("edit-banner-text").textContent = "Error al cargar el estudio: " + (err.message || "Error de red");
+            document.getElementById("edit-banner-text").classList.replace("text-amber-800", "text-red-800");
           }
-
-          // Tutores
-          const tutores = data.tutores || [];
-          tutores.forEach((t, idx) => {
-            const prefix = `tutor${t.numero_tutor}`;
-            _setVal(`${prefix}_nombres`, t.nombre?.split(" ")[0] || "");
-            _setVal(`${prefix}_apellido_paterno`, t.apellido_paterno || "");
-            _setVal(`${prefix}_apellido_materno`, t.apellido_materno || "");
-            if (t.edad) _setVal(`${prefix}_edad`, String(t.edad));
-            if (t.nivel_estudios) _setVal(`${prefix}_nivel_estudios`, t.nivel_estudios);
-            if (t.estado_civil) _setVal(`${prefix}_estado_civil`, t.estado_civil);
-            if (t.num_hijos !== undefined) _setVal(`${prefix}_num_hijos`, String(t.num_hijos));
-            if (t.vivienda) _setVal(`${prefix}_vivienda`, t.vivienda);
-            if (t.fuente_empleo) _setVal(`${prefix}_fuente_empleo`, t.fuente_empleo);
-            if (t.ingreso_mensual) _setVal(`${prefix}_ingreso_mensual`, String(t.ingreso_mensual));
-            if (t.imss_estatus) {
-              const imssRadio = document.querySelector(`input[name="${prefix}_imss"][value="${t.imss_estatus}"]`);
-              if (imssRadio) imssRadio.checked = true;
-            }
-            if (t.infonavit_estatus) {
-              const infRadio = document.querySelector(`input[name="${prefix}_infonavit"][value="${t.infonavit_estatus}"]`);
-              if (infRadio) infRadio.checked = true;
-            }
-          });
-
-          // Store estudio_id for PATCH submit
-          window._editEstudioId = id;
-
-          // Change submit button text
-          const submitBtn = document.querySelector('button[type="submit"]');
-          if (submitBtn) submitBtn.textContent = "ACTUALIZAR ESTUDIO";
-        } catch (_) {
-          alert("Error al cargar el estudio.");
-          window.location.href = "perfil-capturista.html";
+          // Do NOT redirect to perfil - stay on page to debug
         }
       }
 
@@ -3152,22 +3719,126 @@
         }
       }
 
-      // Guardar Estudio (submit)
+      // Form submit handler (edit mode: PATCH backend; new: CONTINUAR)
       document.querySelector("form").addEventListener("submit", async (e) => {
         e.preventDefault();
-        if (estudioSubmitInProgress) return;
-        estudioSubmitInProgress = true;
-        setEstudioSubmitState(true);
-        let keepDisabled = false;
-        try {
-          keepDisabled = await submitEstudio("completo") === true;
-        } finally {
-          if (!keepDisabled) {
-            estudioSubmitInProgress = false;
-            setEstudioSubmitState(false);
+        if (window._editEstudioId) {
+          // Edit mode: submit to backend
+          if (estudioSubmitInProgress) return;
+          estudioSubmitInProgress = true;
+          setEstudioSubmitState(true);
+          let keepDisabled = false;
+          try {
+            keepDisabled = await submitEstudio("completo") === true;
+          } finally {
+            if (!keepDisabled) {
+              estudioSubmitInProgress = false;
+              setEstudioSubmitState(false);
+            }
           }
+        } else {
+          // New record: validate + save to localStorage + navigate
+          continuarEstudioSocioeconomico();
         }
       });
+
+      // -- Restore localStorage draft after catalogs are loaded ----------------
+      async function restoreLocalStorageDraft() {
+        const localDraft = localStorage.getItem("draft_socioeconomico");
+        if (!localDraft) return;
+        try {
+          const data = JSON.parse(localDraft);
+          if (data.beneficiario) {
+            const b = data.beneficiario;
+            const _setVal = (name, val) => {
+              const el = document.querySelector(`[name="${name}"]`);
+              if (el && val != null) el.value = val;
+            };
+            _setVal("nombres", b.nombres || "");
+            _setVal("apellido_paterno", b.apellido_paterno || "");
+            _setVal("apellido_materno", b.apellido_materno || "");
+            _setVal("fecha_nacimiento", b.fecha_nacimiento || "");
+            _setVal("diagnostico", b.diagnostico || "");
+            _setVal("calle", b.calle || "");
+            _setVal("num_ext", b.num_ext || "");
+            _setVal("colonia", b.colonia || "");
+            _setVal("telefonos", b.telefonos || "");
+            _setVal("email", b.email || "");
+            if (b.sexo) {
+              const sexoRadio = document.querySelector(`[name="sexo"][value="${b.sexo}"]`);
+              if (sexoRadio) sexoRadio.checked = true;
+            }
+            if (b.num_int) {
+              const numIntCheckbox = document.querySelector('[name="tiene_num_interior"]');
+              if (numIntCheckbox) {
+                numIntCheckbox.checked = true;
+                numIntCheckbox.dispatchEvent(new Event("change"));
+              }
+              _setVal("num_int", b.num_int);
+            }
+            if (b.estado_codigo) {
+              _setVal("estado_codigo", b.estado_codigo);
+              await loadMunicipiosCatalog();
+              renderMunicipiosSelect(b.estado_codigo, b.ciudad || "");
+            }
+          }
+          if (data.tutores && data.tutores.length > 0) {
+            data.tutores.forEach((t) => {
+              const num = t.numero_tutor;
+              const _setVal = (name, val) => {
+                const el = document.querySelector(`[name="${name}"]`);
+                if (el && val != null) el.value = val;
+              };
+              _setVal(`tutor${num}_nombres`, t.nombres || "");
+              _setVal(`tutor${num}_apellido_paterno`, t.apellido_paterno || "");
+              _setVal(`tutor${num}_apellido_materno`, t.apellido_materno || "");
+              if (t.edad != null) _setVal(`tutor${num}_edad`, String(t.edad));
+              if (t.nivel_estudios) _setVal(`tutor${num}_nivel_estudios`, t.nivel_estudios);
+              if (t.estado_civil) _setVal(`tutor${num}_estado_civil`, t.estado_civil);
+              if (t.num_hijos != null) _setVal(`tutor${num}_num_hijos`, String(t.num_hijos));
+              if (t.vivienda) _setVal(`tutor${num}_vivienda`, t.vivienda);
+              if (t.fuente_empleo) _setVal(`tutor${num}_fuente_empleo`, t.fuente_empleo);
+              if (t.antiguedad_anios != null && t.antiguedad_anios > 0) _setVal(`tutor${num}_antiguedad_anios`, String(t.antiguedad_anios));
+              if (t.antiguedad_meses_extra != null && t.antiguedad_meses_extra > 0) _setVal(`tutor${num}_antiguedad_meses_extra`, String(t.antiguedad_meses_extra));
+              if (t.ingreso_mensual != null) _setVal(`tutor${num}_ingreso_mensual`, SR_Validations.formatIntegerDisplay(String(t.ingreso_mensual)));
+              if (t.sin_empleo) {
+                const sinEmpChk = document.querySelector(`[name="tutor${num}_sin_empleo"]`);
+                if (sinEmpChk) { sinEmpChk.checked = true; sinEmpChk.dispatchEvent(new Event("change")); }
+              }
+              if (t.imss_estatus) {
+                const imssRadio = document.querySelector(`[name="tutor${num}_imss"][value="${t.imss_estatus}"]`);
+                if (imssRadio) imssRadio.checked = true;
+              }
+              if (t.infonavit_estatus) {
+                const infRadio = document.querySelector(`[name="tutor${num}_infonavit"][value="${t.infonavit_estatus}"]`);
+                if (infRadio) infRadio.checked = true;
+              }
+              if (t.email) {
+                const emailChk = document.querySelector(`[name="tutor${num}_tiene_email"]`);
+                if (emailChk) { emailChk.checked = true; emailChk.dispatchEvent(new Event("change")); }
+                _setVal(`tutor${num}_email`, t.email);
+              }
+              if (t.otras_fuentes_aplica) {
+                const otrasChk = document.querySelector(`[name="tutor${num}_otras_fuentes_aplica"]`);
+                if (otrasChk) { otrasChk.checked = true; otrasChk.dispatchEvent(new Event("change")); }
+              }
+              if (t.otras_fuentes_ingreso) _setVal(`tutor${num}_otras_fuentes_ingreso`, t.otras_fuentes_ingreso);
+              if (t.monto_otras_fuentes != null) _setVal(`tutor${num}_monto_otras_fuentes`, SR_Validations.formatMoneyDisplay(String(t.monto_otras_fuentes)));
+              if (t.antiguedad_aplica === false) {
+                const antNoChk = document.querySelector(`[name="tutor${num}_antiguedad_no_aplica"]`);
+                if (antNoChk) { antNoChk.checked = true; antNoChk.dispatchEvent(new Event("change")); }
+              }
+              if (num === 2) {
+                const agregarChk = document.querySelector('[name="agregar_tutor2"]');
+                if (agregarChk) { agregarChk.checked = true; agregarChk.dispatchEvent(new Event("change")); }
+              }
+            });
+            setupTutorConditionalFields();
+          }
+        } catch (err) {
+          console.error("Error loading localStorage draft:", err);
+        }
+      }
     </script>
 
     <!-- Toast de éxito -->
