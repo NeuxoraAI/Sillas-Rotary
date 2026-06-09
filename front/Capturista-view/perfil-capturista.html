@@ -367,11 +367,11 @@
               </div>
             </div>
             <div class="flex items-center gap-2 shrink-0">
-              <a href="${_esc(c.edit_url)}" class="w-8 h-8 rounded-lg text-ug-blue hover:bg-ug-blue/10 flex items-center justify-center transition-all" title="Editar">
+              ${c.status !== 'completo' ? `<button onclick="editarEstudio(${c.estudio_id})" class="w-8 h-8 rounded-lg text-ug-blue hover:bg-ug-blue/10 flex items-center justify-center transition-all" title="Editar">
                 <span class="material-symbols-outlined text-lg">edit</span>
-              </a>
+              </button>` : ''}
               <span class="${c.status === 'completo' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'} text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full">
-                ${c.status === 'completo' ? 'Completo' : c.status === 'borrador' ? 'Borrador' : _esc(c.status)}
+                ${c.status === 'completo' ? 'Completo' : c.status === 'borrador' ? 'En borrador' : _esc(c.status)}
               </span>
             </div>
           </div>
@@ -380,9 +380,25 @@
 
       // Store current perfil data for edit modal
       window._currentPerfil = u;
+      window._captures = captures;
     } catch (_err) {
       _showError('No se pudieron cargar tus datos. Verificá tu conexión.');
     }
+  }
+
+  function editarEstudio(estudioId) {
+    const captures = window._captures || [];
+    const estudio = captures.find(c => c.estudio_id === estudioId);
+    if (!estudio) {
+      alert('No se encontró el estudio');
+      return;
+    }
+    console.log("Saving estudio data to localStorage:", estudio);
+    console.log("Beneficiario data:", estudio.beneficiario);
+    console.log("Tutores count:", (estudio.tutores || []).length);
+    // Save full estudio data for the edit page (keyed by estudio_id)
+    localStorage.setItem('estudio_edit_data_' + estudioId, JSON.stringify(estudio));
+    window.location.href = estudio.edit_url;
   }
 
   // ── Heatmap ──────────────────────────────────────────────────────────────────
