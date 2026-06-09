@@ -51,6 +51,7 @@
     border-color: #51274b40;
   }
   .heatmap-cell { width: 13px; height: 13px; border-radius: 2px; }
+  .heatmap-month { font-size: 10px; fill: #94a3b8; }
   .heatmap-tooltip {
     background: #1e293b; color: #fff; font-size: 11px;
     padding: 4px 8px; border-radius: 4px; white-space: nowrap;
@@ -127,9 +128,14 @@
 
     <!-- Heatmap -->
     <div class="bg-white rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.07)] border border-slate-100 overflow-hidden">
-      <div class="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center gap-3 flex-wrap">
         <span class="material-symbols-outlined text-ug-blue text-xl">calendar_month</span>
         <h2 class="text-base font-semibold text-slate-800">Actividad de la organización</h2>
+        <select id="heatmap-year-select"
+          class="text-xs border border-slate-200 rounded-lg px-2 py-1 bg-white text-slate-600
+                 focus:border-ug-blue focus:outline-none cursor-pointer">
+        </select>
+        <span id="heatmap-count" class="text-xs font-bold text-ug-blue bg-ug-blue/10 rounded-full px-2.5 py-0.5 hidden">0</span>
       </div>
       <div id="heatmap-container" class="px-6 py-5 overflow-x-auto hidden"></div>
       <div id="heatmap-loading" class="px-6 py-8 text-center text-slate-400 text-sm">
@@ -377,7 +383,7 @@
       document.getElementById('org-nombre').textContent = org.nombre;
       document.getElementById('user-nombre-header').textContent = org.nombre;
       document.getElementById('stat-capturas').textContent = org.stats?.total_capturas || 0;
-      document.getElementById('stat-completados').textContent = '—';
+      document.getElementById('stat-completados').textContent = org.stats?.completados || 0;
       document.getElementById('stat-this-month').textContent = org.stats?.this_month || 0;
 
       // Load beneficiaries (hide loading, show empty for now — no per-org endpoint yet)
@@ -483,45 +489,98 @@
   }
 
   // ── Heatmap ──────────────────────────────────────────────────────────────────
-  async function loadOrgHeatmap(orgId) {
+  async function loadOrgHeatmap(orgId, year) {
     const container = document.getElementById('heatmap-container');
     const loading   = document.getElementById('heatmap-loading');
+    const countEl   = document.getElementById('heatmap-count');
+    const selectEl  = document.getElementById('heatmap-year-select');
     if (!orgId) return;
     try {
-      const res = await fetch(`/api/organizaciones/${orgId}/heatmap`, {
+      let url = `/api/organizaciones/${orgId}/heatmap`;
+      if (year) url += '?year=' + year;
+      const res = await fetch(url, {
         headers: { 'Authorization': 'Bearer ' + session.token }
       });
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const data = await res.json();
+
       loading.classList.add('hidden');
       container.classList.remove('hidden');
-      container.innerHTML = _renderHeatmapSVG(data);
+
+      const lookup = {};
+      data.forEach(d => { lookup[d.date] = d.count; });
+      container.innerHTML = _renderHeatmapSVG(data, lookup, countEl, year);
+
+      // Populate year selector from data
+      const sortedDates = data.map(d => d.date).filter(Boolean).sort();
+      const activeYear = year
+        ? Number(year)
+        : sortedDates.length
+          ? Number(sortedDates[sortedDates.length - 1].slice(0, 4))
+          : new Date().getUTCFullYear();
+      populateOrgYearSelector(selectEl, lookup, activeYear);
+
+      // Scroll to the rightmost (most recent) dates
+      container.scrollLeft = container.scrollWidth;
     } catch (_) {
       loading.textContent = 'No se pudo cargar la actividad.';
     }
   }
 
-  function _renderHeatmapSVG(data) {
-    const lookup = {};
-    data.forEach(d => { lookup[d.date] = d.count; });
-    const cellSize = 13, cellGap = 3, step = cellSize + cellGap, cols = 53;
-    const svgW = cols * step + 30, svgH = 7 * step + 20;
-    const today = new Date();
-    const days = [];
-    for (let i = 364; i >= 0; i--) {
-      const d = new Date(today); d.setDate(d.getDate() - i);
-      const dateStr = d.toISOString().slice(0, 10);
-      days.push({ date: d, dateStr, count: lookup[dateStr] || 0 });
+  function _renderHeatmapSVG(data, lookup, countEl, year) {
+    let totalActivities = 0;
+    data.forEach(d => { totalActivities += d.count; });
+
+    if (totalActivities > 0 && countEl) {
+      countEl.textContent = totalActivities;
+      countEl.classList.remove('hidden');
+    } else if (countEl) {
+      countEl.classList.add('hidden');
     }
 
-    const heatColors = ['#ebedf0','#9be9a8','#40c463','#30a14e','#216e39'];
+    const sortedDates = data.map(d => d.date).filter(Boolean).sort();
+    const activeYear = year
+      ? Number(year)
+      : sortedDates.length
+        ? Number(sortedDates[sortedDates.length - 1].slice(0, 4))
+        : new Date().getUTCFullYear();
+
+    const cellSize = 13, cellGap = 3, step = cellSize + cellGap, cols = 53;
+    const svgW = cols * step + 30, svgH = 7 * step + 20;
+
+    // Always render full Jan 1 – Dec 31 grid (spec R9)
+    const endDate = new Date(Date.UTC(activeYear, 11, 31));
+    const days = [];
+    for (let d = new Date(Date.UTC(activeYear, 0, 1)); d <= endDate; d.setUTCDate(d.getUTCDate() + 1)) {
+      const dateStr = d.toISOString().slice(0, 10);
+      days.push({ date: new Date(d), dateStr, count: lookup[dateStr] || 0 });
+    }
+
+    const heatColors = ['#ebedf0','#4ade80','#22c55e','#16a34a','#15803d'];
     let svg = `<svg width="${svgW}" height="${svgH}" xmlns="http://www.w3.org/2000/svg">`;
+
+    // Month labels (spec R8: all 12 months)
     const months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
     let lastMonth = -1;
     for (let i = 0; i < days.length; i++) {
-      const m = days[i].date.getMonth();
-      if (m !== lastMonth) { lastMonth = m; svg += `<text x="${Math.floor(i/7)*step+2}" y="10" fill="#94a3b8" font-size="10">${months[m]}</text>`; }
+      const m = days[i].date.getUTCMonth();
+      if (m !== lastMonth) {
+        lastMonth = m;
+        const col = Math.floor(i / 7);
+        const x = col * step + 2;
+        svg += `<text x="${x}" y="10" class="heatmap-month">${months[m]}</text>`;
+      }
     }
+
+    // Day-of-week labels (Lun, Mié, Vie)
+    const dayLabels = ['', 'Lun', '', 'Mié', '', 'Vie', ''];
+    for (let row = 0; row < 7; row++) {
+      if (dayLabels[row]) {
+        svg += `<text x="0" y="${row * step + 22}" class="heatmap-month" text-anchor="end">${dayLabels[row]}</text>`;
+      }
+    }
+
+    // Cells
     for (let i = 0; i < days.length; i++) {
       const col = Math.floor(i / 7), row = i % 7;
       const x = col * step + 2, y = row * step + 18;
@@ -532,10 +591,38 @@
         onmouseenter="showTip(event,'${_esc(tip)}')" onmouseleave="hideTip()" style="cursor:pointer"/>`;
     }
     svg += '</svg>';
+
+    // Empty year message
+    const emptyMsg = (totalActivities === 0 && year)
+      ? `<p class="text-sm text-slate-400 text-center mb-3">Sin actividad en ${year}</p>`
+      : '';
+
     const legend = '<div class="flex items-center gap-2 mt-4 text-xs text-slate-400 justify-end"><span>Menos</span>' +
       heatColors.map(c => `<span class="heatmap-cell inline-block" style="background:${c}"></span>`).join('') + '<span>Más</span></div>';
-    return svg + legend;
+    return emptyMsg + '<div class="flex items-end gap-1">' + svg + '</div>' + legend;
   }
+
+  function populateOrgYearSelector(selectEl, lookup, activeYear) {
+    const dataYears = Object.keys(lookup).map(d => Number(d.slice(0, 4))).filter(Boolean);
+    const earliestYear = dataYears.length > 0 ? Math.min(...dataYears) : new Date().getUTCFullYear() - 2;
+    const currentYear = new Date().getUTCFullYear();
+    const minYear = Math.max(earliestYear, currentYear - 2);
+
+    selectEl.innerHTML = '';
+    for (let y = currentYear; y >= minYear; y--) {
+      const opt = document.createElement('option');
+      opt.value = String(y);
+      opt.textContent = String(y);
+      if (y === activeYear) opt.selected = true;
+      selectEl.appendChild(opt);
+    }
+    selectEl.dataset.activeYear = activeYear;
+  }
+
+  // Year selector change event
+  document.getElementById('heatmap-year-select').addEventListener('change', function () {
+    if (orgIdFromUrl) loadOrgHeatmap(orgIdFromUrl, this.value);
+  });
 
   function showTip(ev, text) {
     let tip = document.getElementById('htip');

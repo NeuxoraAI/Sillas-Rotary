@@ -147,9 +147,13 @@
 
     <!-- Heatmap -->
     <div class="bg-white rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.07)] border border-slate-100 overflow-hidden">
-      <div class="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center gap-3 flex-wrap">
         <span class="material-symbols-outlined text-ug-blue text-xl">calendar_month</span>
         <h2 class="text-base font-semibold text-slate-800">Actividad</h2>
+        <select id="heatmap-year-select"
+          class="text-xs border border-slate-200 rounded-lg px-2 py-1 bg-white text-slate-600
+                 focus:border-ug-blue focus:outline-none cursor-pointer">
+        </select>
         <span id="heatmap-count" class="text-xs font-bold text-ug-blue bg-ug-blue/10 rounded-full px-2.5 py-0.5 hidden">0</span>
       </div>
       <div id="heatmap-container" class="px-6 py-5 overflow-x-auto">
@@ -160,10 +164,10 @@
         <div class="flex items-center gap-2 mt-4 text-xs text-slate-400 justify-end">
           <span>Menos</span>
           <span class="heatmap-cell inline-block bg-[#ebedf0]"></span>
-          <span class="heatmap-cell inline-block bg-[#9be9a8]"></span>
-          <span class="heatmap-cell inline-block bg-[#40c463]"></span>
-          <span class="heatmap-cell inline-block bg-[#30a14e]"></span>
-          <span class="heatmap-cell inline-block bg-[#216e39]"></span>
+          <span class="heatmap-cell inline-block bg-[#4ade80]"></span>
+          <span class="heatmap-cell inline-block bg-[#22c55e]"></span>
+          <span class="heatmap-cell inline-block bg-[#16a34a]"></span>
+          <span class="heatmap-cell inline-block bg-[#15803d]"></span>
           <span>Más</span>
         </div>
       </div>
@@ -310,14 +314,9 @@
       const orgsContainer = document.getElementById('orgs-container');
       const orgsList = document.getElementById('orgs-list');
       
-      console.log('[DEBUG] orgLideres:', orgLideres);
-      console.log('[DEBUG] orgMiembros:', orgMiembros);
-      console.log('[DEBUG] allOrgs:', allOrgs);
-      
       if (allOrgs.length > 0) {
         orgsContainer.classList.remove('hidden');
         orgsList.innerHTML = allOrgs.map(o => {
-          console.log('[DEBUG] Generating link for org:', o);
           const isLeader = orgLideres.find(l => l.id === o.id) !== undefined;
           return `
           <a href="../perfil-organizacion.html?org_id=${o.id}" 
@@ -331,7 +330,6 @@
           </a>
         `;
         }).join('');
-        console.log('[DEBUG] HTML generated:', orgsList.innerHTML);
       }
 
       // Beneficiary list
@@ -386,12 +384,15 @@
   }
 
   // ── Heatmap ──────────────────────────────────────────────────────────────────
-  async function loadHeatmap() {
+  async function loadHeatmap(year) {
     const container = document.getElementById('heatmap-container');
     const loading   = document.getElementById('heatmap-loading');
     const countEl   = document.getElementById('heatmap-count');
+    const selectEl  = document.getElementById('heatmap-year-select');
     try {
-      const res = await fetch('/api/me/heatmap', {
+      let url = '/api/me/heatmap';
+      if (year) url += '?year=' + year;
+      const res = await fetch(url, {
         headers: { 'Authorization': 'Bearer ' + session.token }
       });
       if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -404,19 +405,31 @@
       const lookup = {};
       let totalActivities = 0;
       data.forEach(d => { lookup[d.date] = d.count; totalActivities += d.count; });
+
+      // Determine active year from data or from parameter
+      const sortedDates = data.map(d => d.date).filter(Boolean).sort();
+      const activeYear = year
+        ? Number(year)
+        : sortedDates.length
+          ? Number(sortedDates[sortedDates.length - 1].slice(0, 4))
+          : new Date().getUTCFullYear();
+
+      // Populate year selector
+      populateYearSelector(selectEl, lookup, activeYear);
+
       if (totalActivities > 0) {
         countEl.textContent = totalActivities;
         countEl.classList.remove('hidden');
+      } else {
+        countEl.classList.add('hidden');
       }
 
-      // Generate last 365 days
+      // Always render full Jan 1 – Dec 31 grid (spec R9)
+      const endDate = new Date(Date.UTC(activeYear, 11, 31));
       const days = [];
-      const today = new Date();
-      for (let i = 364; i >= 0; i--) {
-        const d = new Date(today);
-        d.setDate(d.getDate() - i);
+      for (let d = new Date(Date.UTC(activeYear, 0, 1)); d <= endDate; d.setUTCDate(d.getUTCDate() + 1)) {
         const dateStr = d.toISOString().slice(0, 10);
-        days.push({ date: d, dateStr, count: lookup[dateStr] || 0 });
+        days.push({ date: new Date(d), dateStr, count: lookup[dateStr] || 0 });
       }
 
       // SVG dimensions
@@ -429,11 +442,11 @@
 
       let svg = `<svg width="${svgW}" height="${svgH}" xmlns="http://www.w3.org/2000/svg">`;
 
-      // Month labels
+      // Month labels — always Ene through Dic (spec R8)
       const months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
       let lastMonth = -1;
       for (let i = 0; i < days.length; i++) {
-        const m = days[i].date.getMonth();
+        const m = days[i].date.getUTCMonth();
         if (m !== lastMonth) {
           lastMonth = m;
           const col = Math.floor(i / 7);
@@ -466,30 +479,62 @@
       }
 
       svg += '</svg>';
-      // Reconstruct container HTML preserving the legend below
+
+      // Empty year message
+      const emptyMsg = (totalActivities === 0 && year)
+        ? `<p class="text-sm text-slate-400 text-center mb-3">Sin actividad en ${year}</p>`
+        : '';
+
+      // Reconstruct container HTML preserving legend
       const legendHtml = `
         <div class="flex items-center gap-2 mt-4 text-xs text-slate-400 justify-end">
           <span>Menos</span>
           <span class="heatmap-cell inline-block bg-[#ebedf0]"></span>
-          <span class="heatmap-cell inline-block bg-[#9be9a8]"></span>
-          <span class="heatmap-cell inline-block bg-[#40c463]"></span>
-          <span class="heatmap-cell inline-block bg-[#30a14e]"></span>
-          <span class="heatmap-cell inline-block bg-[#216e39]"></span>
+          <span class="heatmap-cell inline-block bg-[#4ade80]"></span>
+          <span class="heatmap-cell inline-block bg-[#22c55e]"></span>
+          <span class="heatmap-cell inline-block bg-[#16a34a]"></span>
+          <span class="heatmap-cell inline-block bg-[#15803d]"></span>
           <span>Más</span>
         </div>
       `;
-      container.innerHTML = `<div class="flex items-end gap-1">${svg}</div>` + legendHtml;
+      container.innerHTML = emptyMsg + `<div class="flex items-end gap-1">${svg}</div>` + legendHtml;
+      // Scroll to the rightmost (most recent) dates
+      container.scrollLeft = container.scrollWidth;
     } catch (_) {
       loading.textContent = 'No se pudo cargar la actividad.';
     }
   }
 
+  function populateYearSelector(selectEl, lookup, activeYear) {
+    // Determine earliest year from data, or use current year - 2
+    const dataYears = Object.keys(lookup).map(d => Number(d.slice(0, 4))).filter(Boolean);
+    const earliestYear = dataYears.length > 0 ? Math.min(...dataYears) : new Date().getUTCFullYear() - 2;
+    const currentYear = new Date().getUTCFullYear();
+    const minYear = Math.max(earliestYear, currentYear - 2);
+
+    selectEl.innerHTML = '';
+    for (let y = currentYear; y >= minYear; y--) {
+      const opt = document.createElement('option');
+      opt.value = String(y);
+      opt.textContent = String(y);
+      if (y === activeYear) opt.selected = true;
+      selectEl.appendChild(opt);
+    }
+    // Store current active year
+    selectEl.dataset.activeYear = activeYear;
+  }
+
+  // Year selector change event
+  document.getElementById('heatmap-year-select').addEventListener('change', function () {
+    loadHeatmap(this.value);
+  });
+
   function _heatColor(count) {
     if (count === 0) return '#ebedf0';
-    if (count <= 2) return '#9be9a8';
-    if (count <= 5) return '#40c463';
-    if (count <= 9) return '#30a14e';
-    return '#216e39';
+    if (count <= 2) return '#4ade80';  // Brighter green, more visible on white
+    if (count <= 5) return '#22c55e';  // Medium green
+    if (count <= 9) return '#16a34a';  // Darker green
+    return '#15803d';  // Darkest green
   }
 
   function showHeatmapTooltip(ev, text) {

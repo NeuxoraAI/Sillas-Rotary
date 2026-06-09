@@ -170,6 +170,7 @@ def override_db(_test_db_conn):
 _TABLES_ORDER = [
     "historial_estados",
     "organizaciones_lideres",
+    "organizaciones_miembros",
     "solicitudes_tecnicas",
     "estudios_socioeconomicos",
     "tutores",

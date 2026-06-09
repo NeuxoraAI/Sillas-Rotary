@@ -58,6 +58,75 @@ class LiderAssignRequest(BaseModel):
 # Helpers
 # ---------------------------------------------------------------------------
 
+def _year_range(year: int | None) -> tuple[str, str]:
+    """Return (start_date, end_date_exclusive) for the given year, defaulting to current UTC year."""
+    if year is None:
+        year = datetime.now(timezone.utc).year
+    return (f"{year}-01-01", f"{year + 1}-01-01")
+
+
+def _get_org_user_ids(db: _DBAdapter, org_id: int) -> list[int]:
+    """Return all usuario_ids linked to an org (account + leaders + members), excluding NULLs."""
+    rows = db.execute(
+        """
+        SELECT DISTINCT usuario_id FROM (
+            SELECT usuario_id FROM organizaciones WHERE id = %s AND usuario_id IS NOT NULL
+            UNION
+            SELECT usuario_id FROM organizaciones_lideres WHERE organizacion_id = %s
+            UNION
+            SELECT usuario_id FROM organizaciones_miembros WHERE organizacion_id = %s
+        ) AS all_users
+        WHERE usuario_id IS NOT NULL
+        ORDER BY usuario_id
+        """,
+        (org_id, org_id, org_id),
+    ).fetchall()
+    return [r["usuario_id"] for r in rows]
+
+
+def _get_org_stats_and_heatmap(db: _DBAdapter, org_id: int, year: int | None = None) -> dict:
+    """Return {total_capturas, this_month, completados, heatmap_data} for an org, aggregated across all linked users."""
+    user_ids = _get_org_user_ids(db, org_id)
+    if not user_ids:
+        return {"total_capturas": 0, "this_month": 0, "completados": 0, "heatmap_data": []}
+
+    year_start, year_end = _year_range(year)
+
+    # Stats query
+    now = datetime.now(timezone.utc)
+    stats = db.execute(
+        """
+        SELECT
+            COUNT(DISTINCT e.id) AS total_capturas,
+            COUNT(DISTINCT CASE WHEN DATE_TRUNC('month', e.created_at) = DATE_TRUNC('month', %s::timestamptz) THEN e.id END) AS this_month,
+            COUNT(DISTINCT CASE WHEN e.status = 'completo' THEN e.id END) AS completados
+        FROM estudios_socioeconomicos e
+        WHERE e.usuario_id = ANY(%s)
+        """,
+        (now, list(user_ids)),
+    ).fetchone()
+
+    # Heatmap query — year-scoped
+    heatmap_rows = db.execute(
+        """
+        SELECT DATE(e.created_at) AS date, COUNT(DISTINCT e.id) AS count
+        FROM estudios_socioeconomicos e
+        WHERE e.usuario_id = ANY(%s)
+          AND e.created_at >= %s::date
+          AND e.created_at < %s::date
+        GROUP BY DATE(e.created_at)
+        ORDER BY date
+        """,
+        (list(user_ids), year_start, year_end),
+    ).fetchall()
+
+    return {
+        "total_capturas": stats["total_capturas"],
+        "this_month": stats["this_month"],
+        "completados": stats["completados"],
+        "heatmap_data": [{"date": str(r["date"]), "count": r["count"]} for r in heatmap_rows],
+    }
+
 def _get_user_stats(db: _DBAdapter, usuario_id: int) -> dict:
     """Return {total_capturas, this_month} for a user."""
     total = db.execute(
@@ -75,15 +144,16 @@ def _get_user_stats(db: _DBAdapter, usuario_id: int) -> dict:
     return {"total_capturas": total, "this_month": this_month}
 
 
-def _get_heatmap_data(db: _DBAdapter, usuario_id: int) -> list[dict]:
-    """Return [{date: str, count: int}] for last 365 days for a user."""
+def _get_heatmap_data(db: _DBAdapter, usuario_id: int, year: int | None = None) -> list[dict]:
+    """Return [{date: str, count: int}] for a given year (default: current UTC year)."""
+    year_start, year_end = _year_range(year)
     rows = db.execute(
         "SELECT DATE(created_at) AS date, COUNT(*) AS count "
         "FROM estudios_socioeconomicos "
-        "WHERE usuario_id = %s AND created_at >= NOW() - INTERVAL '1 year' "
+        "WHERE usuario_id = %s AND created_at >= %s::date AND created_at < %s::date "
         "GROUP BY DATE(created_at) "
         "ORDER BY date",
-        (usuario_id,),
+        (usuario_id, year_start, year_end),
     ).fetchall()
     return [{"date": str(r["date"]), "count": r["count"]} for r in rows]
 
@@ -208,9 +278,10 @@ def patch_my_perfil(
 def get_my_heatmap(
     db: Annotated[_DBAdapter, Depends(get_db)],
     user: Annotated[CurrentUser, Depends(require_auth)],
+    year: int | None = Query(None),
 ) -> list[dict]:
-    """Return contribution heatmap data for the current user (last 365 days)."""
-    return _get_heatmap_data(db, user.usuario_id)
+    """Return contribution heatmap data for the current user, scoped to year (default: current UTC year)."""
+    return _get_heatmap_data(db, user.usuario_id, year=year)
 
 
 @router.get("/me/beneficiarios")
@@ -324,15 +395,11 @@ def list_organizaciones(
         ).fetchone()["count"]
         org["member_count"] = member_count
 
-        # Get total capturas for this org
-        if org.get("usuario_id"):
-            stats_row = db.execute(
-                "SELECT COUNT(*) AS count FROM estudios_socioeconomicos WHERE usuario_id = %s",
-                (org["usuario_id"],),
-            ).fetchone()
-            org["total_capturas"] = stats_row["count"]
-        else:
-            org["total_capturas"] = 0
+        # Get total capturas for this org (aggregated across all linked users)
+        aggregated = _get_org_stats_and_heatmap(db, org["id"])
+        org["total_capturas"] = aggregated["total_capturas"]
+        org["this_month"] = aggregated["this_month"]
+        org["completados"] = aggregated["completados"]
         result.append(org)
 
     return result
@@ -474,13 +541,14 @@ def get_organizacion(
     ).fetchall()
     result["miembros"] = [dict(m) for m in members]
 
-    # Get stats and heatmap for the org's usuario_id
-    if org["usuario_id"]:
-        result["stats"] = _get_user_stats(db, org["usuario_id"])
-        result["heatmap_data"] = _get_heatmap_data(db, org["usuario_id"])
-    else:
-        result["stats"] = {"total_capturas": 0, "this_month": 0}
-        result["heatmap_data"] = []
+    # Get aggregated stats and heatmap for the org (all linked users)
+    aggregated = _get_org_stats_and_heatmap(db, org_id)
+    result["stats"] = {
+        "total_capturas": aggregated["total_capturas"],
+        "this_month": aggregated["this_month"],
+        "completados": aggregated["completados"],
+    }
+    result["heatmap_data"] = aggregated["heatmap_data"]
 
     return result
 
@@ -649,17 +717,17 @@ def get_org_heatmap(
     org_id: int,
     db: Annotated[_DBAdapter, Depends(get_db)],
     user: Annotated[CurrentUser, Depends(require_auth)],
+    year: int | None = Query(None),
 ) -> list[dict]:
-    """Return aggregate heatmap data for an organization."""
+    """Return aggregate heatmap data for an organization (all linked users), scoped to year (default: current UTC year)."""
     org = db.execute(
-        "SELECT usuario_id FROM organizaciones WHERE id = %s",
+        "SELECT id FROM organizaciones WHERE id = %s",
         (org_id,),
     ).fetchone()
     if org is None:
         raise HTTPException(status_code=404, detail="Organización no encontrada")
-    if org["usuario_id"] is None:
-        return []
-    return _get_heatmap_data(db, org["usuario_id"])
+    aggregated = _get_org_stats_and_heatmap(db, org_id, year=year)
+    return aggregated["heatmap_data"]
 
 
 @router.get("/organizaciones/{org_id}/voluntarios")
