@@ -519,19 +519,25 @@
           >
             <div class="flex flex-col sm:flex-row gap-4">
               <button
-                id="btn-guardar-borrador"
-                class="hidden px-6 py-3 border border-slate-300 text-slate-700 font-bold hover:bg-slate-50 transition-all uppercase text-sm tracking-wide"
+                id="btn-regresar-tecnica"
+                class="px-6 py-3 border border-slate-300 text-slate-700 font-bold hover:bg-slate-50 transition-all uppercase text-sm tracking-wide"
                 type="button"
-                disabled
-                aria-hidden="true"
+              >
+                REGRESAR
+              </button>
+              <button
+                id="btn-guardar-borrador-tecnica"
+                class="px-6 py-3 border border-amber-500 text-amber-700 font-bold hover:bg-amber-50 transition-all uppercase text-sm tracking-wide"
+                type="button"
               >
                 Guardar Borrador
               </button>
               <button
+                id="btn-continuar-tecnica"
                 class="px-10 py-3 bg-primary text-white font-bold shadow-lg hover:bg-primary/90 transition-all uppercase text-sm tracking-wide active:scale-95"
-                type="submit"
+                type="button"
               >
-                GUARDAR SOLICITUD
+                CONTINUAR
               </button>
             </div>
           </div>
@@ -814,8 +820,44 @@
           }
         }
 
-        // Standard auth check for new submissions
-        if (!session?.token || !beneficiarioIdRaw || isNaN(beneficiarioIdRaw)) {
+        // NEW: Check for localStorage draft (offline-first flow)
+        // Only populate from localStorage if no backend draft was loaded (no solicitud_id)
+        const localDraft = localStorage.getItem("draft_tecnica");
+        if (localDraft && !solicitudId) {
+          try {
+            const data = JSON.parse(localDraft);
+            const setVal = (name, val) => {
+              const el = document.querySelector(`[name="${name}"]`);
+              if (el && val != null) el.value = val;
+            };
+            setVal("entorno", data.entorno);
+            setVal("control_tronco", data.control_tronco);
+            setVal("control_cabeza", data.control_cabeza);
+            setVal("control_de_piernas", data.control_de_piernas);
+            setVal("observaciones_posturales", data.observaciones_posturales);
+            if (data.observaciones_posturales && data.observaciones_posturales.trim()) {
+              const chk = document.querySelector('[name="tiene_observaciones"]');
+              if (chk) { chk.checked = true; chk.dispatchEvent(new Event("change")); }
+            }
+            if (data.unidad_medida) {
+              const system = data.unidad_medida === "cm" ? "metric" : "imperial";
+              setVal("unidad_medida", system);
+            }
+            setVal("altura_total_in", data.altura_total_in);
+            setVal("peso_kg", data.peso_kg);
+            setVal("medida_cabeza_asiento", data.medida_cabeza_asiento);
+            setVal("medida_hombro_asiento", data.medida_hombro_asiento);
+            setVal("medida_prof_asiento", data.medida_prof_asiento);
+            setVal("medida_rodilla_talon", data.medida_rodilla_talon);
+            setVal("medida_ancho_cadera", data.medida_ancho_cadera);
+          } catch (err) {
+            console.error("Error loading localStorage draft:", err);
+          }
+        }
+
+        // Standard auth check: require session and region_ctx for new submissions
+        const regionCtx = JSON.parse(localStorage.getItem("region_ctx") || "null");
+        if (!session?.token || !regionCtx?.region_id) {
           window.location.href = "../login.html";
         }
       })();
@@ -828,6 +870,9 @@
         localStorage.removeItem("estudio_id");
         localStorage.removeItem("solicitud_id");
         localStorage.removeItem("guest_ctx");
+        localStorage.removeItem("draft_socioeconomico");
+        localStorage.removeItem("draft_tecnica");
+        localStorage.removeItem("draft_gestion");
         window.location.href = "../login.html";
       });
 
@@ -1267,13 +1312,230 @@
         }, 1800);
       }
 
+      // -- Validación del formulario técnico (extraída de submitSolicitud) --
+      function validarFormularioTecnica() {
+        const f = document.querySelector("form");
+        const errorEl = document.getElementById("error-msg");
+        errorEl.classList.add("hidden");
+        errorEl.textContent = "";
+        SR_Validations.clearAllFieldErrors(f);
+
+        // Validación de campos obligatorios
+        const required = [
+          { id: "entorno", label: "Entorno de Uso" },
+          { id: "control_tronco", label: "Control de Tronco" },
+          { id: "control_cabeza", label: "Control de Cabeza" },
+          { id: "control_de_piernas", label: "Control de Piernas" },
+          { id: "altura_total_in", label: "Altura total" },
+          { id: "peso_kg", label: "Peso" },
+          { id: "medida_cabeza_asiento", label: "Cabeza a asiento" },
+          { id: "medida_hombro_asiento", label: "Hombro a asiento" },
+          { id: "medida_prof_asiento", label: "Profundidad asiento" },
+          { id: "medida_rodilla_talon", label: "Rodilla al suelo" },
+          { id: "medida_ancho_cadera", label: "Ancho de cadera" },
+        ];
+        const missing = SR_Validations.validateRequired(f, required, { status: "completo" });
+        if (missing.length > 0) {
+          missing.forEach(({ id, label }) => {
+            SR_Validations.showFieldError(id, `${label} es obligatorio`);
+          });
+          errorEl.textContent = "Complete los campos obligatorios";
+          errorEl.classList.remove("hidden");
+          return false;
+        }
+
+        // Validate observaciones_posturales if checkbox is checked
+        const tieneObs = f.querySelector('[name="tiene_observaciones"]');
+        if (tieneObs?.checked) {
+          const obsVal = (f.querySelector('[name="observaciones_posturales"]')?.value || "").trim();
+          if (!obsVal) {
+            SR_Validations.showFieldError("observaciones_posturales", "Observaciones posturales es obligatorio");
+            errorEl.textContent = "Complete los campos obligatorios";
+            errorEl.classList.remove("hidden");
+            return false;
+          }
+        }
+
+        // Validar constraints HTML5
+        const constraintErrors = SR_Validations.validateHTML5Constraints(f);
+        if (constraintErrors.length > 0) {
+          constraintErrors.forEach(({ id, message }) => {
+            SR_Validations.showFieldError(id, message);
+          });
+          errorEl.textContent = "Revise los campos con formato incorrecto";
+          errorEl.classList.remove("hidden");
+          return false;
+        }
+
+        return true;
+      }
+
+      // -- Recolectar datos del formulario técnico para localStorage --
+      function getTecnicaFormData() {
+        const f = document.querySelector("form");
+        const fd = new FormData(f);
+        const get = (name) => fd.get(name) || "";
+        const toStrOrNull = (v) => {
+          const s = (v || "").trim();
+          return s === "" ? null : s;
+        };
+
+        return {
+          entorno: get("entorno"),
+          control_tronco: get("control_tronco"),
+          control_cabeza: get("control_cabeza"),
+          control_de_piernas: get("control_de_piernas"),
+          observaciones_posturales: get("observaciones_posturales") || null,
+          altura_total_in: toStrOrNull(get("altura_total_in")),
+          peso_kg: toStrOrNull(get("peso_kg")),
+          medida_cabeza_asiento: toStrOrNull(get("medida_cabeza_asiento")),
+          medida_hombro_asiento: toStrOrNull(get("medida_hombro_asiento")),
+          medida_prof_asiento: toStrOrNull(get("medida_prof_asiento")),
+          medida_rodilla_talon: toStrOrNull(get("medida_rodilla_talon")),
+          medida_ancho_cadera: toStrOrNull(get("medida_ancho_cadera")),
+          unidad_medida: get("unidad_medida") === "metric" ? "cm" : "in",
+          unidad_peso_captura: get("unidad_medida") === "metric" ? "kg" : "lb",
+        };
+      }
+
+      // -- Handler: CONTINUAR (offline-first) --
+      function continuarSolicitudTecnica() {
+        if (!validarFormularioTecnica()) return;
+        const formData = getTecnicaFormData();
+        localStorage.setItem("draft_tecnica", JSON.stringify(formData));
+        window.location.href = "gestion.html";
+      }
+
+      // -- Handler: REGRESAR --
+      function regresarSolicitudTecnica() {
+        // Save current form data before leaving
+        const formData = getTecnicaFormData();
+        localStorage.setItem("draft_tecnica", JSON.stringify(formData));
+        window.location.href = "socioeconomico.html";
+      }
+
+      // -- Guardar Borrador Maestro desde Técnica --
+      async function guardarBorradorDesdeTecnica() {
+        const btn = document.getElementById("btn-guardar-borrador-tecnica");
+        const originalText = btn?.textContent || "Guardar Borrador";
+        if (btn) {
+          btn.disabled = true;
+          btn.textContent = "Guardando...";
+        }
+
+        try {
+          const session = JSON.parse(localStorage.getItem("session") || "null");
+          if (!session?.token) {
+            alert("Debes iniciar sesión para guardar el borrador.");
+            return;
+          }
+
+          // 1. Recolectar datos del formulario técnico actual
+          const tecnicaData = getTecnicaFormData();
+
+          // 2. Mergear con localStorage de otros formularios
+          const draftSocioRaw = localStorage.getItem("draft_socioeconomico");
+          const draftGestionRaw = localStorage.getItem("draft_gestion");
+          const draftSocio = draftSocioRaw ? JSON.parse(draftSocioRaw) : {};
+          const draftGestion = draftGestionRaw ? JSON.parse(draftGestionRaw) : {};
+
+          // 3. Armar payload para el backend
+          const estudioId = localStorage.getItem("estudio_id");
+          const solicitudId = localStorage.getItem("solicitud_id");
+          const beneficiarioId = localStorage.getItem("beneficiario_id");
+
+          const payload = {
+            estudio_id: estudioId ? parseInt(estudioId, 10) : null,
+            solicitud_id: solicitudId ? parseInt(solicitudId, 10) : null,
+            beneficiario_id: beneficiarioId ? parseInt(beneficiarioId, 10) : null,
+            region_id: draftSocio.region_id || null,
+            sede: draftSocio.sede || null,
+            ciudad_registro: draftSocio.ciudad_registro || null,
+            // Beneficiario (desde socioeconomico)
+            nombres: draftSocio.beneficiario?.nombres || null,
+            apellido_paterno: draftSocio.beneficiario?.apellido_paterno || null,
+            apellido_materno: draftSocio.beneficiario?.apellido_materno || null,
+            fecha_nacimiento: draftSocio.beneficiario?.fecha_nacimiento || null,
+            diagnostico: draftSocio.beneficiario?.diagnostico || null,
+            calle: draftSocio.beneficiario?.calle || null,
+            num_ext: draftSocio.beneficiario?.num_ext || null,
+            num_int: draftSocio.beneficiario?.num_int || null,
+            colonia: draftSocio.beneficiario?.colonia || null,
+            ciudad: draftSocio.beneficiario?.ciudad || null,
+            estado_codigo: draftSocio.beneficiario?.estado_codigo || null,
+            sexo: draftSocio.beneficiario?.sexo || null,
+            telefonos: draftSocio.beneficiario?.telefonos || null,
+            email: draftSocio.beneficiario?.email || null,
+            // Estudio (desde socioeconomico)
+            tuvo_silla_previa: draftSocio.estudio?.tuvo_silla_previa || null,
+            como_obtuvo_silla: draftSocio.estudio?.como_obtuvo_silla || null,
+            elaboro_estudio: draftSocio.estudio?.elaboro_estudio || null,
+            fecha_estudio: draftSocio.estudio?.fecha_estudio || null,
+            status: "borrador",
+            // Solicitud (técnica - actual)
+            entorno: tecnicaData.entorno || null,
+            control_tronco: tecnicaData.control_tronco || null,
+            control_cabeza: tecnicaData.control_cabeza || null,
+            control_de_piernas: tecnicaData.control_de_piernas || null,
+            observaciones_posturales: tecnicaData.observaciones_posturales || null,
+            altura_total_in: tecnicaData.altura_total_in || null,
+            peso_kg: tecnicaData.peso_kg || null,
+            medida_cabeza_asiento: tecnicaData.medida_cabeza_asiento || null,
+            medida_hombro_asiento: tecnicaData.medida_hombro_asiento || null,
+            medida_prof_asiento: tecnicaData.medida_prof_asiento || null,
+            medida_rodilla_talon: tecnicaData.medida_rodilla_talon || null,
+            medida_ancho_cadera: tecnicaData.medida_ancho_cadera || null,
+            unidad_medida: tecnicaData.unidad_medida || null,
+            // Gestion (desde gestion)
+            entidad_solicitante: draftGestion.entidad_solicitante || null,
+            prioridad: draftGestion.prioridad || null,
+            justificacion: draftGestion.justificacion || null,
+          };
+
+          const res = await fetch("/api/guardar-borrador", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: "Bearer " + session.token,
+            },
+            body: JSON.stringify(payload),
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            if (data.estudio_id) localStorage.setItem("estudio_id", data.estudio_id);
+            if (data.solicitud_id) localStorage.setItem("solicitud_id", data.solicitud_id);
+            if (data.beneficiario_id) localStorage.setItem("beneficiario_id", data.beneficiario_id);
+            alert("El borrador ha sido guardado con éxito.");
+          } else {
+            const errData = await res.json().catch(() => ({}));
+            if (res.status === 422 && errData.detail) {
+              const errors = Array.isArray(errData.detail)
+                ? errData.detail.map((e) => e.msg || e.message || JSON.stringify(e)).join("; ")
+                : errData.detail;
+              alert("No se pudo guardar el borrador. Verifica los campos: " + errors);
+            } else {
+              alert("Ocurrió un error al guardar el borrador. Intenta nuevamente más tarde.");
+            }
+          }
+        } catch (err) {
+          console.error("Error guardando borrador:", err);
+          alert("Ocurrió un error al guardar el borrador. Intenta nuevamente más tarde.");
+        } finally {
+          if (btn) {
+            btn.disabled = false;
+            btn.textContent = originalText;
+          }
+        }
+      }
+
       let solicitudSubmitInProgress = false;
 
       function setSolicitudSubmitState(isSubmitting) {
-        const submitBtn = document.querySelector('button[type="submit"]');
-        if (!submitBtn) return;
-        submitBtn.disabled = isSubmitting;
-        submitBtn.textContent = isSubmitting ? "Guardando..." : "GUARDAR SOLICITUD";
+        const btn = document.getElementById("btn-continuar-tecnica");
+        if (!btn) return;
+        btn.disabled = isSubmitting;
+        btn.textContent = isSubmitting ? "Guardando..." : "CONTINUAR";
       }
 
       async function submitSolicitud(status) {
@@ -1512,14 +1774,30 @@
       _setupAllMedidaValidations();
       setupObservacionesPosturalesConditional();
 
-      // Guardar Borrador button
-      document.getElementById("btn-guardar-borrador").addEventListener("click", () => {
-        submitSolicitud("borrador");
+      // CONTINUAR button: validate + save to localStorage + navigate
+      document.getElementById("btn-continuar-tecnica")?.addEventListener("click", () => {
+        continuarSolicitudTecnica();
       });
 
-      // Guardar Solicitud (submit)
+      // REGRESAR button: save + go back
+      document.getElementById("btn-regresar-tecnica")?.addEventListener("click", () => {
+        regresarSolicitudTecnica();
+      });
+
+      // GUARDAR BORRADOR button: save all 3 forms to backend
+      document.getElementById("btn-guardar-borrador-tecnica")?.addEventListener("click", () => {
+        guardarBorradorDesdeTecnica();
+      });
+
+      // Form submit handler (for edit mode / backend submission)
       document.querySelector("form").addEventListener("submit", async (e) => {
         e.preventDefault();
+        const solicitudId = localStorage.getItem("solicitud_id");
+        // Only use backend submit when editing an existing solicitud
+        if (!solicitudId) {
+          continuarSolicitudTecnica();
+          return;
+        }
         if (solicitudSubmitInProgress) return;
         solicitudSubmitInProgress = true;
         setSolicitudSubmitState(true);

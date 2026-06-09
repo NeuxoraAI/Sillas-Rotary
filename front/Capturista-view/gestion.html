@@ -284,11 +284,26 @@
             </div>
             <div class="flex flex-col sm:flex-row gap-4">
               <button
-                class="px-10 py-3 bg-primary text-white font-bold shadow-lg hover:bg-primary/90 transition-all uppercase text-sm tracking-wide active:scale-95"
-                id="btn-guardar"
-                type="submit"
+                id="btn-regresar-gestion"
+                class="px-6 py-3 border border-slate-300 text-slate-700 font-bold hover:bg-slate-50 transition-all uppercase text-sm tracking-wide"
+                type="button"
               >
-                Guardar datos de gestión
+                REGRESAR
+              </button>
+              <button
+                id="btn-guardar-borrador-gestion"
+                class="px-6 py-3 border border-amber-500 text-amber-700 font-bold hover:bg-amber-50 transition-all uppercase text-sm tracking-wide"
+                type="button"
+              >
+                Guardar Borrador
+              </button>
+              <button
+                class="px-10 py-3 bg-green-600 text-white font-bold shadow-lg hover:bg-green-700 transition-all uppercase text-sm tracking-wide active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                id="btn-finalizar"
+                type="button"
+                onclick="finalizarRegistro()"
+              >
+                Finalizar Registro
               </button>
             </div>
           </div>
@@ -316,8 +331,21 @@
         localStorage.removeItem("estudio_id");
         localStorage.removeItem("solicitud_id");
         localStorage.removeItem("guest_ctx");
+        localStorage.removeItem("draft_socioeconomico");
+        localStorage.removeItem("draft_tecnica");
+        localStorage.removeItem("draft_gestion");
         window.location.href = "../login.html";
       });
+
+      // Role-gating: hide "Finalizar Registro" for non-capturista roles
+      (function () {
+        const rol = (sessionHeader?.rol || "").toLowerCase();
+        const allowedRoles = ["capturista", "organizacion"];
+        const btn = document.getElementById("btn-finalizar");
+        if (btn && !allowedRoles.includes(rol)) {
+          btn.style.display = "none";
+        }
+      })();
 
       function setCatalogSelectValue(name, val, catalog) {
         const el = document.querySelector(`[name="${name}"]`);
@@ -391,6 +419,144 @@
         apply();
       }
 
+      // -- Recolectar datos del formulario de gestión para localStorage --
+      function getGestionFormData() {
+        const f = document.querySelector("form");
+        const fd = new FormData(f);
+        const get = (name) => fd.get(name) || "";
+
+        return {
+          silla_previa: get("silla_previa") || null,
+          como_obtuvo_silla: get("como_obtuvo_silla") || null,
+          fecha_estudio: get("fecha_estudio") || null,
+          entidad_solicitante: get("entidad_solicitante") || null,
+          prioridad: document.querySelector('[name="prioridad"]:checked')?.value || null,
+          justificacion: get("justificacion") || null,
+        };
+      }
+
+      // -- Handler: REGRESAR --
+      function regresarGestion() {
+        const formData = getGestionFormData();
+        localStorage.setItem("draft_gestion", JSON.stringify(formData));
+        window.location.href = "tecnica.html";
+      }
+
+      // -- Guardar Borrador Maestro desde Gestión --
+      async function guardarBorradorDesdeGestion() {
+        const btn = document.getElementById("btn-guardar-borrador-gestion");
+        const originalText = btn?.textContent || "Guardar Borrador";
+        if (btn) {
+          btn.disabled = true;
+          btn.textContent = "Guardando...";
+        }
+
+        try {
+          const session = JSON.parse(localStorage.getItem("session") || "null");
+          if (!session?.token) {
+            alert("Debes iniciar sesión para guardar el borrador.");
+            return;
+          }
+
+          // 1. Recolectar datos del formulario gestión actual
+          const gestionData = getGestionFormData();
+
+          // 2. Mergear con localStorage de otros formularios
+          const draftSocioRaw = localStorage.getItem("draft_socioeconomico");
+          const draftTecnicaRaw = localStorage.getItem("draft_tecnica");
+          const draftSocio = draftSocioRaw ? JSON.parse(draftSocioRaw) : {};
+          const draftTecnica = draftTecnicaRaw ? JSON.parse(draftTecnicaRaw) : {};
+
+          // 3. Armar payload para el backend
+          const estudioId = localStorage.getItem("estudio_id");
+          const solicitudId = localStorage.getItem("solicitud_id");
+          const beneficiarioId = localStorage.getItem("beneficiario_id");
+
+          const payload = {
+            estudio_id: estudioId ? parseInt(estudioId, 10) : null,
+            solicitud_id: solicitudId ? parseInt(solicitudId, 10) : null,
+            beneficiario_id: beneficiarioId ? parseInt(beneficiarioId, 10) : null,
+            region_id: draftSocio.region_id || null,
+            sede: draftSocio.sede || null,
+            ciudad_registro: draftSocio.ciudad_registro || null,
+            // Beneficiario (desde socioeconomico)
+            nombres: draftSocio.beneficiario?.nombres || null,
+            apellido_paterno: draftSocio.beneficiario?.apellido_paterno || null,
+            apellido_materno: draftSocio.beneficiario?.apellido_materno || null,
+            fecha_nacimiento: draftSocio.beneficiario?.fecha_nacimiento || null,
+            diagnostico: draftSocio.beneficiario?.diagnostico || null,
+            calle: draftSocio.beneficiario?.calle || null,
+            num_ext: draftSocio.beneficiario?.num_ext || null,
+            num_int: draftSocio.beneficiario?.num_int || null,
+            colonia: draftSocio.beneficiario?.colonia || null,
+            ciudad: draftSocio.beneficiario?.ciudad || null,
+            estado_codigo: draftSocio.beneficiario?.estado_codigo || null,
+            sexo: draftSocio.beneficiario?.sexo || null,
+            telefonos: draftSocio.beneficiario?.telefonos || null,
+            email: draftSocio.beneficiario?.email || null,
+            // Estudio (desde socioeconomico)
+            tuvo_silla_previa: draftSocio.estudio?.tuvo_silla_previa || null,
+            como_obtuvo_silla: draftSocio.estudio?.como_obtuvo_silla || null,
+            elaboro_estudio: draftSocio.estudio?.elaboro_estudio || null,
+            fecha_estudio: draftSocio.estudio?.fecha_estudio || null,
+            status: "borrador",
+            // Solicitud (técnica)
+            entorno: draftTecnica.entorno || null,
+            control_tronco: draftTecnica.control_tronco || null,
+            control_cabeza: draftTecnica.control_cabeza || null,
+            control_de_piernas: draftTecnica.control_de_piernas || null,
+            observaciones_posturales: draftTecnica.observaciones_posturales || null,
+            altura_total_in: draftTecnica.altura_total_in || null,
+            peso_kg: draftTecnica.peso_kg || null,
+            medida_cabeza_asiento: draftTecnica.medida_cabeza_asiento || null,
+            medida_hombro_asiento: draftTecnica.medida_hombro_asiento || null,
+            medida_prof_asiento: draftTecnica.medida_prof_asiento || null,
+            medida_rodilla_talon: draftTecnica.medida_rodilla_talon || null,
+            medida_ancho_cadera: draftTecnica.medida_ancho_cadera || null,
+            unidad_medida: draftTecnica.unidad_medida || null,
+            // Gestion (actual)
+            entidad_solicitante: gestionData.entidad_solicitante || null,
+            prioridad: gestionData.prioridad || null,
+            justificacion: gestionData.justificacion || null,
+          };
+
+          const res = await fetch("/api/guardar-borrador", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: "Bearer " + session.token,
+            },
+            body: JSON.stringify(payload),
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            if (data.estudio_id) localStorage.setItem("estudio_id", data.estudio_id);
+            if (data.solicitud_id) localStorage.setItem("solicitud_id", data.solicitud_id);
+            if (data.beneficiario_id) localStorage.setItem("beneficiario_id", data.beneficiario_id);
+            alert("El borrador ha sido guardado con éxito.");
+          } else {
+            const errData = await res.json().catch(() => ({}));
+            if (res.status === 422 && errData.detail) {
+              const errors = Array.isArray(errData.detail)
+                ? errData.detail.map((e) => e.msg || e.message || JSON.stringify(e)).join("; ")
+                : errData.detail;
+              alert("No se pudo guardar el borrador. Verifica los campos: " + errors);
+            } else {
+              alert("Ocurrió un error al guardar el borrador. Intenta nuevamente más tarde.");
+            }
+          }
+        } catch (err) {
+          console.error("Error guardando borrador:", err);
+          alert("Ocurrió un error al guardar el borrador. Intenta nuevamente más tarde.");
+        } finally {
+          if (btn) {
+            btn.disabled = false;
+            btn.textContent = originalText;
+          }
+        }
+      }
+
       // -- Toast de éxito ---------------------------------------------------
       function showSuccessToast(message, redirectUrl) {
         const toast = document.getElementById("success-toast");
@@ -409,6 +575,69 @@
             if (redirectUrl) window.location.href = redirectUrl;
           }, 300);
         }, 1800);
+      }
+
+      // -- Validación del formulario de gestión (sin enviar al backend) ----
+      function validarFormularioGestion() {
+        const f = document.querySelector("form");
+        const errorEl = document.getElementById("error-msg");
+        SR_Validations.clearAllFieldErrors(f);
+
+        const fd = new FormData(f);
+        const get = (name) => fd.get(name) || "";
+        const fechaEstudio = get("fecha_estudio").trim();
+        const missing = [];
+
+        if (!get("silla_previa")) {
+          missing.push({ id: "silla_previa", label: "¿El paciente ha tenido silla previamente?" });
+        }
+        if (get("silla_previa") === "Sí" && !get("como_obtuvo_silla")) {
+          missing.push({ id: "como_obtuvo_silla", label: "¿Cómo la obtuvo?" });
+        }
+        if (!fechaEstudio) {
+          missing.push({ id: "fecha_estudio", label: "Fecha del estudio" });
+        }
+        if (!get("entidad_solicitante")?.trim()) {
+          missing.push({ id: "entidad_solicitante", label: "Entidad Solicitante" });
+        }
+        if (!document.querySelector('[name="prioridad"]:checked')) {
+          missing.push({ id: "prioridad", label: "Prioridad" });
+        }
+
+        if (missing.length > 0) {
+          missing.forEach(({ id, label }) => {
+            SR_Validations.showFieldError(id, `${label} es obligatorio`);
+          });
+          errorEl.textContent = "Complete los campos obligatorios: " + missing.map(m => m.label).join(", ");
+          errorEl.classList.remove("hidden");
+          return false;
+        }
+
+        // Validate justificacion if checkbox is checked
+        const tieneJust = f.querySelector('[name="tiene_justificacion"]');
+        if (tieneJust?.checked) {
+          const justVal = (f.querySelector('[name="justificacion"]')?.value || "").trim();
+          if (!justVal) {
+            SR_Validations.showFieldError("justificacion", "Justificación es obligatorio");
+            errorEl.textContent = "Complete los campos obligatorios";
+            errorEl.classList.remove("hidden");
+            return false;
+          }
+        }
+
+        // Validar constraints HTML5
+        const constraintErrors = SR_Validations.validateHTML5Constraints(f);
+        if (constraintErrors.length > 0) {
+          constraintErrors.forEach(({ id, message }) => {
+            SR_Validations.showFieldError(id, message);
+          });
+          errorEl.textContent = "Revise los campos con formato incorrecto";
+          errorEl.classList.remove("hidden");
+          return false;
+        }
+
+        errorEl.classList.add("hidden");
+        return true;
       }
 
       // -- submitGestion ----------------------------------------------------
@@ -456,58 +685,8 @@
         };
 
         // Frontend validation before sending
-        if (status === "completo") {
-          const missing = [];
-
-          if (!get("silla_previa")) {
-            missing.push({ id: "silla_previa", label: "¿El paciente ha tenido silla previamente?" });
-          }
-          if (get("silla_previa") === "Sí" && !get("como_obtuvo_silla")) {
-            missing.push({ id: "como_obtuvo_silla", label: "¿Cómo la obtuvo?" });
-          }
-          if (!fechaEstudio) {
-            missing.push({ id: "fecha_estudio", label: "Fecha del estudio" });
-          }
-          if (!get("entidad_solicitante")?.trim()) {
-            missing.push({ id: "entidad_solicitante", label: "Entidad Solicitante" });
-          }
-          if (!document.querySelector('[name="prioridad"]:checked')) {
-            missing.push({ id: "prioridad", label: "Prioridad" });
-          }
-
-          if (missing.length > 0) {
-            missing.forEach(({ id, label }) => {
-              SR_Validations.showFieldError(id, `${label} es obligatorio`);
-            });
-            errorEl.textContent = "Complete los campos obligatorios: " + missing.map(m => m.label).join(", ");
-            errorEl.classList.remove("hidden");
-            return;
-          }
-
-          // Validate justificacion if checkbox is checked
-          const tieneJust = f.querySelector('[name="tiene_justificacion"]');
-          if (tieneJust?.checked) {
-            const justVal = (f.querySelector('[name="justificacion"]')?.value || "").trim();
-            if (!justVal) {
-              SR_Validations.showFieldError("justificacion", "Justificación es obligatorio");
-              errorEl.textContent = "Complete los campos obligatorios";
-              errorEl.classList.remove("hidden");
-              return;
-            }
-          }
-        }
-
-        // Validar constraints HTML5 (minlength, pattern) replicando validación nativa desactivada por novalidate
-        if (status === "completo") {
-          const constraintErrors = SR_Validations.validateHTML5Constraints(f);
-          if (constraintErrors.length > 0) {
-            constraintErrors.forEach(({ id, message }) => {
-              SR_Validations.showFieldError(id, message);
-            });
-            errorEl.textContent = "Revise los campos con formato incorrecto";
-            errorEl.classList.remove("hidden");
-            return;
-          }
+        if (status === "completo" && !validarFormularioGestion()) {
+          return;
         }
 
         try {
@@ -561,6 +740,242 @@
         } catch (err) {
           errorEl.textContent = "No se pudo conectar con el servidor.";
           errorEl.classList.remove("hidden");
+        }
+      }
+
+      // -- showErrorToast ----------------------------------------------------
+      function showErrorToast(message) {
+        const toast = document.getElementById("error-toast");
+        const msgEl = document.getElementById("error-toast-msg");
+        if (!toast || !msgEl) return;
+        msgEl.textContent = message;
+        toast.classList.remove("hidden", "hiding");
+        setTimeout(() => {
+          toast.classList.add("hiding");
+          setTimeout(() => {
+            toast.classList.add("hidden");
+            toast.classList.remove("hiding");
+          }, 300);
+        }, 3000);
+      }
+
+      // -- finalizarRegistro (offline-first: POST drafts + finalize) -----------
+      async function finalizarRegistro() {
+        const errorEl = document.getElementById("error-msg");
+        errorEl.classList.add("hidden");
+        errorEl.textContent = "";
+
+        const session = JSON.parse(localStorage.getItem("session") || "null");
+        if (!session?.token) {
+          window.location.href = "../login.html";
+          return;
+        }
+
+        const btn = document.getElementById("btn-finalizar");
+        if (btn) {
+          btn.disabled = true;
+          btn.textContent = "Finalizando...";
+        }
+
+        try {
+          // 1. Validate gestion form fields client-side
+          if (!validarFormularioGestion()) {
+            showErrorToast(
+              "No es posible finalizar el registro. Completa todos los campos requeridos."
+            );
+            if (btn) { btn.disabled = false; btn.textContent = "Finalizar Registro"; }
+            return;
+          }
+
+          // 2. Save current gestion data to localStorage
+          const gestionData = getGestionFormData();
+          localStorage.setItem("draft_gestion", JSON.stringify(gestionData));
+
+          // 3. Get drafts from localStorage
+          const draftSocioRaw = localStorage.getItem("draft_socioeconomico");
+          const draftTecnicaRaw = localStorage.getItem("draft_tecnica");
+          if (!draftSocioRaw) {
+            showErrorToast("No se encontró el estudio socioeconómico. Complete el paso 1.");
+            if (btn) { btn.disabled = false; btn.textContent = "Finalizar Registro"; }
+            return;
+          }
+          if (!draftTecnicaRaw) {
+            showErrorToast("No se encontró la solicitud técnica. Complete el paso 2.");
+            if (btn) { btn.disabled = false; btn.textContent = "Finalizar Registro"; }
+            return;
+          }
+
+          const draftSocio = JSON.parse(draftSocioRaw);
+          const draftTecnica = JSON.parse(draftTecnicaRaw);
+
+          // 4. Prepare estudio payload
+          const estudioId = localStorage.getItem("estudio_id");
+          let estudioPayload;
+          if (estudioId) {
+            // PATCH: existing estudio — top-level fields only
+            estudioPayload = {
+              ...(draftSocio.estudio || {}),
+              beneficiario: draftSocio.beneficiario,
+              tutores: draftSocio.tutores,
+            };
+          } else {
+            // POST: new estudio — nested structure
+            estudioPayload = {
+              region_id: draftSocio.region_id,
+              sede: draftSocio.sede,
+              ciudad_registro: draftSocio.ciudad_registro,
+              beneficiario: draftSocio.beneficiario,
+              tutores: draftSocio.tutores,
+              estudio: draftSocio.estudio,
+            };
+          }
+
+          // 5. POST or PATCH estudio
+          let estudioRes, estudioData;
+          if (estudioId) {
+            estudioRes = await fetch(`/api/estudios/${estudioId}`, {
+              method: "PATCH",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: "Bearer " + session.token,
+              },
+              body: JSON.stringify(estudioPayload),
+            });
+          } else {
+            estudioRes = await fetch("/api/estudios", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: "Bearer " + session.token,
+              },
+              body: JSON.stringify(estudioPayload),
+            });
+          }
+
+          if (!estudioRes.ok) {
+            const errData = await estudioRes.json().catch(() => ({}));
+            console.error("POST estudio error:", estudioRes.status, errData);
+            showErrorToast(errData.detail || `Error al guardar el estudio socioeconómico (${estudioRes.status}).`);
+            if (btn) { btn.disabled = false; btn.textContent = "Finalizar Registro"; }
+            return;
+          }
+          estudioData = await estudioRes.json();
+          const finalEstudioId = estudioData.estudio_id || estudioId;
+          if (estudioData.estudio_id) localStorage.setItem("estudio_id", estudioData.estudio_id);
+          if (estudioData.beneficiario_id) localStorage.setItem("beneficiario_id", estudioData.beneficiario_id);
+
+          // 6. Prepare solicitud payload (merge tecnica + gestion)
+          const beneficiarioId = parseInt(localStorage.getItem("beneficiario_id"), 10);
+          const solicitudPayload = {
+            beneficiario_id: beneficiarioId,
+            entorno: draftTecnica.entorno,
+            control_tronco: draftTecnica.control_tronco,
+            control_cabeza: draftTecnica.control_cabeza,
+            control_de_piernas: draftTecnica.control_de_piernas,
+            observaciones_posturales: draftTecnica.observaciones_posturales,
+            altura_total_in: draftTecnica.altura_total_in,
+            peso_kg: draftTecnica.peso_kg,
+            medida_cabeza_asiento: draftTecnica.medida_cabeza_asiento,
+            medida_hombro_asiento: draftTecnica.medida_hombro_asiento,
+            medida_prof_asiento: draftTecnica.medida_prof_asiento,
+            medida_rodilla_talon: draftTecnica.medida_rodilla_talon,
+            medida_ancho_cadera: draftTecnica.medida_ancho_cadera,
+            unidad_medida: draftTecnica.unidad_medida,
+            unidad_peso_captura: draftTecnica.unidad_peso_captura,
+            entidad_solicitante: gestionData.entidad_solicitante,
+            prioridad: gestionData.prioridad,
+            justificacion: gestionData.justificacion,
+            status: "borrador",
+          };
+
+          // 7. POST or PATCH solicitud
+          const solicitudId = localStorage.getItem("solicitud_id");
+          let solicitudRes, solicitudData;
+          if (solicitudId) {
+            solicitudRes = await fetch(`/api/solicitudes/${solicitudId}`, {
+              method: "PATCH",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: "Bearer " + session.token,
+              },
+              body: JSON.stringify(solicitudPayload),
+            });
+          } else {
+            solicitudRes = await fetch("/api/solicitudes", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: "Bearer " + session.token,
+              },
+              body: JSON.stringify(solicitudPayload),
+            });
+          }
+
+          if (!solicitudRes.ok) {
+            const errData = await solicitudRes.json().catch(() => ({}));
+            console.error("POST solicitud error:", solicitudRes.status, errData);
+            showErrorToast(errData.detail || `Error al guardar la solicitud técnica (${solicitudRes.status}).`);
+            if (btn) { btn.disabled = false; btn.textContent = "Finalizar Registro"; }
+            return;
+          }
+          solicitudData = await solicitudRes.json();
+          const finalSolicitudId = solicitudData.solicitud_id || solicitudId;
+          if (solicitudData.solicitud_id) localStorage.setItem("solicitud_id", solicitudData.solicitud_id);
+
+          // 8. Finalizar registro
+          const finalizarRes = await fetch("/api/finalizar-registro", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: "Bearer " + session.token,
+            },
+            body: JSON.stringify({
+              estudio_id: parseInt(finalEstudioId, 10),
+              solicitud_id: parseInt(finalSolicitudId, 10),
+            }),
+          });
+
+          if (finalizarRes.ok) {
+            const finalData = await finalizarRes.json();
+            // Success: clear ALL localStorage drafts and IDs
+            localStorage.removeItem("draft_socioeconomico");
+            localStorage.removeItem("draft_tecnica");
+            localStorage.removeItem("draft_gestion");
+            localStorage.removeItem("estudio_id");
+            localStorage.removeItem("solicitud_id");
+            localStorage.removeItem("beneficiario_id");
+            if (finalData.already_completed) {
+              showSuccessToast("El registro ya estaba finalizado.", "perfil-capturista.html");
+            } else {
+              showSuccessToast("El registro ha sido finalizado y guardado con éxito.", "perfil-capturista.html");
+            }
+            return;
+          }
+
+          // 9. Handle finalizar errors
+          const errData = await finalizarRes.json().catch(() => ({}));
+          console.error("POST finalizar error:", finalizarRes.status, errData);
+          if (finalizarRes.status === 422) {
+            const detail = errData.detail || {};
+            if (detail.missing && Array.isArray(detail.missing)) {
+              const fields = detail.missing.map((m) => `${m.form}.${m.field}`).join(", ");
+              showErrorToast(`No es posible finalizar el registro. Faltan campos: ${fields}`);
+            } else {
+              showErrorToast("No es posible finalizar el registro. Completa todos los campos requeridos.");
+            }
+          } else if (finalizarRes.status === 403) {
+            showErrorToast("No tiene permisos para finalizar este registro.");
+          } else {
+            showErrorToast(`Ocurrió un error al finalizar el registro (${finalizarRes.status}). Intenta nuevamente más tarde.`);
+          }
+        } catch (err) {
+          showErrorToast("Ocurrió un error al finalizar el registro. Intenta nuevamente más tarde.");
+          console.error("Error in finalizarRegistro:", err);
+        } finally {
+          if (btn) {
+            btn.disabled = false;
+            btn.textContent = "Finalizar Registro";
+          }
         }
       }
 
@@ -655,6 +1070,33 @@
             console.error("Error loading solicitud draft:", err);
           }
         }
+
+        // NEW: Check for localStorage draft (offline-first flow)
+        const localDraft = localStorage.getItem("draft_gestion");
+        if (localDraft) {
+          try {
+            const data = JSON.parse(localDraft);
+            const setVal = (name, val) => {
+              const el = document.querySelector(`[name="${name}"]`);
+              if (el && val != null) el.value = val;
+            };
+            setVal("silla_previa", data.silla_previa);
+            setVal("como_obtuvo_silla", data.como_obtuvo_silla);
+            setVal("fecha_estudio", data.fecha_estudio);
+            setVal("entidad_solicitante", data.entidad_solicitante);
+            if (data.prioridad) {
+              const prioridadRadio = document.querySelector(`[name="prioridad"][value="${data.prioridad}"]`);
+              if (prioridadRadio) prioridadRadio.checked = true;
+            }
+            if (data.justificacion && data.justificacion.trim()) {
+              setVal("justificacion", data.justificacion);
+              const chk = document.querySelector('[name="tiene_justificacion"]');
+              if (chk) { chk.checked = true; chk.dispatchEvent(new Event("change")); }
+            }
+          } catch (err) {
+            console.error("Error loading localStorage draft:", err);
+          }
+        }
       })();
 
       // -- Event Listeners --------------------------------------------------
@@ -663,10 +1105,20 @@
       _setupEntidadValidation();
       _setupJustificacionValidation();
 
-      // Guardar datos de gestión (submit)
+      // REGRESAR button: save + go back
+      document.getElementById("btn-regresar-gestion")?.addEventListener("click", () => {
+        regresarGestion();
+      });
+
+      // GUARDAR BORRADOR button: save all 3 forms to backend
+      document.getElementById("btn-guardar-borrador-gestion")?.addEventListener("click", () => {
+        guardarBorradorDesdeGestion();
+      });
+
+      // Form submit (legacy: redirect to REGRESAR)
       document.querySelector("form").addEventListener("submit", (e) => {
         e.preventDefault();
-        submitGestion("completo");
+        regresarGestion();
       });
     </script>
 
@@ -683,6 +1135,21 @@
         </svg>
       </div>
       <span id="success-toast-msg" class="text-sm font-semibold">Guardado correctamente</span>
+    </div>
+
+    <!-- Toast de error -->
+    <div
+      id="error-toast"
+      class="error-toast fixed top-6 left-1/2 -translate-x-1/2 z-50 hidden flex items-center gap-3 rounded-xl bg-red-500 px-6 py-4 text-white shadow-2xl"
+      role="alert"
+      aria-live="assertive"
+    >
+      <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/20">
+        <svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </div>
+      <span id="error-toast-msg" class="text-sm font-semibold">Error</span>
     </div>
   </body>
 </html>
