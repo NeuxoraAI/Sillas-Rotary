@@ -6,6 +6,8 @@ Tests for:
 - elaboro_estudio override for organizacion role (POST and PATCH)
 """
 
+from datetime import date
+
 import pytest
 
 
@@ -320,6 +322,194 @@ class TestMeBeneficiarios:
         """Tecnico cannot access beneficiary list."""
         res = client.get("/api/me/beneficiarios", headers=tecnico_headers)
         assert res.status_code == 403
+
+
+class TestProfileStatsExtension:
+    """Tests for pendientes count and last_activity_date in /api/me/perfil."""
+
+    def test_perfil_includes_pendientes(self, client, capturista_headers, capturista_user, region_lon):
+        """GET /api/me/perfil includes pendientes count in stats."""
+        # Create a draft study (status = 'borrador')
+        payload = _build_minimal_estudio(region_lon["id"], "Capturista Test")
+        payload["estudio"]["status"] = "borrador"
+        res = client.post("/api/estudios", json=payload, headers=capturista_headers)
+        assert res.status_code == 201
+
+        res = client.get("/api/me/perfil", headers=capturista_headers)
+        assert res.status_code == 200
+        data = res.json()
+        assert "pendientes" in data["stats"]
+        assert data["stats"]["pendientes"] >= 1
+
+    def test_perfil_pendientes_zero_when_all_complete(self, client, capturista_headers, capturista_user, region_lon):
+        """When all studies are complete, pendientes is 0."""
+        payload = _build_minimal_estudio(region_lon["id"], "Capturista Test")
+        payload["estudio"]["status"] = "completo"
+        res = client.post("/api/estudios", json=payload, headers=capturista_headers)
+        assert res.status_code == 201
+
+        res = client.get("/api/me/perfil", headers=capturista_headers)
+        data = res.json()
+        assert data["stats"]["pendientes"] == 0
+
+    def test_perfil_includes_last_activity_date_with_studies(self, client, capturista_headers, capturista_user, region_lon):
+        """GET /api/me/perfil includes last_activity_date when studies exist."""
+        payload = _build_minimal_estudio(region_lon["id"], "Capturista Test")
+        res = client.post("/api/estudios", json=payload, headers=capturista_headers)
+        assert res.status_code == 201
+
+        res = client.get("/api/me/perfil", headers=capturista_headers)
+        assert res.status_code == 200
+        data = res.json()
+        assert "last_activity_date" in data
+        assert data["last_activity_date"] is not None
+
+    def test_perfil_last_activity_date_null_no_studies(self, client, capturista_headers):
+        """When no studies exist, last_activity_date is null."""
+        res = client.get("/api/me/perfil", headers=capturista_headers)
+        data = res.json()
+        assert data["last_activity_date"] is None
+
+    def test_perfil_includes_avatar_url(self, client, capturista_headers):
+        """GET /api/me/perfil includes avatar_url in usuario object."""
+        res = client.get("/api/me/perfil", headers=capturista_headers)
+        assert res.status_code == 200
+        data = res.json()
+        assert "avatar_url" in data["usuario"]
+        # New users have no avatar, so it should be None/null
+        assert data["usuario"]["avatar_url"] is None
+
+    def test_perfil_backward_compatible_fields(self, client, capturista_headers):
+        """All original fields remain in the perfil response."""
+        res = client.get("/api/me/perfil", headers=capturista_headers)
+        assert res.status_code == 200
+        data = res.json()
+        # Original fields still present
+        assert "usuario" in data
+        assert "stats" in data
+        assert "total_capturas" in data["stats"]
+        assert "this_month" in data["stats"]
+        assert "heatmap_data" in data
+        assert "can_edit" in data
+
+
+class TestHeatmapYearFilter:
+    """Tests for ?year= query param on /api/me/heatmap."""
+
+    def test_heatmap_year_param_filters_data(self, client, capturista_headers, capturista_user, region_lon):
+        """GET /api/me/heatmap?year=2025 returns only 2025 data."""
+        payload = _build_minimal_estudio(region_lon["id"], "Capturista Test")
+        res = client.post("/api/estudios", json=payload, headers=capturista_headers)
+        assert res.status_code == 201
+
+        current_year = date.today().year
+        res = client.get(f"/api/me/heatmap?year={current_year}", headers=capturista_headers)
+        assert res.status_code == 200
+        data = res.json()
+        # Should have at least the study we just created
+        assert len(data) >= 1
+
+    def test_heatmap_year_param_empty_for_different_year(self, client, capturista_headers, capturista_user, region_lon):
+        """GET /api/me/heatmap?year=2000 returns empty for a year with no data."""
+        res = client.get("/api/me/heatmap?year=2000", headers=capturista_headers)
+        assert res.status_code == 200
+        assert res.json() == []
+
+    def test_heatmap_default_no_year_param(self, client, capturista_headers, capturista_user, region_lon):
+        """GET /api/me/heatmap without year param returns last 365 days (default behavior)."""
+        payload = _build_minimal_estudio(region_lon["id"], "Capturista Test")
+        client.post("/api/estudios", json=payload, headers=capturista_headers)
+
+        res = client.get("/api/me/heatmap", headers=capturista_headers)
+        assert res.status_code == 200
+        data = res.json()
+        assert len(data) >= 1
+
+
+class TestBeneficiarioSearchFilter:
+    """Tests for ?q= and ?status= query params on /api/me/beneficiarios."""
+
+    def test_beneficiarios_search_by_name(self, client, capturista_headers, capturista_user, region_lon):
+        """GET /api/me/beneficiarios?q=Mar filters by name."""
+        # Create a study with a specific beneficiary name
+        payload = _build_minimal_estudio(region_lon["id"], "Capturista Test")
+        payload["beneficiario"]["nombres"] = "MARIA"
+        payload["beneficiario"]["apellido_paterno"] = "GARCIA"
+        res = client.post("/api/estudios", json=payload, headers=capturista_headers)
+        assert res.status_code == 201
+
+        res = client.get("/api/me/beneficiarios?q=Mar", headers=capturista_headers)
+        assert res.status_code == 200
+        data = res.json()
+        assert len(data) >= 1
+        # All results should contain "mar" (case-insensitive) in beneficiario_nombre or folio
+        for item in data:
+            name_match = "mar" in item["beneficiario_nombre"].lower()
+            folio_match = item["folio"] and "mar" in item["folio"].lower()
+            assert name_match or folio_match, f"No match in {item}"
+
+    def test_beneficiarios_search_no_results(self, client, capturista_headers):
+        """GET /api/me/beneficiarios?q=ZZZZNOTFOUND returns empty."""
+        res = client.get("/api/me/beneficiarios?q=ZZZZNOTFOUND", headers=capturista_headers)
+        assert res.status_code == 200
+        assert res.json() == []
+
+    def test_beneficiarios_filter_by_status_borrador(self, client, capturista_headers, capturista_user, region_lon):
+        """GET /api/me/beneficiarios?status=borrador returns only draft studies."""
+        payload = _build_minimal_estudio(region_lon["id"], "Capturista Test")
+        # Default status is borrador in _build_minimal_estudio
+        res = client.post("/api/estudios", json=payload, headers=capturista_headers)
+        assert res.status_code == 201
+
+        res = client.get("/api/me/beneficiarios?status=borrador", headers=capturista_headers)
+        assert res.status_code == 200
+        data = res.json()
+        for item in data:
+            assert item["status"] == "borrador"
+
+    def test_beneficiarios_filter_by_status_completo(self, client, capturista_headers, capturista_user, region_lon):
+        """GET /api/me/beneficiarios?status=completo returns only completed studies."""
+        payload = _build_minimal_estudio(region_lon["id"], "Capturista Test")
+        payload["estudio"]["status"] = "completo"
+        res = client.post("/api/estudios", json=payload, headers=capturista_headers)
+        assert res.status_code == 201
+
+        res = client.get("/api/me/beneficiarios?status=completo", headers=capturista_headers)
+        assert res.status_code == 200
+        data = res.json()
+        for item in data:
+            assert item["status"] == "completo"
+
+    def test_beneficiarios_combined_search_and_status(self, client, capturista_headers, capturista_user, region_lon):
+        """GET /api/me/beneficiarios?q=Mar&status=borrador combines both filters."""
+        payload = _build_minimal_estudio(region_lon["id"], "Capturista Test")
+        # status defaults to borrador in the helper but let's be explicit
+        payload["beneficiario"]["nombres"] = "MARTA"
+        payload["estudio"]["status"] = "borrador"
+        res = client.post("/api/estudios", json=payload, headers=capturista_headers)
+        assert res.status_code == 201
+
+        res = client.get("/api/me/beneficiarios?q=Mar&status=borrador", headers=capturista_headers)
+        assert res.status_code == 200
+        data = res.json()
+        for item in data:
+            assert item["status"] == "borrador"
+
+    def test_beneficiarios_no_params_returns_all(self, client, capturista_headers, capturista_user, region_lon):
+        """GET /api/me/beneficiarios without params returns all user's studies."""
+        payload = _build_minimal_estudio(region_lon["id"], "Capturista Test")
+        res = client.post("/api/estudios", json=payload, headers=capturista_headers)
+        assert res.status_code == 201
+
+        res = client.get("/api/me/beneficiarios", headers=capturista_headers)
+        assert res.status_code == 200
+        data = res.json()
+        assert len(data) >= 1
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Organization CRUD Tests
+# ═══════════════════════════════════════════════════════════════════════════════
 
 
 class TestOrganizacionesCRUD:

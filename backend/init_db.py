@@ -186,6 +186,7 @@ DDL = [
     """,
     "CREATE INDEX IF NOT EXISTS idx_estudios_usuario_created ON estudios_socioeconomicos(usuario_id, created_at)",
     "ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS telefono TEXT",
+    "ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS avatar_url TEXT",
 ]
 
 

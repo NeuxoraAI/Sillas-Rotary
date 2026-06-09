@@ -113,14 +113,14 @@ def _test_db_conn():
         return  # unreachable, but helps type checkers
     conn.autocommit = False
 
-    # Ensure all DDL tables exist in the test schema (idempotent CREATE IF NOT EXISTS).
-    # This keeps the test schema in sync with init_db.py even when new tables
-    # are added to the codebase.
+    # Ensure all DDL tables exist in the test schema (idempotent CREATE IF NOT EXISTS
+    # and ALTER TABLE ADD COLUMN IF NOT EXISTS). This keeps the test schema in sync
+    # with init_db.py even when new tables or columns are added.
     from init_db import DDL
     with conn.cursor() as cur:
         for ddl_stmt in DDL:
             stmt = ddl_stmt.strip()
-            if stmt and stmt.upper().startswith("CREATE"):
+            if stmt and (stmt.upper().startswith("CREATE") or stmt.upper().startswith("ALTER")):
                 cur.execute(stmt)
     conn.commit()
 

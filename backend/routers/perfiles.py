@@ -19,7 +19,7 @@ Endpoints:
 """
 
 from datetime import date, timedelta, datetime, timezone
-from typing import Annotated
+from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, EmailStr
@@ -59,7 +59,7 @@ class LiderAssignRequest(BaseModel):
 # ---------------------------------------------------------------------------
 
 def _get_user_stats(db: _DBAdapter, usuario_id: int) -> dict:
-    """Return {total_capturas, this_month} for a user."""
+    """Return {total_capturas, this_month, pendientes} for a user."""
     total = db.execute(
         "SELECT COUNT(*) AS count FROM estudios_socioeconomicos WHERE usuario_id = %s",
         (usuario_id,),
@@ -72,19 +72,40 @@ def _get_user_stats(db: _DBAdapter, usuario_id: int) -> dict:
         (usuario_id, now),
     ).fetchone()["count"]
 
-    return {"total_capturas": total, "this_month": this_month}
-
-
-def _get_heatmap_data(db: _DBAdapter, usuario_id: int) -> list[dict]:
-    """Return [{date: str, count: int}] for last 365 days for a user."""
-    rows = db.execute(
-        "SELECT DATE(created_at) AS date, COUNT(*) AS count "
-        "FROM estudios_socioeconomicos "
-        "WHERE usuario_id = %s AND created_at >= NOW() - INTERVAL '1 year' "
-        "GROUP BY DATE(created_at) "
-        "ORDER BY date",
+    pendientes = db.execute(
+        "SELECT COUNT(*) AS count FROM estudios_socioeconomicos "
+        "WHERE usuario_id = %s AND status = 'borrador'",
         (usuario_id,),
-    ).fetchall()
+    ).fetchone()["count"]
+
+    return {"total_capturas": total, "this_month": this_month, "pendientes": pendientes}
+
+
+def _get_heatmap_data(db: _DBAdapter, usuario_id: int, year: int | None = None) -> list[dict]:
+    """Return [{date: str, count: int}] for a user's activity.
+
+    Args:
+        year: Optional calendar year to filter by. Defaults to last 365 days
+              if not provided (backward-compatible).
+    """
+    if year is not None:
+        rows = db.execute(
+            "SELECT DATE(created_at) AS date, COUNT(*) AS count "
+            "FROM estudios_socioeconomicos "
+            "WHERE usuario_id = %s AND EXTRACT(YEAR FROM created_at) = %s "
+            "GROUP BY DATE(created_at) "
+            "ORDER BY date",
+            (usuario_id, year),
+        ).fetchall()
+    else:
+        rows = db.execute(
+            "SELECT DATE(created_at) AS date, COUNT(*) AS count "
+            "FROM estudios_socioeconomicos "
+            "WHERE usuario_id = %s AND created_at >= NOW() - INTERVAL '1 year' "
+            "GROUP BY DATE(created_at) "
+            "ORDER BY date",
+            (usuario_id,),
+        ).fetchall()
     return [{"date": str(r["date"]), "count": r["count"]} for r in rows]
 
 
@@ -99,12 +120,21 @@ def get_my_perfil(
 ) -> dict:
     """Return current user profile with stats and org leadership info."""
     usuario_row = db.execute(
-        "SELECT id, nombre, email, telefono, rol FROM usuarios WHERE id = %s",
+        "SELECT id, nombre, email, telefono, rol, avatar_url FROM usuarios WHERE id = %s",
         (user.usuario_id,),
     ).fetchone()
 
     stats = _get_user_stats(db, user.usuario_id)
-    heatmap = _get_heatmap_data(db, user.usuario_id)
+
+    # Get last activity date (most recent estudio created_at)
+    last_activity_row = db.execute(
+        "SELECT MAX(created_at) AS last_activity_date "
+        "FROM estudios_socioeconomicos WHERE usuario_id = %s",
+        (user.usuario_id,),
+    ).fetchone()
+    last_activity_date = last_activity_row["last_activity_date"]
+    if last_activity_date is not None:
+        last_activity_date = last_activity_date.isoformat()
 
     # Check orgs the user leads (via organizaciones_lideres)
     leader_rows = db.execute(
@@ -135,9 +165,11 @@ def get_my_perfil(
             "email": usuario_row["email"],
             "telefono": usuario_row.get("telefono"),
             "rol": usuario_row["rol"],
+            "avatar_url": usuario_row.get("avatar_url"),
         },
         "stats": stats,
-        "heatmap_data": heatmap,
+        "last_activity_date": last_activity_date,
+        "heatmap_data": _get_heatmap_data(db, user.usuario_id),
         "organizaciones_lider": [dict(r) for r in leader_rows],
         "organizaciones_miembro": [dict(r) for r in member_rows],
         "can_edit": True,
@@ -206,21 +238,47 @@ def patch_my_perfil(
 
 @router.get("/me/heatmap")
 def get_my_heatmap(
-    db: Annotated[_DBAdapter, Depends(get_db)],
-    user: Annotated[CurrentUser, Depends(require_auth)],
+    year: Annotated[int | None, Query(description="Calendar year to filter heatmap data")] = None,
+    db: Annotated[_DBAdapter, Depends(get_db)] = None,
+    user: Annotated[CurrentUser, Depends(require_auth)] = None,
 ) -> list[dict]:
-    """Return contribution heatmap data for the current user (last 365 days)."""
-    return _get_heatmap_data(db, user.usuario_id)
+    """Return contribution heatmap data for the current user.
+
+    Args:
+        year: Optional calendar year (e.g. 2025). If omitted, returns last 365 days.
+    """
+    return _get_heatmap_data(db, user.usuario_id, year=year)
 
 
 @router.get("/me/beneficiarios")
 def get_my_beneficiarios(
-    db: Annotated[_DBAdapter, Depends(get_db)],
-    user: Annotated[CurrentUser, Depends(require_roles("capturista", "organizacion", "admin"))],
+    q: Annotated[str | None, Query(description="Search beneficiary name or folio")] = None,
+    status: Annotated[str | None, Query(description="Filter by status: borrador or completo")] = None,
+    db: Annotated[_DBAdapter, Depends(get_db)] = None,
+    user: Annotated[CurrentUser, Depends(require_roles("capturista", "organizacion", "admin"))] = None,
 ) -> list[dict]:
-    """Return beneficiary list with edit links for the current user."""
+    """Return beneficiary list with edit links for the current user.
+
+    Args:
+        q: Optional search string to filter by beneficiary name or folio.
+        status: Optional status filter ('borrador' or 'completo').
+    """
+    conditions = ["e.usuario_id = %s"]
+    params: list = [user.usuario_id]
+
+    if status is not None:
+        conditions.append("e.status = %s")
+        params.append(status)
+
+    if q is not None:
+        conditions.append("(b.nombre ILIKE %s OR b.folio ILIKE %s)")
+        search_pattern = f"%{q}%"
+        params.extend([search_pattern, search_pattern])
+
+    where_clause = " AND ".join(conditions)
+
     rows = db.execute(
-        """
+        f"""
         SELECT
             e.id         AS estudio_id,
             b.folio,
@@ -232,10 +290,10 @@ def get_my_beneficiarios(
             e.created_at
         FROM estudios_socioeconomicos e
         JOIN beneficiarios b ON b.id = e.beneficiario_id
-        WHERE e.usuario_id = %s
+        WHERE {where_clause}
         ORDER BY e.created_at DESC
         """,
-        (user.usuario_id,),
+        tuple(params),
     ).fetchall()
 
     return [
