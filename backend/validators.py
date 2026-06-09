@@ -443,3 +443,28 @@ def validate_nombre_usuario(value: str) -> str:
     if len(v) > 100:
         raise ValueError("nombre excede 100 caracteres")
     return v
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Draft-mode wrapper — skips validation for None / empty-string
+# ──────────────────────────────────────────────────────────────────────────
+
+def validate_optional(validator):
+    """
+    Wrap a validator to skip validation when value is None or empty string.
+
+    In draft mode (borrador), all fields are optional. This wrapper makes
+    any validator a no-op for None/"" so that Pydantic field_validator
+    methods can reuse existing validators without enforcing completeness.
+
+    Usage:
+        @field_validator("nombres")
+        @classmethod
+        def _validar_nombres(cls, v: Optional[str]) -> Optional[str]:
+            return validate_optional(validate_nombre)(v)
+    """
+    def wrapper(value):
+        if value is None or value == "":
+            return value
+        return validator(value)
+    return wrapper

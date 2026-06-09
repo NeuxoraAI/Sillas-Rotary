@@ -14,21 +14,21 @@ DDL = [
     """
     CREATE TABLE IF NOT EXISTS beneficiarios (
         id                SERIAL PRIMARY KEY,
-        nombre            TEXT NOT NULL,
-        nombres           TEXT NOT NULL DEFAULT '',
-        apellido_paterno  TEXT NOT NULL DEFAULT '',
-        apellido_materno  TEXT NOT NULL DEFAULT '',
-        fecha_nacimiento  TEXT NOT NULL,
-        diagnostico       TEXT NOT NULL,
-        calle             TEXT NOT NULL,
+        nombre            TEXT,
+        nombres           TEXT,
+        apellido_paterno  TEXT,
+        apellido_materno  TEXT,
+        fecha_nacimiento  TEXT,
+        diagnostico       TEXT,
+        calle             TEXT,
         num_ext           TEXT,
         num_int           TEXT,
-        colonia           TEXT NOT NULL,
-        ciudad            TEXT NOT NULL,
+        colonia           TEXT,
+        ciudad            TEXT,
         estado_codigo     TEXT,
         estado_nombre     TEXT,
         sexo                         TEXT,
-        telefonos                    TEXT NOT NULL,
+        telefonos                    TEXT,
         created_at                     TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
     """,
@@ -37,7 +37,7 @@ DDL = [
         id               SERIAL PRIMARY KEY,
         beneficiario_id  INTEGER NOT NULL REFERENCES beneficiarios(id) ON DELETE CASCADE,
         numero_tutor     INTEGER NOT NULL CHECK(numero_tutor IN (1, 2)),
-        nombre           TEXT    NOT NULL,
+        nombre           TEXT,
         email            TEXT,
         edad             INTEGER CHECK(edad IS NULL OR (edad > 0 AND edad < 120)),
         nivel_estudios   TEXT,
@@ -70,15 +70,16 @@ DDL = [
         monto_otras_fuentes     REAL,
         tuvo_silla_previa       INTEGER CHECK(tuvo_silla_previa IN (0, 1)),
         como_obtuvo_silla       TEXT,
-        elaboro_estudio         TEXT    NOT NULL,
-        fecha_estudio           TEXT    NOT NULL,
-        sede                    TEXT    NOT NULL,
+        elaboro_estudio         TEXT,
+        fecha_estudio           TEXT,
+        sede                    TEXT,
         ciudad_registro         TEXT,
         credencial_path         TEXT,
         credencial_url          TEXT,
         comprobante_domicilio_path TEXT,
         comprobante_domicilio_url  TEXT,
         status                  TEXT    NOT NULL DEFAULT 'borrador' CHECK(status IN ('borrador', 'completo')),
+        finalizado_at           TIMESTAMPTZ NULL,
         created_at              TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         updated_at              TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         CONSTRAINT uq_estudio_beneficiario_usuario UNIQUE (beneficiario_id, usuario_id)
@@ -92,10 +93,10 @@ DDL = [
         -- DEPRECATED v1: capturista_id column retained in live DB for backward
         -- compatibility.  New code uses usuario_id (managed by Supabase migrations).
         -- capturista_id           INTEGER REFERENCES capturistas(id) ON DELETE RESTRICT,
-        entorno                     TEXT    NOT NULL,
-        control_tronco              TEXT    NOT NULL,
-        control_cabeza              TEXT    NOT NULL,
-        control_de_piernas          TEXT    NOT NULL,
+        entorno                     TEXT,
+        control_tronco              TEXT,
+        control_cabeza              TEXT,
+        control_de_piernas          TEXT,
         observaciones_posturales    TEXT,
         altura_total_in             NUMERIC(7,3) CHECK(altura_total_in IS NULL OR (altura_total_in >= 0 AND altura_total_in <= 9999.999)),
         peso_kg                     NUMERIC(7,3) CHECK(peso_kg IS NULL OR (peso_kg >= 0 AND peso_kg <= 9999.999)),
@@ -111,11 +112,13 @@ DDL = [
         prioridad                   TEXT    CHECK(prioridad IS NULL OR prioridad IN ('Alta', 'Media')),
         justificacion               TEXT,
         status                      TEXT    NOT NULL DEFAULT 'borrador' CHECK(status IN ('borrador', 'completo')),
+        finalizado_at               TIMESTAMPTZ NULL,
         created_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         updated_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         CONSTRAINT uq_solicitud_beneficiario_usuario UNIQUE (beneficiario_id, usuario_id)
     )
     """,
+
     """
     CREATE TABLE IF NOT EXISTS procesos_tecnicos (
         id                            SERIAL PRIMARY KEY,
@@ -186,6 +189,8 @@ DDL = [
     """,
     "CREATE INDEX IF NOT EXISTS idx_estudios_usuario_created ON estudios_socioeconomicos(usuario_id, created_at)",
     "ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS telefono TEXT",
+    "ALTER TABLE estudios_socioeconomicos ADD COLUMN IF NOT EXISTS finalizado_at TIMESTAMPTZ NULL",
+    "ALTER TABLE solicitudes_tecnicas ADD COLUMN IF NOT EXISTS finalizado_at TIMESTAMPTZ NULL",
 ]
 
 
