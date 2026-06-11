@@ -6,7 +6,7 @@ Tests for:
 - elaboro_estudio override for organizacion role (POST and PATCH)
 """
 
-from datetime import date
+from datetime import date, datetime
 
 import pytest
 
@@ -364,6 +364,33 @@ class TestProfileStatsExtension:
         assert "last_activity_date" in data
         assert data["last_activity_date"] is not None
 
+    def test_perfil_last_activity_date_uses_resume_update(self, client, capturista_headers, capturista_user, region_lon, _test_db_conn):
+        """last_activity_date reflects updated_at after a resumed draft is saved."""
+        payload = _build_minimal_estudio(region_lon["id"], "Capturista Test")
+        res = client.post("/api/estudios", json=payload, headers=capturista_headers)
+        assert res.status_code == 201
+        estudio_id = res.json()["estudio_id"]
+
+        with _test_db_conn.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE estudios_socioeconomicos
+                SET created_at = %s, updated_at = %s
+                WHERE id = %s
+                """,
+                ("2025-01-01T00:00:00+00:00", "2025-01-01T00:00:00+00:00", estudio_id),
+            )
+        _test_db_conn.commit()
+
+        res = client.patch(f"/api/estudios/{estudio_id}", json={"status": "borrador"}, headers=capturista_headers)
+        assert res.status_code == 200
+        updated_at = datetime.fromisoformat(res.json()["updated_at"])
+
+        res = client.get("/api/me/perfil", headers=capturista_headers)
+        assert res.status_code == 200
+        last_activity_date = datetime.fromisoformat(res.json()["last_activity_date"])
+        assert last_activity_date == updated_at
+
     def test_perfil_last_activity_date_null_no_studies(self, client, capturista_headers):
         """When no studies exist, last_activity_date is null."""
         res = client.get("/api/me/perfil", headers=capturista_headers)
@@ -408,6 +435,32 @@ class TestHeatmapYearFilter:
         data = res.json()
         # Should have at least the study we just created
         assert len(data) >= 1
+
+    def test_heatmap_year_param_filters_across_multiple_years(self, client, capturista_headers, capturista_user, region_lon, _test_db_conn):
+        """GET /api/me/heatmap?year=YYYY excludes activity from other years."""
+        payload_2025 = _build_minimal_estudio(region_lon["id"], "Capturista Test")
+        res_2025 = client.post("/api/estudios", json=payload_2025, headers=capturista_headers)
+        assert res_2025.status_code == 201
+
+        payload_2026 = _build_minimal_estudio(region_lon["id"], "Capturista Test")
+        payload_2026["beneficiario"]["nombres"] = "BENEFICIARIO DOS"
+        res_2026 = client.post("/api/estudios", json=payload_2026, headers=capturista_headers)
+        assert res_2026.status_code == 201
+
+        with _test_db_conn.cursor() as cur:
+            cur.execute(
+                "UPDATE estudios_socioeconomicos SET created_at = %s WHERE id = %s",
+                ("2025-06-15T10:00:00+00:00", res_2025.json()["estudio_id"]),
+            )
+            cur.execute(
+                "UPDATE estudios_socioeconomicos SET created_at = %s WHERE id = %s",
+                ("2026-06-15T10:00:00+00:00", res_2026.json()["estudio_id"]),
+            )
+        _test_db_conn.commit()
+
+        res = client.get("/api/me/heatmap?year=2025", headers=capturista_headers)
+        assert res.status_code == 200
+        assert res.json() == [{"date": "2025-06-15", "count": 1}]
 
     def test_heatmap_year_param_empty_for_different_year(self, client, capturista_headers, capturista_user, region_lon):
         """GET /api/me/heatmap?year=2000 returns empty for a year with no data."""
