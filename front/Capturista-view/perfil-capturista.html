@@ -5,21 +5,19 @@
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Mi Perfil | Capturista — Ecosistema VIDA UG</title>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block" rel="stylesheet"/>
 <script>
   tailwind.config = {
     theme: {
       extend: {
         colors: {
-          "primary":         "#51274b",
-          "secondary":       "#B9844D",
-          "ug-blue":         "#51274b",
-          "ug-blue-shadow":  "#3d1d39",
-          "ug-blue-deep":    "#2f162c",
-          "ug-yellow":       "#B9844D",
-          "ug-yellow-shadow": "#8f6338",
-          "ug-yellow-light": "#d6ae80",
+          "primary":          "#2B063D",
+          "primary-bold":     "#3A0A4F",
+          "ug-orange":        "#F15A24",
+          "ug-orange-hover":  "#E84B10",
+          "ug-orange-pure":   "#FF5A1F",
+          "warm-bg":          "#FBF7F5",
         },
         fontFamily: { "display": ["Public Sans"] },
       },
@@ -27,7 +25,49 @@
   }
 </script>
 <style>
-  body { font-family: 'Public Sans', sans-serif; }
+  :root {
+    --c-orange:       #FF5A1F;
+    --c-purple:       #2B063D;
+    --c-title:        #2D073F;
+    --c-gray:         #777;
+    --shadow-card:    0 18px 45px -12px rgba(43, 6, 61, 0.10), 0 4px 14px rgba(60, 30, 20, 0.05);
+  }
+
+  body {
+    font-family: 'Public Sans', sans-serif;
+    background: #FBF7F5;
+  }
+
+  /* Fixed gradient layer on its own composited element: cheaper than
+     background-attachment: fixed, which forces full repaints on scroll */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(ellipse at -5% 10%, rgba(255,255,255,0.70) 0%, rgba(255,255,255,0.25) 35%, transparent 60%),
+      radial-gradient(ellipse at 102% 60%, rgba(255,200,170,0.30) 0%, rgba(255,225,210,0.12) 40%, transparent 65%),
+      radial-gradient(ellipse at -4% 92%, rgba(255,170,130,0.25) 0%, rgba(255,210,190,0.10) 38%, transparent 62%),
+      linear-gradient(165deg, #FBF7F5 0%, #F9F0EC 50%, #FBF7F5 100%);
+  }
+
+  /* Top-left dotted texture, like the reference corner */
+  .bg-dots-topleft {
+    position: fixed;
+    top: 90px;
+    left: 0;
+    width: 180px;
+    height: 220px;
+    background-image: radial-gradient(circle, rgba(255,140,100,0.25) 1.2px, transparent 1.6px);
+    background-size: 16px 16px;
+    -webkit-mask-image: radial-gradient(ellipse at 0% 30%, #000 0%, transparent 75%);
+    mask-image: radial-gradient(ellipse at 0% 30%, #000 0%, transparent 75%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
   .material-symbols-outlined {
     font-family: 'Material Symbols Outlined';
     font-weight: normal;
@@ -43,135 +83,178 @@
     -webkit-font-smoothing: antialiased;
     font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
   }
-  .captura-card {
-    transition: all 0.2s;
+
+  .card {
+    background: rgba(255,255,255,0.94);
+    border: 1px solid rgba(255,255,255,0.8);
+    border-radius: 18px;
+    box-shadow: var(--shadow-card);
   }
-  .captura-card:hover {
-    transform: translateX(4px);
-    border-color: #51274b40;
+
+  /* Entrance choreography */
+  .rise { animation: rise-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .rise-1 { animation-delay: 0.04s; }
+  .rise-2 { animation-delay: 0.10s; }
+  .rise-3 { animation-delay: 0.16s; }
+  .rise-4 { animation-delay: 0.22s; }
+  @keyframes rise-in {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .rise, .rise-1, .rise-2, .rise-3, .rise-4 { animation: none; }
   }
 
   /* Heatmap */
-  .heatmap-cell { width: 13px; height: 13px; border-radius: 2px; }
   .heatmap-month { font-size: 10px; fill: #94a3b8; }
+  .heatmap-cell { width: 12px; height: 12px; border-radius: 3px; }
   .heatmap-tooltip {
-    background: #1e293b; color: #fff; font-size: 11px;
-    padding: 4px 8px; border-radius: 4px; white-space: nowrap;
+    background: #2B063D; color: #fff; font-size: 11px;
+    padding: 4px 8px; border-radius: 6px; white-space: nowrap;
     pointer-events: none; position: absolute; z-index: 50;
     transform: translate(-50%, -100%); margin-top: -6px;
   }
   .heatmap-tooltip::after {
     content: ''; position: absolute; top: 100%; left: 50%;
     margin-left: -4px; border: 4px solid transparent;
-    border-top-color: #1e293b;
+    border-top-color: #2B063D;
   }
   .modal-overlay {
-    background: rgba(0,0,0,0.5); backdrop-filter: blur(2px);
+    background: rgba(43,6,61,0.45); backdrop-filter: blur(3px);
   }
-  /* Tab active */
-  .tab-btn.active { color: #51274b; border-bottom: 2px solid #51274b; font-weight: 700; }
-  .tab-btn { color: #94a3b8; padding-bottom: 4px; }
+
+  /* Table row hover */
+  .bene-row:hover { background: #FFF8F4; }
 </style>
 </head>
-<body class="bg-slate-50 font-display min-h-screen flex flex-col">
+<body class="font-display min-h-screen flex flex-col">
 
-<!-- Header -->
-<header class="w-full bg-ug-blue py-4 px-6 shadow-lg">
-  <div class="max-w-5xl mx-auto flex items-center justify-between gap-4">
-    <div class="flex items-center gap-4">
-      <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow overflow-hidden">
-        <img alt="VIDA UG" class="w-4/5 h-4/5 object-contain" src="../assets/logo_vida_ug.png"/>
+<div class="bg-dots-topleft" aria-hidden="true"></div>
+
+<!-- Top bar: floating card -->
+<header class="w-full px-4 pt-5 relative z-10">
+  <div class="max-w-6xl mx-auto card px-5 py-3.5 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-orange-50 border border-orange-100 flex items-center justify-center">
+        <span class="material-symbols-outlined text-ug-orange-pure text-xl">person</span>
       </div>
-      <div class="hidden sm:block">
-        <p class="text-white text-sm font-bold tracking-tight">Mi Perfil</p>
-        <p class="text-white/50 text-[10px] uppercase tracking-wider">Capturista</p>
+      <div>
+        <p class="text-[15px] font-bold" style="color: var(--c-title);">Mi Perfil</p>
+        <p class="text-xs text-slate-500">Panel de usuario</p>
       </div>
     </div>
     <div class="flex items-center gap-3">
-      <span id="user-nombre-header" class="text-white text-sm font-semibold hidden sm:block">—</span>
-      <button id="btn-logout" title="Cerrar sesión" class="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/70 hover:text-white transition-all">
-        <span class="material-symbols-outlined text-base">logout</span>
+      <div id="header-avatar" class="w-10 h-10 rounded-full bg-purple-100 border border-purple-200 flex items-center justify-center overflow-hidden shrink-0">
+        <span class="material-symbols-outlined text-primary text-xl">face</span>
+      </div>
+      <div class="hidden sm:block text-right sm:text-left">
+        <p id="user-nombre-header" class="text-sm font-bold leading-tight" style="color: var(--c-title);">—</p>
+        <p id="user-rol-header" class="text-xs text-slate-500">—</p>
+      </div>
+      <button id="btn-logout" title="Cerrar sesión" class="w-9 h-9 rounded-xl hover:bg-orange-50 flex items-center justify-center text-slate-400 hover:text-ug-orange-pure transition-all">
+        <span class="material-symbols-outlined text-xl">logout</span>
       </button>
     </div>
   </div>
 </header>
 
 <!-- Main -->
-<main class="flex-1 px-4 py-8">
-  <div class="max-w-3xl mx-auto space-y-6">
+<main class="flex-1 px-4 py-6 relative z-10">
+  <div class="max-w-6xl mx-auto space-y-5">
 
     <!-- Profile Card -->
-    <div class="bg-white rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.07)] border border-slate-100 overflow-hidden">
-      <div class="px-6 py-6 sm:px-8 sm:py-8">
-        <div class="flex items-start justify-between gap-4">
-          <div class="flex items-center gap-4">
-            <div class="w-14 h-14 bg-ug-blue/10 rounded-2xl flex items-center justify-center shrink-0">
-              <span class="material-symbols-outlined text-ug-blue text-3xl">person</span>
+    <section class="card rise rise-1 px-6 py-6 sm:px-8 sm:py-7">
+      <div class="flex flex-col lg:flex-row lg:items-start gap-6">
+
+        <!-- Identity -->
+        <div class="flex items-center gap-5 lg:pr-8 lg:border-r lg:border-slate-100 shrink-0">
+          <div id="profile-avatar" class="w-24 h-24 rounded-full bg-purple-100 border-4 border-white shadow-md flex items-center justify-center overflow-hidden shrink-0">
+            <span class="material-symbols-outlined text-primary text-5xl">face</span>
+          </div>
+          <div>
+            <h1 class="text-2xl font-extrabold tracking-tight" style="color: var(--c-title);" id="user-nombre">—</h1>
+            <p class="text-sm text-slate-500 mt-0.5" id="user-rol">—</p>
+            <span class="inline-flex items-center gap-1.5 mt-2 text-xs font-semibold text-green-700 bg-green-50 border border-green-100 rounded-full px-3 py-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+              Perfil activo
+            </span>
+          </div>
+        </div>
+
+        <!-- Actions + stats -->
+        <div class="flex-1 min-w-0">
+          <div class="flex flex-col sm:flex-row sm:justify-end gap-3">
+            <button id="btn-nueva-captura" class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-[#FF4B0B] to-[#FF681F] hover:shadow-lg hover:shadow-orange-200 active:scale-[0.98] text-white font-bold rounded-xl shadow-md shadow-orange-200/60 transition-all">
+              <span class="material-symbols-outlined text-xl">add_circle</span>
+              <span>Nueva Captura</span>
+            </button>
+            <button id="btn-editar-perfil" class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white hover:bg-orange-50 active:scale-[0.98] text-ug-orange-pure font-bold rounded-xl border-2 border-ug-orange-pure/70 transition-all">
+              <span class="material-symbols-outlined text-xl">edit</span>
+              <span>Editar Perfil</span>
+            </button>
+          </div>
+
+          <div class="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="rounded-2xl p-4 bg-purple-50/70 border border-purple-100 flex items-center gap-3">
+              <div class="w-11 h-11 rounded-full bg-white border border-purple-100 flex items-center justify-center shrink-0">
+                <span class="material-symbols-outlined text-primary text-xl">content_paste</span>
+              </div>
+              <div>
+                <p class="text-xs font-medium text-slate-500">Total de capturas</p>
+                <p class="text-2xl font-extrabold leading-tight" style="color: var(--c-title);" id="stat-capturas">0</p>
+              </div>
             </div>
-            <div>
-              <h1 class="text-xl font-bold text-slate-900" id="user-nombre">—</h1>
-              <p class="text-sm text-slate-500" id="user-rol">—</p>
+            <div class="rounded-2xl p-4 bg-green-50/80 border border-green-100 flex items-center gap-3">
+              <div class="w-11 h-11 rounded-full bg-white border border-green-100 flex items-center justify-center shrink-0">
+                <span class="material-symbols-outlined text-green-600 text-xl">check_circle</span>
+              </div>
+              <div>
+                <p class="text-xs font-medium text-slate-500">Completados</p>
+                <p class="text-2xl font-extrabold leading-tight text-green-700" id="stat-completados">0</p>
+              </div>
+            </div>
+            <div class="rounded-2xl p-4 bg-orange-50/80 border border-orange-100 flex items-center gap-3">
+              <div class="w-11 h-11 rounded-full bg-white border border-orange-100 flex items-center justify-center shrink-0">
+                <span class="material-symbols-outlined text-ug-orange-pure text-xl">schedule</span>
+              </div>
+              <div>
+                <p class="text-xs font-medium text-slate-500">Pendientes</p>
+                <p class="text-2xl font-extrabold leading-tight text-ug-orange-pure" id="stat-pendientes">0</p>
+              </div>
             </div>
           </div>
         </div>
-
-        <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div class="bg-ug-blue/5 rounded-xl p-5 border border-ug-blue/10">
-            <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Total de capturas</p>
-            <p class="text-3xl font-bold text-ug-blue mt-1" id="stat-capturas">0</p>
-          </div>
-          <div class="bg-green-50 rounded-xl p-5 border border-green-100">
-            <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Completados</p>
-            <p class="text-3xl font-bold text-green-600 mt-1" id="stat-completados">0</p>
-          </div>
-        </div>
-
-        <!-- Organizations (GitHub-style badges) -->
-        <div id="orgs-container" class="hidden mt-6">
-          <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">Organizaciones</p>
-          <div id="orgs-list" class="flex flex-wrap gap-2"></div>
-        </div>
-
-        <div class="mt-6 flex flex-col sm:flex-row gap-3">
-          <button id="btn-nueva-captura" class="flex-1 py-3 bg-ug-blue hover:bg-ug-blue/90 active:scale-[0.98] text-white font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2">
-            <span class="material-symbols-outlined text-xl">add_circle</span>
-            <span>Nueva Captura</span>
-          </button>
-          <button id="btn-editar-perfil" class="flex-1 sm:flex-none py-3 bg-white hover:bg-slate-50 active:scale-[0.98] text-slate-700 font-bold rounded-xl border-2 border-slate-200 shadow-lg transition-all flex items-center justify-center gap-2">
-            <span class="material-symbols-outlined text-xl">edit</span>
-            <span>Editar Perfil</span>
-          </button>
-        </div>
       </div>
-    </div>
+    </section>
 
-    <!-- Heatmap -->
-    <div class="bg-white rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.07)] border border-slate-100 overflow-hidden">
-      <div class="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
-        <span class="material-symbols-outlined text-ug-blue text-xl">calendar_month</span>
-        <h2 class="text-base font-semibold text-slate-800">Actividad</h2>
-        <span id="heatmap-count" class="text-xs font-bold text-ug-blue bg-ug-blue/10 rounded-full px-2.5 py-0.5 hidden">0</span>
+    <!-- Organizations & badges -->
+    <section id="orgs-section" class="card rise rise-2 px-6 py-5 sm:px-8">
+      <div class="flex items-center gap-2.5 mb-4">
+        <span class="material-symbols-outlined text-ug-orange-pure text-xl">workspace_premium</span>
+        <h2 class="text-base font-bold" style="color: var(--c-title);">Organizaciones e insignias</h2>
       </div>
-      <div id="heatmap-container" class="px-6 py-5 overflow-x-auto">
-        <div class="flex items-end gap-1">
-          <!-- week columns will be rendered by JS -->
-          <svg id="heatmap-svg" width="828" height="128" class="block mx-auto"></svg>
-        </div>
-        <div class="flex items-center gap-2 mt-4 text-xs text-slate-400 justify-end">
-          <span>Menos</span>
-          <span class="heatmap-cell inline-block bg-[#ebedf0]"></span>
-          <span class="heatmap-cell inline-block bg-[#9be9a8]"></span>
-          <span class="heatmap-cell inline-block bg-[#40c463]"></span>
-          <span class="heatmap-cell inline-block bg-[#30a14e]"></span>
-          <span class="heatmap-cell inline-block bg-[#216e39]"></span>
-          <span>Más</span>
-        </div>
+      <div id="orgs-list" class="flex flex-wrap gap-3">
+        <!-- org pills rendered by JS -->
       </div>
+    </section>
+
+    <!-- Activity -->
+    <section class="card rise rise-3 overflow-hidden">
+      <div class="px-6 py-4 sm:px-8 border-b border-slate-100 flex flex-wrap items-center gap-x-4 gap-y-2">
+        <div class="flex items-center gap-2.5">
+          <span class="material-symbols-outlined text-ug-orange-pure text-xl">calendar_month</span>
+          <h2 class="text-base font-bold" style="color: var(--c-title);">Actividad</h2>
+        </div>
+        <select id="year-select" class="text-sm font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg pl-3 pr-8 py-1.5 focus:border-ug-orange-pure focus:ring-ug-orange-pure/30 cursor-pointer">
+        </select>
+        <p id="activity-summary" class="ml-auto text-sm text-slate-500 hidden"></p>
+      </div>
+      <div id="heatmap-container" class="hidden px-6 py-5 sm:px-8 overflow-x-auto"></div>
       <div id="heatmap-loading" class="px-6 py-8 text-center text-slate-400 text-sm">
         <span class="material-symbols-outlined text-2xl block mb-1 animate-pulse">hourglass_empty</span>
         Cargando actividad…
       </div>
-    </div>
+    </section>
 
     <!-- Error banner -->
     <div id="error-banner" class="hidden bg-red-50 border border-red-200 rounded-xl px-5 py-4 flex items-start gap-3" role="alert">
@@ -179,50 +262,29 @@
       <p id="error-text" class="text-red-700 text-sm leading-relaxed"></p>
     </div>
 
-    <!-- Edit Profile Modal -->
-    <div id="edit-modal" class="hidden fixed inset-0 z-50 modal-overlay flex items-center justify-center p-4">
-      <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-5">
-        <div class="flex items-center justify-between">
-          <h3 class="text-lg font-bold text-slate-900">Editar Perfil</h3>
-          <button id="btn-cerrar-modal" class="w-8 h-8 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-400">
-            <span class="material-symbols-outlined text-xl">close</span>
-          </button>
+    <!-- Beneficiary list -->
+    <section class="card rise rise-4 overflow-hidden">
+      <div class="px-6 py-4 sm:px-8 border-b border-slate-100 flex flex-wrap items-center gap-x-4 gap-y-3">
+        <div class="flex items-center gap-2.5">
+          <span class="material-symbols-outlined text-ug-orange-pure text-xl">group</span>
+          <h2 class="text-base font-bold" style="color: var(--c-title);">Beneficiarios registrados</h2>
+          <span id="count-capturas" class="text-xs font-bold text-ug-orange-pure bg-orange-50 border border-orange-100 rounded-full px-2.5 py-0.5">0</span>
         </div>
-        <div class="space-y-4">
-          <div class="space-y-2">
-            <label class="block text-sm font-semibold text-slate-700" for="edit-nombre">Nombre</label>
-            <input id="edit-nombre" type="text" maxlength="120" minlength="2"
-              class="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-ug-blue focus:outline-none text-sm" />
+        <div class="ml-auto flex flex-wrap items-center gap-3 w-full sm:w-auto">
+          <div class="relative flex-1 sm:flex-none sm:w-64">
+            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg pointer-events-none">search</span>
+            <input id="search-input" type="search" placeholder="Buscar beneficiario..."
+              class="w-full pl-10 pr-3 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:border-ug-orange-pure focus:ring-ug-orange-pure/30 placeholder:text-slate-400"/>
           </div>
-          <div class="space-y-2">
-            <label class="block text-sm font-semibold text-slate-700" for="edit-email">Correo electrónico</label>
-            <input id="edit-email" type="email" maxlength="254"
-              class="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-ug-blue focus:outline-none text-sm" />
-          </div>
-          <div class="space-y-2">
-            <label class="block text-sm font-semibold text-slate-700" for="edit-telefono">Teléfono</label>
-            <input id="edit-telefono" type="tel" maxlength="10" pattern="[0-9]{0,10}"
-              class="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-ug-blue focus:outline-none text-sm" />
-          </div>
-        </div>
-        <p id="edit-error" class="hidden text-red-600 text-sm bg-red-50 rounded-lg px-4 py-2" role="alert"></p>
-        <p id="edit-success" class="hidden text-green-700 text-sm bg-green-50 rounded-lg px-4 py-2" role="status"></p>
-        <div class="flex gap-3 pt-2">
-          <button id="btn-cancelar-edit" class="flex-1 py-3 border-2 border-slate-200 rounded-xl font-semibold text-slate-600 hover:bg-slate-50 transition-all">Cancelar</button>
-          <button id="btn-guardar-edit" class="flex-1 py-3 bg-ug-blue hover:bg-ug-blue/90 text-white font-bold rounded-xl transition-all">Guardar</button>
+          <select id="filter-status" class="text-sm font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl pl-3 pr-8 py-2 focus:border-ug-orange-pure focus:ring-ug-orange-pure/30 cursor-pointer">
+            <option value="">Todos</option>
+            <option value="completo">Completos</option>
+            <option value="borrador">Borradores</option>
+          </select>
         </div>
       </div>
-    </div>
 
-    <!-- Beneficiary List -->
-    <div class="bg-white rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.07)] border border-slate-100 overflow-hidden">
-      <div class="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
-        <span class="material-symbols-outlined text-ug-blue text-xl">group</span>
-        <h2 class="text-base font-semibold text-slate-800">Beneficiarios registrados</h2>
-        <span id="count-capturas" class="text-xs font-bold text-ug-blue bg-ug-blue/10 rounded-full px-2.5 py-0.5">0</span>
-      </div>
-
-      <div id="beneficiary-list" class="divide-y divide-slate-100">
+      <div id="beneficiary-list">
         <!-- Loading state -->
         <div id="loading-state" class="px-6 py-10 text-center text-slate-400 text-sm">
           <span class="material-symbols-outlined text-3xl block mb-2 animate-pulse">hourglass_empty</span>
@@ -234,19 +296,83 @@
           <p class="font-semibold text-slate-500">Aún no has registrado beneficiarios</p>
           <p class="text-sm text-slate-400 mt-1">Iniciá una nueva captura para comenzar.</p>
         </div>
-        <!-- Items will be rendered here -->
+        <!-- Table -->
+        <div id="table-wrap" class="hidden overflow-x-auto">
+          <table class="w-full text-sm min-w-[760px]">
+            <thead>
+              <tr class="text-left text-xs text-slate-400 border-b border-slate-100">
+                <th class="font-semibold px-6 sm:px-8 py-3">Beneficiario</th>
+                <th class="font-semibold px-4 py-3">Folio</th>
+                <th class="font-semibold px-4 py-3">Fecha</th>
+                <th class="font-semibold px-4 py-3">Capturista</th>
+                <th class="font-semibold px-4 py-3">Estatus</th>
+                <th class="font-semibold px-4 py-3 text-right pr-6 sm:pr-8">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="beneficiary-rows" class="divide-y divide-slate-50"></tbody>
+          </table>
+        </div>
+        <div id="no-results" class="hidden px-6 py-10 text-center text-sm text-slate-400">
+          Sin resultados para tu búsqueda.
+        </div>
       </div>
-    </div>
+    </section>
   </div>
 </main>
 
+<!-- Edit Profile Modal -->
+<div id="edit-modal" class="hidden fixed inset-0 z-50 modal-overlay flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-5">
+    <div class="flex items-center justify-between">
+      <h3 class="text-lg font-bold" style="color: var(--c-title);">Editar Perfil</h3>
+      <button id="btn-cerrar-modal" class="w-8 h-8 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-400">
+        <span class="material-symbols-outlined text-xl">close</span>
+      </button>
+    </div>
+    <div class="space-y-4">
+      <div class="space-y-2">
+        <label class="block text-sm font-semibold text-slate-700" for="edit-nombre">Nombre</label>
+        <input id="edit-nombre" type="text" maxlength="120" minlength="2"
+          class="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-ug-orange-pure focus:ring-0 focus:outline-none text-sm" />
+      </div>
+      <div class="space-y-2">
+        <label class="block text-sm font-semibold text-slate-700" for="edit-email">Correo electrónico</label>
+        <input id="edit-email" type="email" maxlength="254"
+          class="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-ug-orange-pure focus:ring-0 focus:outline-none text-sm" />
+      </div>
+      <div class="space-y-2">
+        <label class="block text-sm font-semibold text-slate-700" for="edit-telefono">Teléfono</label>
+        <input id="edit-telefono" type="tel" maxlength="10" pattern="[0-9]{0,10}"
+          class="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-ug-orange-pure focus:ring-0 focus:outline-none text-sm" />
+      </div>
+    </div>
+    <p id="edit-error" class="hidden text-red-600 text-sm bg-red-50 rounded-lg px-4 py-2" role="alert"></p>
+    <p id="edit-success" class="hidden text-green-700 text-sm bg-green-50 rounded-lg px-4 py-2" role="status"></p>
+    <div class="flex gap-3 pt-2">
+      <button id="btn-cancelar-edit" class="flex-1 py-3 border-2 border-slate-200 rounded-xl font-semibold text-slate-600 hover:bg-slate-50 transition-all">Cancelar</button>
+      <button id="btn-guardar-edit" class="flex-1 py-3 bg-gradient-to-r from-[#FF4B0B] to-[#FF681F] hover:opacity-95 text-white font-bold rounded-xl transition-all">Guardar</button>
+    </div>
+  </div>
+</div>
+
 <!-- Footer -->
-<footer class="w-full bg-gradient-to-b from-ug-yellow via-ug-yellow to-ug-yellow-light">
+<footer class="w-full relative z-10 border-t border-slate-200/60 bg-white/60 backdrop-blur-sm mt-4">
   <div class="py-4 px-6">
-    <div class="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
-      <div class="flex items-center gap-2 text-ug-blue/70">
-        <span class="material-symbols-outlined text-base">code</span>
-        <span class="text-xs font-medium">Desarrollado por <strong class="text-ug-blue font-bold">NEUXORA</strong> · León, Gto.</span>
+    <div class="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div class="flex items-center gap-2 text-slate-500">
+        <span class="material-symbols-outlined text-base" style="color:#777;">code</span>
+        <span class="text-xs font-medium">Desarrollado por <strong class="font-bold" style="color: var(--c-purple);">NEUXORA</strong> · León, Gto.</span>
+      </div>
+      <div class="flex items-center gap-2 text-xs font-semibold">
+        <a href="#" class="inline-flex items-center gap-1.5 text-primary-bold hover:text-ug-orange-pure transition-colors">
+          <span class="material-symbols-outlined text-base">verified_user</span>
+          Aviso de Privacidad
+        </a>
+        <span class="inline-block w-px h-3.5 bg-slate-300 mx-1"></span>
+        <a href="https://andreraz.github.io/" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 text-primary-bold hover:text-ug-orange-pure transition-colors">
+          <span class="material-symbols-outlined text-base">headset_mic</span>
+          Soporte Técnico
+        </a>
       </div>
     </div>
   </div>
@@ -260,9 +386,10 @@
   }
 
   // Populate user info
-  document.getElementById('user-nombre').textContent   = session.nombre;
+  document.getElementById('user-nombre').textContent        = session.nombre;
   document.getElementById('user-nombre-header').textContent = session.nombre;
-  document.getElementById('user-rol').textContent      = _formatRol(session.rol);
+  document.getElementById('user-rol').textContent           = _formatRol(session.rol);
+  document.getElementById('user-rol-header').textContent    = _formatRol(session.rol);
 
   // ── Logout ──────────────────────────────────────────────────────────────────
   document.getElementById('btn-logout').addEventListener('click', function () {
@@ -275,9 +402,20 @@
     window.location.href = 'seleccion-region.html';
   });
 
-  // ── Load profile data ──────────────────────────────────────────────────────
+  // ── Year selector ──────────────────────────────────────────────────────────
+  const CURRENT_YEAR = new Date().getFullYear();
+  const yearSelect = document.getElementById('year-select');
+  for (let y = CURRENT_YEAR; y >= CURRENT_YEAR - 3; y--) {
+    const opt = document.createElement('option');
+    opt.value = y;
+    opt.textContent = y;
+    yearSelect.appendChild(opt);
+  }
+  yearSelect.addEventListener('change', () => loadHeatmap(Number(yearSelect.value)));
+
+  // ── Load data ──────────────────────────────────────────────────────────────
   loadProfile();
-  loadHeatmap();
+  loadHeatmap(CURRENT_YEAR);
 
   async function loadProfile() {
     try {
@@ -293,90 +431,60 @@
 
       // Perfil data
       const u = perfil.usuario;
-      document.getElementById('user-nombre').textContent = u.nombre;
+      document.getElementById('user-nombre').textContent        = u.nombre;
       document.getElementById('user-nombre-header').textContent = u.nombre;
-      document.getElementById('user-rol').textContent = _formatRol(u.rol);
+      document.getElementById('user-rol').textContent           = _formatRol(u.rol);
+      document.getElementById('user-rol-header').textContent    = _formatRol(u.rol);
+
+      // Avatar
+      if (u.avatar_url) {
+        const img = `<img src="${_esc(u.avatar_url)}" alt="" class="w-full h-full object-cover"/>`;
+        document.getElementById('profile-avatar').innerHTML = img;
+        document.getElementById('header-avatar').innerHTML  = img;
+      }
 
       // Stats
-      const total = perfil.stats.total_capturas;
-      document.getElementById('stat-capturas').textContent = total;
+      document.getElementById('stat-capturas').textContent    = perfil.stats.total_capturas;
+      document.getElementById('stat-pendientes').textContent  = perfil.stats.pendientes ?? 0;
       document.getElementById('stat-completados').textContent = captures.filter(c => c.status === 'completo').length;
-      document.getElementById('count-capturas').textContent = captures.length;
+      document.getElementById('count-capturas').textContent   = captures.length;
 
-      // Organizations (GitHub-style simple badges)
-      const orgLideres = perfil.organizaciones_lider || [];
+      // Last activity (shown next to heatmap summary)
+      window._lastActivity = perfil.last_activity_date || null;
+      _refreshActivitySummary();
+
+      // Organizations + badges
+      const orgLideres  = perfil.organizaciones_lider || [];
       const orgMiembros = perfil.organizaciones_miembro || [];
       const allOrgs = [...orgLideres, ...orgMiembros];
-      const orgsContainer = document.getElementById('orgs-container');
       const orgsList = document.getElementById('orgs-list');
-      
-      console.log('[DEBUG] orgLideres:', orgLideres);
-      console.log('[DEBUG] orgMiembros:', orgMiembros);
-      console.log('[DEBUG] allOrgs:', allOrgs);
-      
-      if (allOrgs.length > 0) {
-        orgsContainer.classList.remove('hidden');
-        orgsList.innerHTML = allOrgs.map(o => {
-          console.log('[DEBUG] Generating link for org:', o);
-          const isLeader = orgLideres.find(l => l.id === o.id) !== undefined;
-          return `
-          <a href="../perfil-organizacion.html?org_id=${o.id}" 
-             class="inline-flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-lg hover:border-ug-blue hover:shadow-sm transition-all group"
-             style="cursor: pointer; text-decoration: none;">
-            <div class="w-8 h-8 rounded-lg bg-ug-blue/10 flex items-center justify-center shrink-0">
-              <span class="material-symbols-outlined text-ug-blue text-base">groups</span>
-            </div>
-            <span class="text-sm font-medium text-slate-700 group-hover:text-ug-blue">${_esc(o.nombre)}</span>
-            ${isLeader ? '<span class="text-[10px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">LÍDER</span>' : ''}
-          </a>
-        `;
-        }).join('');
-        console.log('[DEBUG] HTML generated:', orgsList.innerHTML);
-      }
+      const isLeaderOfAny = orgLideres.length > 0;
+
+      const orgPills = allOrgs.map(o => `
+        <a href="../perfil-organizacion.html?org_id=${o.id}"
+           class="inline-flex items-center gap-2.5 pl-3 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl hover:border-ug-orange-pure/60 hover:shadow-md hover:shadow-orange-100 transition-all no-underline">
+          ${_orgLogo(o.nombre)}
+          <span class="text-sm font-semibold text-slate-700">${_esc(o.nombre)}</span>
+        </a>
+      `).join('');
+
+      const badgePills = `
+        ${isLeaderOfAny ? `
+        <span class="inline-flex items-center gap-2 px-4 py-2.5 bg-orange-50 border border-orange-200 rounded-xl text-sm font-bold text-ug-orange-pure">
+          <span class="material-symbols-outlined text-lg">crown</span>
+          Líder
+        </span>` : ''}
+        <span class="inline-flex items-center gap-2 px-4 py-2.5 bg-green-50 border border-green-200 rounded-xl text-sm font-bold text-green-700">
+          <span class="material-symbols-outlined text-lg">verified_user</span>
+          Capturista activo
+        </span>
+      `;
+
+      orgsList.innerHTML = orgPills + badgePills;
 
       // Beneficiary list
-      const listEl   = document.getElementById('beneficiary-list');
-      const loading  = document.getElementById('loading-state');
-      const empty    = document.getElementById('empty-state');
-
-      loading.classList.add('hidden');
-
-      if (captures.length === 0) {
-        empty.classList.remove('hidden');
-        return;
-      }
-
-      listEl.innerHTML = captures.map(c => `
-        <div class="captura-card px-6 py-4 border-b border-slate-100 last:border-b-0">
-          <div class="flex items-start justify-between gap-3">
-            <div class="min-w-0 flex-1">
-              <p class="font-semibold text-slate-900 truncate">${_esc(c.beneficiario_nombre)}</p>
-              <div class="flex flex-wrap gap-x-3 gap-y-1 mt-1 text-xs text-slate-500">
-                <span class="inline-flex items-center gap-1">
-                  <span class="material-symbols-outlined text-xs">tag</span>
-                  ${_esc(c.folio)}
-                </span>
-                <span class="inline-flex items-center gap-1">
-                  <span class="material-symbols-outlined text-xs">calendar_today</span>
-                  ${_esc(c.fecha_estudio)}
-                </span>
-                <span class="inline-flex items-center gap-1">
-                  <span class="material-symbols-outlined text-xs">person</span>
-                  ${_esc(c.elaboro_estudio)}
-                </span>
-              </div>
-            </div>
-            <div class="flex items-center gap-2 shrink-0">
-              <a href="${_esc(c.edit_url)}" class="w-8 h-8 rounded-lg text-ug-blue hover:bg-ug-blue/10 flex items-center justify-center transition-all" title="Editar">
-                <span class="material-symbols-outlined text-lg">edit</span>
-              </a>
-              <span class="${c.status === 'completo' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'} text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full">
-                ${c.status === 'completo' ? 'Completo' : c.status === 'borrador' ? 'Borrador' : _esc(c.status)}
-              </span>
-            </div>
-          </div>
-        </div>
-      `).join('');
+      window._captures = captures;
+      renderCaptures();
 
       // Store current perfil data for edit modal
       window._currentPerfil = u;
@@ -385,13 +493,105 @@
     }
   }
 
-  // ── Heatmap ──────────────────────────────────────────────────────────────────
-  async function loadHeatmap() {
+  function _orgLogo(nombre) {
+    const n = String(nombre || '').toLowerCase();
+    let src = null;
+    if (n.includes('hope haven')) src = '../assets/logo_hope_haven_h.png';
+    else if (n.includes('rotary')) src = '../assets/logo_rotary_wordmark.png';
+    else if (n.includes('vida')) src = '../assets/logo_vida_ug.png';
+    if (src) {
+      return `<span class="w-9 h-9 rounded-lg border border-slate-100 bg-white flex items-center justify-center overflow-hidden shrink-0">
+        <img src="${src}" alt="" class="max-w-[80%] max-h-[80%] object-contain"/></span>`;
+    }
+    return `<span class="w-9 h-9 rounded-lg bg-purple-50 border border-purple-100 flex items-center justify-center shrink-0">
+      <span class="material-symbols-outlined text-primary text-lg">groups</span></span>`;
+  }
+
+  // ── Beneficiary table: render + search + status filter ────────────────────
+  document.getElementById('search-input').addEventListener('input', renderCaptures);
+  document.getElementById('filter-status').addEventListener('change', renderCaptures);
+
+  function renderCaptures() {
+    if (!window._captures) return; // data not loaded yet; keep the loading state
+    const captures = window._captures;
+    const loading  = document.getElementById('loading-state');
+    const empty    = document.getElementById('empty-state');
+    const wrap     = document.getElementById('table-wrap');
+    const noRes    = document.getElementById('no-results');
+    const rowsEl   = document.getElementById('beneficiary-rows');
+
+    loading.classList.add('hidden');
+
+    if (captures.length === 0) {
+      empty.classList.remove('hidden');
+      wrap.classList.add('hidden');
+      noRes.classList.add('hidden');
+      return;
+    }
+    empty.classList.add('hidden');
+
+    const q = document.getElementById('search-input').value.trim().toLowerCase();
+    const st = document.getElementById('filter-status').value;
+    const filtered = captures.filter(c => {
+      const matchQ = !q
+        || String(c.beneficiario_nombre || '').toLowerCase().includes(q)
+        || String(c.folio || '').toLowerCase().includes(q);
+      const matchSt = !st || c.status === st;
+      return matchQ && matchSt;
+    });
+
+    if (filtered.length === 0) {
+      wrap.classList.add('hidden');
+      noRes.classList.remove('hidden');
+      return;
+    }
+    noRes.classList.add('hidden');
+    wrap.classList.remove('hidden');
+
+    rowsEl.innerHTML = filtered.map(c => `
+      <tr class="bene-row transition-colors">
+        <td class="px-6 sm:px-8 py-3.5">
+          <div class="flex items-center gap-3 min-w-0">
+            <span class="w-9 h-9 rounded-full bg-orange-50 border border-orange-100 flex items-center justify-center shrink-0">
+              <span class="material-symbols-outlined text-ug-orange-pure text-lg">person</span>
+            </span>
+            <span class="font-bold truncate" style="color: var(--c-title);">${_esc(c.beneficiario_nombre)}</span>
+          </div>
+        </td>
+        <td class="px-4 py-3.5 text-slate-500 font-medium whitespace-nowrap">${_esc(c.folio)}</td>
+        <td class="px-4 py-3.5 text-slate-500 whitespace-nowrap">
+          <span class="inline-flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-base text-slate-400">calendar_today</span>
+            ${_esc(c.fecha_estudio)}
+          </span>
+        </td>
+        <td class="px-4 py-3.5 text-slate-500 whitespace-nowrap">
+          <span class="inline-flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-base text-slate-400">person</span>
+            ${_esc(c.elaboro_estudio)}
+          </span>
+        </td>
+        <td class="px-4 py-3.5">
+          <span class="${c.status === 'completo' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-amber-50 text-amber-700 border-amber-200'} border text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full whitespace-nowrap">
+            ${c.status === 'completo' ? 'Completo' : c.status === 'borrador' ? 'Borrador' : _esc(c.status)}
+          </span>
+        </td>
+        <td class="px-4 py-3.5 text-right pr-6 sm:pr-8">
+          <a href="${_esc(c.edit_url)}" title="Editar"
+             class="inline-flex w-9 h-9 rounded-lg border border-slate-200 text-slate-500 hover:text-ug-orange-pure hover:border-ug-orange-pure/60 items-center justify-center transition-all">
+            <span class="material-symbols-outlined text-lg">edit</span>
+          </a>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  // ── Heatmap (calendar year) ─────────────────────────────────────────────────
+  async function loadHeatmap(year) {
     const container = document.getElementById('heatmap-container');
     const loading   = document.getElementById('heatmap-loading');
-    const countEl   = document.getElementById('heatmap-count');
     try {
-      const res = await fetch('/api/me/heatmap', {
+      const res = await fetch('/api/me/heatmap?year=' + year, {
         headers: { 'Authorization': 'Bearer ' + session.token }
       });
       if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -404,69 +604,60 @@
       const lookup = {};
       let totalActivities = 0;
       data.forEach(d => { lookup[d.date] = d.count; totalActivities += d.count; });
-      if (totalActivities > 0) {
-        countEl.textContent = totalActivities;
-        countEl.classList.remove('hidden');
-      }
+      window._yearTotal = totalActivities;
+      window._yearShown = year;
+      _refreshActivitySummary();
 
-      // Generate last 365 days
-      const days = [];
-      const today = new Date();
-      for (let i = 364; i >= 0; i--) {
-        const d = new Date(today);
-        d.setDate(d.getDate() - i);
-        const dateStr = d.toISOString().slice(0, 10);
-        days.push({ date: d, dateStr, count: lookup[dateStr] || 0 });
-      }
+      // Calendar-year grid: Jan 1 .. Dec 31
+      const start = new Date(Date.UTC(year, 0, 1));
+      const end   = new Date(Date.UTC(year, 11, 31));
+      const offset = start.getUTCDay(); // 0 = Sunday
+      const totalDays = Math.round((end - start) / 86400000) + 1;
 
-      // SVG dimensions
-      const cellSize = 13;
-      const cellGap = 3;
+      const cellSize = 12;
+      const cellGap  = 3;
       const step = cellSize + cellGap;
-      const cols = 53;
-      const svgW = cols * step + 30;
-      const svgH = 7 * step + 20;
+      const cols = Math.ceil((offset + totalDays) / 7);
+      const svgW = cols * step + 34;
+      const svgH = 7 * step + 22;
 
-      let svg = `<svg width="${svgW}" height="${svgH}" xmlns="http://www.w3.org/2000/svg">`;
+      let svg = `<svg width="${svgW}" height="${svgH}" xmlns="http://www.w3.org/2000/svg" class="block mx-auto">`;
 
-      // Month labels
       const months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
       let lastMonth = -1;
-      for (let i = 0; i < days.length; i++) {
-        const m = days[i].date.getMonth();
+
+      for (let i = 0; i < totalDays; i++) {
+        const d = new Date(start.getTime() + i * 86400000);
+        const dateStr = d.toISOString().slice(0, 10);
+        const idx = offset + i;
+        const col = Math.floor(idx / 7);
+        const row = idx % 7;
+        const x = col * step + 30;
+        const y = row * step + 18;
+
+        const m = d.getUTCMonth();
         if (m !== lastMonth) {
           lastMonth = m;
-          const col = Math.floor(i / 7);
-          const x = col * step + 2;
           svg += `<text x="${x}" y="10" class="heatmap-month">${months[m]}</text>`;
         }
+
+        const count = lookup[dateStr] || 0;
+        const tooltip = `${dateStr}: ${count} captura${count !== 1 ? 's' : ''}`;
+        svg += `<rect x="${x}" y="${y}" width="${cellSize}" height="${cellSize}" rx="3" fill="${_heatColor(count)}"
+          onmouseenter="showHeatmapTooltip(event,'${_esc(tooltip)}')"
+          onmouseleave="hideHeatmapTooltip()" style="cursor:pointer"/>`;
       }
 
       // Day labels (Mon, Wed, Fri)
       const dayLabels = ['', 'Lun', '', 'Mié', '', 'Vie', ''];
       for (let row = 0; row < 7; row++) {
         if (dayLabels[row]) {
-          svg += `<text x="0" y="${row * step + 22}" class="heatmap-month" text-anchor="end">${dayLabels[row]}</text>`;
+          svg += `<text x="26" y="${row * step + 28}" class="heatmap-month" text-anchor="end">${dayLabels[row]}</text>`;
         }
       }
 
-      // Cells
-      for (let i = 0; i < days.length; i++) {
-        const col = Math.floor(i / 7);
-        const row = i % 7;
-        const x = col * step + 2;
-        const y = row * step + 18;
-        const d = days[i];
-        const color = _heatColor(d.count);
-        const tooltip = `${d.dateStr}: ${d.count} captura${d.count !== 1 ? 's' : ''}`;
-
-        svg += `<rect x="${x}" y="${y}" width="${cellSize}" height="${cellSize}" rx="2" fill="${color}"
-          onmouseenter="showHeatmapTooltip(event,'${_esc(tooltip)}')"
-          onmouseleave="hideHeatmapTooltip()" style="cursor:pointer"/>`;
-      }
-
       svg += '</svg>';
-      // Reconstruct container HTML preserving the legend below
+
       const legendHtml = `
         <div class="flex items-center gap-2 mt-4 text-xs text-slate-400 justify-end">
           <span>Menos</span>
@@ -478,10 +669,33 @@
           <span>Más</span>
         </div>
       `;
-      container.innerHTML = `<div class="flex items-end gap-1">${svg}</div>` + legendHtml;
+      container.innerHTML = svg + legendHtml;
     } catch (_) {
       loading.textContent = 'No se pudo cargar la actividad.';
+      loading.classList.remove('hidden');
+      container.classList.add('hidden');
     }
+  }
+
+  function _refreshActivitySummary() {
+    const el = document.getElementById('activity-summary');
+    if (window._yearTotal === undefined) return;
+    const n = window._yearTotal;
+    const parts = [`${n} captura${n !== 1 ? 's' : ''} registrada${n !== 1 ? 's' : ''} en ${window._yearShown}`];
+    if (window._lastActivity) {
+      parts.push('Última actividad: ' + _formatDate(window._lastActivity));
+    }
+    el.textContent = parts.join('  ·  ');
+    el.classList.remove('hidden');
+  }
+
+  function _formatDate(iso) {
+    try {
+      const d = new Date(iso);
+      const meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+      // UTC getters: keep the displayed date consistent with the UTC-bucketed heatmap
+      return `${String(d.getUTCDate()).padStart(2,'0')} ${meses[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
+    } catch (_) { return iso; }
   }
 
   function _heatColor(count) {
