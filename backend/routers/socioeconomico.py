@@ -130,7 +130,7 @@ class BeneficiarioIn(BaseModel):
     apellido_paterno: str
     apellido_materno: str
     fecha_nacimiento: str
-    diagnostico: str
+    diagnostico: Optional[str] = ""
     calle: str
     num_ext: Optional[str] = None
     num_int: Optional[str] = None
@@ -187,7 +187,10 @@ class BeneficiarioIn(BaseModel):
 
     @field_validator("diagnostico")
     @classmethod
-    def _diagnostico_valido(cls, v: str) -> str:
+    def _diagnostico_valido(cls, v: Optional[str]) -> str:
+        # Diagnostico is now captured in the technical form; empty is allowed here.
+        if v is None or v == "":
+            return ""
         return validate_diagnostico(v)
 
     @field_validator("calle")

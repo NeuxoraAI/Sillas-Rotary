@@ -104,12 +104,11 @@
               <label class="block text-sm font-semibold text-slate-700"
                 >Equipo Solicitado</label
               >
-              <input
-                class="w-full border-slate-300 bg-slate-50 text-slate-500 shadow-sm focus:ring-0 cursor-not-allowed"
-                disabled=""
-                type="text"
-                value="Silla de Ruedas Estándar"
-              />
+              <select class="w-full" name="equipo_solicitado">
+                <option value="">Silla de ruedas neurológica</option>
+                <option value="PCI">Silla de ruedas neurológica — PCI</option>
+                <option value="PCA">Silla de ruedas neurológica — PCA</option>
+              </select>
             </div>
             <div class="space-y-2">
               <label class="block text-sm font-semibold text-slate-700"
@@ -141,6 +140,22 @@
             Capacidad Postural y Diagnóstico
           </h2>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-2">
+              <label class="block text-sm font-semibold text-slate-700"
+                >Diagnóstico Médico</label
+              >
+              <input
+                class="w-full"
+                name="diagnostico"
+                type="text"
+                minlength="3"
+                maxlength="160"
+                pattern="^[A-Za-záéíóúÁÉÍÓÚüÜñÑ0-9\s\-().\/.,]+$"
+                required
+                aria-describedby="diagnostico-error"
+              />
+              <p class="field-error hidden text-red-600 text-xs mt-1" id="diagnostico-error" data-error-for="diagnostico" role="alert"></p>
+            </div>
             <div class="space-y-2">
               <label class="block text-sm font-semibold text-slate-700"
                 >Control de Tronco</label
@@ -414,52 +429,171 @@
           data-purpose="patient-photo-upload"
           id="multimedia"
         >
-          <h3 class="text-lg font-bold mb-4" style="color: var(--c-title);">
-            Fotografía del Paciente
-          </h3>
-          <p class="text-sm text-slate-600 mb-6">
-            Por favor, suba una foto del paciente sentado de frente o de perfil
-            para validar las necesidades de soporte de la silla de ruedas.
-          </p>
-          <div class="space-y-2 rounded-lg border border-dashed border-slate-300 bg-white p-4">
-            <label class="block text-sm font-semibold text-slate-700" for="file-upload"
-              >Subir fotografía del paciente</label
-            >
-            <input
-              id="file-upload"
-              name="file-upload"
-              class="w-full border-slate-300 text-sm file:mr-4 file:rounded-md file:border-0 file:bg-ug-orange-pure file:px-4 file:py-2 file:font-semibold file:text-white hover:file:bg-ug-orange-hover"
-              type="file"
-              accept=".jpg,.jpeg,.png,image/jpeg,image/png"
-            />
-            <label class="block text-sm font-semibold text-slate-700 mt-4"
-              >Tomar foto del paciente</label
-            >
-            <button
-              type="button"
-              id="photo-camera-trigger"
-              class="btn-secondary px-4 py-2 text-sm rounded-lg"
-            >
-              <span class="material-symbols-outlined text-base">photo_camera</span>Tomar foto
-            </button>
-            <p class="text-xs text-slate-500">Acepta JPG o PNG. Máximo 10MB.</p>
-            <p id="photo-status" class="text-xs text-slate-500"></p>
-            <button
-              type="button"
-              id="photo-preview-card"
-              class="hidden mt-2 w-full overflow-hidden rounded-lg border border-slate-200 bg-white text-left hover:border-primary/40"
-            >
-              <div
-                id="photo-preview-media"
-                class="flex h-44 items-center justify-center bg-slate-100"
-              ></div>
-              <div class="border-t border-slate-200 px-3 py-2">
-                <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Vista previa
-                </p>
-                <p id="photo-preview-name" class="truncate text-sm text-slate-700"></p>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-2 rounded-lg border border-dashed border-slate-300 bg-white p-4">
+              <div class="flex items-center gap-2 mb-4">
+                <h3 class="text-lg font-bold" style="color: var(--c-title);">
+                  Fotografía del Paciente
+                </h3>
+                <div class="relative flex items-center">
+                  <button
+                    type="button"
+                    id="photo-info-toggle"
+                    class="flex items-center text-blue-600 hover:text-blue-800"
+                    aria-expanded="false"
+                    aria-controls="photo-info-panel"
+                    aria-label="Ver instrucciones de la fotografía"
+                  >
+                    <span class="material-symbols-outlined text-xl">info</span>
+                  </button>
+                  <div
+                    id="photo-info-panel"
+                    class="hidden absolute left-1/2 top-full z-20 mt-3 w-72 max-w-[80vw] -translate-x-1/2 rounded-lg border-2 border-slate-300 bg-slate-100 p-4 text-center shadow-xl"
+                    role="tooltip"
+                  >
+                    <div
+                      class="absolute left-1/2 -top-[7px] h-3 w-3 -translate-x-1/2 rotate-45 border-l-2 border-t-2 border-slate-300 bg-slate-100"
+                    ></div>
+                    <img
+                      src="../assets/fotografia_paciente.png"
+                      alt="Ejemplo de fotografía del paciente sentado de frente"
+                      class="mx-auto mb-4 max-h-56 rounded-lg shadow-md"
+                    />
+                    <p class="text-xs text-slate-600 font-medium">
+                      Subir una foto del paciente sentado de frente.
+                    </p>
+                  </div>
+                </div>
               </div>
-            </button>
+              <label class="block text-sm font-semibold text-slate-700" for="file-upload"
+                >Subir fotografía del paciente</label
+              >
+              <input
+                id="file-upload"
+                name="file-upload"
+                class="w-full border-slate-300 text-sm file:mr-4 file:rounded-md file:border-0 file:bg-ug-orange-pure file:px-4 file:py-2 file:font-semibold file:text-white hover:file:bg-ug-orange-hover"
+                type="file"
+                accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+              />
+              <label class="block text-sm font-semibold text-slate-700 mt-4"
+                >Tomar foto del paciente</label
+              >
+              <button
+                type="button"
+                id="photo-camera-trigger"
+                class="btn-secondary px-4 py-2 text-sm rounded-lg"
+              >
+                <span class="material-symbols-outlined text-base">photo_camera</span>Tomar foto
+              </button>
+              <p class="text-xs text-slate-500">Acepta JPG o PNG. Máximo 10MB.</p>
+              <p id="photo-status" class="text-xs text-slate-500"></p>
+              <div class="relative">
+                <button
+                  type="button"
+                  id="photo-preview-card"
+                  class="hidden mt-2 w-full overflow-hidden rounded-lg border border-slate-200 bg-white text-left hover:border-primary/40"
+                >
+                  <div
+                    id="photo-preview-media"
+                    class="flex h-44 items-center justify-center bg-slate-100"
+                  ></div>
+                  <div class="border-t border-slate-200 px-3 py-2">
+                    <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Vista previa
+                    </p>
+                    <p id="photo-preview-name" class="truncate text-sm text-slate-700"></p>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  id="photo-remove-btn"
+                  class="hidden absolute right-2 top-4 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-slate-900/70 text-white hover:bg-red-600"
+                  aria-label="Quitar fotografía del paciente"
+                >
+                  <span class="material-symbols-outlined text-base">close</span>
+                </button>
+              </div>
+            </div>
+            <div class="space-y-2 rounded-lg border border-dashed border-slate-300 bg-white p-4">
+              <div class="flex items-center gap-2 mb-4">
+                <h3 class="text-lg font-bold" style="color: var(--c-title);">
+                  Estudio Clínico
+                </h3>
+                <div class="relative flex items-center">
+                  <button
+                    type="button"
+                    id="estudio-info-toggle"
+                    class="flex items-center text-blue-600 hover:text-blue-800"
+                    aria-expanded="false"
+                    aria-controls="estudio-info-panel"
+                    aria-label="Ver instrucciones del estudio clínico"
+                  >
+                    <span class="material-symbols-outlined text-xl">info</span>
+                  </button>
+                  <div
+                    id="estudio-info-panel"
+                    class="hidden absolute left-1/2 top-full z-20 mt-3 w-72 max-w-[80vw] -translate-x-1/2 rounded-lg border-2 border-slate-300 bg-slate-100 p-4 text-center shadow-xl"
+                    role="tooltip"
+                  >
+                    <div
+                      class="absolute left-1/2 -top-[7px] h-3 w-3 -translate-x-1/2 rotate-45 border-l-2 border-t-2 border-slate-300 bg-slate-100"
+                    ></div>
+                    <p class="text-xs text-slate-600 font-medium">
+                      Subir un estudio clínico del paciente o tomar una foto del
+                      estudio médico impreso.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <label class="block text-sm font-semibold text-slate-700" for="estudio-clinico-file"
+                >Subir estudio clínico</label
+              >
+              <input
+                id="estudio-clinico-file"
+                name="estudio_clinico_file"
+                class="w-full border-slate-300 text-sm file:mr-4 file:rounded-md file:border-0 file:bg-ug-orange-pure file:px-4 file:py-2 file:font-semibold file:text-white hover:file:bg-ug-orange-hover"
+                type="file"
+                accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf"
+              />
+              <label class="block text-sm font-semibold text-slate-700 mt-4"
+                >Tomar foto del estudio</label
+              >
+              <button
+                type="button"
+                id="estudio-camera-trigger"
+                class="btn-secondary px-4 py-2 text-sm rounded-lg"
+              >
+                <span class="material-symbols-outlined text-base">photo_camera</span>Tomar foto
+              </button>
+              <p class="text-xs text-slate-500">Acepta JPG, PNG o PDF. Máximo 10MB.</p>
+              <p id="estudio-status" class="text-xs text-slate-500"></p>
+              <div class="relative">
+                <button
+                  type="button"
+                  id="estudio-preview-card"
+                  class="hidden mt-2 w-full overflow-hidden rounded-lg border border-slate-200 bg-white text-left hover:border-primary/40"
+                >
+                  <div
+                    id="estudio-preview-media"
+                    class="flex h-44 items-center justify-center bg-slate-100"
+                  ></div>
+                  <div class="border-t border-slate-200 px-3 py-2">
+                    <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Vista previa
+                    </p>
+                    <p id="estudio-preview-name" class="truncate text-sm text-slate-700"></p>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  id="estudio-remove-btn"
+                  class="hidden absolute right-2 top-4 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-slate-900/70 text-white hover:bg-red-600"
+                  aria-label="Quitar estudio clínico"
+                >
+                  <span class="material-symbols-outlined text-base">close</span>
+                </button>
+              </div>
+            </div>
           </div>
         </section>
         <!-- END: Seccion Multimedia -->
@@ -742,6 +876,7 @@
 
               // Set select fields
               setVal("entorno", data.entorno);
+              setVal("diagnostico", data.diagnostico);
               setVal("control_tronco", data.control_tronco);
               setVal("control_cabeza", data.control_cabeza);
               setVal("control_de_piernas", data.control_de_piernas);
@@ -811,6 +946,7 @@
               if (el && val != null) el.value = val;
             };
             setVal("entorno", data.entorno);
+            setVal("diagnostico", data.diagnostico);
             setVal("control_tronco", data.control_tronco);
             setVal("control_cabeza", data.control_cabeza);
             setVal("control_de_piernas", data.control_de_piernas);
@@ -857,6 +993,12 @@
       });
 
       // -- Setup observaciones textarea validation -------------------------------
+      function _setupDiagnosticoValidation() {
+        const input = document.querySelector('[name="diagnostico"]');
+        if (!input) return;
+        SR_Validations.setupTextField(input, SR_Validations.DIAGNOSTICO_RE);
+      }
+
       function _setupObsValidation() {
         const textarea = document.querySelector('[name="observaciones_posturales"]');
         if (!textarea) return;
@@ -920,9 +1062,17 @@
         type: null,
         name: "",
       };
+      let capturedEstudioFile = null;
+      const estudioPreviewState = {
+        objectUrl: null,
+        sourceUrl: null,
+        type: null,
+        name: "",
+      };
       const cameraState = {
         stream: null,
         selectedDeviceId: null,
+        target: "photo",
       };
 
       function extractStoredFilename(path) {
@@ -966,17 +1116,20 @@
         const card = document.getElementById("photo-preview-card");
         const media = document.getElementById("photo-preview-media");
         const name = document.getElementById("photo-preview-name");
+        const removeBtn = document.getElementById("photo-remove-btn");
         if (!card || !media || !name) return;
 
         const previewUrl = photoPreviewState.objectUrl || photoPreviewState.sourceUrl;
         if (!previewUrl) {
           card.classList.add("hidden");
+          removeBtn?.classList.add("hidden");
           media.innerHTML = "";
           name.textContent = "";
           return;
         }
 
         card.classList.remove("hidden");
+        removeBtn?.classList.remove("hidden");
         name.textContent = photoPreviewState.name || "Fotografía del paciente";
         media.innerHTML = `<img src="${previewUrl}" alt="Vista previa de la fotografía del paciente" class="h-full w-full object-contain" />`;
       }
@@ -1001,6 +1154,84 @@
           : "";
       }
 
+      function revokeEstudioPreviewUrl() {
+        if (estudioPreviewState.objectUrl) {
+          URL.revokeObjectURL(estudioPreviewState.objectUrl);
+          estudioPreviewState.objectUrl = null;
+        }
+      }
+
+      function setEstudioPreviewFromFile(file) {
+        revokeEstudioPreviewUrl();
+        estudioPreviewState.objectUrl = URL.createObjectURL(file);
+        estudioPreviewState.sourceUrl = null;
+        estudioPreviewState.type = file.type || "image/jpeg";
+        estudioPreviewState.name = file.name || "Estudio clínico";
+      }
+
+      function renderEstudioPreviewCard() {
+        const card = document.getElementById("estudio-preview-card");
+        const media = document.getElementById("estudio-preview-media");
+        const name = document.getElementById("estudio-preview-name");
+        const removeBtn = document.getElementById("estudio-remove-btn");
+        if (!card || !media || !name) return;
+
+        const previewUrl = estudioPreviewState.objectUrl || estudioPreviewState.sourceUrl;
+        if (!previewUrl) {
+          card.classList.add("hidden");
+          removeBtn?.classList.add("hidden");
+          media.innerHTML = "";
+          name.textContent = "";
+          return;
+        }
+
+        card.classList.remove("hidden");
+        removeBtn?.classList.remove("hidden");
+        name.textContent = estudioPreviewState.name || "Estudio clínico";
+        if (estudioPreviewState.type === "application/pdf") {
+          media.innerHTML = `<div class="flex h-full w-full flex-col items-center justify-center gap-2 text-slate-600"><span class="text-3xl">📄</span><span class="text-xs font-semibold uppercase tracking-wide">PDF</span></div>`;
+          return;
+        }
+        media.innerHTML = `<img src="${previewUrl}" alt="Vista previa del estudio clínico" class="h-full w-full object-contain" />`;
+      }
+
+      function clearPhotoUpload() {
+        capturedPhotoFile = null;
+        uploadedPhotoUrl = null;
+        const inputEl = document.getElementById("file-upload");
+        if (inputEl) inputEl.value = "";
+        clearPhotoPreviewState();
+        renderPhotoStatus();
+        renderPhotoPreviewCard();
+      }
+
+      function clearEstudioUpload() {
+        capturedEstudioFile = null;
+        const inputEl = document.getElementById("estudio-clinico-file");
+        if (inputEl) inputEl.value = "";
+        revokeEstudioPreviewUrl();
+        estudioPreviewState.sourceUrl = null;
+        estudioPreviewState.type = null;
+        estudioPreviewState.name = "";
+        renderEstudioStatus();
+        renderEstudioPreviewCard();
+      }
+
+      function renderEstudioStatus() {
+        const statusEl = document.getElementById("estudio-status");
+        const inputEl = document.getElementById("estudio-clinico-file");
+        if (!statusEl || !inputEl) return;
+
+        if (inputEl.files?.[0]) {
+          statusEl.textContent = `Estudio seleccionado: ${inputEl.files[0].name}`;
+          return;
+        }
+
+        statusEl.textContent = capturedEstudioFile
+          ? `Estudio capturado: ${capturedEstudioFile.name}`
+          : "";
+      }
+
       function getPreviewModalElements() {
         return {
           modal: document.getElementById("document-preview-modal"),
@@ -1017,14 +1248,22 @@
         if (modal) modal.classList.add("hidden");
       }
 
-      function openDocumentPreviewModal() {
+      function openDocumentPreviewModal(target = "photo") {
+        const isEstudio = target === "estudio";
+        const state = isEstudio ? estudioPreviewState : photoPreviewState;
+        const label = isEstudio ? "el estudio clínico" : "la fotografía del paciente";
+        const fallbackName = isEstudio ? "Estudio clínico" : "Fotografía del paciente";
         const { modal, title, name, content } = getPreviewModalElements();
-        const previewUrl = photoPreviewState.objectUrl || photoPreviewState.sourceUrl;
+        const previewUrl = state.objectUrl || state.sourceUrl;
         if (!modal || !title || !name || !content || !previewUrl) return;
 
-        title.textContent = "Vista previa de la fotografía del paciente";
-        name.textContent = photoPreviewState.name || "Fotografía del paciente";
-        content.innerHTML = `<img src="${previewUrl}" alt="Vista previa ampliada de la fotografía del paciente" class="max-h-full max-w-full object-contain" />`;
+        title.textContent = `Vista previa de ${label}`;
+        name.textContent = state.name || fallbackName;
+        if (state.type === "application/pdf") {
+          content.innerHTML = `<iframe src="${previewUrl}" class="h-full w-full rounded-lg bg-white" title="Vista previa de ${label}"></iframe>`;
+        } else {
+          content.innerHTML = `<img src="${previewUrl}" alt="Vista previa ampliada de ${label}" class="max-h-full max-w-full object-contain" />`;
+        }
         modal.classList.remove("hidden");
       }
 
@@ -1111,9 +1350,18 @@
         if (modal) modal.classList.add("hidden");
       }
 
-      async function openCameraModal() {
+      async function openCameraModal(target = "photo") {
         const { modal, error } = getCameraElements();
         if (!modal || !error) return;
+
+        cameraState.target = target;
+        const titleEl = document.getElementById("camera-modal-title");
+        if (titleEl) {
+          titleEl.textContent =
+            target === "estudio"
+              ? "Capturar estudio clínico"
+              : "Capturar fotografía del paciente";
+        }
 
         if (!navigator.mediaDevices?.getUserMedia) {
           throw new Error("Este navegador no permite acceder a la webcam desde esta pantalla.");
@@ -1149,14 +1397,25 @@
         canvas.toBlob(
           (blob) => {
             if (!blob) return;
-            capturedPhotoFile = new File([blob], `foto-paciente-${Date.now()}.jpg`, {
-              type: "image/jpeg",
-            });
-            const inputEl = document.getElementById("file-upload");
-            if (inputEl) inputEl.value = "";
-            setPhotoPreviewFromFile(capturedPhotoFile);
-            renderPhotoStatus();
-            renderPhotoPreviewCard();
+            if (cameraState.target === "estudio") {
+              capturedEstudioFile = new File([blob], `estudio-clinico-${Date.now()}.jpg`, {
+                type: "image/jpeg",
+              });
+              const inputEl = document.getElementById("estudio-clinico-file");
+              if (inputEl) inputEl.value = "";
+              setEstudioPreviewFromFile(capturedEstudioFile);
+              renderEstudioStatus();
+              renderEstudioPreviewCard();
+            } else {
+              capturedPhotoFile = new File([blob], `foto-paciente-${Date.now()}.jpg`, {
+                type: "image/jpeg",
+              });
+              const inputEl = document.getElementById("file-upload");
+              if (inputEl) inputEl.value = "";
+              setPhotoPreviewFromFile(capturedPhotoFile);
+              renderPhotoStatus();
+              renderPhotoPreviewCard();
+            }
             closeCameraModal();
           },
           "image/jpeg",
@@ -1183,10 +1442,41 @@
           renderPhotoPreviewCard();
         });
 
-        previewCard?.addEventListener("click", openDocumentPreviewModal);
+        previewCard?.addEventListener("click", () => openDocumentPreviewModal("photo"));
         cameraTrigger?.addEventListener("click", async () => {
           try {
-            await openCameraModal();
+            await openCameraModal("photo");
+          } catch (err) {
+            const errorEl = document.getElementById("error-msg");
+            errorEl.textContent =
+              err instanceof Error ? err.message : "No se pudo abrir la webcam.";
+            errorEl.classList.remove("hidden");
+          }
+        });
+
+        const estudioInput = document.getElementById("estudio-clinico-file");
+        const estudioPreviewCard = document.getElementById("estudio-preview-card");
+        const estudioCameraTrigger = document.getElementById("estudio-camera-trigger");
+
+        estudioInput?.addEventListener("change", () => {
+          capturedEstudioFile = null;
+          const file = estudioInput.files?.[0];
+          if (file) {
+            setEstudioPreviewFromFile(file);
+          } else {
+            revokeEstudioPreviewUrl();
+            estudioPreviewState.sourceUrl = null;
+            estudioPreviewState.type = null;
+            estudioPreviewState.name = "";
+          }
+          renderEstudioStatus();
+          renderEstudioPreviewCard();
+        });
+
+        estudioPreviewCard?.addEventListener("click", () => openDocumentPreviewModal("estudio"));
+        estudioCameraTrigger?.addEventListener("click", async () => {
+          try {
+            await openCameraModal("estudio");
           } catch (err) {
             const errorEl = document.getElementById("error-msg");
             errorEl.textContent =
@@ -1224,8 +1514,50 @@
             }
           });
 
+        document
+          .getElementById("photo-remove-btn")
+          ?.addEventListener("click", clearPhotoUpload);
+        document
+          .getElementById("estudio-remove-btn")
+          ?.addEventListener("click", clearEstudioUpload);
+
+        const infoBubbles = [
+          ["photo-info-toggle", "photo-info-panel"],
+          ["estudio-info-toggle", "estudio-info-panel"],
+        ]
+          .map(([toggleId, panelId]) => ({
+            toggle: document.getElementById(toggleId),
+            panel: document.getElementById(panelId),
+          }))
+          .filter(({ toggle, panel }) => toggle && panel);
+
+        function closeInfoBubbles(except) {
+          infoBubbles.forEach(({ toggle, panel }) => {
+            if (panel === except) return;
+            panel.classList.add("hidden");
+            toggle.setAttribute("aria-expanded", "false");
+          });
+        }
+
+        infoBubbles.forEach(({ toggle, panel }) => {
+          toggle.addEventListener("click", (event) => {
+            event.stopPropagation();
+            closeInfoBubbles(panel);
+            const hidden = panel.classList.toggle("hidden");
+            toggle.setAttribute("aria-expanded", String(!hidden));
+          });
+          panel.addEventListener("click", (event) => event.stopPropagation());
+        });
+
+        document.addEventListener("click", () => closeInfoBubbles());
+        document.addEventListener("keydown", (event) => {
+          if (event.key === "Escape") closeInfoBubbles();
+        });
+
         renderPhotoStatus();
         renderPhotoPreviewCard();
+        renderEstudioStatus();
+        renderEstudioPreviewCard();
       }
 
       async function uploadFoto(fileInput) {
@@ -1461,6 +1793,7 @@
 
         return {
           entorno: get("entorno"),
+          diagnostico: toStrOrNull(get("diagnostico")),
           control_tronco: get("control_tronco"),
           control_cabeza: get("control_cabeza"),
           control_de_piernas: get("control_de_piernas"),
@@ -1588,7 +1921,7 @@
             apellido_paterno: draftSocio.beneficiario?.apellido_paterno || null,
             apellido_materno: draftSocio.beneficiario?.apellido_materno || null,
             fecha_nacimiento: draftSocio.beneficiario?.fecha_nacimiento || null,
-            diagnostico: draftSocio.beneficiario?.diagnostico || null,
+            diagnostico: tecnicaData.diagnostico || draftSocio.beneficiario?.diagnostico || null,
             calle: draftSocio.beneficiario?.calle || null,
             num_ext: draftSocio.beneficiario?.num_ext || null,
             num_int: draftSocio.beneficiario?.num_int || null,
@@ -1700,6 +2033,7 @@
         if (status === "completo") {
           const required = [
             { id: "entorno", label: "Entorno de Uso" },
+            { id: "diagnostico", label: "Diagnóstico Médico" },
             { id: "control_tronco", label: "Control de Tronco" },
             { id: "control_cabeza", label: "Control de Cabeza" },
             { id: "control_de_piernas", label: "Control de Piernas" },
@@ -1767,6 +2101,7 @@
         const payload = {
           beneficiario_id: beneficiarioId,
           entorno: get("entorno"),
+          diagnostico: (get("diagnostico") || "").trim() || null,
           control_tronco: get("control_tronco"),
           control_cabeza: get("control_cabeza"),
           control_de_piernas: get("control_de_piernas"),
@@ -2130,6 +2465,7 @@
       setupPhotoInputs();
       setupUnidadMedidaLabels();
       setupImageZoom();
+      _setupDiagnosticoValidation();
       _setupObsValidation();
       _setupAllMedidaValidations();
       setupObservacionesPosturalesConditional();

@@ -26,6 +26,7 @@ from validators import (
     validate_unidad_peso,
     validate_prioridad,
     validate_status,
+    validate_diagnostico,
 )
 
 router = APIRouter()
@@ -409,6 +410,7 @@ def _storage():
 class SolicitudCreateRequest(BaseModel):
     beneficiario_id: int
     entorno: str
+    diagnostico: Optional[str] = None
     control_tronco: str
     control_cabeza: str
     control_de_piernas: str
@@ -433,6 +435,13 @@ class SolicitudCreateRequest(BaseModel):
     @classmethod
     def _entorno_valido(cls, v: str) -> str:
         return validate_entorno(v)
+
+    @field_validator("diagnostico", mode="before")
+    @classmethod
+    def validate_diagnostico_field(cls, v) -> Optional[str]:
+        if v is None or (isinstance(v, str) and v.strip() == ""):
+            return None
+        return validate_diagnostico(str(v))
 
     @field_validator("control_tronco")
     @classmethod
@@ -535,6 +544,7 @@ class SolicitudCreateResponse(BaseModel):
 
 class SolicitudUpdateRequest(BaseModel):
     entorno: Optional[str] = None
+    diagnostico: Optional[str] = None
     control_tronco: Optional[str] = None
     control_cabeza: Optional[str] = None
     control_de_piernas: Optional[str] = None
@@ -561,6 +571,13 @@ class SolicitudUpdateRequest(BaseModel):
         if v is None:
             return v
         return validate_entorno(v)
+
+    @field_validator("diagnostico", mode="before")
+    @classmethod
+    def validate_diagnostico_field(cls, v) -> Optional[str]:
+        if v is None or (isinstance(v, str) and v.strip() == ""):
+            return None
+        return validate_diagnostico(str(v))
 
     @field_validator("control_tronco")
     @classmethod
@@ -1414,6 +1431,12 @@ def crear_solicitud(
     except Exception as exc:
         raise _classify_db_error(exc) from exc
 
+    if body.diagnostico is not None:
+        db.execute(
+            "UPDATE beneficiarios SET diagnostico = %s WHERE id = %s",
+            (body.diagnostico, body.beneficiario_id),
+        )
+
     _try_backfill_foto_path(
         db,
         solicitud_id=solicitud_id,
@@ -1443,7 +1466,13 @@ def obtener_solicitud(
 
     assert_resource_owner(row["usuario_id"], usuario)
 
-    return dict(row)
+    out = dict(row)
+    beneficiario = db.execute(
+        "SELECT diagnostico FROM beneficiarios WHERE id = %s",
+        (row["beneficiario_id"],),
+    ).fetchone()
+    out["diagnostico"] = beneficiario["diagnostico"] if beneficiario else None
+    return out
 
 
 @router.patch("/solicitudes/{id}", response_model=SolicitudUpdateResponse)
@@ -1454,7 +1483,7 @@ def actualizar_solicitud(
     usuario: Annotated[CurrentUser, Depends(require_roles("capturista", "tecnico", "admin", "organizacion"))],
 ) -> SolicitudUpdateResponse:
     existing = db.execute(
-        "SELECT id, usuario_id FROM solicitudes_tecnicas WHERE id = %s", (id,)
+        "SELECT id, usuario_id, beneficiario_id FROM solicitudes_tecnicas WHERE id = %s", (id,)
     ).fetchone()
 
     if existing is None:
@@ -1463,6 +1492,13 @@ def actualizar_solicitud(
     assert_resource_owner(existing["usuario_id"], usuario)
 
     fields = body.model_dump(exclude_none=True)
+    # Diagnostico lives on beneficiarios, not solicitudes_tecnicas
+    diagnostico = fields.pop("diagnostico", None)
+    if diagnostico is not None:
+        db.execute(
+            "UPDATE beneficiarios SET diagnostico = %s WHERE id = %s",
+            (diagnostico, existing["beneficiario_id"]),
+        )
     if fields.get("unidad_medida") in ("cm", "in") or "unidad_peso_captura" in fields:
         fields = _normalize_medidas_patch(fields)
     # Rename to DB column name

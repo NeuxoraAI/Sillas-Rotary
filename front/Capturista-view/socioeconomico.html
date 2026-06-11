@@ -163,22 +163,6 @@
             </div>
             <div class="space-y-2">
               <label class="block text-sm font-semibold text-slate-700"
-                >Diagnóstico Médico</label
-              >
-              <input
-                class="w-full"
-                name="diagnostico"
-                type="text"
-                minlength="3"
-                maxlength="160"
-                pattern="^[A-Za-záéíóúÁÉÍÓÚüÜñÑ0-9\s\-().\/.,]+$"
-                required
-                aria-describedby="diagnostico-error"
-              />
-              <p class="field-error hidden text-red-600 text-xs mt-1" id="diagnostico-error" data-error-for="diagnostico" role="alert"></p>
-            </div>
-            <div class="space-y-2">
-              <label class="block text-sm font-semibold text-slate-700"
                 >Calle</label
               >
               <input
@@ -802,13 +786,18 @@
               <button type="button" data-camera-target="credencial" class="btn-secondary px-4 py-2 text-sm rounded-lg"><span class="material-symbols-outlined text-base">photo_camera</span>Tomar foto</button>
               <p class="text-xs text-slate-500">Acepta JPG, PNG o PDF. Máximo 10MB.</p>
               <p id="credencial-status" class="text-xs text-slate-500"></p>
-              <button type="button" id="credencial-preview-card" class="hidden mt-2 w-full overflow-hidden rounded-lg border border-slate-200 bg-white text-left hover:border-primary/40">
-                <div id="credencial-preview-media" class="flex h-36 items-center justify-center bg-slate-100"></div>
-                <div class="border-t border-slate-200 px-3 py-2">
-                  <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Vista previa</p>
-                  <p id="credencial-preview-name" class="truncate text-sm text-slate-700"></p>
-                </div>
-              </button>
+              <div class="relative">
+                <button type="button" id="credencial-preview-card" class="hidden mt-2 w-full overflow-hidden rounded-lg border border-slate-200 bg-white text-left hover:border-primary/40">
+                  <div id="credencial-preview-media" class="flex h-36 items-center justify-center bg-slate-100"></div>
+                  <div class="border-t border-slate-200 px-3 py-2">
+                    <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Vista previa</p>
+                    <p id="credencial-preview-name" class="truncate text-sm text-slate-700"></p>
+                  </div>
+                </button>
+                <button type="button" id="credencial-remove-btn" class="hidden absolute right-2 top-4 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-slate-900/70 text-white hover:bg-red-600" aria-label="Quitar credencial">
+                  <span class="material-symbols-outlined text-base">close</span>
+                </button>
+              </div>
             </div>
             <div class="space-y-2 rounded-lg border border-dashed border-slate-300 bg-white p-4">
               <label class="block text-sm font-semibold text-slate-700" for="comprobante-domicilio-file">Subir Comprobante de domicilio</label>
@@ -817,13 +806,18 @@
               <button type="button" data-camera-target="comprobante_domicilio" class="btn-secondary px-4 py-2 text-sm rounded-lg"><span class="material-symbols-outlined text-base">photo_camera</span>Tomar foto</button>
               <p class="text-xs text-slate-500">Acepta JPG, PNG o PDF. Máximo 10MB.</p>
               <p id="comprobante-domicilio-status" class="text-xs text-slate-500"></p>
-              <button type="button" id="comprobante_domicilio-preview-card" class="hidden mt-2 w-full overflow-hidden rounded-lg border border-slate-200 bg-white text-left hover:border-primary/40">
-                <div id="comprobante_domicilio-preview-media" class="flex h-36 items-center justify-center bg-slate-100"></div>
-                <div class="border-t border-slate-200 px-3 py-2">
-                  <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Vista previa</p>
-                  <p id="comprobante_domicilio-preview-name" class="truncate text-sm text-slate-700"></p>
-                </div>
-              </button>
+              <div class="relative">
+                <button type="button" id="comprobante_domicilio-preview-card" class="hidden mt-2 w-full overflow-hidden rounded-lg border border-slate-200 bg-white text-left hover:border-primary/40">
+                  <div id="comprobante_domicilio-preview-media" class="flex h-36 items-center justify-center bg-slate-100"></div>
+                  <div class="border-t border-slate-200 px-3 py-2">
+                    <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Vista previa</p>
+                    <p id="comprobante_domicilio-preview-name" class="truncate text-sm text-slate-700"></p>
+                  </div>
+                </button>
+                <button type="button" id="comprobante_domicilio-remove-btn" class="hidden absolute right-2 top-4 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-slate-900/70 text-white hover:bg-red-600" aria-label="Quitar comprobante de domicilio">
+                  <span class="material-symbols-outlined text-base">close</span>
+                </button>
+              </div>
             </div>
           </div>
         </section>
@@ -1153,6 +1147,7 @@
           previewCardId: "credencial-preview-card",
           previewMediaId: "credencial-preview-media",
           previewNameId: "credencial-preview-name",
+          removeBtnId: "credencial-remove-btn",
           label: "Credencial",
         },
         {
@@ -1163,6 +1158,7 @@
           previewCardId: "comprobante_domicilio-preview-card",
           previewMediaId: "comprobante_domicilio-preview-media",
           previewNameId: "comprobante_domicilio-preview-name",
+          removeBtnId: "comprobante_domicilio-remove-btn",
           label: "Comprobante de domicilio",
         },
       ];
@@ -1233,17 +1229,20 @@
         const card = document.getElementById(config.previewCardId);
         const media = document.getElementById(config.previewMediaId);
         const name = document.getElementById(config.previewNameId);
+        const removeBtn = document.getElementById(config.removeBtnId);
         if (!card || !media || !name) return;
 
         const previewUrl = state.objectUrl || state.sourceUrl;
         if (!previewUrl) {
           card.classList.add("hidden");
+          removeBtn?.classList.add("hidden");
           media.innerHTML = "";
           name.textContent = "";
           return;
         }
 
         card.classList.remove("hidden");
+        removeBtn?.classList.remove("hidden");
         name.textContent = state.name || config.label;
 
         if (state.type === "application/pdf") {
@@ -1299,7 +1298,25 @@
           if (previewCard) {
             previewCard.addEventListener("click", () => openDocumentPreviewModal(config.key));
           }
+
+          const removeBtn = document.getElementById(config.removeBtnId);
+          if (removeBtn) {
+            removeBtn.addEventListener("click", () => clearDocumentUpload(config.key));
+          }
         });
+      }
+
+      function clearDocumentUpload(key) {
+        const config = DOCUMENT_INPUTS.find((item) => item.key === key);
+        if (!config) return;
+
+        capturedDocumentFiles[key] = null;
+        uploadedDocumentRefs[key] = { path: null, url: null };
+        const inputEl = document.getElementById(config.inputId);
+        if (inputEl) inputEl.value = "";
+        clearPreviewState(key);
+        renderDocumentStatus(key);
+        renderPreviewCard(key);
       }
 
       function getCameraElements() {
@@ -1764,12 +1781,6 @@
         });
       }
 
-      function setupDiagnosticoValidation() {
-        const input = document.querySelector('[name="diagnostico"]');
-        if (!input) return;
-        SR_Validations.setupTextField(input, SR_Validations.DIAGNOSTICO_RE);
-      }
-
       function setupCalleValidation() {
         const input = document.querySelector('[name="calle"]');
         if (!input) return;
@@ -2104,7 +2115,6 @@
                   }
                 }
                 setVal("fecha_nacimiento", b.fecha_nacimiento);
-                setVal("diagnostico", b.diagnostico);
                 setVal("calle", b.calle);
                 setVal("colonia", b.colonia);
                 setVal("num_ext", b.num_ext);
@@ -2390,7 +2400,6 @@
             apellido_paterno: get("apellido_paterno"),
             apellido_materno: get("apellido_materno"),
             fecha_nacimiento: get("fecha_nacimiento"),
-            diagnostico: get("diagnostico"),
             calle: get("calle"),
             num_ext: get("num_ext"),
             num_int: document.querySelector('[name="tiene_num_interior"]')?.checked ? (get("num_int") || null) : null,
@@ -2611,10 +2620,6 @@
         if (!form.querySelector('[name="sexo"]:checked')) {
           SR_Validations.showFieldError("sexo", "Sexo es obligatorio");
           beneficiarioMissing.push({ id: "sexo", label: "Sexo" });
-        }
-        if (!((form.querySelector('[name="diagnostico"]')?.value || "").trim())) {
-          SR_Validations.showFieldError("diagnostico", "Diagnóstico es obligatorio");
-          beneficiarioMissing.push({ id: "diagnostico", label: "Diagnóstico" });
         }
         const domicilioFields = [
           { id: "calle", label: "Calle" },
@@ -3068,12 +3073,6 @@
             beneficiarioMissing.push({ id: "sexo", label: "Sexo" });
           }
 
-          // Diagnóstico
-          if (!((form.querySelector('[name="diagnostico"]')?.value || "").trim())) {
-            SR_Validations.showFieldError("diagnostico", "Diagnóstico es obligatorio");
-            beneficiarioMissing.push({ id: "diagnostico", label: "Diagnóstico" });
-          }
-
           // 2. Domicilio
           const domicilioFields = [
             { id: "calle", label: "Calle" },
@@ -3517,7 +3516,6 @@
 
       // Guardar Borrador button
       setupNameFieldValidation();
-      setupDiagnosticoValidation();
       setupCalleValidation();
       setupColoniaValidation();
       setupNumeroDomicilioValidation();
@@ -3622,7 +3620,6 @@
         _setVal("apellido_paterno", b.apellido_paterno || "");
         _setVal("apellido_materno", b.apellido_materno || "");
         _setVal("fecha_nacimiento", b.fecha_nacimiento || "");
-        _setVal("diagnostico", b.diagnostico || "");
         _setVal("calle", b.calle || "");
         _setVal("num_ext", b.num_ext || "");
         _setVal("colonia", b.colonia || "");
@@ -3913,7 +3910,6 @@
             _setVal("apellido_paterno", b.apellido_paterno || "");
             _setVal("apellido_materno", b.apellido_materno || "");
             _setVal("fecha_nacimiento", b.fecha_nacimiento || "");
-            _setVal("diagnostico", b.diagnostico || "");
             _setVal("calle", b.calle || "");
             _setVal("num_ext", b.num_ext || "");
             _setVal("colonia", b.colonia || "");

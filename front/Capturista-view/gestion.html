@@ -464,7 +464,7 @@
           apellido_paterno: draftSocio.beneficiario?.apellido_paterno || null,
           apellido_materno: draftSocio.beneficiario?.apellido_materno || null,
           fecha_nacimiento: draftSocio.beneficiario?.fecha_nacimiento || null,
-          diagnostico: draftSocio.beneficiario?.diagnostico || null,
+          diagnostico: draftTecnica.diagnostico || draftSocio.beneficiario?.diagnostico || null,
           calle: draftSocio.beneficiario?.calle || null,
           num_ext: draftSocio.beneficiario?.num_ext || null,
           num_int: draftSocio.beneficiario?.num_int || null,
