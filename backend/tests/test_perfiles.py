@@ -208,7 +208,9 @@ class TestMePerfil:
         assert "stats" in data
         assert "total_capturas" in data["stats"]
         assert "this_month" in data["stats"]
-        assert "heatmap_data" in data
+        # heatmap_data was removed from this response: no frontend consumed it
+        # and it duplicated the aggregation served by GET /api/me/heatmap
+        assert "heatmap_data" not in data
         assert data["can_edit"] is True
 
     def test_get_my_perfil_with_no_studies(self, client, capturista_headers):
@@ -217,7 +219,6 @@ class TestMePerfil:
         assert res.status_code == 200
         data = res.json()
         assert data["stats"]["total_capturas"] == 0
-        assert data["heatmap_data"] == []
 
     def test_get_my_perfil_requires_auth(self, client):
         """GET /api/me/perfil without JWT returns 401."""
@@ -416,7 +417,6 @@ class TestProfileStatsExtension:
         assert "stats" in data
         assert "total_capturas" in data["stats"]
         assert "this_month" in data["stats"]
-        assert "heatmap_data" in data
         assert "can_edit" in data
 
 

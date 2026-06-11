@@ -60,25 +60,20 @@ class LiderAssignRequest(BaseModel):
 
 def _get_user_stats(db: _DBAdapter, usuario_id: int) -> dict:
     """Return {total_capturas, this_month, pendientes} for a user."""
-    total = db.execute(
-        "SELECT COUNT(*) AS count FROM estudios_socioeconomicos WHERE usuario_id = %s",
-        (usuario_id,),
-    ).fetchone()["count"]
-
     now = datetime.now(timezone.utc)
-    this_month = db.execute(
-        "SELECT COUNT(*) AS count FROM estudios_socioeconomicos "
-        "WHERE usuario_id = %s AND DATE_TRUNC('month', created_at) = DATE_TRUNC('month', %s::timestamptz)",
-        (usuario_id, now),
-    ).fetchone()["count"]
+    row = db.execute(
+        "SELECT COUNT(*) AS total, "
+        "COUNT(*) FILTER (WHERE DATE_TRUNC('month', created_at) = DATE_TRUNC('month', %s::timestamptz)) AS this_month, "
+        "COUNT(*) FILTER (WHERE status = 'borrador') AS pendientes "
+        "FROM estudios_socioeconomicos WHERE usuario_id = %s",
+        (now, usuario_id),
+    ).fetchone()
 
-    pendientes = db.execute(
-        "SELECT COUNT(*) AS count FROM estudios_socioeconomicos "
-        "WHERE usuario_id = %s AND status = 'borrador'",
-        (usuario_id,),
-    ).fetchone()["count"]
-
-    return {"total_capturas": total, "this_month": this_month, "pendientes": pendientes}
+    return {
+        "total_capturas": row["total"],
+        "this_month": row["this_month"],
+        "pendientes": row["pendientes"],
+    }
 
 
 def _get_heatmap_data(db: _DBAdapter, usuario_id: int, year: int | None = None) -> list[dict]:
@@ -171,7 +166,6 @@ def get_my_perfil(
         },
         "stats": stats,
         "last_activity_date": last_activity_date,
-        "heatmap_data": _get_heatmap_data(db, user.usuario_id),
         "organizaciones_lider": [dict(r) for r in leader_rows],
         "organizaciones_miembro": [dict(r) for r in member_rows],
         "can_edit": True,
