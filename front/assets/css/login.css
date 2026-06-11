@@ -1,33 +1,12 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   Login Page — Visual spec: institutional, modern, clean, premium dashboard
-   Warm whites + organic curves + orange #FF5A1F + deep purple #2B063D
+   Login Page — page-specific styles; shared tokens provided by theme.css
    ═══════════════════════════════════════════════════════════════════════════ */
 
 :root {
-  --c-orange:        #FF5A1F;
-  --c-orange-mid:    #F15A24;
-  --c-orange-hover:  #E84B10;
-  --c-orange-light:  #FFF1EB;
-  --c-orange-glow:   rgba(255, 90, 31, 0.35);
-  --c-purple:        #2B063D;
-  --c-purple-bold:   #3A0A4F;
-  --c-title:        #2D073F;
-  --c-label:        #3A0A4F;
-  --c-subtitle:     #6F6B6B;
-  --c-gray:         #777;
-  --c-input-bg:     #FBF7F6;
-  --c-input-border: #E8DDD9;
-  --c-placeholder:  #A0A0A0;
-  --bg-warm-white:  #FBF7F5;
-  --bg-pale-pink:   #F8EDEA;
-  --bg-soft-gray:   #F4F1F0;
-  --c-separator:    #CFC7C4;
-  --shadow-card:    0 18px 45px rgba(60, 30, 20, 0.12);
-  --shadow-video:    0 18px 45px rgba(60, 30, 20, 0.14);
+  /* Login-specific overrides on top of theme.css */
   --radius-card:    24px;
   --radius-video:   20px;
   --radius-input:   12px;
-  --radius-btn:     10px;
 }
 
 body {

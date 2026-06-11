@@ -11,96 +11,95 @@
       href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;600;700&amp;display=swap"
       rel="stylesheet"
     />
-    <script>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&amp;display=block" rel="stylesheet"/>
+    <script id="tailwind-config">
       tailwind.config = {
+        darkMode: "class",
         theme: {
           extend: {
             colors: {
-              primary: "#51274b",
-              secondary: "#B9844D",
-              "ug-blue": "#51274b",
-              "ug-blue-shadow": "#3d1d39",
-              "ug-blue-deep": "#2f162c",
-              "ug-yellow": "#B9844D",
-              "ug-yellow-shadow": "#8f6338",
-              "ug-yellow-light": "#d6ae80",
+              "primary":          "#2B063D",
+              "primary-bold":     "#3A0A4F",
+              "ug-orange":        "#F15A24",
+              "ug-orange-hover":  "#E84B10",
+              "ug-orange-pure":   "#FF5A1F",
+              "warm-bg":          "#FBF7F5",
             },
-            fontFamily: {
-              sans: ['"Public Sans"', "sans-serif"],
-            },
-            borderRadius: {
-              custom: "0.5rem",
-            },
+            fontFamily: { "display": ["Public Sans"] },
+            borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "full": "9999px" },
           },
         },
       };
     </script>
     <!-- END: Tailwind CSS & Plugins -->
+    <link href="../assets/css/theme.css" rel="stylesheet"/>
     <link href="../assets/css/socioeconomico.css" rel="stylesheet" />
   </head>
-  <body class="bg-slate-50 min-h-screen py-10 px-4 flex flex-col items-center font-sans">
-    <main
-      class="max-w-5xl w-full bg-white shadow-2xl rounded-lg overflow-hidden border border-slate-200"
-    >
-      <header class="bg-ug-blue px-6 py-4 text-white">
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-white/60">Captura de campo</p>
-            <h1 class="text-2xl font-bold tracking-tight">Estudio Socioeconómico</h1>
+  <body class="page-bg min-h-screen flex flex-col font-display" style="background: #FBF7F5;">
+
+    <!-- Floating top bar -->
+    <header class="w-full px-4 pt-5 relative z-10">
+      <div class="max-w-5xl mx-auto topbar px-5 py-3.5 flex items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <div class="topbar-icon">
+            <span class="material-symbols-outlined text-xl" style="color: var(--c-orange);">assignment</span>
           </div>
-          <div class="flex items-center justify-between gap-4 sm:justify-end">
-            <div class="text-right">
-              <p id="user-nombre" class="text-sm font-semibold leading-none">—</p>
-              <p id="user-rol" class="mt-1 text-[10px] font-bold uppercase tracking-wider text-white/55">Capturista</p>
-            </div>
-            <button
-              id="btn-cambiar-capturista"
-              type="button"
-              class="rounded-xl bg-white/10 px-3 py-2 text-xs font-bold uppercase tracking-wider text-white/80 transition-colors hover:bg-white/20 hover:text-white"
-            >
-              Salir
-            </button>
+          <div>
+            <p class="text-[15px] font-bold" style="color: var(--c-title);">Estudio Socioeconómico</p>
+            <p class="text-xs text-slate-500">Captura de campo · Paso 1 de 3</p>
           </div>
         </div>
-      </header>
-      <form class="p-8 space-y-12" novalidate>
+        <div class="flex items-center gap-3">
+          <div class="hidden sm:block text-right">
+            <p id="user-nombre" class="text-sm font-bold leading-tight" style="color: var(--c-title);">—</p>
+            <p id="user-rol" class="text-xs text-slate-500">—</p>
+          </div>
+          <button
+            id="btn-cambiar-capturista"
+            type="button"
+            title="Cerrar sesión"
+            class="w-9 h-9 rounded-xl hover:bg-orange-50 flex items-center justify-center text-slate-400 hover:text-ug-orange-pure transition-all"
+          >
+            <span class="material-symbols-outlined text-xl">logout</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Step indicator -->
+    <div class="w-full mt-4 step-bar">
+      <div class="max-w-5xl mx-auto px-4 py-2.5 flex items-center gap-2">
+        <div class="step-pill active">
+          <div class="step-pill-num">1</div>
+          <span>Estudio</span>
+        </div>
+        <div class="flex-1 h-0.5 bg-gradient-to-r from-orange-200 to-slate-200 rounded"></div>
+        <div class="step-pill">
+          <div class="step-pill-num">2</div>
+          <span>Técnica</span>
+        </div>
+        <div class="flex-1 h-0.5 bg-slate-200 rounded"></div>
+        <div class="step-pill">
+          <div class="step-pill-num">3</div>
+          <span>Gestión</span>
+        </div>
+      </div>
+    </div>
+
+    <main class="flex-1 px-4 py-6 relative z-10">
+    <div class="max-w-5xl mx-auto">
+    <div class="card overflow-hidden">
+    <form class="p-8 space-y-12" novalidate>
         <!-- PART 1: ESTUDIO SOCIOECONÓMICO -->
-        <div id="edit-banner" class="hidden bg-amber-50 border-b border-amber-200 px-6 py-3 flex items-center gap-2 -mx-8 -mt-8 mb-6">
+        <div id="edit-banner" class="hidden bg-amber-50 border border-amber-200 rounded-xl px-6 py-3 flex items-center gap-2 mb-6">
           <span class="material-symbols-outlined text-amber-600 text-lg">edit</span>
           <span id="edit-banner-text" class="text-amber-800 text-sm font-semibold">Editando estudio</span>
           <a id="btn-cancelar-edicion" href="perfil-capturista.html" class="ml-auto text-xs font-bold text-amber-700 hover:text-amber-900 underline">Cancelar</a>
         </div>
-        <div class="-mx-8 -mt-8 mb-8 border-b border-slate-200 bg-ug-blue/5 px-8 py-5">
-          <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2 class="text-xl font-bold text-slate-900" id="form-title">Estudio Socioeconómico</h2>
-              <p class="mt-1 text-sm text-slate-500">Paso 1 de 3 · Datos del beneficiario y tutores.</p>
-            </div>
-            <div class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500">
-              <span class="rounded-full bg-ug-blue px-3 py-1 text-white">Estudio</span>
-              <span class="rounded-full bg-slate-100 px-3 py-1">Técnica</span>
-              <span class="rounded-full bg-slate-100 px-3 py-1">Gestión</span>
-            </div>
-          </div>
-        </div>
         <!-- Datos del Beneficiario -->
         <section data-purpose="beneficiary-data">
-          <h2
-            class="text-xl font-bold mb-6 text-primary flex items-center gap-2 border-b-2 border-primary/10 pb-2"
-          >
-            <svg
-              class="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewbox="0 0 24 24"
-            >
-              <path
-                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-              ></path>
-            </svg>
+          <h2 class="section-heading">
+            <span class="material-symbols-outlined">person</span>
             Datos del Beneficiario
           </h2>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -108,7 +107,7 @@
             <div class="space-y-2">
               <label class="block text-sm font-semibold text-slate-700">Nombre(s)</label>
               <input
-                class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary"
+                class="w-full"
                 name="nombres"
                 type="text"
                 minlength="2"
@@ -123,7 +122,7 @@
             <div class="space-y-2">
               <label class="block text-sm font-semibold text-slate-700">Apellido Paterno</label>
               <input
-                class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary"
+                class="w-full"
                 name="apellido_paterno"
                 type="text"
                 minlength="2"
@@ -138,7 +137,7 @@
             <div class="space-y-2">
               <label class="block text-sm font-semibold text-slate-700">Apellido Materno</label>
               <input
-                class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary"
+                class="w-full"
                 name="apellido_materno"
                 type="text"
                 minlength="2"
@@ -154,7 +153,7 @@
                 >Fecha de nacimiento del beneficiario</label
               >
               <input
-                class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary"
+                class="w-full"
                 name="fecha_nacimiento"
                 type="date"
                 required
@@ -167,7 +166,7 @@
                 >Diagnóstico Médico</label
               >
               <input
-                class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary"
+                class="w-full"
                 name="diagnostico"
                 type="text"
                 minlength="3"
@@ -183,7 +182,7 @@
                 >Calle</label
               >
               <input
-                class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary"
+                class="w-full"
                 name="calle"
                 type="text"
                 minlength="3"
@@ -196,22 +195,22 @@
             </div>
             <div class="space-y-2">
               <label class="block text-sm font-semibold text-slate-700">Número exterior</label>
-              <input class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary" name="num_ext" type="text" minlength="1" maxlength="10" pattern="[A-Za-z0-9\-\/]{1,10}" required aria-describedby="num_ext-error" />
+              <input class="w-full" name="num_ext" type="text" minlength="1" maxlength="10" pattern="[A-Za-z0-9\-\/]{1,10}" required aria-describedby="num_ext-error" />
               <p class="field-error hidden text-red-600 text-xs mt-1" id="num_ext-error" data-error-for="num_ext" role="alert"></p>
             </div>
             <div class="space-y-2">
               <label class="inline-flex items-center gap-2 text-sm font-medium text-slate-700">
-                <input class="text-primary h-4 w-4" name="tiene_num_interior" type="checkbox" />
+                <input class="h-4 w-4" name="tiene_num_interior" type="checkbox" />
                 <span>Agregar número interior</span>
               </label>
-              <input class="w-full border-slate-300 bg-slate-100 text-slate-400 cursor-not-allowed shadow-sm focus:border-primary focus:ring-primary" name="num_int" type="text" minlength="1" maxlength="10" pattern="[A-Za-z0-9\-\/]{0,10}" disabled />
+              <input class="w-full text-slate-400 cursor-not-allowed" name="num_int" type="text" minlength="1" maxlength="10" pattern="[A-Za-z0-9\-\/]{0,10}" disabled />
             </div>
             <div class="space-y-2">
               <label class="block text-sm font-semibold text-slate-700"
                 >Colonia</label
               >
               <input
-                class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary"
+                class="w-full"
                 name="colonia"
                 type="text"
                 minlength="2"
@@ -224,13 +223,13 @@
             </div>
             <div class="space-y-2">
               <label class="block text-sm font-semibold text-slate-700">Estado</label>
-              <select class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary" name="estado_codigo" id="estado_codigo" required aria-describedby="estado_codigo-error"></select>
+              <select class="w-full" name="estado_codigo" id="estado_codigo" required aria-describedby="estado_codigo-error"></select>
               <p class="field-error hidden text-red-600 text-xs mt-1" id="estado_codigo-error" data-error-for="estado_codigo" role="alert"></p>
             </div>
             <div class="space-y-2">
               <label class="block text-sm font-semibold text-slate-700">Ciudad / Municipio</label>
               <select
-                class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary"
+                class="w-full"
                 name="ciudad"
                 id="ciudad"
                 required
@@ -254,11 +253,11 @@
                 >Teléfonos de contacto</label
               >
               <div class="flex">
-                <span id="telefono-prefix" class="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-slate-300 bg-slate-100 text-slate-600 text-sm">
+                <span id="telefono-prefix" class="input-prefix">
                   🇲🇽 +52
                 </span>
                 <input
-                  class="flex-1 rounded-r-lg border-slate-300 shadow-sm focus:border-primary focus:ring-primary"
+                  class="flex-1 input-group-start"
                   name="telefonos"
                   type="tel"
                   inputmode="numeric"
@@ -276,22 +275,8 @@
         </section>
         <!-- Datos de los Tutores -->
         <section class="space-y-8" data-purpose="tutor-data">
-          <h2
-            class="text-xl font-bold text-primary flex items-center gap-2 border-b-2 border-primary/10 pb-2"
-          >
-            <svg
-              class="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewbox="0 0 24 24"
-            >
-              <path
-                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-              ></path>
-            </svg>
+          <h2 class="section-heading">
+            <span class="material-symbols-outlined">group</span>
             Datos de los Tutores
           </h2>
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
@@ -310,7 +295,7 @@
                     <label class="text-xs font-bold text-slate-500 uppercase"
                       >Nombre(s)</label
                     ><input
-                      class="w-full mt-1 border-slate-300"
+                      class="w-full mt-1"
                       name="tutor1_nombres"
                       type="text"
                       minlength="2"
@@ -325,7 +310,7 @@
                     <label class="text-xs font-bold text-slate-500 uppercase"
                       >Apellido Paterno</label
                     ><input
-                      class="w-full mt-1 border-slate-300"
+                      class="w-full mt-1"
                       name="tutor1_apellido_paterno"
                       type="text"
                       minlength="2"
@@ -340,7 +325,7 @@
                     <label class="text-xs font-bold text-slate-500 uppercase"
                       >Apellido Materno</label
                     ><input
-                      class="w-full mt-1 border-slate-300"
+                      class="w-full mt-1"
                       name="tutor1_apellido_materno"
                       type="text"
                       minlength="2"
@@ -357,7 +342,7 @@
                     <label class="text-xs font-bold text-slate-500 uppercase"
                       >Edad</label
                     ><input
-                      class="w-full mt-1 border-slate-300"
+                      class="w-full mt-1"
                       name="tutor1_edad"
                       type="number"
                       min="0"
@@ -372,7 +357,7 @@
                       >Estudios</label
                     >
                     <select
-                      class="w-full mt-1 border-slate-300"
+                      class="w-full mt-1"
                       name="tutor1_nivel_estudios"
                       required
                       aria-describedby="tutor1_nivel_estudios-error"
@@ -396,7 +381,7 @@
                     >Edo. Civil</label
                   >
                   <select
-                      class="w-full mt-1 border-slate-300"
+                      class="w-full mt-1"
                       name="tutor1_estado_civil"
                       required
                       aria-describedby="tutor1_estado_civil-error"
@@ -414,7 +399,7 @@
                     <label class="text-xs font-bold text-slate-500 uppercase"
                       >No. Hijos</label
                     ><input
-                      class="w-full mt-1 border-slate-300"
+                      class="w-full mt-1"
                     name="tutor1_num_hijos"
                     type="number"
                     min="0"
@@ -430,7 +415,7 @@
                     >Vivienda</label
                   >
                   <select
-                    class="w-full mt-1 border-slate-300"
+                    class="w-full mt-1"
                     name="tutor1_vivienda"
                     required
                     aria-describedby="tutor1_vivienda-error"
@@ -448,7 +433,7 @@
                   <label class="text-xs font-bold text-slate-500 uppercase"
                     >Fuente Empleo</label
                   ><input
-                    class="w-full mt-1 border-slate-300"
+                    class="w-full mt-1"
                     name="tutor1_fuente_empleo"
                     type="text"
                     minlength="2"
@@ -458,7 +443,7 @@
                   />
                   <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor1_fuente_empleo-error" data-error-for="tutor1_fuente_empleo" role="alert"></p>
                   <label class="inline-flex items-center gap-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-lg px-3 py-2 mt-2">
-                    <input class="text-primary h-4 w-4" name="tutor1_sin_empleo" type="checkbox" />
+                    <input class="h-4 w-4" name="tutor1_sin_empleo" type="checkbox" />
                     <span>No tiene empleo</span>
                   </label>
                 </div>
@@ -466,42 +451,42 @@
                   <div>
                     <label class="text-xs font-bold text-slate-500 uppercase"
                       >Antigüedad (años)</label
-                    ><input class="w-full mt-1 border-slate-300" name="tutor1_antiguedad_anios" type="number" min="0" max="50" aria-describedby="tutor1_antiguedad_anios-error" />
+                    ><input class="w-full mt-1" name="tutor1_antiguedad_anios" type="number" min="0" max="50" aria-describedby="tutor1_antiguedad_anios-error" />
                     <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor1_antiguedad_anios-error" data-error-for="tutor1_antiguedad_anios" role="alert"></p>
                   </div>
                   <div>
                     <label class="text-xs font-bold text-slate-500 uppercase"
                       >Antigüedad (meses)</label
-                    ><input class="w-full mt-1 border-slate-300" name="tutor1_antiguedad_meses_extra" type="number" min="0" max="11" />
+                    ><input class="w-full mt-1" name="tutor1_antiguedad_meses_extra" type="number" min="0" max="11" />
                   </div>
                 </div>
                 <label class="inline-flex items-center gap-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-lg px-3 py-2">
-                  <input class="text-primary h-4 w-4" name="tutor1_antiguedad_no_aplica" type="checkbox" />
+                  <input class="h-4 w-4" name="tutor1_antiguedad_no_aplica" type="checkbox" />
                   <span>No aplica antigüedad</span>
                 </label>
                 <div>
                   <label class="text-xs font-bold text-slate-500 uppercase"
                     >Ingreso Mensual</label
                   ><div class="flex items-center">
-                  <span class="bg-slate-200 border border-r-0 border-slate-300 px-3 py-2 rounded-l-lg text-slate-600 text-sm font-semibold">$</span>
-                  <input class="flex-grow rounded-r-lg border-slate-300" name="tutor1_ingreso_mensual" type="text" aria-describedby="tutor1_ingreso_mensual-error" />
+                  <span class="input-prefix font-semibold">$</span>
+                  <input class="flex-grow input-group-start" name="tutor1_ingreso_mensual" type="text" aria-describedby="tutor1_ingreso_mensual-error" />
                 </div>
                   <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor1_ingreso_mensual-error" data-error-for="tutor1_ingreso_mensual" role="alert"></p>
                 </div>
                 <label class="inline-flex items-center gap-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-lg px-3 py-2">
-                  <input class="text-primary h-4 w-4" name="tutor1_otras_fuentes_aplica" type="checkbox" />
+                  <input class="h-4 w-4" name="tutor1_otras_fuentes_aplica" type="checkbox" />
                   <span>Tiene otras fuentes de ingreso</span>
                 </label>
                 <div>
                   <label class="text-xs font-bold text-slate-500 uppercase">Otra fuente</label>
-                  <input class="w-full mt-1 border-slate-300" name="tutor1_otras_fuentes_ingreso" type="text" minlength="2" maxlength="100" pattern="^[A-Za-záéíóúÁÉÍÓÚüÜñÑ0-9\s\-().\/.,]+$" disabled aria-describedby="tutor1_otras_fuentes_ingreso-error" />
+                  <input class="w-full mt-1" name="tutor1_otras_fuentes_ingreso" type="text" minlength="2" maxlength="100" pattern="^[A-Za-záéíóúÁÉÍÓÚüÜñÑ0-9\s\-().\/.,]+$" disabled aria-describedby="tutor1_otras_fuentes_ingreso-error" />
                   <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor1_otras_fuentes_ingreso-error" data-error-for="tutor1_otras_fuentes_ingreso" role="alert"></p>
                 </div>
                 <div>
                   <label class="text-xs font-bold text-slate-500 uppercase">Monto adicional</label>
                   <div class="flex items-center">
-                  <span class="bg-slate-200 border border-r-0 border-slate-300 px-3 py-2 rounded-l-lg text-slate-600 text-sm font-semibold">$</span>
-                  <input class="flex-grow rounded-r-lg border-slate-300" name="tutor1_monto_otras_fuentes" type="text" disabled aria-describedby="tutor1_monto_otras_fuentes-error" />
+                  <span class="input-prefix font-semibold">$</span>
+                  <input class="flex-grow input-group-start" name="tutor1_monto_otras_fuentes" type="text" disabled aria-describedby="tutor1_monto_otras_fuentes-error" />
                 </div>
                   <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor1_monto_otras_fuentes-error" data-error-for="tutor1_monto_otras_fuentes" role="alert"></p>
                 </div>
@@ -509,10 +494,10 @@
                   <legend class="text-xs font-bold text-slate-500 uppercase">IMSS</legend>
                   <div class="flex gap-4 mt-1">
                     <label class="inline-flex items-center gap-1">
-                      <input type="radio" name="tutor1_imss" value="SI" class="text-primary" required aria-describedby="tutor1_imss-error" /> Sí
+                      <input type="radio" name="tutor1_imss" value="SI" class="" required aria-describedby="tutor1_imss-error" /> Sí
                     </label>
                     <label class="inline-flex items-center gap-1">
-                      <input type="radio" name="tutor1_imss" value="NO" class="text-primary" /> No
+                      <input type="radio" name="tutor1_imss" value="NO" class="" /> No
                     </label>
                   </div>
                 </fieldset>
@@ -521,21 +506,21 @@
                   <legend class="text-xs font-bold text-slate-500 uppercase">INFONAVIT</legend>
                   <div class="flex gap-4 mt-1">
                     <label class="inline-flex items-center gap-1">
-                      <input type="radio" name="tutor1_infonavit" value="SI" class="text-primary" required aria-describedby="tutor1_infonavit-error" /> Sí
+                      <input type="radio" name="tutor1_infonavit" value="SI" class="" required aria-describedby="tutor1_infonavit-error" /> Sí
                     </label>
                     <label class="inline-flex items-center gap-1">
-                      <input type="radio" name="tutor1_infonavit" value="NO" class="text-primary" /> No
+                      <input type="radio" name="tutor1_infonavit" value="NO" class="" /> No
                     </label>
                   </div>
                 </fieldset>
                 <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor1_infonavit-error" data-error-for="tutor1_infonavit" role="alert"></p>
                 <div class="space-y-2">
                   <label class="inline-flex items-center gap-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-lg px-3 py-2">
-                    <input class="text-primary h-4 w-4" name="tutor1_tiene_email" type="checkbox" />
+                    <input class="h-4 w-4" name="tutor1_tiene_email" type="checkbox" />
                     <span>Agregar correo electrónico</span>
                   </label>
                   <input
-                    class="w-full mt-1 border-slate-300 shadow-sm focus:border-primary focus:ring-primary bg-slate-100 text-slate-400 cursor-not-allowed"
+                    class="w-full mt-1 text-slate-400 cursor-not-allowed"
                     name="tutor1_email"
                     type="email"
                     maxlength="254"
@@ -558,7 +543,7 @@
               >
                 <span>Tutor 2</span>
                 <label class="inline-flex items-center gap-2 text-sm font-medium text-slate-700">
-                  <input class="text-primary h-4 w-4" name="agregar_tutor2" type="checkbox" />
+                  <input class="h-4 w-4" name="agregar_tutor2" type="checkbox" />
                   <span>Agregar</span>
                 </label>
               </h3>
@@ -569,7 +554,7 @@
                     <label class="text-xs font-bold text-slate-500 uppercase"
                       >Nombre(s)</label
                     ><input
-                      class="w-full mt-1 border-slate-300"
+                      class="w-full mt-1"
                       name="tutor2_nombres"
                       type="text"
                       minlength="2"
@@ -583,7 +568,7 @@
                     <label class="text-xs font-bold text-slate-500 uppercase"
                       >Apellido Paterno</label
                     ><input
-                      class="w-full mt-1 border-slate-300"
+                      class="w-full mt-1"
                       name="tutor2_apellido_paterno"
                       type="text"
                       minlength="2"
@@ -597,7 +582,7 @@
                     <label class="text-xs font-bold text-slate-500 uppercase"
                       >Apellido Materno</label
                     ><input
-                      class="w-full mt-1 border-slate-300"
+                      class="w-full mt-1"
                       name="tutor2_apellido_materno"
                       type="text"
                       minlength="2"
@@ -613,7 +598,7 @@
                     <label class="text-xs font-bold text-slate-500 uppercase"
                       >Edad</label
                     ><input
-                      class="w-full mt-1 border-slate-300"
+                      class="w-full mt-1"
                       name="tutor2_edad"
                       type="number"
                       min="0"
@@ -627,7 +612,7 @@
                       >Estudios</label
                     >
                     <select
-                      class="w-full mt-1 border-slate-300"
+                      class="w-full mt-1"
                       name="tutor2_nivel_estudios"
                       aria-describedby="tutor2_nivel_estudios-error"
                     >
@@ -650,7 +635,7 @@
                       >Edo. Civil</label
                     >
                     <select
-                      class="w-full mt-1 border-slate-300"
+                      class="w-full mt-1"
                       name="tutor2_estado_civil"
                       aria-describedby="tutor2_estado_civil-error"
                     >
@@ -667,7 +652,7 @@
                     <label class="text-xs font-bold text-slate-500 uppercase"
                       >No. Hijos</label
                     ><input
-                      class="w-full mt-1 border-slate-300"
+                      class="w-full mt-1"
                     name="tutor2_num_hijos"
                     type="number"
                     min="0"
@@ -682,7 +667,7 @@
                     >Vivienda</label
                   >
                   <select
-                    class="w-full mt-1 border-slate-300"
+                    class="w-full mt-1"
                     name="tutor2_vivienda"
                     aria-describedby="tutor2_vivienda-error"
                   >
@@ -699,7 +684,7 @@
                   <label class="text-xs font-bold text-slate-500 uppercase"
                     >Fuente Empleo</label
                   ><input
-                    class="w-full mt-1 border-slate-300"
+                    class="w-full mt-1"
                     name="tutor2_fuente_empleo"
                     type="text"
                     minlength="2"
@@ -709,7 +694,7 @@
                   />
                   <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor2_fuente_empleo-error" data-error-for="tutor2_fuente_empleo" role="alert"></p>
                   <label class="inline-flex items-center gap-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-lg px-3 py-2 mt-2">
-                    <input class="text-primary h-4 w-4" name="tutor2_sin_empleo" type="checkbox" />
+                    <input class="h-4 w-4" name="tutor2_sin_empleo" type="checkbox" />
                     <span>No tiene empleo</span>
                   </label>
                 </div>
@@ -717,42 +702,42 @@
                   <div>
                     <label class="text-xs font-bold text-slate-500 uppercase"
                       >Antigüedad (años)</label
-                    ><input class="w-full mt-1 border-slate-300" name="tutor2_antiguedad_anios" type="number" min="0" max="50" aria-describedby="tutor2_antiguedad_anios-error" />
+                    ><input class="w-full mt-1" name="tutor2_antiguedad_anios" type="number" min="0" max="50" aria-describedby="tutor2_antiguedad_anios-error" />
                     <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor2_antiguedad_anios-error" data-error-for="tutor2_antiguedad_anios" role="alert"></p>
                   </div>
                   <div>
                     <label class="text-xs font-bold text-slate-500 uppercase"
                       >Antigüedad (meses)</label
-                    ><input class="w-full mt-1 border-slate-300" name="tutor2_antiguedad_meses_extra" type="number" min="0" max="11" />
+                    ><input class="w-full mt-1" name="tutor2_antiguedad_meses_extra" type="number" min="0" max="11" />
                   </div>
                 </div>
                 <label class="inline-flex items-center gap-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-lg px-3 py-2">
-                  <input class="text-primary h-4 w-4" name="tutor2_antiguedad_no_aplica" type="checkbox" />
+                  <input class="h-4 w-4" name="tutor2_antiguedad_no_aplica" type="checkbox" />
                   <span>No aplica antigüedad</span>
                 </label>
                 <div>
                   <label class="text-xs font-bold text-slate-500 uppercase"
                     >Ingreso Mensual</label
                   ><div class="flex items-center">
-                  <span class="bg-slate-200 border border-r-0 border-slate-300 px-3 py-2 rounded-l-lg text-slate-600 text-sm font-semibold">$</span>
-                  <input class="flex-grow rounded-r-lg border-slate-300" name="tutor2_ingreso_mensual" type="text" aria-describedby="tutor2_ingreso_mensual-error" />
+                  <span class="input-prefix font-semibold">$</span>
+                  <input class="flex-grow input-group-start" name="tutor2_ingreso_mensual" type="text" aria-describedby="tutor2_ingreso_mensual-error" />
                 </div>
                   <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor2_ingreso_mensual-error" data-error-for="tutor2_ingreso_mensual" role="alert"></p>
                 </div>
                 <label class="inline-flex items-center gap-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-lg px-3 py-2">
-                  <input class="text-primary h-4 w-4" name="tutor2_otras_fuentes_aplica" type="checkbox" />
+                  <input class="h-4 w-4" name="tutor2_otras_fuentes_aplica" type="checkbox" />
                   <span>Tiene otras fuentes de ingreso</span>
                 </label>
                 <div>
                   <label class="text-xs font-bold text-slate-500 uppercase">Otra fuente</label>
-                  <input class="w-full mt-1 border-slate-300" name="tutor2_otras_fuentes_ingreso" type="text" minlength="2" maxlength="100" pattern="^[A-Za-záéíóúÁÉÍÓÚüÜñÑ0-9\s\-().\/.,]+$" disabled aria-describedby="tutor2_otras_fuentes_ingreso-error" />
+                  <input class="w-full mt-1" name="tutor2_otras_fuentes_ingreso" type="text" minlength="2" maxlength="100" pattern="^[A-Za-záéíóúÁÉÍÓÚüÜñÑ0-9\s\-().\/.,]+$" disabled aria-describedby="tutor2_otras_fuentes_ingreso-error" />
                   <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor2_otras_fuentes_ingreso-error" data-error-for="tutor2_otras_fuentes_ingreso" role="alert"></p>
                 </div>
                 <div>
                   <label class="text-xs font-bold text-slate-500 uppercase">Monto adicional</label>
                   <div class="flex items-center">
-                  <span class="bg-slate-200 border border-r-0 border-slate-300 px-3 py-2 rounded-l-lg text-slate-600 text-sm font-semibold">$</span>
-                  <input class="flex-grow rounded-r-lg border-slate-300" name="tutor2_monto_otras_fuentes" type="text" disabled aria-describedby="tutor2_monto_otras_fuentes-error" />
+                  <span class="input-prefix font-semibold">$</span>
+                  <input class="flex-grow input-group-start" name="tutor2_monto_otras_fuentes" type="text" disabled aria-describedby="tutor2_monto_otras_fuentes-error" />
                 </div>
                   <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor2_monto_otras_fuentes-error" data-error-for="tutor2_monto_otras_fuentes" role="alert"></p>
                 </div>
@@ -760,10 +745,10 @@
                   <legend class="text-xs font-bold text-slate-500 uppercase">IMSS</legend>
                   <div class="flex gap-4 mt-1">
                     <label class="inline-flex items-center gap-1">
-                      <input type="radio" name="tutor2_imss" value="SI" class="text-primary" aria-describedby="tutor2_imss-error" /> Sí
+                      <input type="radio" name="tutor2_imss" value="SI" class="" aria-describedby="tutor2_imss-error" /> Sí
                     </label>
                     <label class="inline-flex items-center gap-1">
-                      <input type="radio" name="tutor2_imss" value="NO" class="text-primary" /> No
+                      <input type="radio" name="tutor2_imss" value="NO" class="" /> No
                     </label>
                   </div>
                 </fieldset>
@@ -772,21 +757,21 @@
                   <legend class="text-xs font-bold text-slate-500 uppercase">INFONAVIT</legend>
                   <div class="flex gap-4 mt-1">
                     <label class="inline-flex items-center gap-1">
-                      <input type="radio" name="tutor2_infonavit" value="SI" class="text-primary" aria-describedby="tutor2_infonavit-error" /> Sí
+                      <input type="radio" name="tutor2_infonavit" value="SI" class="" aria-describedby="tutor2_infonavit-error" /> Sí
                     </label>
                     <label class="inline-flex items-center gap-1">
-                      <input type="radio" name="tutor2_infonavit" value="NO" class="text-primary" /> No
+                      <input type="radio" name="tutor2_infonavit" value="NO" class="" /> No
                     </label>
                   </div>
                 </fieldset>
                 <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor2_infonavit-error" data-error-for="tutor2_infonavit" role="alert"></p>
                 <div class="space-y-2">
                   <label class="inline-flex items-center gap-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-lg px-3 py-2">
-                    <input class="text-primary h-4 w-4" name="tutor2_tiene_email" type="checkbox" />
+                    <input class="h-4 w-4" name="tutor2_tiene_email" type="checkbox" />
                     <span>Agregar correo electrónico</span>
                   </label>
                   <input
-                    class="w-full mt-1 border-slate-300 shadow-sm focus:border-primary focus:ring-primary bg-slate-100 text-slate-400 cursor-not-allowed"
+                    class="w-full mt-1 text-slate-400 cursor-not-allowed"
                     name="tutor2_email"
                     type="email"
                     maxlength="254"
@@ -805,18 +790,16 @@
         </section>
         <!-- Documentos -->
         <section class="space-y-6">
-          <h2 class="text-xl font-bold text-primary flex items-center gap-2 border-b-2 border-primary/10 pb-2">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-            </svg>
+          <h2 class="section-heading">
+            <span class="material-symbols-outlined">description</span>
             Documentos de Soporte
           </h2>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-4">
+            <div class="space-y-2 rounded-lg border border-dashed border-slate-300 bg-white p-4">
               <label class="block text-sm font-semibold text-slate-700" for="credencial-file">Subir Credencial</label>
-              <input id="credencial-file" name="credencial_file" class="w-full border-slate-300 text-sm file:mr-4 file:rounded-md file:border-0 file:bg-primary file:px-4 file:py-2 file:font-semibold file:text-white hover:file:bg-primary/90" type="file" accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf"/>
+              <input id="credencial-file" name="credencial_file" class="w-full border-slate-300 text-sm file:mr-4 file:rounded-md file:border-0 file:bg-ug-orange-pure file:px-4 file:py-2 file:font-semibold file:text-white hover:file:bg-ug-orange-hover" type="file" accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf"/>
               <label class="block text-sm font-semibold text-slate-700 mt-4">Tomar foto de Credencial</label>
-              <button type="button" data-camera-target="credencial" class="inline-flex cursor-pointer items-center rounded-md bg-slate-700 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">Tomar foto</button>
+              <button type="button" data-camera-target="credencial" class="btn-secondary px-4 py-2 text-sm rounded-lg"><span class="material-symbols-outlined text-base">photo_camera</span>Tomar foto</button>
               <p class="text-xs text-slate-500">Acepta JPG, PNG o PDF. Máximo 10MB.</p>
               <p id="credencial-status" class="text-xs text-slate-500"></p>
               <button type="button" id="credencial-preview-card" class="hidden mt-2 w-full overflow-hidden rounded-lg border border-slate-200 bg-white text-left hover:border-primary/40">
@@ -827,11 +810,11 @@
                 </div>
               </button>
             </div>
-            <div class="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-4">
+            <div class="space-y-2 rounded-lg border border-dashed border-slate-300 bg-white p-4">
               <label class="block text-sm font-semibold text-slate-700" for="comprobante-domicilio-file">Subir Comprobante de domicilio</label>
-              <input id="comprobante-domicilio-file" name="comprobante_domicilio_file" class="w-full border-slate-300 text-sm file:mr-4 file:rounded-md file:border-0 file:bg-primary file:px-4 file:py-2 file:font-semibold file:text-white hover:file:bg-primary/90" type="file" accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf"/>
+              <input id="comprobante-domicilio-file" name="comprobante_domicilio_file" class="w-full border-slate-300 text-sm file:mr-4 file:rounded-md file:border-0 file:bg-ug-orange-pure file:px-4 file:py-2 file:font-semibold file:text-white hover:file:bg-ug-orange-hover" type="file" accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf"/>
               <label class="block text-sm font-semibold text-slate-700 mt-4">Tomar foto de Comprobante de domicilio</label>
-              <button type="button" data-camera-target="comprobante_domicilio" class="inline-flex cursor-pointer items-center rounded-md bg-slate-700 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">Tomar foto</button>
+              <button type="button" data-camera-target="comprobante_domicilio" class="btn-secondary px-4 py-2 text-sm rounded-lg"><span class="material-symbols-outlined text-base">photo_camera</span>Tomar foto</button>
               <p class="text-xs text-slate-500">Acepta JPG, PNG o PDF. Máximo 10MB.</p>
               <p id="comprobante-domicilio-status" class="text-xs text-slate-500"></p>
               <button type="button" id="comprobante_domicilio-preview-card" class="hidden mt-2 w-full overflow-hidden rounded-lg border border-slate-200 bg-white text-left hover:border-primary/40">
@@ -868,7 +851,7 @@
             <div class="flex flex-col sm:flex-row gap-4">
               <button
                 id="btn-guardar-borrador-estudio"
-                class="hidden px-6 py-3 border border-slate-300 text-slate-700 font-bold hover:bg-slate-50 transition-all uppercase text-sm tracking-wide"
+                class="hidden btn-secondary px-6 py-3 text-sm uppercase tracking-wide"
                 type="button"
                 disabled
                 aria-hidden="true"
@@ -876,7 +859,7 @@
                 Guardar Borrador
               </button>
               <button
-                class="px-10 py-3 bg-primary text-white font-bold shadow-lg hover:bg-primary/90 transition-all uppercase text-sm tracking-wide active:scale-95"
+                class="btn-primary px-10 py-3 text-sm rounded-xl uppercase tracking-wide"
                 type="submit"
               >
                 GUARDAR ESTUDIO
@@ -885,11 +868,13 @@
           </div>
           <p id="error-msg" class="hidden text-red-500 text-sm mt-2"></p>
           <div class="mt-12 pt-6 border-t border-slate-100 flex flex-col items-center gap-2 text-center sm:flex-row sm:justify-between">
-            <span class="text-xs font-medium text-slate-500">Desarrollado por <strong class="font-bold text-ug-blue">NEUXORA</strong> · León, Gto.</span>
+            <span class="text-xs font-medium text-slate-500">Desarrollado por <strong class="font-bold" style="color: var(--c-title);">NEUXORA</strong> · León, Gto.</span>
             <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Ecosistema VIDA UG</span>
           </div>
         </footer>
       </form>
+    </div><!-- /card -->
+    </div><!-- /max-w-5xl -->
     </main>
     <!-- Camera Modal -->
     <div
@@ -910,7 +895,7 @@
             <button
               id="camera-close"
               type="button"
-              class="rounded-md border border-slate-300 px-3 py-1 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              class="btn-secondary px-3 py-1 text-sm rounded-lg"
             >
               Cerrar
             </button>
@@ -924,7 +909,7 @@
               >
               <select
                 id="camera-device-select"
-                class="w-full border-slate-300 text-sm"
+                class="w-full text-sm"
               ></select>
             </div>
             <video
@@ -940,14 +925,14 @@
               <button
                 id="camera-capture"
                 type="button"
-                class="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90"
+                class="btn-primary px-4 py-2 text-sm rounded-lg"
               >
                 Tomar foto
               </button>
               <button
                 id="camera-cancel"
                 type="button"
-                class="rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                class="btn-secondary px-4 py-2 text-sm rounded-lg"
               >
                 Cancelar
               </button>
@@ -973,7 +958,7 @@
             <button
               id="document-preview-close"
               type="button"
-              class="rounded-md border border-slate-300 px-3 py-1 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              class="btn-secondary px-3 py-1 text-sm rounded-lg"
             >
               Cerrar
             </button>

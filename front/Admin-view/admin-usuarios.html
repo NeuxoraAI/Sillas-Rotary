@@ -13,36 +13,39 @@
       href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block"
       rel="stylesheet"
     />
-    <script>
+    <script id="tailwind-config">
       tailwind.config = {
+        darkMode: "class",
         theme: {
           extend: {
             colors: {
-              "ug-blue": "#51274b",
-              "ug-blue-shadow": "#3d1d39",
-              "ug-blue-deep": "#2f162c",
-              "ug-yellow": "#B9844D",
-              "ug-yellow-shadow": "#8f6338",
-              "ug-yellow-light": "#d6ae80",
-              sidebar: "#2f162c",
+              "primary":          "#2B063D",
+              "primary-bold":     "#3A0A4F",
+              "ug-orange":        "#F15A24",
+              "ug-orange-hover":  "#E84B10",
+              "ug-orange-pure":   "#FF5A1F",
+              "warm-bg":          "#FBF7F5",
+              sidebar:            "#ffffff",
             },
             fontFamily: { display: ["Public Sans"] },
+            borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "full": "9999px" },
           },
         },
       };
     </script>
+    <link href="../assets/css/theme.css" rel="stylesheet"/>
     <link href="../assets/css/admin-usuarios.css" rel="stylesheet" />
   </head>
-  <body class="bg-slate-100 font-display min-h-screen flex">
+  <body class="bg-warm-bg font-display min-h-screen flex">
     <!-- Sidebar -->
     <aside
-      class="w-60 min-h-screen bg-sidebar flex flex-col shrink-0 hidden md:flex"
+      class="w-60 min-h-screen bg-sidebar border-r border-slate-200 shadow-sm flex flex-col shrink-0 hidden md:flex"
     >
       <!-- Logo area -->
-      <div class="px-5 py-6 border-b border-white/10">
+      <div class="px-5 py-6 border-b border-slate-200">
         <div class="flex items-center gap-3">
           <div
-            class="w-9 h-9 bg-white rounded-xl flex items-center justify-center overflow-hidden shrink-0"
+            class="w-9 h-9 bg-white rounded-xl flex items-center justify-center overflow-hidden shrink-0 border border-slate-200"
           >
             <img
               src="../assets/logo_vida_ug.png"
@@ -51,8 +54,8 @@
             />
           </div>
           <div>
-            <p class="text-white text-sm font-bold leading-none">Panel Admin</p>
-            <p class="text-white/40 text-[10px] mt-0.5">Sillas Rotary v7</p>
+            <p class="text-sm font-bold leading-none" style="color: var(--c-title);">Panel Admin</p>
+            <p class="text-slate-400 text-[10px] mt-0.5">Sillas Rotary v7</p>
           </div>
         </div>
       </div>
@@ -74,28 +77,28 @@
       </nav>
 
       <!-- User / logout -->
-      <div class="px-3 py-4 border-t border-white/10">
+      <div class="px-3 py-4 border-t border-slate-200">
         <div class="flex items-center gap-3 px-2">
           <div
-            class="w-8 h-8 rounded-full bg-ug-yellow flex items-center justify-center shrink-0"
+            class="w-8 h-8 rounded-full bg-ug-orange-pure flex items-center justify-center shrink-0"
           >
-            <span class="material-symbols-outlined text-sm text-ug-blue"
+            <span class="material-symbols-outlined text-sm text-white"
               >person</span
             >
           </div>
           <div class="flex-1 min-w-0">
             <p
               id="sidebar-nombre"
-              class="text-white text-xs font-semibold truncate"
+              class="text-slate-800 text-xs font-semibold truncate"
             >
               —
             </p>
-            <p class="text-white/40 text-[10px]">Administrador</p>
+            <p class="text-slate-400 text-[10px]">Administrador</p>
           </div>
           <button
             id="btn-logout"
             title="Cerrar sesión"
-            class="text-white/40 hover:text-white transition-colors"
+            class="text-slate-400 hover:text-ug-orange-pure transition-colors"
           >
             <span class="material-symbols-outlined text-lg">logout</span>
           </button>
@@ -105,31 +108,30 @@
 
     <!-- Main -->
     <div class="flex-1 flex flex-col min-w-0">
-      <!-- Top bar (mobile) -->
+      <!-- Top bar (mobile only — sidebar hidden on mobile) -->
       <header
-        class="md:hidden bg-sidebar px-4 py-3 flex items-center justify-between"
+        class="md:hidden bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between"
       >
-        <p class="text-white font-bold text-sm">Panel Admin — Usuarios</p>
-        <button id="btn-logout-mobile" class="text-white/60 hover:text-white">
+        <p class="font-bold text-sm" style="color: var(--c-title);">Panel Admin — Usuarios</p>
+        <button id="btn-logout-mobile" class="text-slate-400 hover:text-ug-orange-pure transition-colors">
           <span class="material-symbols-outlined">logout</span>
         </button>
       </header>
 
       <main class="flex-1 p-6 space-y-6 max-w-5xl mx-auto w-full">
         <!-- Page title -->
-        <div class="flex items-center gap-3">
+        <div class="rise rise-1 flex items-center gap-4">
           <div
-            class="w-10 h-10 bg-ug-blue rounded-xl flex items-center justify-center"
+            class="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0"
+            style="background: linear-gradient(135deg,#FFF1EB 0%,#FFE4D6 100%); border: 1px solid rgba(255,90,31,0.18); box-shadow:0 4px 12px rgba(255,90,31,0.12);"
           >
-            <span class="material-symbols-outlined text-white text-xl"
-              >group</span
-            >
+            <span class="material-symbols-outlined text-2xl" style="color: var(--c-orange);">group</span>
           </div>
           <div>
-            <h1 class="text-xl font-bold text-slate-900">
+            <h1 class="text-2xl font-extrabold tracking-tight" style="color: var(--c-title);">
               Gestión de Usuarios
             </h1>
-            <p class="text-slate-500 text-sm">
+            <p class="text-slate-500 text-sm mt-0.5">
               Cree y administre las cuentas del sistema.
             </p>
           </div>
@@ -137,15 +139,16 @@
 
         <!-- Create user card -->
         <div
-          class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden"
+          class="card rise rise-2 overflow-hidden"
         >
           <div
-            class="px-6 py-4 border-b border-slate-100 flex items-center gap-2"
+            class="px-6 py-4 border-b border-slate-100 flex items-center gap-2.5"
+            style="background:linear-gradient(90deg,#FFF9F7 0%,#fff 100%);"
           >
-            <span class="material-symbols-outlined text-ug-blue text-lg"
+            <span class="material-symbols-outlined text-xl" style="color:var(--c-orange);"
               >person_add</span
             >
-            <h2 class="text-base font-semibold text-slate-800">
+            <h2 class="text-base font-bold" style="color:var(--c-title);">
               Nuevo Usuario
             </h2>
           </div>
@@ -170,7 +173,7 @@
                   type="text"
                   autocomplete="off"
                   placeholder="Ej: Juan Pérez"
-                  class="w-full pl-11 pr-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-ug-blue focus:outline-none text-sm text-slate-900 placeholder:text-slate-400 transition-colors"
+                  class="w-full pl-11 pr-4 py-3 text-sm"
                 />
               </div>
             </div>
@@ -192,7 +195,7 @@
                   type="email"
                   autocomplete="off"
                   placeholder="usuario@ejemplo.com"
-                  class="w-full pl-11 pr-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-ug-blue focus:outline-none text-sm text-slate-900 placeholder:text-slate-400 transition-colors"
+                  class="w-full pl-11 pr-4 py-3 text-sm"
                 />
               </div>
             </div>
@@ -213,7 +216,7 @@
                   name="password"
                   type="password"
                   placeholder="Mínimo 8 caracteres"
-                  class="w-full pl-11 pr-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-ug-blue focus:outline-none text-sm text-slate-900 placeholder:text-slate-400 transition-colors"
+                  class="w-full pl-11 pr-4 py-3 text-sm"
                 />
               </div>
             </div>
@@ -232,7 +235,7 @@
                 <select
                   id="rol"
                   name="rol"
-                  class="w-full appearance-none pl-11 pr-10 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-ug-blue focus:outline-none text-sm text-slate-900 transition-colors"
+                  class="w-full pl-11 pr-10 py-3 text-sm"
                 >
                   <option value="">— Seleccione un rol —</option>
                   <option value="capturista">Capturista</option>
@@ -261,7 +264,7 @@
               <button
                 type="submit"
                 id="btn-crear"
-                class="w-full sm:w-auto sm:self-end px-8 py-3 bg-ug-blue hover:bg-ug-blue/90 active:scale-[0.98] text-white font-bold rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-60 shadow-sm"
+                class="btn-primary w-full sm:w-auto sm:self-end px-8 py-3 text-sm rounded-xl flex items-center justify-center gap-2 disabled:opacity-60"
               >
                 <span class="material-symbols-outlined text-lg"
                   >person_add</span
@@ -274,27 +277,28 @@
 
         <!-- Users table -->
         <div
-          class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden"
+          class="card rise rise-3 overflow-hidden"
         >
           <div
             class="px-6 py-4 border-b border-slate-100 flex items-center justify-between gap-3"
+            style="background:linear-gradient(90deg,#FFF9F7 0%,#fff 100%);"
           >
-            <div class="flex items-center gap-3 min-w-0">
-              <span class="material-symbols-outlined text-slate-500 text-lg"
+            <div class="flex items-center gap-2.5 min-w-0">
+              <span class="material-symbols-outlined text-xl" style="color:var(--c-orange);"
                 >manage_accounts</span
               >
-              <h2 class="text-base font-semibold text-slate-800">
+              <h2 class="text-base font-bold" style="color:var(--c-title);">
                 Usuarios del Sistema
               </h2>
               <span
                 id="count-usuarios"
-                class="hidden text-xs font-bold text-ug-blue bg-ug-blue/10 rounded-full px-2.5 py-0.5"
+                class="hidden text-xs font-bold text-ug-orange-pure bg-orange-50 border border-orange-100 rounded-full px-2.5 py-0.5"
                 >0</span
               >
             </div>
             <button
               id="btn-refresh"
-              class="w-9 h-9 rounded-lg text-slate-400 hover:text-ug-blue hover:bg-slate-100 transition-colors flex items-center justify-center shrink-0"
+              class="w-9 h-9 rounded-lg text-slate-400 hover:text-primary hover:bg-slate-100 transition-colors flex items-center justify-center shrink-0"
               title="Recargar lista"
             >
               <span class="material-symbols-outlined text-xl">refresh</span>
@@ -374,17 +378,17 @@
                 <div class="space-y-2">
                   <label class="block text-sm font-semibold text-slate-700">Descripción</label>
                   <textarea id="manage-org-descripcion" rows="2"
-                    class="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-ug-blue focus:outline-none text-sm"></textarea>
+                    class="w-full px-4 py-3 text-sm"></textarea>
                 </div>
                 <div class="space-y-2">
                   <label class="block text-sm font-semibold text-slate-700">Dirección</label>
                   <input id="manage-org-direccion" type="text"
-                    class="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-ug-blue focus:outline-none text-sm" />
+                    class="w-full px-4 py-3 text-sm" />
                 </div>
                 <div class="space-y-2">
                   <label class="block text-sm font-semibold text-slate-700">Teléfono</label>
                   <input id="manage-org-telefono" type="text"
-                    class="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-ug-blue focus:outline-none text-sm" />
+                    class="w-full px-4 py-3 text-sm" />
                 </div>
 
                 <!-- Líderes -->
@@ -395,10 +399,10 @@
                   </div>
                   <div class="flex gap-2">
                     <select id="manage-org-add-lider"
-                      class="flex-1 px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-ug-blue focus:outline-none text-sm">
+                      class="flex-1 px-4 py-3 text-sm">
                       <option value="">— Agregar líder —</option>
                     </select>
-                    <button id="btn-agregar-lider" class="px-4 py-2 bg-ug-blue hover:bg-ug-blue/90 active:scale-[0.98] text-white text-sm font-bold rounded-xl transition-all disabled:opacity-50">
+                    <button id="btn-agregar-lider" class="btn-primary px-4 py-2 text-sm rounded-xl disabled:opacity-50">
                       Agregar
                     </button>
                   </div>
@@ -413,10 +417,10 @@
                   </div>
                   <div class="flex gap-2">
                     <select id="manage-org-add-miembro"
-                      class="flex-1 px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-ug-blue focus:outline-none text-sm">
+                      class="flex-1 px-4 py-3 text-sm">
                       <option value="">— Agregar miembro —</option>
                     </select>
-                    <button id="btn-agregar-miembro" class="px-4 py-2 bg-ug-blue hover:bg-ug-blue/90 active:scale-[0.98] text-white text-sm font-bold rounded-xl transition-all disabled:opacity-50">
+                    <button id="btn-agregar-miembro" class="btn-primary px-4 py-2 text-sm rounded-xl disabled:opacity-50">
                       Agregar
                     </button>
                   </div>
@@ -427,7 +431,7 @@
                   <p class="text-sm font-semibold text-slate-700">Estadísticas</p>
                   <div class="flex gap-4">
                     <div class="text-center">
-                      <p id="manage-org-total-capturas" class="text-2xl font-bold text-ug-blue">0</p>
+                      <p id="manage-org-total-capturas" class="text-2xl font-bold text-primary">0</p>
                       <p class="text-xs text-slate-500">Capturas</p>
                     </div>
                   </div>
@@ -438,7 +442,7 @@
 
               <div class="flex gap-3">
                 <button id="btn-cerrar-manage-org-2" class="flex-1 py-3 border-2 border-slate-200 rounded-xl font-semibold text-slate-600 hover:bg-slate-50 transition-all">Cancelar</button>
-                <button id="btn-guardar-org" class="flex-1 py-3 bg-ug-blue hover:bg-ug-blue/90 text-white font-bold rounded-xl transition-all">Guardar cambios</button>
+                <button id="btn-guardar-org" class="btn-primary flex-1 py-3 text-sm rounded-xl">Guardar cambios</button>
               </div>
             </div>
           </div>
@@ -485,8 +489,12 @@
       async function loadUsuarios() {
         const tbody = document.getElementById("tabla-usuarios");
         const countEl = document.getElementById("count-usuarios");
-        tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-10 text-center text-slate-400 text-sm">
-      <span class="material-symbols-outlined text-3xl block mb-2 animate-pulse">hourglass_empty</span>Cargando…</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center">
+          <div class="inline-flex flex-col items-center gap-2">
+            <span class="material-symbols-outlined text-3xl text-slate-300 animate-pulse">hourglass_empty</span>
+            <p class="text-sm text-slate-400">Cargando usuarios…</p>
+          </div>
+        </td></tr>`;
         countEl.classList.add("hidden");
 
         try {
@@ -498,10 +506,14 @@
           countEl.classList.remove("hidden");
 
           if (usuarios.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center text-slate-400 text-sm">
-          <span class="material-symbols-outlined text-4xl block mb-2 text-slate-300">group_off</span>
-          <p class="font-semibold text-slate-500">No hay usuarios registrados</p>
-          <p class="text-xs mt-1">Cree el primero con el formulario de arriba.</p>
+            tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-14 text-center">
+          <div class="inline-flex flex-col items-center gap-2">
+            <div class="w-14 h-14 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center mb-1">
+              <span class="material-symbols-outlined text-3xl text-slate-300">group_off</span>
+            </div>
+            <p class="font-bold text-slate-500 text-sm">Sin usuarios registrados</p>
+            <p class="text-xs text-slate-400">Cree el primero con el formulario de arriba.</p>
+          </div>
         </td></tr>`;
             return;
           }
@@ -509,26 +521,26 @@
           tbody.innerHTML = usuarios
             .map(
               (u) => `
-        <tr class="hover:bg-slate-50/70 transition-colors ${!u.activo ? "opacity-60" : ""}">
-          <td class="px-6 py-4">
+        <tr class="hover:bg-orange-50/30 transition-colors ${!u.activo ? "opacity-55" : ""}">
+          <td class="px-6 py-3.5">
             <div class="flex items-center gap-3 min-w-0">
-              <div class="w-9 h-9 rounded-full ${_avatarColor(u.rol)} flex items-center justify-center font-bold text-sm shrink-0" title="#${u.usuario_id}">
+              <div class="w-10 h-10 rounded-xl ${_avatarColor(u.rol)} flex items-center justify-center font-bold text-sm shrink-0 shadow-sm" title="#${u.usuario_id}">
                 ${_initial(u.nombre)}
               </div>
               <div class="min-w-0">
-                <p class="font-semibold text-slate-900 truncate">${_esc(u.nombre)}</p>
-                <p class="text-xs text-slate-500 md:hidden truncate">${_esc(u.email)}</p>
+                <p class="font-semibold text-slate-800 truncate text-sm">${_esc(u.nombre)}</p>
+                <p class="text-xs text-slate-400 md:hidden truncate">${_esc(u.email)}</p>
               </div>
             </div>
           </td>
-          <td class="px-6 py-4 text-slate-600 hidden md:table-cell">${_esc(u.email)}</td>
-          <td class="px-6 py-4">${_rolBadge(u.rol)}</td>
-          <td class="px-6 py-4">${_estadoBadge(u.activo)}</td>
-          <td class="px-6 py-4 text-right">
+          <td class="px-6 py-3.5 text-sm text-slate-500 hidden md:table-cell">${_esc(u.email)}</td>
+          <td class="px-6 py-3.5">${_rolBadge(u.rol)}</td>
+          <td class="px-6 py-3.5">${_estadoBadge(u.activo)}</td>
+          <td class="px-6 py-3.5 text-right">
             <div class="flex items-center justify-end gap-1">
               ${u.rol === 'organizacion' && u.activo
                 ? `<button onclick="gestionarOrganizacion(${u.usuario_id})"
-                  class="w-9 h-9 rounded-lg text-ug-blue hover:bg-ug-blue/10 transition-colors inline-flex items-center justify-center"
+                  class="w-9 h-9 rounded-xl border border-primary/10 text-primary hover:bg-purple-50 hover:border-primary/20 transition-all inline-flex items-center justify-center"
                   title="Gestionar organización">
                   <span class="material-symbols-outlined text-xl">settings</span>
                 </button>`
@@ -537,11 +549,11 @@
               ${
                 u.activo
                   ? `<button onclick="deactivateUsuario(${u.usuario_id})"
-                class="w-9 h-9 rounded-lg text-red-500 hover:bg-red-50 hover:text-red-700 transition-colors inline-flex items-center justify-center"
+                class="w-9 h-9 rounded-xl border border-red-100 text-red-400 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all inline-flex items-center justify-center"
                 title="Desactivar usuario">
                 <span class="material-symbols-outlined text-xl">person_off</span>
               </button>`
-                  : '<span class="w-9 h-9 rounded-lg text-slate-300 inline-flex items-center justify-center" title="Usuario inactivo"><span class="material-symbols-outlined text-xl">block</span></span>'
+                  : '<span class="w-9 h-9 rounded-xl text-slate-300 inline-flex items-center justify-center" title="Usuario inactivo"><span class="material-symbols-outlined text-xl">block</span></span>'
               }
             </div>
           </td>
@@ -550,9 +562,15 @@
             )
             .join("");
         } catch (_) {
-          tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-10 text-center text-red-500 text-sm">
-        <span class="material-symbols-outlined text-3xl block mb-2">error</span>
-        Error al cargar los usuarios. Intente de nuevo.</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center">
+          <div class="inline-flex flex-col items-center gap-2">
+            <div class="w-14 h-14 rounded-2xl bg-red-50 border border-red-100 flex items-center justify-center mb-1">
+              <span class="material-symbols-outlined text-3xl text-red-400">error</span>
+            </div>
+            <p class="font-bold text-slate-500 text-sm">Error al cargar</p>
+            <p class="text-xs text-slate-400">Verifique su conexión e intente de nuevo.</p>
+          </div>
+        </td></tr>`;
         }
       }
 
@@ -940,33 +958,38 @@
       function _rolBadge(rol) {
         const map = {
           admin: {
-            cls: "bg-purple-100 text-purple-700",
+            cls: "text-purple-700 border border-purple-200",
+            bg: "#F3EEF9",
             icon: "shield_person",
             label: "Admin",
           },
           capturista: {
-            cls: "bg-blue-100 text-blue-700",
+            cls: "text-orange-700 border border-orange-200",
+            bg: "#FFF1EB",
             icon: "edit_note",
             label: "Capturista",
           },
           tecnico: {
-            cls: "bg-teal-100 text-teal-700",
+            cls: "text-teal-700 border border-teal-200",
+            bg: "#EDFAF8",
             icon: "build",
             label: "Técnico",
           },
           organizacion: {
-            cls: "bg-amber-100 text-amber-700",
+            cls: "text-amber-700 border border-amber-200",
+            bg: "#FFFBEB",
             icon: "groups",
             label: "Organización",
           },
         };
         const m = map[rol] || {
-          cls: "bg-slate-100 text-slate-600",
+          cls: "text-slate-600 border border-slate-200",
+          bg: "#F8FAFC",
           icon: "person",
           label: rol || "—",
         };
-        return `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${m.cls}">
-      <span class="material-symbols-outlined text-sm" style="font-size:14px">${m.icon}</span>${_esc(m.label)}
+        return `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${m.cls}" style="background:${m.bg};">
+      <span class="material-symbols-outlined" style="font-size:13px">${m.icon}</span>${_esc(m.label)}
     </span>`;
       }
 
@@ -985,9 +1008,9 @@
 
       function _avatarColor(rol) {
         const map = {
-          admin: "bg-purple-100 text-purple-700",
-          capturista: "bg-blue-100 text-blue-700",
-          tecnico: "bg-teal-100 text-teal-700",
+          admin:        "bg-purple-100 text-purple-700",
+          capturista:   "bg-orange-100 text-orange-700",
+          tecnico:      "bg-teal-100 text-teal-700",
           organizacion: "bg-amber-100 text-amber-700",
         };
         return map[rol] || "bg-slate-100 text-slate-600";

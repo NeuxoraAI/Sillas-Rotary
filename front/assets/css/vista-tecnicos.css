@@ -1,38 +1,21 @@
-:root {
-  --page-primary: #51274b;
-  --page-primary-shadow: #3d1d39;
-  --page-primary-deep: #2f162c;
-  --page-accent: #b9844d;
-  --page-accent-shadow: #8f6338;
-}
+/* vista-tecnicos.css — page-specific styles only; shared tokens live in theme.css */
 
-body { font-family: "Public Sans", sans-serif; }
-.material-symbols-outlined {
-  font-family: "Material Symbols Outlined";
-  font-weight: normal;
-  font-style: normal;
-  line-height: 1;
-  letter-spacing: normal;
-  text-transform: none;
-  display: inline-block;
-  white-space: nowrap;
-  word-wrap: normal;
-  direction: ltr;
-  -webkit-font-feature-settings: "liga";
-  -webkit-font-smoothing: antialiased;
-  font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
-}
 @keyframes spin { to { transform: rotate(360deg); } }
 .animate-spin { animation: spin 1s linear infinite; }
+
 @keyframes fadeIn {
   from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
+  to   { opacity: 1; transform: scale(1); }
 }
 .animate-fade-in { animation: fadeIn 0.2s ease-out; }
-.badge-sin_iniciar { background: #f1f5f9; color: #475569; }
-.badge-en_proceso { background: #ede7f6; color: var(--page-primary); }
-.badge-finalizado { background: #dcfce7; color: #15803d; }
-.badge-revision_pendiente { background: #f6eadc; color: var(--page-accent-shadow); }
+
+/* Status badges */
+.badge-sin_iniciar       { background: #f1f5f9; color: #475569; }
+.badge-en_proceso        { background: #ede7f6; color: var(--c-purple); }
+.badge-finalizado        { background: #dcfce7; color: #15803d; }
+.badge-revision_pendiente { background: #fff7ed; color: #c2410c; }
+
+/* Filter panel slide */
 .filter-panel {
   transition: max-height 0.3s ease, opacity 0.2s ease;
   max-height: 0;
@@ -40,10 +23,11 @@ body { font-family: "Public Sans", sans-serif; }
   overflow: hidden;
 }
 .filter-panel.open { max-height: 800px; opacity: 1; overflow: visible; }
+
+/* Modal scrollbar */
 .modal-body::-webkit-scrollbar { width: 4px; }
 .modal-body::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
 input, select, textarea {
-  color: #0f172a !important;
-  caret-color: var(--page-primary);
-  -webkit-text-fill-color: #0f172a;
+  caret-color: var(--c-orange);
 }

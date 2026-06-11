@@ -1,33 +1,7 @@
-:root {
-  --page-primary: #51274b;
-  --page-primary-shadow: #3d1d39;
-  --page-primary-deep: #2f162c;
-  --page-accent: #b9844d;
-  --page-accent-shadow: #8f6338;
-}
+/* gestion.css — page-specific styles only; shared tokens live in theme.css */
 
-body { font-family: "Public Sans", sans-serif; }
 input, select, textarea {
   border-radius: 0.5rem !important;
-  color: #0f172a !important;
-  caret-color: var(--page-primary);
-  -webkit-text-fill-color: #0f172a;
+  caret-color: var(--c-orange);
 }
 button { border-radius: 0.5rem !important; }
-.section-divider {
-  border-top: 2px solid #e2e8f0;
-  margin-top: 3rem;
-  padding-top: 3rem;
-}
-@keyframes toastIn {
-  0% { transform: scale(0.8) translateY(-20px); opacity: 0; }
-  60% { transform: scale(1.05) translateY(0); opacity: 1; }
-  100% { transform: scale(1) translateY(0); opacity: 1; }
-}
-@keyframes toastOut {
-  0% { transform: scale(1); opacity: 1; }
-  100% { transform: scale(0.9); opacity: 0; }
-}
-.success-toast { animation: toastIn 0.4s ease-out forwards; }
-.success-toast.hiding { animation: toastOut 0.3s ease-in forwards; }
-h1, h2, h3 { color: #0f172a; font-weight: 700; }

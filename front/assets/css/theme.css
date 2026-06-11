@@ -1,0 +1,529 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   theme.css — Shared design tokens for Ecosistema VIDA UG
+   Palette: deep purple #2B063D + orange #FF5A1F on warm cream #FBF7F5
+   All pages must link this file BEFORE any page-specific CSS.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── Brand colors ── */
+  --c-orange:          #FF5A1F;
+  --c-orange-mid:      #F15A24;
+  --c-orange-hover:    #E84B10;
+  --c-orange-light:    #FFF1EB;
+  --c-orange-glow:     rgba(255, 90, 31, 0.35);
+  --c-purple:          #2B063D;
+  --c-purple-bold:     #3A0A4F;
+
+  /* ── Semantic text ── */
+  --c-title:           #2D073F;
+  --c-label:           #3A0A4F;
+  --c-subtitle:        #6F6B6B;
+  --c-gray:            #777;
+
+  /* ── Inputs ── */
+  --c-input-bg:        #FBF7F6;
+  --c-input-border:    #E8DDD9;
+  --c-placeholder:     #A0A0A0;
+
+  /* ── Backgrounds ── */
+  --bg-warm-white:     #FBF7F5;
+  --bg-pale-pink:      #F8EDEA;
+  --bg-soft-gray:      #F4F1F0;
+
+  /* ── Surfaces ── */
+  --c-separator:       #CFC7C4;
+  --shadow-card:       0 18px 45px -12px rgba(43, 6, 61, 0.10), 0 4px 14px rgba(60, 30, 20, 0.05);
+  --shadow-card-lg:    0 24px 60px -16px rgba(43, 6, 61, 0.20), 0 6px 18px rgba(60, 30, 20, 0.07);
+
+  /* ── Radii ── */
+  --radius-card:       18px;
+  --radius-input:      10px;
+  --radius-btn:        10px;
+
+  /* ── Sidebar (admin pages) ── */
+  --c-sidebar:         #ffffff;
+}
+
+/* ── Body warm-cream base ── */
+body {
+  font-family: 'Public Sans', sans-serif;
+  background: var(--bg-warm-white);
+}
+
+/* ── White card component ── */
+.card {
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+
+/* ── Material Symbols baseline ── */
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   GLOBAL FIELD LAYER — single source of truth for all form controls.
+   Applied after Tailwind forms plugin normalization. Uses !important where
+   needed to override utility classes that pages may still carry.
+   Login (.login-input) inherits these tokens but keeps its own overrides.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Base: text inputs, select, textarea ── */
+input:not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="radio"]):not([type="checkbox"]),
+select,
+textarea {
+  background-color: var(--c-input-bg) !important;
+  border: 1px solid var(--c-input-border) !important;
+  border-radius: var(--radius-input) !important;
+  min-height: 44px;
+  font-size: 15px !important;
+  color: #0f172a !important;
+  caret-color: var(--c-orange);
+  -webkit-text-fill-color: #0f172a;
+  transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* ── Focus: orange border + warm ring, white bg ── */
+input:not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="radio"]):not([type="checkbox"]):focus,
+select:focus,
+textarea:focus {
+  border-color: var(--c-orange) !important;
+  box-shadow: 0 0 0 3px rgba(241, 90, 36, 0.18) !important;
+  background-color: #fff !important;
+  outline: none !important;
+}
+
+/* ── Disabled / readonly ── */
+input:disabled,
+select:disabled,
+textarea:disabled,
+input[readonly],
+textarea[readonly] {
+  background-color: #f1f5f9 !important;  /* slate-100 */
+  color: #94a3b8 !important;             /* slate-400 */
+  -webkit-text-fill-color: #94a3b8;
+  cursor: not-allowed;
+  box-shadow: none !important;
+}
+
+/* ── Placeholder ── */
+input::placeholder,
+textarea::placeholder {
+  color: var(--c-placeholder) !important;
+  opacity: 1;
+  -webkit-text-fill-color: var(--c-placeholder);
+}
+
+/* ── Checkboxes and radios: orange accent ── */
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--c-orange);
+  color: var(--c-orange) !important;        /* @tailwindcss/forms uses color for checked state */
+  min-height: unset;
+  font-size: unset !important;
+  border: 1px solid var(--c-input-border) !important;
+  background-color: #fff !important;
+  transition: border-color 0.2s, box-shadow 0.2s !important;
+}
+input[type="checkbox"]:focus,
+input[type="radio"]:focus {
+  box-shadow: 0 0 0 3px rgba(241, 90, 36, 0.18) !important;
+  border-color: var(--c-orange) !important;
+  outline: none !important;
+  background-color: #fff !important;
+}
+input[type="checkbox"]:checked,
+input[type="radio"]:checked {
+  background-color: var(--c-orange) !important;
+  border-color: var(--c-orange) !important;
+}
+
+/* ── File inputs: preserve orange file:// button, don't let height rules break them ── */
+input[type="file"] {
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  min-height: unset;
+  font-size: 14px !important;
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a;
+}
+input[type="file"]:focus {
+  box-shadow: none !important;
+  border: none !important;
+  background-color: transparent !important;
+}
+
+/* ── Input text fix (autofill tint override) ── */
+input:not([type="file"]):not([type="radio"]):not([type="checkbox"]),
+select,
+textarea {
+  caret-color: var(--c-orange);
+}
+
+/* ── Input-group prefix/suffix spans (e.g. $, +52, unit labels) ── */
+/* These sit adjacent to a field and should share the same border/radius family. */
+.input-prefix,
+.input-suffix {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 0.75rem;
+  background-color: #f1f5f9;           /* slate-100 — neutral, not conflicting */
+  border: 1px solid var(--c-input-border);
+  color: #475569;                       /* slate-600 */
+  font-size: 14px;
+  font-weight: 600;
+  min-height: 44px;
+  white-space: nowrap;
+}
+.input-prefix { border-right: none; border-radius: var(--radius-input) 0 0 var(--radius-input); }
+.input-suffix { border-left: none;  border-radius: 0 var(--radius-input) var(--radius-input) 0; }
+
+/* Fields inside an input-group — override independent radius on left/right ends */
+.input-group-start { border-radius: 0 var(--radius-input) var(--radius-input) 0 !important; }
+.input-group-end   { border-radius: var(--radius-input) 0 0 var(--radius-input) !important; }
+
+/* ── Admin sidebar nav links (light sidebar) ── */
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  color: #374151;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s;
+  text-decoration: none;
+}
+.nav-link:hover {
+  color: var(--c-orange);
+  background-color: #FFF1EB;
+}
+.nav-link.active {
+  background-color: #FFF1EB;
+  color: var(--c-orange);
+}
+.nav-link .material-symbols-outlined {
+  color: inherit;
+}
+
+/* ── Entrance animation (canonical rise-in) ── */
+.rise { animation: rise-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.rise-1 { animation-delay: 0.04s; }
+.rise-2 { animation-delay: 0.10s; }
+.rise-3 { animation-delay: 0.16s; }
+.rise-4 { animation-delay: 0.22s; }
+
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rise, .rise-1, .rise-2, .rise-3, .rise-4 {
+    animation: none;
+  }
+}
+
+/* ── Orange CTA button ── */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: linear-gradient(90deg, #FF4B0B, #FF681F);
+  color: #fff;
+  font-weight: 700;
+  border: none;
+  border-radius: var(--radius-btn);
+  box-shadow: 0 8px 18px var(--c-orange-glow);
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s, opacity 0.2s;
+}
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 26px rgba(255, 90, 31, 0.45);
+}
+.btn-primary:active { transform: scale(0.98); }
+.btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* ── Orange divider accent ── */
+.divider-orange {
+  width: 40px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--c-orange);
+  margin: 0 auto;
+}
+
+/* ── Toast animations (shared by form pages) ── */
+@keyframes toastIn {
+  0%   { transform: scale(0.8) translateY(-20px); opacity: 0; }
+  60%  { transform: scale(1.05) translateY(0);    opacity: 1; }
+  100% { transform: scale(1)    translateY(0);    opacity: 1; }
+}
+@keyframes toastOut {
+  0%   { transform: scale(1);   opacity: 1; }
+  100% { transform: scale(0.9); opacity: 0; }
+}
+.success-toast         { animation: toastIn  0.4s ease-out forwards; }
+.success-toast.hiding  { animation: toastOut 0.3s ease-in  forwards; }
+
+/* ── Section divider (form pages) ── */
+.section-divider {
+  border-top: 2px solid #e2e8f0;
+  margin-top: 3rem;
+  padding-top: 3rem;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   SHARED CHROME COMPONENTS — used by all pages except login
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Page warm background with radial glow ── */
+.page-bg::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at -5% 10%, rgba(255,255,255,0.70) 0%, rgba(255,255,255,0.25) 35%, transparent 60%),
+    radial-gradient(ellipse at 102% 60%, rgba(255,200,170,0.30) 0%, rgba(255,225,210,0.12) 40%, transparent 65%),
+    radial-gradient(ellipse at -4% 92%, rgba(255,170,130,0.25) 0%, rgba(255,210,190,0.10) 38%, transparent 62%),
+    linear-gradient(165deg, #FBF7F5 0%, #F9F0EC 50%, #FBF7F5 100%);
+}
+
+/* ── Floating top bar ── */
+.topbar {
+  background: rgba(255,255,255,0.96);
+  border: 1px solid rgba(255,255,255,0.8);
+  border-radius: var(--radius-card);
+  box-shadow: 0 4px 20px -4px rgba(43,6,61,0.10), 0 1px 6px rgba(60,30,20,0.04);
+}
+
+/* ── Topbar icon badge ── */
+.topbar-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: #FFF1EB;
+  border: 1px solid rgba(255,90,31,0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ── Step pill bar (Región → Captura / Estudio → Técnica → Gestión) ── */
+.step-bar {
+  background: rgba(255,255,255,0.88);
+  border-bottom: 1px solid rgba(226,232,240,0.7);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+.step-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 14px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #94a3b8;
+  background: transparent;
+  transition: all 0.15s;
+}
+.step-pill.active {
+  background: var(--c-orange-light);
+  color: var(--c-orange);
+}
+.step-pill-num {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 800;
+  background: #e2e8f0;
+  color: #64748b;
+}
+.step-pill.active .step-pill-num {
+  background: var(--c-orange);
+  color: #fff;
+}
+
+/* ── Section heading inside a card ── */
+.section-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--c-title);
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1.5px solid #e2e8f0;
+}
+.section-heading .material-symbols-outlined {
+  color: var(--c-orange);
+  font-size: 20px;
+}
+
+/* ── Secondary button (white + orange border) ── */
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: #fff;
+  color: var(--c-orange);
+  font-weight: 700;
+  border: 2px solid rgba(255,90,31,0.60);
+  border-radius: var(--radius-btn);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-secondary:hover {
+  background: #FFF1EB;
+  border-color: var(--c-orange);
+}
+.btn-secondary:active { transform: scale(0.98); }
+.btn-secondary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* ── Input orange-focus override ── */
+.input-field {
+  background: #fff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: var(--radius-input);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  width: 100%;
+}
+.input-field:focus {
+  outline: none;
+  border-color: var(--c-orange);
+  box-shadow: 0 0 0 3px rgba(255,90,31,0.15);
+}
+
+/* ── Shared light footer ── */
+.page-footer {
+  background: rgba(255,255,255,0.80);
+  border-top: 1px solid rgba(226,232,240,0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   GLOBAL ANIMATION LAYER — tasteful motion, all pages
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Card hover lift ── */
+.card {
+  transition: box-shadow 0.2s ease-out, transform 0.2s ease-out;
+}
+.card:hover {
+  box-shadow: var(--shadow-card-lg);
+  transform: translateY(-2px);
+}
+
+/* ── Button press scale ── */
+.btn-primary:active { transform: scale(0.98); }
+.btn-primary:hover  { box-shadow: 0 12px 26px rgba(255, 90, 31, 0.45); }
+
+/* ── Table / list row hover ── */
+tr, li {
+  transition: background-color 0.15s ease-out;
+}
+
+/* ── Modal fade-in backdrop + scale-up content ── */
+@keyframes modal-backdrop-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes modal-content-in {
+  from { opacity: 0; transform: scale(0.95) translateY(8px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0);   }
+}
+.modal-animate-in {
+  animation: modal-backdrop-in 0.2s ease-out both;
+}
+.modal-animate-in > * {
+  animation: modal-content-in 0.25s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ── Step pill smooth color transition ── */
+.step-pill {
+  transition: background-color 0.2s ease-out, color 0.2s ease-out;
+}
+
+/* ── Nav link smooth transition (already has transition:all 0.2s) ── */
+
+/* ── Reduced motion: disable all animations ── */
+@media (prefers-reduced-motion: reduce) {
+  .card:hover { transform: none; }
+  .modal-animate-in,
+  .modal-animate-in > * { animation: none; }
+}
+
+/* ── Heatmap tooltip ── */
+.heatmap-tooltip {
+  background: var(--c-purple);
+  color: #fff;
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+  pointer-events: none;
+  position: absolute;
+  z-index: 50;
+  transform: translate(-50%, -100%);
+  margin-top: -6px;
+}
+.heatmap-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -4px;
+  border: 4px solid transparent;
+  border-top-color: var(--c-purple);
+}
+
+/* Forced-colors (High Contrast Mode) fallback: box-shadow focus rings are not
+   rendered there, so restore a real outline for keyboard navigation. */
+@media (forced-colors: active) {
+  input:focus,
+  select:focus,
+  textarea:focus,
+  button:focus-visible,
+  a:focus-visible {
+    outline: 2px solid Highlight !important;
+    outline-offset: 2px;
+  }
+}
