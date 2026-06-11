@@ -8,43 +8,28 @@
     <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block" rel="stylesheet"/>
     <script src="assets/js/validations.js"></script>
-    <script>
+    <script id="tailwind-config">
       tailwind.config = {
+        darkMode: "class",
         theme: {
           extend: {
             colors: {
-              "primary": "#51274b",
-              "ug-blue": "#51274b",
-              "ug-blue-shadow": "#3d1d39",
-              "ug-blue-deep": "#2f162c",
-              "ug-yellow": "#B9844D",
-              "ug-yellow-shadow": "#8f6338",
-              "ug-yellow-light": "#d6ae80",
-              "sidebar": "#2f162c",
+              "primary":          "#2B063D",
+              "primary-bold":     "#3A0A4F",
+              "ug-orange":        "#F15A24",
+              "ug-orange-hover":  "#E84B10",
+              "ug-orange-pure":   "#FF5A1F",
+              "warm-bg":          "#FBF7F5",
+              "sidebar":          "#ffffff",
             },
             fontFamily: { display: ["Public Sans"] },
+            borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "full": "9999px" },
           },
         },
       };
     </script>
+    <link href="assets/css/theme.css" rel="stylesheet"/>
     <style>
-      body { font-family: "Public Sans", sans-serif; }
-      .nav-link {
-        display: flex; align-items: center; gap: 0.75rem;
-        padding: 0.75rem 1rem; border-radius: 0.75rem;
-        color: rgb(255 255 255 / 0.7); font-size: 0.875rem;
-        font-weight: 500; transition: all 0.2s; text-decoration: none;
-      }
-      .nav-link:hover { color: #fff; background-color: rgb(255 255 255 / 0.1); }
-      .nav-link.active { background-color: rgb(255 255 255 / 0.15); color: #fff; }
-      .material-symbols-outlined {
-        font-family: "Material Symbols Outlined"; font-weight: normal;
-        font-style: normal; line-height: 1; letter-spacing: normal;
-        text-transform: none; display: inline-block; white-space: nowrap;
-        word-wrap: normal; direction: ltr;
-        -webkit-font-feature-settings: "liga"; -webkit-font-smoothing: antialiased;
-        font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
-      }
       /* Filter panel */
       .filter-panel { transition: max-height 0.3s ease, opacity 0.2s ease; max-height: 0; opacity: 0; overflow: hidden; }
       .filter-panel.open { max-height: 800px; opacity: 1; overflow: visible; }
@@ -61,29 +46,23 @@
       .badge-revision_pendiente { background: #fef3c7; color: #b45309; }
       .modal-body::-webkit-scrollbar { width: 4px; }
       .modal-body::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-      /* Delete animations */
+      /* Delete animation */
       @keyframes slideOutRight {
         from { opacity: 1; transform: translateX(0); }
-        to { opacity: 0; transform: translateX(100%); }
+        to   { opacity: 0; transform: translateX(100%); }
       }
       .deleting-row {
         animation: slideOutRight 0.5s ease-in forwards;
         background-color: #fef2f2 !important;
         border-color: #ef4444 !important;
       }
-      .btn-loading {
-        position: relative;
-        color: transparent !important;
-      }
+      .btn-loading { position: relative; color: transparent !important; }
       .btn-loading::after {
         content: "";
         position: absolute;
-        width: 1rem;
-        height: 1rem;
-        top: 50%;
-        left: 50%;
-        margin-left: -0.5rem;
-        margin-top: -0.5rem;
+        width: 1rem; height: 1rem;
+        top: 50%; left: 50%;
+        margin-left: -0.5rem; margin-top: -0.5rem;
         border: 2px solid rgba(255,255,255,0.3);
         border-radius: 50%;
         border-top-color: #fff;
@@ -91,17 +70,17 @@
       }
     </style>
   </head>
-  <body class="bg-slate-100 font-display min-h-screen flex">
+  <body class="bg-warm-bg font-display min-h-screen flex">
     <!-- Sidebar -->
-    <aside class="w-60 min-h-screen bg-sidebar flex flex-col shrink-0 hidden md:flex">
-      <div class="px-5 py-6 border-b border-white/10">
+    <aside class="w-60 min-h-screen bg-sidebar border-r border-slate-200 shadow-sm flex flex-col shrink-0 hidden md:flex">
+      <div class="px-5 py-6 border-b border-slate-200">
         <div class="flex items-center gap-3">
-          <div class="w-9 h-9 bg-white rounded-xl flex items-center justify-center overflow-hidden shrink-0">
+          <div class="w-9 h-9 bg-white rounded-xl flex items-center justify-center overflow-hidden shrink-0 border border-slate-200">
             <img src="assets/logo_vida_ug.png" alt="VIDA UG" class="w-4/5 h-4/5 object-contain"/>
           </div>
           <div>
-            <p class="text-white text-sm font-bold leading-none">Panel Admin</p>
-            <p class="text-white/40 text-[10px] mt-0.5">Sillas Rotary v7</p>
+            <p class="text-sm font-bold leading-none" style="color: var(--c-title);">Panel Admin</p>
+            <p class="text-slate-400 text-[10px] mt-0.5">Sillas Rotary v7</p>
           </div>
         </div>
       </div>
@@ -119,16 +98,16 @@
           Países y Regiones
         </a>
       </nav>
-      <div class="px-3 py-4 border-t border-white/10">
+      <div class="px-3 py-4 border-t border-slate-200">
         <div class="flex items-center gap-3 px-2">
-          <div class="w-8 h-8 rounded-full bg-ug-yellow flex items-center justify-center shrink-0">
-            <span class="material-symbols-outlined text-sm text-ug-blue">person</span>
+          <div class="w-8 h-8 rounded-full bg-ug-orange-pure flex items-center justify-center shrink-0">
+            <span class="material-symbols-outlined text-sm text-white">person</span>
           </div>
           <div class="flex-1 min-w-0">
-            <p id="sidebar-nombre" class="text-white text-xs font-semibold truncate">—</p>
-            <p class="text-white/40 text-[10px]">Administrador</p>
+            <p id="sidebar-nombre" class="text-slate-800 text-xs font-semibold truncate">—</p>
+            <p class="text-slate-400 text-[10px]">Administrador</p>
           </div>
-          <button id="btn-logout" title="Cerrar sesión" class="text-white/40 hover:text-white transition-colors">
+          <button id="btn-logout" title="Cerrar sesión" class="text-slate-400 hover:text-ug-orange-pure transition-colors">
             <span class="material-symbols-outlined text-lg">logout</span>
           </button>
         </div>
@@ -137,9 +116,9 @@
 
     <!-- Main -->
     <div class="flex-1 flex flex-col min-w-0">
-      <header class="md:hidden bg-sidebar px-4 py-3 flex items-center justify-between">
-        <p class="text-white font-bold text-sm">Panel Admin — Beneficiarios</p>
-        <button id="btn-logout-mobile" class="text-white/60 hover:text-white">
+      <header class="md:hidden bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between">
+        <p class="font-bold text-sm" style="color: var(--c-title);">Panel Admin — Beneficiarios</p>
+        <button id="btn-logout-mobile" class="text-slate-400 hover:text-ug-orange-pure transition-colors">
           <span class="material-symbols-outlined">logout</span>
         </button>
       </header>
@@ -151,10 +130,10 @@
             <div class="relative flex-1">
               <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg pointer-events-none">search</span>
               <input id="input-search" type="search" autocomplete="off" placeholder="Buscar por nombre, folio, ciudad, región, país…"
-                class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-ug-blue focus:outline-none transition-colors text-sm"/>
+                class="w-full pl-10 pr-4 py-2.5 text-sm"/>
             </div>
             <button id="btn-toggle-filters" title="Filtros"
-              class="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 border-2 border-slate-200 flex items-center justify-center text-slate-500 hover:text-ug-blue transition-all shrink-0">
+              class="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 border-2 border-slate-200 flex items-center justify-center text-slate-500 hover:text-primary transition-all shrink-0">
               <span class="material-symbols-outlined text-xl">tune</span>
             </button>
           </div>
@@ -163,29 +142,29 @@
             <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
               <div class="space-y-1">
                 <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">País</label>
-                <select id="filter-pais" class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 focus:border-ug-blue focus:outline-none py-2">
+                <select id="filter-pais" class="w-full text-sm py-2">
                   <option value="">Todos</option>
                 </select>
               </div>
               <div class="space-y-1">
                 <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Región</label>
-                <select id="filter-region" class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 focus:border-ug-blue focus:outline-none py-2" disabled>
+                <select id="filter-region" class="w-full text-sm py-2" disabled>
                   <option value="">Todos</option>
                 </select>
               </div>
               <div class="space-y-1">
                 <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Ciudad</label>
                 <input id="filter-ciudad" type="text" autocomplete="off" placeholder="Ej: León"
-                  class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 focus:border-ug-blue focus:outline-none py-2 px-3"/>
+                  class="w-full text-sm py-2 px-3"/>
               </div>
               <div class="space-y-1">
                 <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Sede</label>
                 <input id="filter-sede" type="text" autocomplete="off" placeholder="Ej: Hospital"
-                  class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 focus:border-ug-blue focus:outline-none py-2 px-3"/>
+                  class="w-full text-sm py-2 px-3"/>
               </div>
               <div class="space-y-1">
                 <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Fase</label>
-                <select id="filter-estado" class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 focus:border-ug-blue focus:outline-none py-2">
+                <select id="filter-estado" class="w-full text-sm py-2">
                   <option value="">Todos</option>
                   <option value="sin_iniciar">Sin iniciar</option>
                   <option value="en_proceso">En proceso</option>
@@ -196,26 +175,26 @@
               <div class="space-y-1">
                 <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Peso mínimo (lb)</label>
                 <input id="filter-peso-min" type="number" min="0" max="300" step="0.1" placeholder="0"
-                  class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 focus:border-ug-blue focus:outline-none py-2 px-3"/>
+                  class="w-full text-sm py-2 px-3"/>
               </div>
               <div class="space-y-1">
                 <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Peso máximo (lb)</label>
                 <input id="filter-peso-max" type="number" min="0" max="300" step="0.1" placeholder="300"
-                  class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 focus:border-ug-blue focus:outline-none py-2 px-3"/>
+                  class="w-full text-sm py-2 px-3"/>
               </div>
               <div class="space-y-1">
                 <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Altura mín (in)</label>
                 <input id="filter-altura-min" type="number" min="0" max="120" step="0.1" placeholder="0"
-                  class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 focus:border-ug-blue focus:outline-none py-2 px-3"/>
+                  class="w-full text-sm py-2 px-3"/>
               </div>
               <div class="space-y-1">
                 <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Altura máx (in)</label>
                 <input id="filter-altura-max" type="number" min="0" max="120" step="0.1" placeholder="120"
-                  class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 focus:border-ug-blue focus:outline-none py-2 px-3"/>
+                  class="w-full text-sm py-2 px-3"/>
               </div>
               <div class="space-y-1">
                 <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Foto</label>
-                <select id="filter-foto" class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 focus:border-ug-blue focus:outline-none py-2">
+                <select id="filter-foto" class="w-full text-sm py-2">
                   <option value="">Todos</option>
                   <option value="true">Con foto</option>
                   <option value="false">Sin foto</option>
@@ -228,7 +207,7 @@
               <button id="btn-export-excel" class="text-xs font-bold text-white bg-green-600 hover:bg-green-700 px-4 py-1.5 rounded-lg transition-colors flex items-center gap-1">
                 <span class="material-symbols-outlined text-sm">download</span>Exportar Excel
               </button>
-              <button id="btn-apply-filters" class="text-xs font-bold text-white bg-ug-blue hover:bg-ug-blue/90 px-4 py-1.5 rounded-lg transition-colors">Aplicar</button>
+              <button id="btn-apply-filters" class="btn-primary text-xs px-4 py-1.5 rounded-lg">Aplicar</button>
             </div>
           </div>
         </div>
@@ -237,7 +216,7 @@
       <main class="flex-1 max-w-7xl mx-auto w-full px-4 py-6">
         <!-- Loading -->
         <div id="state-loading" class="hidden flex flex-col items-center justify-center py-20">
-          <div class="w-10 h-10 border-4 border-ug-blue/20 border-t-ug-blue rounded-full animate-spin"></div>
+          <div class="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
           <p class="text-slate-500 text-sm mt-4 font-medium">Cargando beneficiarios…</p>
         </div>
 
@@ -247,7 +226,7 @@
             <span class="material-symbols-outlined text-red-400 text-3xl">error_outline</span>
           </div>
           <p id="error-message" class="text-slate-700 text-sm font-medium text-center max-w-xs">Error al cargar los datos.</p>
-          <button id="btn-retry" class="mt-4 px-6 py-2 bg-ug-blue text-white text-sm font-bold rounded-xl hover:bg-ug-blue/90 transition-colors">Reintentar</button>
+          <button id="btn-retry" class="btn-primary mt-4 px-6 py-2 text-sm rounded-xl">Reintentar</button>
         </div>
 
         <!-- Empty -->
@@ -263,7 +242,7 @@
         <!-- Selection toolbar -->
         <div id="selection-toolbar" class="hidden flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4 pb-4 border-b border-slate-200">
           <div class="flex items-center gap-3">
-            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Seleccionados: <span id="selection-count" class="text-ug-blue font-bold">0</span></span>
+            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Seleccionados: <span id="selection-count" class="text-primary font-bold">0</span></span>
             <button id="btn-export-selected" class="text-xs font-bold text-white bg-green-600 hover:bg-green-700 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed">
               <span class="material-symbols-outlined text-sm">download</span>Exportar seleccionados
             </button>
@@ -299,12 +278,12 @@
           </div>
           <div id="modal-body" class="modal-body flex-1 overflow-y-auto px-5 py-4 space-y-6">
             <div id="modal-loading" class="flex items-center justify-center py-12">
-              <div class="w-8 h-8 border-4 border-ug-blue/20 border-t-ug-blue rounded-full animate-spin"></div>
+              <div class="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
             </div>
             <div id="modal-content" class="hidden space-y-6"></div>
           </div>
           <div id="modal-footer" class="hidden px-5 py-4 border-t border-slate-200 shrink-0 flex items-center justify-end gap-3">
-            <button id="btn-edit" class="px-4 py-2 text-sm font-bold text-white bg-ug-blue hover:bg-ug-blue/90 rounded-xl transition-colors flex items-center gap-1">
+            <button id="btn-edit" class="btn-primary px-4 py-2 text-sm rounded-xl flex items-center gap-1">
               <span class="material-symbols-outlined text-base">edit</span>Editar
             </button>
             <button id="btn-delete" class="px-4 py-2 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-colors flex items-center gap-1">
@@ -325,9 +304,9 @@
           </div>
           <!-- Tabs -->
           <div class="flex border-b border-slate-200 shrink-0">
-            <button data-tab="estudio" class="edit-tab flex-1 py-3 text-sm font-semibold text-slate-500 border-b-2 border-transparent hover:text-ug-blue transition-colors tab-active text-ug-blue border-ug-blue">Estudio Socioeconómico</button>
-            <button data-tab="tecnica" class="edit-tab flex-1 py-3 text-sm font-semibold text-slate-500 border-b-2 border-transparent hover:text-ug-blue transition-colors">Solicitud Técnica</button>
-            <button data-tab="gestion" class="edit-tab flex-1 py-3 text-sm font-semibold text-slate-500 border-b-2 border-transparent hover:text-ug-blue transition-colors">Gestión de Donación</button>
+            <button data-tab="estudio" class="edit-tab flex-1 py-3 text-sm font-semibold text-slate-500 border-b-2 border-transparent hover:text-primary transition-colors tab-active text-primary border-primary">Estudio Socioeconómico</button>
+            <button data-tab="tecnica" class="edit-tab flex-1 py-3 text-sm font-semibold text-slate-500 border-b-2 border-transparent hover:text-primary transition-colors">Solicitud Técnica</button>
+            <button data-tab="gestion" class="edit-tab flex-1 py-3 text-sm font-semibold text-slate-500 border-b-2 border-transparent hover:text-primary transition-colors">Gestión de Donación</button>
           </div>
           <div id="edit-body" class="modal-body flex-1 overflow-y-auto px-5 py-4">
             <div id="edit-content" class="space-y-6"></div>
@@ -337,7 +316,7 @@
             <button id="btn-save-tab" class="px-4 py-2 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-colors flex items-center gap-1">
               <span class="material-symbols-outlined text-base">save</span>Guardar pestaña
             </button>
-            <button id="btn-save-all" class="px-4 py-2 text-sm font-bold text-white bg-ug-blue hover:bg-ug-blue/90 rounded-xl transition-colors flex items-center gap-1">
+            <button id="btn-save-all" class="btn-primary px-4 py-2 text-sm rounded-xl flex items-center gap-1">
               <span class="material-symbols-outlined text-base">check_circle</span>Guardar todo
             </button>
           </div>
@@ -360,7 +339,7 @@
           <p class="text-sm text-slate-600 mb-5">Si cierras ahora, perderás las modificaciones no guardadas.</p>
           <div class="flex items-center justify-end gap-3">
             <button id="btn-return-unsaved-edit" class="px-4 py-2 text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors">Regresar</button>
-            <button id="btn-accept-unsaved-edit" class="px-4 py-2 text-sm font-bold text-white bg-ug-blue hover:bg-ug-blue/90 rounded-xl transition-colors">Aceptar</button>
+            <button id="btn-accept-unsaved-edit" class="btn-primary px-4 py-2 text-sm rounded-xl">Aceptar</button>
           </div>
         </div>
       </div>
@@ -369,8 +348,8 @@
       <div id="save-confirm-overlay" class="hidden fixed inset-0 z-[70] bg-black/40 flex items-center justify-center p-4">
         <div class="animate-fade-in bg-white w-full max-w-md rounded-2xl shadow-2xl p-6">
           <div class="text-center mb-4">
-            <div class="w-14 h-14 bg-ug-blue/10 rounded-full flex items-center justify-center mx-auto mb-3">
-              <span class="material-symbols-outlined text-ug-blue text-3xl">warning</span>
+            <div class="w-14 h-14 bg-orange-50 rounded-full flex items-center justify-center mx-auto mb-3">
+              <span class="material-symbols-outlined text-3xl" style="color: var(--c-orange);">warning</span>
             </div>
             <h3 id="save-confirm-title" class="text-lg font-bold text-slate-900">Confirmar guardado</h3>
             <p id="save-confirm-message" class="text-sm text-slate-500 mt-1">Revise los cambios antes de continuar.</p>
@@ -381,7 +360,7 @@
           </div>
           <div class="flex items-center justify-end gap-3">
             <button id="btn-cancel-save" class="px-4 py-2 text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors">Regresar a editar</button>
-            <button id="btn-confirm-save" class="px-4 py-2 text-sm font-bold text-white bg-ug-blue hover:bg-ug-blue/90 rounded-xl transition-colors">Confirmar y guardar</button>
+            <button id="btn-confirm-save" class="btn-primary px-4 py-2 text-sm rounded-xl">Confirmar y guardar</button>
           </div>
         </div>
       </div>
@@ -416,7 +395,7 @@
           </div>
           <p class="text-sm text-slate-600 mb-4">Esta acción es <strong>irreversible</strong>. Se eliminará el beneficiario y todos sus registros asociados (estudio, solicitud, tutores, procesos).</p>
           <p class="text-xs font-semibold text-slate-500 mb-3">Escriba <span class="text-red-600 font-bold">ELIMINAR</span> para confirmar.</p>
-          <input id="delete-confirm-input" type="text" autocomplete="off" placeholder="ELIMINAR" class="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-red-500 focus:outline-none text-sm font-bold text-red-600 placeholder:text-slate-400 mb-4"/>
+          <input id="delete-confirm-input" type="text" autocomplete="off" placeholder="ELIMINAR" class="w-full px-4 py-3 focus:border-red-500 text-sm font-bold text-red-600 mb-4"/>
           <div class="flex items-center justify-end gap-3">
             <button id="btn-cancel-delete" class="px-4 py-2 text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors">Cancelar</button>
             <button id="btn-confirm-delete" class="px-4 py-2 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed" disabled>Confirmar eliminación</button>
@@ -583,7 +562,7 @@
       // ═══════════════════════════════════════════════════════════════════════════
       $("btn-toggle-filters").addEventListener("click", function () {
         filterPanel.classList.toggle("open");
-        this.classList.toggle("border-ug-blue"); this.classList.toggle("text-ug-blue");
+        this.classList.toggle("border-primary"); this.classList.toggle("text-primary");
       });
 
       filterPais.addEventListener("change", async function () {
@@ -721,8 +700,8 @@
           const estadoLabel = _formatEstado(estado);
           const paisRegion = (item.pais_nombre || "") + " / " + (item.region_nombre || "");
           const fotoUrl = item.foto_url ? _resolveFotoUrl(item.foto_url) : null;
-          return `<div class="bg-white rounded-2xl shadow-sm border ${isSelected ? 'border-ug-blue ring-1 ring-ug-blue' : 'border-slate-200'} p-4 flex items-start gap-3 hover:shadow-md transition-shadow cursor-pointer" data-id="${item.beneficiario_id}">
-            <input type="checkbox" class="select-checkbox mt-1 w-4 h-4 rounded border-slate-300 text-ug-blue focus:ring-ug-blue" ${isSelected ? "checked" : ""} data-id="${item.beneficiario_id}"/>
+          return `<div class="bg-white rounded-2xl shadow-sm border ${isSelected ? 'border-primary ring-1 ring-primary' : 'border-slate-200'} p-4 flex items-start gap-3 hover:shadow-md transition-shadow cursor-pointer" data-id="${item.beneficiario_id}">
+            <input type="checkbox" class="select-checkbox mt-1 w-4 h-4 rounded" ${isSelected ?"checked" :""} data-id="${item.beneficiario_id}"/>
             <div class="flex-1 min-w-0" data-action="detail" data-id="${item.beneficiario_id}">
               <div class="flex items-start justify-between gap-2">
                 <div class="min-w-0">
@@ -750,7 +729,7 @@
             _updateSelectionUI();
             // Update card border
             const card = this.closest("[data-id]");
-            if (card) card.classList.toggle("border-ug-blue", this.checked);
+            if (card) card.classList.toggle("border-primary", this.checked);
           });
         });
 
@@ -923,10 +902,10 @@
         // ── Documentos ──
         var docsHtml = '<div class="grid grid-cols-2 gap-3">';
         if (e.credencial_url_resolved) {
-          docsHtml += '<div class="bg-slate-50 rounded-xl p-3 border border-slate-100"><p class="text-[11px] font-bold text-slate-500 uppercase mb-1">Credencial</p><a href="' + _escapeHtml(e.credencial_url_resolved) + '" target="_blank" rel="noopener" class="text-sm text-ug-blue underline hover:text-ug-blue/80 break-all">Ver documento</a></div>';
+          docsHtml += '<div class="bg-slate-50 rounded-xl p-3 border border-slate-100"><p class="text-[11px] font-bold text-slate-500 uppercase mb-1">Credencial</p><a href="' + _escapeHtml(e.credencial_url_resolved) + '" target="_blank" rel="noopener" class="text-sm text-primary underline hover:text-primary/80 break-all">Ver documento</a></div>';
         } else { docsHtml += _fd("Credencial", null); }
         if (e.comprobante_domicilio_url_resolved) {
-          docsHtml += '<div class="bg-slate-50 rounded-xl p-3 border border-slate-100"><p class="text-[11px] font-bold text-slate-500 uppercase mb-1">Comprobante domicilio</p><a href="' + _escapeHtml(e.comprobante_domicilio_url_resolved) + '" target="_blank" rel="noopener" class="text-sm text-ug-blue underline hover:text-ug-blue/80 break-all">Ver documento</a></div>';
+          docsHtml += '<div class="bg-slate-50 rounded-xl p-3 border border-slate-100"><p class="text-[11px] font-bold text-slate-500 uppercase mb-1">Comprobante domicilio</p><a href="' + _escapeHtml(e.comprobante_domicilio_url_resolved) + '" target="_blank" rel="noopener" class="text-sm text-primary underline hover:text-primary/80 break-all">Ver documento</a></div>';
         } else { docsHtml += _fd("Comprobante domicilio", null); }
         docsHtml += '</div>';
 
@@ -949,7 +928,7 @@
         } else {
           partHtml = '<div class="space-y-2">';
           participantes.forEach(function (p) {
-            partHtml += '<div class="flex items-center gap-2 text-sm"><span class="w-2 h-2 rounded-full bg-ug-blue"></span><span class="font-medium text-slate-700">' + _escapeHtml(p.nombre || "—") + '</span><span class="text-slate-400 text-xs">' + _escapeHtml(p.accion || "—") + '</span><span class="text-slate-300 text-xs">' + _formatDate(p.created_at) + '</span></div>';
+            partHtml += '<div class="flex items-center gap-2 text-sm"><span class="w-2 h-2 rounded-full bg-primary"></span><span class="font-medium text-slate-700">' + _escapeHtml(p.nombre || "—") + '</span><span class="text-slate-400 text-xs">' + _escapeHtml(p.accion || "—") + '</span><span class="text-slate-300 text-xs">' + _formatDate(p.created_at) + '</span></div>';
           });
           partHtml += '</div>';
         }
@@ -1403,12 +1382,12 @@
             '<div class="space-y-1"><label class="text-xs font-semibold text-slate-500">Monto adicional ($)</label><input id="field-' + p + 'monto_otras_fuentes" name="' + p + 'monto_otras_fuentes" type="text" class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 py-2 px-3" /></div>' +
             '</div>' +
             '<fieldset class="mt-3"><legend class="text-xs font-bold text-slate-500 uppercase">IMSS</legend><div class="flex gap-4 mt-1">' +
-            '<label class="inline-flex items-center gap-1"><input type="radio" name="' + p + 'imss" value="SI" class="text-ug-blue"' + (imssSI ? " checked" : "") + ' /> Sí</label>' +
-            '<label class="inline-flex items-center gap-1"><input type="radio" name="' + p + 'imss" value="NO" class="text-ug-blue"' + (imssNO ? " checked" : "") + ' /> No</label>' +
+            '<label class="inline-flex items-center gap-1"><input type="radio" name="' + p + 'imss" value="SI" class=""' + (imssSI ?" checked" :"") + ' /> Sí</label>' +
+            '<label class="inline-flex items-center gap-1"><input type="radio" name="' + p + 'imss" value="NO" class=""' + (imssNO ?" checked" :"") + ' /> No</label>' +
             '</div></fieldset>' +
             '<fieldset class="mt-3"><legend class="text-xs font-bold text-slate-500 uppercase">INFONAVIT</legend><div class="flex gap-4 mt-1">' +
-            '<label class="inline-flex items-center gap-1"><input type="radio" name="' + p + 'infonavit" value="SI" class="text-ug-blue"' + (infSI ? " checked" : "") + ' /> Sí</label>' +
-            '<label class="inline-flex items-center gap-1"><input type="radio" name="' + p + 'infonavit" value="NO" class="text-ug-blue"' + (infNO ? " checked" : "") + ' /> No</label>' +
+            '<label class="inline-flex items-center gap-1"><input type="radio" name="' + p + 'infonavit" value="SI" class=""' + (infSI ?" checked" :"") + ' /> Sí</label>' +
+            '<label class="inline-flex items-center gap-1"><input type="radio" name="' + p + 'infonavit" value="NO" class=""' + (infNO ?" checked" :"") + ' /> No</label>' +
             '</div></fieldset>' +
             _field(p + "email", "Correo electrónico", "email", { maxlength: 254 }) +
           '</div>';
@@ -1419,10 +1398,10 @@
           const pathVal = draft[docKey + "_path"] || "";
           const urlResolved = draft[docKey + "_url_resolved"] || "";
           const hasExisting = !!urlResolved;
-          return '<div class="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-4">' +
+          return '<div class="space-y-2 rounded-lg border border-dashed border-slate-300 bg-white p-4">' +
             '<label class="block text-sm font-semibold text-slate-700">' + label + '</label>' +
-            (hasExisting ? '<div class="mb-2"><p class="text-xs text-slate-500">Documento actual:</p><a href="' + _escapeHtml(urlResolved) + '" target="_blank" rel="noopener" class="text-xs text-ug-blue underline hover:text-ug-blue/80 break-all">' + _escapeHtml(pathVal || urlResolved) + '</a></div>' : '<p class="text-xs text-slate-400 mb-2">Sin documento cargado</p>') +
-            '<input id="field-' + docKey + '_file" name="' + docKey + '_file" type="file" accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf" class="w-full border-slate-300 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-ug-blue file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white hover:file:bg-ug-blue/90"/>' +
+            (hasExisting ? '<div class="mb-2"><p class="text-xs text-slate-500">Documento actual:</p><a href="' + _escapeHtml(urlResolved) + '" target="_blank" rel="noopener" class="text-xs text-primary underline hover:text-primary/80 break-all">' + _escapeHtml(pathVal || urlResolved) + '</a></div>' : '<p class="text-xs text-slate-400 mb-2">Sin documento cargado</p>') +
+            '<input id="field-' + docKey + '_file" name="' + docKey + '_file" type="file" accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf" class="w-full border-slate-300 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-ug-orange-pure file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white hover:file:bg-ug-orange-hover"/>' +
             '<p class="text-xs text-slate-400">JPG, PNG o PDF. Máximo 10MB.</p>' +
             '<p id="' + docKey + '-status" class="text-xs text-slate-500"></p>' +
             '</div>';
@@ -1522,12 +1501,12 @@
           else if (v !== false && v !== "false" && v != null) { extraParts.push(k + '="' + v + '"'); }
         });
         var extra = extraParts.join(" ");
-        return '<div class="space-y-1"><label class="text-xs font-semibold text-slate-500">' + label + '</label><input id="field-' + name + '" name="' + name + '" type="' + type + '" ' + extra + ' class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 py-2 px-3 focus:border-ug-blue focus:outline-none"/><span data-error-for="' + name + '" class="field-error hidden text-red-500 text-[11px]"></span></div>';
+        return '<div class="space-y-1"><label class="text-xs font-semibold text-slate-500">' + label + '</label><input id="field-' + name + '" name="' + name + '" type="' + type + '" ' + extra + ' class="w-full text-sm py-2 px-3"/><span data-error-for="' + name + '" class="field-error hidden text-red-500 text-[11px]"></span></div>';
       }
       function _fieldArea(name, label, attrs) {
         attrs = attrs || {};
         const extra = Object.keys(attrs).map(k => `${k}="${attrs[k]}"`).join(" ");
-        return `<div class="space-y-1 col-span-2"><label class="text-xs font-semibold text-slate-500">${label}</label><textarea id="field-${name}" name="${name}" rows="3" ${extra} class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 py-2 px-3 focus:border-ug-blue focus:outline-none resize-y"></textarea><span data-error-for="${name}" class="field-error hidden text-red-500 text-[11px]"></span></div>`;
+        return `<div class="space-y-1 col-span-2"><label class="text-xs font-semibold text-slate-500">${label}</label><textarea id="field-${name}" name="${name}" rows="3" ${extra} class="w-full text-sm py-2 px-3 resize-y"></textarea><span data-error-for="${name}" class="field-error hidden text-red-500 text-[11px]"></span></div>`;
       }
       function _select(name, label, options) {
         const opts = options.map(o => `<option value="${o}">${o}</option>`).join("");
@@ -1877,8 +1856,8 @@
       function _updateEditTabs() {
         document.querySelectorAll(".edit-tab").forEach(function (btn) {
           const isActive = btn.dataset.tab === state.currentEditTab;
-          btn.classList.toggle("text-ug-blue", isActive);
-          btn.classList.toggle("border-ug-blue", isActive);
+          btn.classList.toggle("text-primary", isActive);
+          btn.classList.toggle("border-primary", isActive);
           btn.classList.toggle("text-slate-500", !isActive);
           btn.classList.toggle("border-transparent", !isActive);
         });

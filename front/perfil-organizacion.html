@@ -7,85 +7,57 @@
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block" rel="stylesheet"/>
-<script>
+<script id="tailwind-config">
   tailwind.config = {
+    darkMode: "class",
     theme: {
       extend: {
         colors: {
-          "primary":         "#51274b",
-          "secondary":       "#B9844D",
-          "ug-blue":         "#51274b",
-          "ug-blue-shadow":  "#3d1d39",
-          "ug-blue-deep":    "#2f162c",
-          "ug-yellow":       "#B9844D",
-          "ug-yellow-shadow": "#8f6338",
-          "ug-yellow-light": "#d6ae80",
+          "primary":          "#2B063D",
+          "primary-bold":     "#3A0A4F",
+          "ug-orange":        "#F15A24",
+          "ug-orange-hover":  "#E84B10",
+          "ug-orange-pure":   "#FF5A1F",
+          "warm-bg":          "#FBF7F5",
         },
         fontFamily: { "display": ["Public Sans"] },
+        borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "full": "9999px" },
       },
     },
   }
 </script>
+<link href="assets/css/theme.css" rel="stylesheet"/>
 <style>
-  body { font-family: 'Public Sans', sans-serif; }
-  .material-symbols-outlined {
-    font-family: 'Material Symbols Outlined';
-    font-weight: normal;
-    font-style: normal;
-    line-height: 1;
-    letter-spacing: normal;
-    text-transform: none;
-    display: inline-block;
-    white-space: nowrap;
-    word-wrap: normal;
-    direction: ltr;
-    -webkit-font-feature-settings: 'liga';
-    -webkit-font-smoothing: antialiased;
-    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-  }
-  .captura-card {
-    transition: all 0.2s;
-  }
+  .captura-card { transition: all 0.2s; }
   .captura-card:hover {
     transform: translateX(4px);
-    border-color: #51274b40;
+    border-color: rgba(43,6,61,0.25);
   }
   .heatmap-cell { width: 13px; height: 13px; border-radius: 2px; }
-  .heatmap-tooltip {
-    background: #1e293b; color: #fff; font-size: 11px;
-    padding: 4px 8px; border-radius: 4px; white-space: nowrap;
-    pointer-events: none; position: absolute; z-index: 50;
-    transform: translate(-50%, -100%); margin-top: -6px;
-  }
-  .heatmap-tooltip::after {
-    content: ''; position: absolute; top: 100%; left: 50%;
-    margin-left: -4px; border: 4px solid transparent;
-    border-top-color: #1e293b;
-  }
   .tab-btn { cursor: pointer; color: #94a3b8; padding-bottom: 4px; font-weight: 600; transition: all 0.2s; }
-  .tab-btn.active { color: #51274b; border-bottom: 2px solid #51274b; font-weight: 700; }
+  .tab-btn.active { color: var(--c-orange); border-bottom: 2px solid var(--c-orange); font-weight: 700; }
   .tab-content { display: none; }
   .tab-content.active { display: block; }
 </style>
 </head>
-<body class="bg-slate-50 font-display min-h-screen flex flex-col">
+<body class="page-bg font-display min-h-screen flex flex-col" style="background: #FBF7F5;">
 
-<!-- Header -->
-<header class="w-full bg-ug-blue py-4 px-6 shadow-lg">
-  <div class="max-w-5xl mx-auto flex items-center justify-between gap-4">
-    <div class="flex items-center gap-4">
-      <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow overflow-hidden">
-        <img alt="VIDA UG" class="w-4/5 h-4/5 object-contain" src="assets/logo_vida_ug.png"/>
+<!-- Floating top bar -->
+<header class="w-full px-4 pt-5 relative z-10">
+  <div class="max-w-5xl mx-auto topbar px-5 py-3.5 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <div class="topbar-icon">
+        <span class="material-symbols-outlined text-xl" style="color: var(--c-orange);">groups</span>
       </div>
-      <div class="hidden sm:block">
-        <p class="text-white text-sm font-bold tracking-tight" id="user-nombre-header">Organización</p>
-        <p class="text-white/50 text-[10px] uppercase tracking-wider">Organización</p>
+      <div>
+        <p class="text-[15px] font-bold" style="color: var(--c-title);" id="user-nombre-header">Organización</p>
+        <p class="text-xs text-slate-500">Panel de organización</p>
       </div>
     </div>
     <div class="flex items-center gap-3">
-      <span id="user-rol-badge" class="text-white/60 text-xs hidden sm:block">Organización</span>
-      <button id="btn-logout" title="Cerrar sesión" class="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/70 hover:text-white transition-all">
-        <span class="material-symbols-outlined text-base">logout</span>
+      <span id="user-rol-badge" class="hidden sm:block text-xs text-slate-500">Organización</span>
+      <button id="btn-logout" title="Cerrar sesión" class="w-9 h-9 rounded-xl hover:bg-orange-50 flex items-center justify-center text-slate-400 hover:text-ug-orange-pure transition-all">
+        <span class="material-symbols-outlined text-xl">logout</span>
       </button>
     </div>
   </div>
@@ -99,8 +71,8 @@
     <div class="bg-white rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.07)] border border-slate-100 overflow-hidden">
       <div class="px-6 py-6 sm:px-8 sm:py-8">
         <div class="flex items-start gap-4">
-          <div class="w-14 h-14 bg-ug-blue/10 rounded-2xl flex items-center justify-center shrink-0">
-            <span class="material-symbols-outlined text-ug-blue text-3xl">groups</span>
+          <div class="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0" style="background: #FFF1EB; border: 1px solid rgba(255,90,31,0.15);">
+            <span class="material-symbols-outlined text-3xl" style="color: var(--c-orange);">groups</span>
           </div>
           <div>
             <h1 class="text-xl font-bold text-slate-900" id="org-nombre">—</h1>
@@ -109,9 +81,9 @@
         </div>
 
         <div class="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div class="bg-ug-blue/5 rounded-xl p-5 border border-ug-blue/10">
+          <div class="rounded-xl p-5 bg-purple-50/70 border border-purple-100">
             <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Capturas totales</p>
-            <p class="text-3xl font-bold text-ug-blue mt-1" id="stat-capturas">0</p>
+            <p class="text-3xl font-bold mt-1" style="color: var(--c-title);" id="stat-capturas">0</p>
           </div>
           <div class="bg-green-50 rounded-xl p-5 border border-green-100">
             <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Completados</p>
@@ -128,7 +100,7 @@
     <!-- Heatmap -->
     <div class="bg-white rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.07)] border border-slate-100 overflow-hidden">
       <div class="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
-        <span class="material-symbols-outlined text-ug-blue text-xl">calendar_month</span>
+        <span class="material-symbols-outlined text-xl" style="color: var(--c-orange);">calendar_month</span>
         <h2 class="text-base font-semibold text-slate-800">Actividad de la organización</h2>
       </div>
       <div id="heatmap-container" class="px-6 py-5 overflow-x-auto hidden"></div>
@@ -169,7 +141,7 @@
     <!-- Guest Volunteer Form — only visible when logged in as organizacion -->
     <div id="guest-form-container" class="hidden bg-white rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.07)] border border-slate-100 overflow-hidden">
       <div class="px-6 py-5 border-b border-slate-100 flex items-center gap-3">
-        <span class="material-symbols-outlined text-ug-blue text-xl">person_add</span>
+        <span class="material-symbols-outlined text-xl" style="color: var(--c-orange);">person_add</span>
         <h2 class="text-base font-semibold text-slate-800">Capturar como voluntario</h2>
       </div>
       <form id="guest-form" class="px-6 py-5 space-y-4" novalidate>
@@ -183,7 +155,7 @@
               id="guest-nombre" name="guest-nombre" type="text" autocomplete="off"
               placeholder="Ej: María López"
               minlength="2" maxlength="120"
-              class="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-ug-blue focus:outline-none transition-colors text-slate-900 placeholder:text-slate-400 text-sm"
+              class="w-full pl-12 pr-4 py-4 text-sm"
             />
           </div>
           <p id="guest-nombre-error" class="hidden text-red-600 text-sm" role="alert"></p>
@@ -199,7 +171,7 @@
               id="guest-contacto" name="guest-contacto" type="tel" autocomplete="off"
               placeholder="4771234567"
               maxlength="10" pattern="[0-9]{10}"
-              class="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-ug-blue focus:outline-none transition-colors text-slate-900 placeholder:text-slate-400 text-sm"
+              class="w-full pl-12 pr-4 py-4 text-sm"
             />
           </div>
         </div>
@@ -208,7 +180,7 @@
 
         <button
           id="btn-continuar-captura" type="submit"
-          class="w-full py-4 bg-ug-blue hover:bg-ug-blue/90 active:scale-[0.98] text-white font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 group disabled:opacity-60 disabled:cursor-not-allowed"
+          class="btn-primary w-full py-4 rounded-xl flex items-center justify-center gap-2 group disabled:opacity-60 disabled:cursor-not-allowed"
         >
           <span class="material-symbols-outlined text-xl group-hover:translate-x-1 transition-transform">arrow_forward</span>
           <span>Comenzar Captura</span>
@@ -232,9 +204,9 @@
       <!-- Beneficiarios tab -->
       <div id="tab-beneficiarios" class="tab-content active">
         <div class="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
-          <span class="material-symbols-outlined text-ug-blue text-xl">assignment</span>
+          <span class="material-symbols-outlined text-xl" style="color: var(--c-orange);">assignment</span>
           <h2 class="text-base font-semibold text-slate-800">Capturas de la organización</h2>
-          <span id="count-capturas" class="text-xs font-bold text-ug-blue bg-ug-blue/10 rounded-full px-2.5 py-0.5">0</span>
+          <span id="count-capturas" class="text-xs font-bold text-ug-orange-pure bg-orange-50 rounded-full px-2.5 py-0.5">0</span>
         </div>
         <div id="beneficiarios-list" class="divide-y divide-slate-100">
           <div id="loading-state" class="px-6 py-10 text-center text-slate-400 text-sm">
@@ -252,7 +224,7 @@
       <!-- Voluntarios tab -->
       <div id="tab-voluntarios" class="tab-content">
         <div class="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
-          <span class="material-symbols-outlined text-ug-blue text-xl">diversity_3</span>
+          <span class="material-symbols-outlined text-xl" style="color: var(--c-orange);">diversity_3</span>
           <h2 class="text-base font-semibold text-slate-800">Voluntarios</h2>
         </div>
         <div id="voluntarios-body" class="divide-y divide-slate-100">
@@ -267,12 +239,12 @@
 </main>
 
 <!-- Footer -->
-<footer class="w-full bg-gradient-to-b from-ug-yellow via-ug-yellow to-ug-yellow-light">
+<footer class="w-full bg-white/70 border-t border-slate-200/60 backdrop-blur-sm">
   <div class="py-4 px-6">
     <div class="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
-      <div class="flex items-center gap-2 text-ug-blue/70">
+      <div class="flex items-center gap-2 text-slate-500">
         <span class="material-symbols-outlined text-base">code</span>
-        <span class="text-xs font-medium">Desarrollado por <strong class="text-ug-blue font-bold">NEUXORA</strong> · León, Gto.</span>
+        <span class="text-xs font-medium">Desarrollado por <strong class="font-bold" style="color: var(--c-title);">NEUXORA</strong> · León, Gto.</span>
       </div>
     </div>
   </div>
@@ -570,7 +542,7 @@
               ${v.contacto ? '· ' + _esc(v.contacto) : ''}
             </p>
           </div>
-          <span class="bg-ug-blue/10 text-ug-blue text-xs font-bold px-3 py-1 rounded-full">${v.capturas}</span>
+          <span class="bg-primary/10 text-primary text-xs font-bold px-3 py-1 rounded-full">${v.capturas}</span>
         </div>
       `).join('');
       body.innerHTML = html;

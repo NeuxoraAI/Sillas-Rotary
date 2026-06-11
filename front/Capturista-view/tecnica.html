@@ -11,100 +11,94 @@
       href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;600;700&amp;display=swap"
       rel="stylesheet"
     />
-    <script>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&amp;display=block" rel="stylesheet"/>
+    <script id="tailwind-config">
       tailwind.config = {
+        darkMode: "class",
         theme: {
           extend: {
             colors: {
-              primary: "#51274b",
-              secondary: "#B9844D",
-              "ug-blue": "#51274b",
-              "ug-blue-shadow": "#3d1d39",
-              "ug-blue-deep": "#2f162c",
-              "ug-yellow": "#B9844D",
-              "ug-yellow-shadow": "#8f6338",
-              "ug-yellow-light": "#d6ae80",
+              "primary":          "#2B063D",
+              "primary-bold":     "#3A0A4F",
+              "ug-orange":        "#F15A24",
+              "ug-orange-hover":  "#E84B10",
+              "ug-orange-pure":   "#FF5A1F",
+              "warm-bg":          "#FBF7F5",
             },
-            fontFamily: {
-              sans: ['"Public Sans"', "sans-serif"],
-            },
-            borderRadius: {
-              custom: "0.5rem",
-            },
+            fontFamily: { "display": ["Public Sans"] },
+            borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "full": "9999px" },
           },
         },
       };
     </script>
     <!-- END: Tailwind CSS & Plugins -->
+    <link href="../assets/css/theme.css" rel="stylesheet"/>
     <link href="../assets/css/tecnica.css" rel="stylesheet" />
   </head>
-  <body
-    class="bg-slate-50 min-h-screen py-10 px-4 flex flex-col items-center font-sans"
-  >
-    <main
-      class="max-w-4xl w-full bg-white shadow-2xl rounded-lg overflow-hidden border border-slate-200"
-    >
-      <header class="bg-ug-blue px-6 py-4 text-white">
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+  <body class="page-bg min-h-screen flex flex-col font-display" style="background: #FBF7F5;">
+
+    <!-- Floating top bar -->
+    <header class="w-full px-4 pt-5 relative z-10">
+      <div class="max-w-4xl mx-auto topbar px-5 py-3.5 flex items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <div class="topbar-icon">
+            <span class="material-symbols-outlined text-xl" style="color: var(--c-orange);">wheelchair_pickup</span>
+          </div>
           <div>
-            <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-white/60">Captura de campo</p>
-            <h1 class="text-2xl font-bold tracking-tight">Solicitud Técnica</h1>
-          </div>
-          <div class="flex items-center justify-between gap-4 sm:justify-end">
-            <div class="text-right">
-              <p id="user-nombre" class="text-sm font-semibold leading-none">—</p>
-              <p id="user-rol" class="mt-1 text-[10px] font-bold uppercase tracking-wider text-white/55">Capturista</p>
-            </div>
-            <button
-              id="btn-logout"
-              type="button"
-              class="rounded-xl bg-white/10 px-3 py-2 text-xs font-bold uppercase tracking-wider text-white/80 transition-colors hover:bg-white/20 hover:text-white"
-            >
-              Salir
-            </button>
+            <p class="text-[15px] font-bold" style="color: var(--c-title);">Solicitud Técnica</p>
+            <p class="text-xs text-slate-500">Captura de campo · Paso 2 de 3</p>
           </div>
         </div>
-      </header>
-      <form class="p-8 space-y-12" novalidate>
-        <div class="-mx-8 -mt-8 mb-8 border-b border-slate-200 bg-ug-blue/5 px-8 py-5">
-          <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2 class="text-xl font-bold text-slate-900">Solicitud Técnica</h2>
-              <p class="mt-1 text-sm text-slate-500">Paso 2 de 3 · Medidas corporales, postura y fotografía.</p>
-            </div>
-            <div class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500">
-              <a href="socioeconomico.html" class="rounded-full bg-slate-100 px-3 py-1 hover:bg-slate-200">Estudio</a>
-              <span class="rounded-full bg-ug-blue px-3 py-1 text-white">Técnica</span>
-              <span class="rounded-full bg-slate-100 px-3 py-1">Gestión</span>
-            </div>
+        <div class="flex items-center gap-3">
+          <div class="hidden sm:block text-right">
+            <p id="user-nombre" class="text-sm font-bold leading-tight" style="color: var(--c-title);">—</p>
+            <p id="user-rol" class="text-xs text-slate-500">—</p>
           </div>
+          <button
+            id="btn-logout"
+            type="button"
+            title="Cerrar sesión"
+            class="w-9 h-9 rounded-xl hover:bg-orange-50 flex items-center justify-center text-slate-400 hover:text-ug-orange-pure transition-all"
+          >
+            <span class="material-symbols-outlined text-xl">logout</span>
+          </button>
         </div>
+      </div>
+    </header>
+
+    <!-- Step indicator -->
+    <div class="w-full mt-4 step-bar">
+      <div class="max-w-4xl mx-auto px-4 py-2.5 flex items-center gap-2">
+        <a href="socioeconomico.html" class="step-pill">
+          <div class="step-pill-num">1</div>
+          <span>Estudio</span>
+        </a>
+        <div class="flex-1 h-0.5 bg-orange-200 rounded"></div>
+        <div class="step-pill active">
+          <div class="step-pill-num">2</div>
+          <span>Técnica</span>
+        </div>
+        <div class="flex-1 h-0.5 bg-slate-200 rounded"></div>
+        <div class="step-pill">
+          <div class="step-pill-num">3</div>
+          <span>Gestión</span>
+        </div>
+      </div>
+    </div>
+
+    <main class="flex-1 px-4 py-6 relative z-10">
+    <div class="max-w-4xl mx-auto">
+    <div class="card overflow-hidden">
+    <form class="p-8 space-y-12" novalidate>
         <!-- BEGIN: Seccion Entorno -->
         <section
           data-purpose="wheelchair-context-selection"
           id="contexto-silla"
         >
-          <div
-            class="flex items-center gap-3 mb-6 border-b border-slate-100 pb-4"
-          >
-            <div class="bg-blue-50 p-2 rounded-full">
-              <svg
-                class="w-6 h-6 text-primary"
-                fill="none"
-                stroke="currentColor"
-                viewbox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                ></path>
-              </svg>
-            </div>
-            <h2 class="text-xl font-semibold">Especificaciones de Uso</h2>
-          </div>
+          <h2 class="section-heading">
+            <span class="material-symbols-outlined">inventory_2</span>
+            Especificaciones de Uso
+          </h2>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="space-y-2">
               <label class="block text-sm font-semibold text-slate-700"
@@ -122,7 +116,7 @@
                 >Entorno de Uso Principal</label
               >
               <select
-                class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary"
+                class="w-full"
                 name="entorno"
                 required
                 aria-describedby="entorno-error"
@@ -142,35 +136,17 @@
           data-purpose="postural-capacity-assessment"
           id="capacidad-postural"
         >
-          <div
-            class="flex items-center gap-3 mb-6 border-b border-slate-100 pb-4"
-          >
-            <div class="bg-blue-50 p-2 rounded-full">
-              <svg
-                class="w-6 h-6 text-primary"
-                fill="none"
-                stroke="currentColor"
-                viewbox="0 0 24 24"
-              >
-                <path
-                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                ></path>
-              </svg>
-            </div>
-            <h2 class="text-xl font-semibold">
-              Capacidad Postural y Diagnóstico
-            </h2>
-          </div>
+          <h2 class="section-heading">
+            <span class="material-symbols-outlined">accessibility_new</span>
+            Capacidad Postural y Diagnóstico
+          </h2>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="space-y-2">
               <label class="block text-sm font-semibold text-slate-700"
                 >Control de Tronco</label
               >
               <select
-                class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary"
+                class="w-full"
                 name="control_tronco"
                 required
                 aria-describedby="control_tronco-error"
@@ -187,7 +163,7 @@
                 >Control de Cabeza</label
               >
               <select
-                class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary"
+                class="w-full"
                 name="control_cabeza"
                 required
                 aria-describedby="control_cabeza-error"
@@ -203,7 +179,7 @@
                 >Control de Piernas</label
               >
               <select
-                class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary"
+                class="w-full"
                 name="control_de_piernas"
                 required
                 aria-describedby="control_de_piernas-error"
@@ -219,11 +195,11 @@
                   >Observaciones Posturales (Escoliosis, Cifosis, etc.)</label
                 >
               <label class="inline-flex items-center gap-2 text-sm font-medium text-slate-700">
-                <input class="text-primary h-4 w-4" name="tiene_observaciones" type="checkbox" />
+                <input class="h-4 w-4" name="tiene_observaciones" type="checkbox" />
                 <span>Agregar observaciones posturales</span>
               </label>
               <textarea
-                class="w-full border-slate-300 shadow-sm focus:border-primary focus:ring-primary bg-slate-100 text-slate-400 cursor-not-allowed"
+                class="w-full text-slate-400 cursor-not-allowed"
                 name="observaciones_posturales"
                 minlength="3"
                 maxlength="500"
@@ -243,37 +219,13 @@
           data-purpose="technical-measurements-visual"
           id="medidas-tecnicas"
         >
-          <div
-            class="flex items-center gap-3 mb-6 border-b border-slate-100 pb-4"
-          >
-            <div class="bg-blue-50 p-2 rounded-full">
-              <svg
-                class="w-6 h-6 text-primary"
-                fill="none"
-                stroke="currentColor"
-                viewbox="0 0 24 24"
-              >
-                <path
-                  d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                ></path>
-                <path
-                  d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                ></path>
-              </svg>
-            </div>
-            <h2 class="text-xl font-semibold">
-              Medidas Técnicas para Sillas de Ruedas
-            </h2>
-          </div>
+          <h2 class="section-heading">
+            <span class="material-symbols-outlined">straighten</span>
+            Medidas Técnicas para Sillas de Ruedas
+          </h2>
           <div class="mb-4">
             <label class="block text-sm font-semibold text-slate-700 mb-1">Sistema de medición</label>
-            <select name="unidad_medida" id="unidad_medida" class="w-full md:w-60 border-slate-300 shadow-sm focus:border-primary focus:ring-primary">
+            <select name="unidad_medida" id="unidad_medida" class="w-full md:w-60">
               <option value="imperial">Pulgadas / Libras</option>
               <option value="metric">Centímetros / Kilogramos</option>
             </select>
@@ -304,7 +256,7 @@
                 >
                 <div class="flex items-center">
                   <input
-                    class="flex-grow rounded-l-lg border-slate-300 focus:border-primary focus:ring-primary"
+                    class="flex-grow input-group-end"
                      name="altura_total_in"
                      placeholder="0.0"
                      type="text"
@@ -314,7 +266,7 @@
                      aria-describedby="altura_total_in-error"
                    />
                   <span
-                    class="bg-slate-200 border border-l-0 border-slate-300 px-4 py-2 rounded-r-lg text-slate-600 text-sm font-semibold"
+                    class="input-suffix font-semibold"
                      ><span data-unit-suffix>in</span></span
                    >
                 </div>
@@ -326,7 +278,7 @@
                 >
                 <div class="flex items-center">
                   <input
-                    class="flex-grow rounded-l-lg border-slate-300 focus:border-primary focus:ring-primary"
+                    class="flex-grow input-group-end"
                      name="peso_kg"
                      placeholder="0.0"
                      type="text"
@@ -336,7 +288,7 @@
                      aria-describedby="peso_kg-error"
                    />
                   <span data-unit-suffix-peso
-                    class="bg-slate-200 border border-l-0 border-slate-300 px-4 py-2 rounded-r-lg text-slate-600 text-sm font-semibold"
+                    class="input-suffix font-semibold"
                     >lb</span
                   >
                 </div>
@@ -348,7 +300,7 @@
                 >
                 <div class="flex items-center">
                   <input
-                    class="flex-grow rounded-l-lg border-slate-300 focus:border-primary focus:ring-primary"
+                    class="flex-grow input-group-end"
                      name="medida_cabeza_asiento"
                      placeholder="0.0"
                      type="text"
@@ -358,7 +310,7 @@
                      aria-describedby="medida_cabeza_asiento-error"
                    />
                   <span
-                    class="bg-slate-200 border border-l-0 border-slate-300 px-4 py-2 rounded-r-lg text-slate-600 text-sm font-semibold"
+                    class="input-suffix font-semibold"
                      ><span data-unit-suffix>in</span></span
                    >
                 </div>
@@ -370,7 +322,7 @@
                 >
                 <div class="flex items-center">
                   <input
-                    class="flex-grow rounded-l-lg border-slate-300 focus:border-primary focus:ring-primary"
+                    class="flex-grow input-group-end"
                      name="medida_hombro_asiento"
                      placeholder="0.0"
                      type="text"
@@ -380,7 +332,7 @@
                      aria-describedby="medida_hombro_asiento-error"
                    />
                   <span
-                    class="bg-slate-200 border border-l-0 border-slate-300 px-4 py-2 rounded-r-lg text-slate-600 text-sm font-semibold"
+                    class="input-suffix font-semibold"
                      ><span data-unit-suffix>in</span></span
                    >
                 </div>
@@ -392,7 +344,7 @@
                 >
                 <div class="flex items-center">
                   <input
-                    class="flex-grow rounded-l-lg border-slate-300 focus:border-primary focus:ring-primary"
+                    class="flex-grow input-group-end"
                      name="medida_prof_asiento"
                      placeholder="0.0"
                      type="text"
@@ -402,7 +354,7 @@
                      aria-describedby="medida_prof_asiento-error"
                    />
                   <span
-                    class="bg-slate-200 border border-l-0 border-slate-300 px-4 py-2 rounded-r-lg text-slate-600 text-sm font-semibold"
+                    class="input-suffix font-semibold"
                      ><span data-unit-suffix>in</span></span
                    >
                 </div>
@@ -414,7 +366,7 @@
                 >
                 <div class="flex items-center">
                   <input
-                    class="flex-grow rounded-l-lg border-slate-300 focus:border-primary focus:ring-primary"
+                    class="flex-grow input-group-end"
                      name="medida_rodilla_talon"
                      placeholder="0.0"
                      type="text"
@@ -424,7 +376,7 @@
                      aria-describedby="medida_rodilla_talon-error"
                    />
                   <span
-                    class="bg-slate-200 border border-l-0 border-slate-300 px-4 py-2 rounded-r-lg text-slate-600 text-sm font-semibold"
+                    class="input-suffix font-semibold"
                      ><span data-unit-suffix>in</span></span
                    >
                 </div>
@@ -436,7 +388,7 @@
                 >
                 <div class="flex items-center">
                   <input
-                    class="flex-grow rounded-l-lg border-slate-300 focus:border-primary focus:ring-primary"
+                    class="flex-grow input-group-end"
                      name="medida_ancho_cadera"
                      placeholder="0.0"
                      type="text"
@@ -446,7 +398,7 @@
                      aria-describedby="medida_ancho_cadera-error"
                    />
                   <span
-                    class="bg-slate-200 border border-l-0 border-slate-300 px-4 py-2 rounded-r-lg text-slate-600 text-sm font-semibold"
+                    class="input-suffix font-semibold"
                      ><span data-unit-suffix>in</span></span
                    >
                 </div>
@@ -458,25 +410,25 @@
         <!-- END: Seccion Medidas Tecnicas -->
         <!-- BEGIN: Seccion Multimedia -->
         <section
-          class="bg-slate-50 p-8 rounded-lg border border-slate-200"
+          class="bg-white p-8 rounded-lg border border-slate-200"
           data-purpose="patient-photo-upload"
           id="multimedia"
         >
-          <h3 class="text-lg font-bold mb-4 text-slate-800">
+          <h3 class="text-lg font-bold mb-4" style="color: var(--c-title);">
             Fotografía del Paciente
           </h3>
           <p class="text-sm text-slate-600 mb-6">
             Por favor, suba una foto del paciente sentado de frente o de perfil
             para validar las necesidades de soporte de la silla de ruedas.
           </p>
-          <div class="space-y-2 rounded-lg border border-slate-200 bg-white p-4">
+          <div class="space-y-2 rounded-lg border border-dashed border-slate-300 bg-white p-4">
             <label class="block text-sm font-semibold text-slate-700" for="file-upload"
               >Subir fotografía del paciente</label
             >
             <input
               id="file-upload"
               name="file-upload"
-              class="w-full border-slate-300 text-sm file:mr-4 file:rounded-md file:border-0 file:bg-primary file:px-4 file:py-2 file:font-semibold file:text-white hover:file:bg-primary/90"
+              class="w-full border-slate-300 text-sm file:mr-4 file:rounded-md file:border-0 file:bg-ug-orange-pure file:px-4 file:py-2 file:font-semibold file:text-white hover:file:bg-ug-orange-hover"
               type="file"
               accept=".jpg,.jpeg,.png,image/jpeg,image/png"
             />
@@ -486,9 +438,9 @@
             <button
               type="button"
               id="photo-camera-trigger"
-              class="inline-flex cursor-pointer items-center rounded-md bg-slate-700 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+              class="btn-secondary px-4 py-2 text-sm rounded-lg"
             >
-              Tomar foto
+              <span class="material-symbols-outlined text-base">photo_camera</span>Tomar foto
             </button>
             <p class="text-xs text-slate-500">Acepta JPG o PNG. Máximo 10MB.</p>
             <p id="photo-status" class="text-xs text-slate-500"></p>
@@ -520,21 +472,21 @@
             <div class="flex flex-col sm:flex-row gap-4">
               <button
                 id="btn-regresar-tecnica"
-                class="px-6 py-3 border border-slate-300 text-slate-700 font-bold hover:bg-slate-50 transition-all uppercase text-sm tracking-wide"
+                class="btn-secondary px-6 py-3 text-sm rounded-xl uppercase tracking-wide"
                 type="button"
               >
                 REGRESAR
               </button>
               <button
                 id="btn-guardar-borrador-tecnica"
-                class="px-6 py-3 border border-amber-500 text-amber-700 font-bold hover:bg-amber-50 transition-all uppercase text-sm tracking-wide"
+                class="btn-secondary px-6 py-3 text-sm rounded-xl uppercase tracking-wide"
                 type="button"
               >
                 Guardar Borrador
               </button>
               <button
                 id="btn-continuar-tecnica"
-                class="px-10 py-3 bg-primary text-white font-bold shadow-lg hover:bg-primary/90 transition-all uppercase text-sm tracking-wide active:scale-95"
+                class="btn-primary px-10 py-3 text-sm rounded-xl uppercase tracking-wide"
                 type="button"
               >
                 CONTINUAR
@@ -543,12 +495,14 @@
           </div>
           <p id="error-msg" class="hidden text-red-500 text-sm mt-2"></p>
           <div class="mt-8 pt-4 border-t border-slate-100 flex flex-col items-center gap-2 text-center sm:flex-row sm:justify-between">
-            <span class="text-xs font-medium text-slate-500">Desarrollado por <strong class="font-bold text-ug-blue">NEUXORA</strong> · León, Gto.</span>
+            <span class="text-xs font-medium text-slate-500">Desarrollado por <strong class="font-bold" style="color: var(--c-title);">NEUXORA</strong> · León, Gto.</span>
             <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Ecosistema VIDA UG</span>
           </div>
         </footer>
         <!-- END: Footer Actions -->
       </form>
+    </div><!-- /card -->
+    </div><!-- /max-w-4xl -->
     </main>
     <div
       id="camera-modal"
@@ -568,7 +522,7 @@
             <button
               id="camera-close"
               type="button"
-              class="rounded-md border border-slate-300 px-3 py-1 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              class="btn-secondary px-3 py-1 text-sm rounded-lg"
             >
               Cerrar
             </button>
@@ -598,14 +552,14 @@
               <button
                 id="camera-capture"
                 type="button"
-                class="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90"
+                class="btn-primary px-4 py-2 text-sm rounded-lg"
               >
                 Tomar foto
               </button>
               <button
                 id="camera-cancel"
                 type="button"
-                class="rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                class="btn-secondary px-4 py-2 text-sm rounded-lg"
               >
                 Cancelar
               </button>
@@ -630,7 +584,7 @@
             <button
               id="document-preview-close"
               type="button"
-              class="rounded-md border border-slate-300 px-3 py-1 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              class="btn-secondary px-3 py-1 text-sm rounded-lg"
             >
               Cerrar
             </button>
@@ -642,35 +596,61 @@
         </div>
       </div>
     </div>
-    <!-- Image zoom modal for guia_medidas_postural.jpeg -->
+    <!-- Image zoom lightbox for guia_medidas_postural.jpeg (issues #19 #22) -->
     <div
       id="image-zoom-modal"
-      class="hidden fixed inset-0 z-50 bg-slate-950/85 px-4 py-6"
+      class="hidden fixed inset-0 z-50"
+      style="background:rgba(10,5,20,0.92);touch-action:none;"
     >
-      <div class="mx-auto flex h-full max-w-5xl items-center justify-center">
-        <div class="w-full rounded-xl bg-white p-4 shadow-2xl">
-          <div class="flex items-start justify-between gap-4 border-b border-slate-200 pb-3">
-            <div>
-              <h3 class="text-lg font-bold text-slate-900">Guía clínica de referencia</h3>
-              <p class="text-sm text-slate-600">Ampliación de imagen de referencia</p>
-            </div>
-            <button
-              id="image-zoom-close"
-              type="button"
-              class="rounded-md border border-slate-300 px-3 py-1 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-            >
-              Cerrar
-            </button>
-          </div>
-          <div class="mt-4 flex h-[70vh] items-center justify-center rounded-lg bg-slate-100 p-4">
-            <img
-              id="image-zoom-content"
-              src="../assets/guia_medidas_postural.jpeg"
-              alt="Guía de medidas posturales ampliada"
-              class="max-h-full max-w-full object-contain"
-            />
-          </div>
+      <!-- Minimal header strip -->
+      <div class="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-4 py-3"
+           style="background:rgba(255,255,255,0.96);border-bottom:1px solid rgba(226,232,240,0.6);">
+        <div>
+          <p class="text-sm font-bold" style="color:var(--c-title);">Guía clínica de referencia</p>
+          <p class="text-xs text-slate-500">Pellizca o usa la rueda para hacer zoom · Arrastra para explorar</p>
         </div>
+        <button
+          id="image-zoom-close"
+          type="button"
+          class="btn-secondary px-3 py-1.5 text-sm rounded-lg"
+          aria-label="Cerrar visor"
+        >
+          <span class="material-symbols-outlined text-base" style="line-height:1;vertical-align:middle;">close</span>
+          Cerrar
+        </button>
+      </div>
+
+      <!-- Zoom controls (floating, touch-friendly) -->
+      <div class="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2"
+           style="background:rgba(255,255,255,0.96);border-radius:14px;padding:6px 10px;box-shadow:0 4px 20px rgba(0,0,0,0.3);">
+        <button id="zoom-in-btn" type="button" title="Acercar"
+          class="w-11 h-11 rounded-xl flex items-center justify-center text-slate-700 hover:bg-orange-50 hover:text-ug-orange-pure transition-all active:scale-90">
+          <span class="material-symbols-outlined text-2xl">zoom_in</span>
+        </button>
+        <button id="zoom-reset-btn" type="button" title="Restablecer"
+          class="w-11 h-11 rounded-xl flex items-center justify-center text-slate-700 hover:bg-orange-50 hover:text-ug-orange-pure transition-all active:scale-90">
+          <span class="material-symbols-outlined text-2xl">restart_alt</span>
+        </button>
+        <button id="zoom-out-btn" type="button" title="Alejar"
+          class="w-11 h-11 rounded-xl flex items-center justify-center text-slate-700 hover:bg-orange-50 hover:text-ug-orange-pure transition-all active:scale-90">
+          <span class="material-symbols-outlined text-2xl">zoom_out</span>
+        </button>
+      </div>
+
+      <!-- Image stage (full viewport minus header) -->
+      <div id="zoom-stage"
+           class="absolute inset-0 flex items-center justify-center overflow-hidden"
+           style="top:56px;touch-action:none;cursor:zoom-in;">
+        <img
+          id="image-zoom-content"
+          src="../assets/guia_medidas_postural.jpeg"
+          alt="Guía de medidas posturales ampliada"
+          style="transform-origin:0 0;transform:scale(1) translate(0px,0px);
+                 max-width:none;max-height:none;display:block;
+                 user-select:none;-webkit-user-drag:none;
+                 transition:transform 0.18s cubic-bezier(0.22,1,0.36,1);"
+          draggable="false"
+        />
       </div>
     </div>
     <div
@@ -693,7 +673,7 @@
           <button
             id="success-modal-action"
             type="button"
-            class="mt-6 inline-flex items-center justify-center rounded-md bg-primary px-5 py-3 text-sm font-semibold text-white hover:bg-primary/90"
+            class="btn-primary mt-6 px-5 py-3 text-sm rounded-xl"
           >
             Continuar
           </button>
@@ -1906,23 +1886,244 @@
       }
 
       function setupImageZoom() {
-        const modal = document.getElementById("image-zoom-modal");
+        const modal    = document.getElementById("image-zoom-modal");
         const closeBtn = document.getElementById("image-zoom-close");
+        const stage    = document.getElementById("zoom-stage");
+        const img      = document.getElementById("image-zoom-content");
+        const zoomIn   = document.getElementById("zoom-in-btn");
+        const zoomOut  = document.getElementById("zoom-out-btn");
+        const zoomReset= document.getElementById("zoom-reset-btn");
         const guideImg = document.querySelector(
           "[data-purpose='technical-measurements-visual'] img[src*='guia_medidas_postural']"
         );
 
-        if (!modal || !closeBtn || !guideImg) return;
+        if (!modal || !closeBtn || !stage || !img || !guideImg) return;
 
+        // ── State ──────────────────────────────────────────────────────────────────
+        const MIN_SCALE = 1.0;
+        const MAX_SCALE = 4.0;
+        let scale  = 1.0;
+        let tx     = 0;     // translate X in px
+        let ty     = 0;     // translate Y in px
+        let isDown = false;
+        let lastX  = 0;
+        let lastY  = 0;
+
+        // Pinch state
+        let pinching   = false;
+        let pinchDist0 = 0;
+        let pinchScale0= 1;
+        let pinchMidX  = 0;
+        let pinchMidY  = 0;
+
+        // Double-tap state
+        let lastTapTime = 0;
+
+        // ── Apply transform (smooth or immediate) ──────────────────────────────────
+        function applyTransform(smooth) {
+          img.style.transition = smooth
+            ? "transform 0.18s cubic-bezier(0.22,1,0.36,1)"
+            : "none";
+          img.style.transform = `scale(${scale}) translate(${tx}px,${ty}px)`;
+          stage.style.cursor = scale > 1.01 ? (isDown ? "grabbing" : "grab") : "zoom-in";
+        }
+
+        // ── Clamp pan so image never fully leaves viewport ─────────────────────────
+        function clampPan() {
+          const sw = stage.clientWidth;
+          const sh = stage.clientHeight;
+          const iw = img.naturalWidth  || img.clientWidth;
+          const ih = img.naturalHeight || img.clientHeight;
+
+          // Scaled image dimensions
+          const scaledW = iw * scale;
+          const scaledH = ih * scale;
+
+          // With transform-origin 0 0 and translate(tx,ty):
+          // The image left edge sits at: offsetX + tx*scale
+          // where offsetX = (sw - iw*scale)/2 when scale<fill  — but since
+          // we use transform-origin:0 0 the origin is the top-left of the img
+          // element as rendered before transform. We need to constrain tx/ty so
+          // the scaled image doesn't entirely slide off-screen.
+          const maxTx =  Math.max(0, (scaledW - sw) / 2 / scale);
+          const maxTy =  Math.max(0, (scaledH - sh) / 2 / scale);
+          tx = Math.max(-maxTx, Math.min(maxTx, tx));
+          ty = Math.max(-maxTy, Math.min(maxTy, ty));
+        }
+
+        // ── Zoom toward a point in stage coordinates ──────────────────────────────
+        function zoomAt(newScale, stageX, stageY) {
+          newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, newScale));
+          if (newScale === scale) return;
+
+          // Point on the image in image-local coords before zoom:
+          // stageCenter = stage center
+          const cx = stage.clientWidth  / 2;
+          const cy = stage.clientHeight / 2;
+
+          // Current image origin offset (transform-origin:0 0, centered by flex)
+          // flex centers: origin at (cx - iw*scale/2, cy - ih*scale/2)
+          const iw = img.naturalWidth  || img.clientWidth;
+          const ih = img.naturalHeight || img.clientHeight;
+          const originX = cx - (iw * scale) / 2 + tx * scale;
+          const originY = cy - (ih * scale) / 2 + ty * scale;
+
+          // Image-local coords of the pointer
+          const imgX = (stageX - originX) / scale;
+          const imgY = (stageY - originY) / scale;
+
+          // After scaling, keep imgX/imgY under pointer:
+          // newOriginX + imgX * newScale = stageX  =>  newOriginX = stageX - imgX * newScale
+          // newOriginX = cx - iw*newScale/2 + newTx*newScale
+          // => newTx = (stageX - imgX*newScale - cx + iw*newScale/2) / newScale
+          const newTx = (stageX - imgX * newScale - cx + iw * newScale / 2) / newScale;
+          const newTy = (stageY - imgY * newScale - cy + ih * newScale / 2) / newScale;
+
+          scale = newScale;
+          tx = newTx;
+          ty = newTy;
+          clampPan();
+        }
+
+        // ── Reset ──────────────────────────────────────────────────────────────────
+        function resetZoom() {
+          scale = 1;
+          tx = 0;
+          ty = 0;
+          applyTransform(true);
+        }
+
+        // ── Open / close ──────────────────────────────────────────────────────────
+        function openZoom() {
+          resetZoom();
+          applyTransform(false);
+          modal.classList.remove("hidden");
+          document.body.style.overflow = "hidden";
+        }
+        function closeZoom() {
+          modal.classList.add("hidden");
+          document.body.style.overflow = "";
+        }
+
+        // ── Mouse wheel zoom ──────────────────────────────────────────────────────
+        stage.addEventListener("wheel", (e) => {
+          e.preventDefault();
+          const rect = stage.getBoundingClientRect();
+          const stageX = e.clientX - rect.left;
+          const stageY = e.clientY - rect.top;
+          const delta  = e.deltaY < 0 ? 0.15 : -0.15;
+          zoomAt(scale + delta * scale, stageX, stageY);
+          clampPan();
+          applyTransform(false);
+        }, { passive: false });
+
+        // ── Pointer drag (mouse + touch) ───────────────────────────────────────────
+        stage.addEventListener("pointerdown", (e) => {
+          if (e.isPrimary && !pinching) {
+            isDown = true;
+            lastX = e.clientX;
+            lastY = e.clientY;
+            stage.setPointerCapture(e.pointerId);
+            applyTransform(false);
+          }
+        });
+        stage.addEventListener("pointermove", (e) => {
+          if (!e.isPrimary || !isDown || pinching) return;
+          const dx = e.clientX - lastX;
+          const dy = e.clientY - lastY;
+          lastX = e.clientX;
+          lastY = e.clientY;
+          if (scale > 1.01) {
+            tx += dx / scale;
+            ty += dy / scale;
+            clampPan();
+            applyTransform(false);
+          }
+        });
+        stage.addEventListener("pointerup", (e) => {
+          if (e.isPrimary) { isDown = false; applyTransform(false); }
+        });
+        stage.addEventListener("pointercancel", () => { isDown = false; });
+
+        // ── Pinch-to-zoom (Pointer Events, two pointers) ──────────────────────────
+        const activePointers = new Map();
+        stage.addEventListener("pointerdown", (e) => {
+          activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+          if (activePointers.size === 2) {
+            isDown = false;
+            pinching = true;
+            const pts = [...activePointers.values()];
+            const dx = pts[1].x - pts[0].x;
+            const dy = pts[1].y - pts[0].y;
+            pinchDist0  = Math.hypot(dx, dy);
+            pinchScale0 = scale;
+            const rect = stage.getBoundingClientRect();
+            pinchMidX = ((pts[0].x + pts[1].x) / 2) - rect.left;
+            pinchMidY = ((pts[0].y + pts[1].y) / 2) - rect.top;
+          }
+        });
+        stage.addEventListener("pointermove", (e) => {
+          activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+          if (pinching && activePointers.size === 2) {
+            const pts = [...activePointers.values()];
+            const dx = pts[1].x - pts[0].x;
+            const dy = pts[1].y - pts[0].y;
+            const dist = Math.hypot(dx, dy);
+            if (pinchDist0 === 0) return; // both pointers at the same point: scale is undefined
+            const newScale = pinchScale0 * (dist / pinchDist0);
+            zoomAt(newScale, pinchMidX, pinchMidY);
+            clampPan();
+            applyTransform(false);
+          }
+        });
+        function endPointer(e) {
+          activePointers.delete(e.pointerId);
+          if (activePointers.size < 2) pinching = false;
+        }
+        stage.addEventListener("pointerup",     endPointer);
+        stage.addEventListener("pointercancel", endPointer);
+
+        // ── Double-tap / double-click toggle 1x ↔ 2.5x ────────────────────────────
+        stage.addEventListener("click", (e) => {
+          if (pinching) return;
+          const now = Date.now();
+          if (now - lastTapTime < 300) {
+            const rect = stage.getBoundingClientRect();
+            if (scale > 1.05) {
+              resetZoom(); applyTransform(true);
+            } else {
+              zoomAt(2.5, e.clientX - rect.left, e.clientY - rect.top);
+              clampPan(); applyTransform(true);
+            }
+          }
+          lastTapTime = now;
+        });
+
+        // ── Button controls ────────────────────────────────────────────────────────
+        zoomIn.addEventListener("click", () => {
+          const cx = stage.clientWidth / 2, cy = stage.clientHeight / 2;
+          zoomAt(scale * 1.3, cx, cy); clampPan(); applyTransform(true);
+        });
+        zoomOut.addEventListener("click", () => {
+          const cx = stage.clientWidth / 2, cy = stage.clientHeight / 2;
+          zoomAt(scale / 1.3, cx, cy); clampPan(); applyTransform(true);
+        });
+        zoomReset.addEventListener("click", resetZoom);
+
+        // ── Keyboard ──────────────────────────────────────────────────────────────
+        document.addEventListener("keydown", (e) => {
+          if (modal.classList.contains("hidden")) return;
+          if (e.key === "Escape") closeZoom();
+        });
+
+        // ── Open triggers ─────────────────────────────────────────────────────────
         guideImg.classList.add("cursor-pointer");
-
-        const openZoom = () => modal.classList.remove("hidden");
-        const closeZoom = () => { modal.classList.add("hidden"); };
-
         guideImg.addEventListener("click", openZoom);
         closeBtn.addEventListener("click", closeZoom);
+
+        // Backdrop click (only the overlay itself, not children)
         modal.addEventListener("click", (e) => {
-          if (e.target?.id === "image-zoom-modal") closeZoom();
+          if (e.target === modal) closeZoom();
         });
       }
 

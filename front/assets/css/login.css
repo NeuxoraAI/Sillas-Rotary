@@ -1,13 +1,59 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Login Page — page-specific styles; shared tokens provided by theme.css
+   ═══════════════════════════════════════════════════════════════════════════ */
+
 :root {
-  --page-primary: #51274b;
-  --page-primary-shadow: #3d1d39;
-  --page-primary-deep: #2f162c;
-  --page-accent: #b9844d;
-  --page-accent-shadow: #8f6338;
+  /* Login-specific overrides on top of theme.css */
+  --radius-card:    24px;
+  --radius-video:   20px;
+  --radius-input:   12px;
 }
 
-body { font-family: 'Public Sans', sans-serif; }
-.backdrop-blur-md { backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+body {
+  min-height: 100vh;
+  font-family: 'Public Sans', sans-serif;
+  background:
+    radial-gradient(ellipse at -8% 7%, rgba(255,255,255,0.72) 0%, rgba(255,255,255,0.32) 32%, transparent 58%),
+    radial-gradient(ellipse at 94% 24%, rgba(255,235,229,0.58) 0%, rgba(255,235,229,0.20) 42%, transparent 68%),
+    radial-gradient(circle at 96% 28%, rgba(255,160,130,0.12) 0 1px, transparent 1.5px),
+    linear-gradient(165deg, #FBF7F5 0%, #F8EDEA 46%, #F4F1F0 76%, #FBF7F5 100%);
+  background-size: auto, auto, 18px 18px, auto;
+}
+
+.brand-header {
+  /* No z-index here: a stacking context would isolate the logos'
+     mix-blend-mode from the body background */
+  position: relative;
+}
+
+.brand-header::before {
+  content: '';
+  position: absolute;
+  left: -8%;
+  top: 8px;
+  width: 58%;
+  height: 132px;
+  border: 1px solid rgba(255, 90, 31, 0.07);
+  border-color: transparent transparent rgba(255, 90, 31, 0.12) transparent;
+  border-radius: 0 0 58% 44%;
+  transform: rotate(-2deg);
+  pointer-events: none;
+}
+
+.brand-header::after {
+  content: '';
+  position: absolute;
+  right: 1.5%;
+  top: 18px;
+  width: 270px;
+  height: 120px;
+  border-top: 2px solid rgba(255, 90, 31, 0.38);
+  border-right: 1px solid rgba(255, 90, 31, 0.18);
+  border-radius: 0 92% 0 0;
+  transform: rotate(-7deg);
+  pointer-events: none;
+}
+
 .material-symbols-outlined {
   font-family: 'Material Symbols Outlined';
   font-weight: normal;
@@ -26,6 +72,439 @@ body { font-family: 'Public Sans', sans-serif; }
 
 input, select, textarea {
   color: #0f172a !important;
-  caret-color: var(--page-primary);
+  caret-color: var(--c-orange);
   -webkit-text-fill-color: #0f172a;
+}
+
+/* ── Login page: layered warm background ── */
+.login-page {
+  background: transparent;
+  min-height: calc(100vh - 146px);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Login stage fills remaining space ── */
+.login-stage {
+  flex: 1 1 auto;
+}
+
+/* ── Soft corner glows ── */
+.bg-glow-topleft {
+  position: absolute;
+  top: -8%;
+  left: -10%;
+  width: 50%;
+  height: 55%;
+  background: radial-gradient(ellipse at 30% 30%, rgba(255,255,255,0.60) 0%, rgba(255,255,255,0.16) 45%, transparent 70%);
+  pointer-events: none;
+  z-index: 1;
+}
+.bg-glow-topright {
+  position: absolute;
+  top: -6%;
+  right: -8%;
+  width: 48%;
+  height: 60%;
+  background: radial-gradient(ellipse at 70% 30%, rgba(255,138,77,0.16) 0%, rgba(255,200,170,0.09) 45%, transparent 72%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ── Top-right thin arcs ── */
+.bg-arc-topright {
+  position: absolute;
+  top: 2%;
+  right: 0;
+  width: 40%;
+  height: 26%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ── Full-width connecting band behind both corner waves ── */
+.wave-band {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 30%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ── Corner waves ── */
+.wave-orange {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 34%;
+  height: 46%;
+  pointer-events: none;
+  z-index: 2;
+  transform-origin: bottom;
+  animation: wave-breathe 9s ease-in-out infinite alternate;
+}
+.wave-purple {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 42%;
+  height: 44%;
+  pointer-events: none;
+  z-index: 2;
+  transform-origin: bottom;
+  animation: wave-breathe 12s ease-in-out infinite alternate-reverse;
+}
+
+/* Scale from the bottom edge so waves never lift off the page corner */
+@keyframes wave-breathe {
+  from { transform: scaleY(1); }
+  to   { transform: scaleY(1.05); }
+}
+
+/* ── Login card ── */
+.login-card {
+  background: rgba(255,255,255,0.92);
+  border: 1px solid rgba(255,255,255,0.7);
+  border-radius: var(--radius-card);
+  box-shadow: 0 24px 60px -16px rgba(43, 6, 61, 0.20), 0 6px 18px rgba(60, 30, 20, 0.07);
+}
+
+/* ── Entrance choreography ── */
+.brand-header img {
+  animation: fade-in 0.8s ease-out both;
+}
+.login-card {
+  animation: rise-in 0.65s cubic-bezier(0.22, 1, 0.36, 1) 0.05s both;
+}
+.login-video {
+  animation: rise-in 0.65s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both;
+}
+
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(26px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brand-header img,
+  .login-card,
+  .login-video,
+  .wave-orange,
+  .wave-purple,
+  .login-btn::after {
+    animation: none;
+    transition: none;
+  }
+}
+
+/* ── Login input ── */
+.login-input {
+  background-color: var(--c-input-bg) !important;
+  border: 1px solid var(--c-input-border) !important;
+  border-radius: var(--radius-input) !important;
+  height: 56px !important;
+  font-size: 15px;
+  transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
+}
+.login-input:focus {
+  border-color: var(--c-orange) !important;
+  box-shadow: 0 0 0 3px rgba(241, 90, 36, 0.18) !important;
+  background-color: #fff !important;
+}
+.login-input::placeholder {
+  color: var(--c-placeholder);
+}
+
+/* ── Video card: full-bleed video, single soft shadow, no frame ── */
+.login-video {
+  background: #FFF7F3; /* avoids dark flash before the video paints */
+  border: 0;
+  border-radius: var(--radius-card);
+  box-shadow: 0 24px 60px -16px rgba(43, 6, 61, 0.22), 0 6px 18px rgba(60, 30, 20, 0.07);
+  padding: 0;
+  overflow: hidden;
+}
+
+.login-video > div {
+  padding: 0 !important;
+}
+
+.video-player {
+  border: 0;
+  border-radius: var(--radius-card);
+  overflow: hidden;
+}
+.video-player video {
+  display: block;
+  border-radius: var(--radius-card);
+}
+
+/* ── Header spacing: reference has 35–45px top air ── */
+.brand-header {
+  padding-top: 38px;
+  padding-bottom: 24px;
+}
+
+/* ── Logo sizes ── */
+.logo-vida-ug,
+.logo-hope-haven,
+.logo-rotary {
+  /* Blend white logo canvases into the warm background */
+  mix-blend-mode: multiply;
+}
+.logo-vida-ug {
+  width: 132px;
+  height: auto;
+  max-height: 80px;
+  object-fit: contain;
+}
+.logo-hope-haven {
+  width: 360px;
+  height: auto;
+  max-height: 90px;
+  object-fit: contain;
+}
+.logo-rotary {
+  width: 150px;
+  height: auto;
+  max-height: 70px;
+  object-fit: contain;
+}
+
+/* ── Header separator ── */
+.brand-separator {
+  width: 1px;
+  background-color: var(--c-separator);
+}
+
+/* ── Login icon area ── */
+.login-icon-wrap {
+  width: 76px;
+  height: 76px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 12px;
+  border-radius: 0;
+  overflow: hidden;
+}
+
+.login-center-img {
+  width: 96px;
+  height: 96px;
+  object-fit: cover;
+  object-position: center;
+}
+
+/* ── Title ── */
+.login-title {
+  color: var(--c-title);
+  font-size: 30px;
+  font-weight: 700;
+  text-align: center;
+  line-height: 1.2;
+}
+
+/* ── Subtitle ── */
+.login-subtitle {
+  color: var(--c-subtitle);
+  font-size: 15px;
+  text-align: center;
+  line-height: 1.4;
+}
+
+/* ── Orange divider ── */
+.login-divider {
+  width: 40px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--c-orange);
+  margin: 0 auto;
+}
+
+/* ── Form labels ── */
+.login-label {
+  color: var(--c-label);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* ── CTA button ── */
+.login-btn {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 56px;
+  background: linear-gradient(90deg, #FF4B0B, #FF681F);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: none;
+  border-radius: var(--radius-btn);
+  box-shadow: 0 8px 18px var(--c-orange-glow);
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s, opacity 0.2s;
+}
+.login-btn::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -60%;
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(100deg, transparent, rgba(255,255,255,0.35), transparent);
+  transform: skewX(-20deg);
+  transition: left 0.5s ease;
+}
+.login-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 26px rgba(255, 90, 31, 0.45);
+}
+.login-btn:hover::after {
+  left: 120%;
+}
+.login-btn:active {
+  transform: scale(0.98);
+}
+.login-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ── Security note ── */
+.login-security-note {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--c-gray);
+  font-size: 14px;
+}
+.login-security-note .material-symbols-outlined {
+  color: var(--c-orange-mid);
+  font-size: 18px;
+}
+
+/* ── Footer: above waves, legible ── */
+.login-footer {
+  position: relative;
+  z-index: 10;
+  background: rgba(251, 247, 245, 0.88);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border-top: 1px solid rgba(207,199,196,0.3);
+}
+.login-footer .footer-neuxora {
+  color: var(--c-gray);
+  font-size: 14px;
+}
+.login-footer .footer-neuxora strong {
+  color: var(--c-purple-bold);
+  font-weight: 700;
+}
+.login-footer .footer-links a {
+  color: var(--c-purple-bold);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.login-footer .footer-links a:hover {
+  color: var(--c-orange);
+}
+.login-footer .footer-separator {
+  display: inline-block;
+  width: 1px;
+  height: 14px;
+  background: var(--c-separator);
+  margin: 0 10px;
+  vertical-align: middle;
+}
+
+/* ── Desktop layout (1400px+) ── */
+@media (min-width: 1400px) {
+  .login-stage {
+    display: flex;
+    gap: 55px;
+    justify-content: center;
+    align-items: flex-start;
+    max-width: 1390px;
+    padding-top: 30px;
+  }
+  .login-card {
+    width: 460px;
+    flex-shrink: 0;
+    min-height: 570px;
+    padding: 38px 44px 36px;
+  }
+  .login-video {
+    width: 900px;
+    flex-shrink: 0;
+    min-height: 550px;
+  }
+}
+
+/* ── Tablet/small desktop (768px–1399px) ── */
+@media (min-width: 768px) and (max-width: 1399px) {
+  .login-stage {
+    display: grid;
+    grid-template-columns: minmax(280px, 460px) 1fr;
+    gap: 2rem;
+    align-items: start;
+    padding-top: 24px;
+  }
+  .login-card {
+    max-width: 460px;
+    padding: 36px 32px;
+  }
+  .login-video {
+    min-height: 440px;
+  }
+}
+
+/* ── Footer links ── */
+footer a {
+  text-decoration: none;
+}
+footer a:hover {
+  text-decoration: none;
+}
+
+/* ── Mobile adjustments (<768px) ── */
+@media (max-width: 767px) {
+  .login-stage {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+  .wave-orange,
+  .wave-purple,
+  .wave-band {
+    opacity: 0.35;
+  }
+  .bg-arc-topright {
+    opacity: 0.40;
+  }
+  .logo-vida-ug   { width: 85px;  max-height: 45px; }
+  .logo-hope-haven { width: 180px; max-height: 55px; }
+  .logo-rotary    { width: 85px;  max-height: 45px; }
+  .login-card {
+    padding: 28px 22px;
+  }
+  .login-page {
+    min-height: auto;
+  }
 }

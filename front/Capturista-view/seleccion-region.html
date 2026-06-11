@@ -13,64 +13,59 @@
     theme: {
       extend: {
         colors: {
-          "ug-blue":         "#51274b",
-          "ug-blue-shadow":  "#3d1d39",
-          "ug-blue-deep":    "#2f162c",
-          "ug-yellow":       "#B9844D",
-          "ug-yellow-shadow":"#8f6338",
-          "ug-yellow-light": "#d6ae80",
-          "primary":         "#51274b",
+          "primary":          "#2B063D",
+          "primary-bold":     "#3A0A4F",
+          "ug-orange":        "#F15A24",
+          "ug-orange-hover":  "#E84B10",
+          "ug-orange-pure":   "#FF5A1F",
+          "warm-bg":          "#FBF7F5",
         },
         fontFamily: { "display": ["Public Sans"] },
-        borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+        borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "full": "9999px" },
       },
     },
   }
 </script>
+<link href="../assets/css/theme.css" rel="stylesheet"/>
 <link href="../assets/css/seleccion-region.css" rel="stylesheet"/>
 </head>
-<body class="bg-slate-50 font-display min-h-screen flex flex-col">
+<body class="page-bg font-display min-h-screen flex flex-col" style="background: #FBF7F5;">
 
-<!-- Header -->
-<header class="w-full bg-ug-blue py-4 px-6 shadow-lg">
-  <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
-    <!-- Logos (compact) -->
-    <div class="flex items-center gap-4">
-      <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow overflow-hidden">
-        <img alt="Hope Haven" class="w-4/5 h-4/5 object-contain" src="../assets/logo_hope_haven.png"/>
+<!-- Floating top bar -->
+<header class="w-full px-4 pt-5 relative z-10">
+  <div class="max-w-lg mx-auto topbar px-5 py-3.5 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <div class="topbar-icon">
+        <span class="material-symbols-outlined text-xl" style="color: var(--c-orange);">map</span>
       </div>
-      <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow overflow-hidden">
-        <img alt="Rotary" class="w-4/5 h-4/5 object-contain" src="../assets/Logo_rotary_200.png"/>
-      </div>
-      <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow overflow-hidden">
-        <img alt="VIDA UG" class="w-4/5 h-4/5 object-contain" src="../assets/logo_vida_ug.png"/>
+      <div>
+        <p class="text-[15px] font-bold" style="color: var(--c-title);">Selección de Región</p>
+        <p class="text-xs text-slate-500">Ecosistema VIDA UG</p>
       </div>
     </div>
-
-    <!-- User info + logout -->
     <div class="flex items-center gap-3">
-      <div class="text-right hidden sm:block">
-        <p id="user-nombre" class="text-white text-sm font-semibold leading-none">—</p>
-        <p id="user-rol" class="text-white/50 text-[10px] uppercase tracking-wider mt-0.5">—</p>
+      <div class="hidden sm:block text-right">
+        <p id="user-nombre" class="text-sm font-bold leading-tight" style="color: var(--c-title);">—</p>
+        <p id="user-rol" class="text-xs text-slate-500">—</p>
       </div>
-      <button id="btn-logout" title="Cerrar sesión" class="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/70 hover:text-white transition-all">
-        <span class="material-symbols-outlined text-base">logout</span>
+      <button id="btn-logout" title="Cerrar sesión" class="w-9 h-9 rounded-xl hover:bg-orange-50 flex items-center justify-center text-slate-400 hover:text-ug-orange-pure transition-all">
+        <span class="material-symbols-outlined text-xl">logout</span>
       </button>
     </div>
   </div>
 </header>
 
 <!-- Step indicator -->
-<div class="w-full bg-ug-blue/5 border-b border-slate-200">
+<div class="w-full mt-4 step-bar">
   <div class="max-w-lg mx-auto px-4 py-3 flex items-center gap-3">
-    <div class="flex items-center gap-2 shrink-0">
-      <div class="w-7 h-7 rounded-full bg-ug-blue text-white text-xs font-bold flex items-center justify-center shadow">1</div>
-      <span class="text-sm font-semibold text-ug-blue">Región</span>
+    <div class="step-pill active">
+      <div class="step-pill-num">1</div>
+      <span>Región</span>
     </div>
-    <div class="flex-1 h-0.5 bg-gradient-to-r from-ug-blue/40 to-slate-300 rounded"></div>
-    <div class="flex items-center gap-2 opacity-40 shrink-0">
-      <div class="w-7 h-7 rounded-full bg-slate-300 text-slate-600 text-xs font-bold flex items-center justify-center">2</div>
-      <span class="text-sm font-semibold text-slate-500">Captura</span>
+    <div class="flex-1 h-0.5 bg-gradient-to-r from-orange-200 to-slate-200 rounded"></div>
+    <div class="step-pill">
+      <div class="step-pill-num">2</div>
+      <span>Captura</span>
     </div>
   </div>
 </div>
@@ -85,11 +80,11 @@
       <!-- Card header -->
       <div class="px-8 pt-8 pb-6 border-b border-slate-100">
         <div class="flex items-center gap-4">
-          <div class="w-12 h-12 bg-ug-blue/10 rounded-xl flex items-center justify-center shrink-0">
-            <span class="material-symbols-outlined text-ug-blue text-2xl">public</span>
+          <div class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0" style="background: #FFF1EB; border: 1px solid rgba(255,90,31,0.15);">
+            <span class="material-symbols-outlined text-2xl" style="color: var(--c-orange);">public</span>
           </div>
           <div>
-            <h1 class="text-xl font-bold text-slate-900">Selección de Región</h1>
+            <h1 class="text-xl font-bold" style="color: var(--c-title);">Selección de Región</h1>
             <p class="text-slate-500 text-sm mt-0.5">Elija el país, región y sede donde realizará la captura.</p>
           </div>
         </div>
@@ -105,7 +100,7 @@
           </label>
           <div class="relative">
             <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl pointer-events-none">flag</span>
-            <select id="pais" class="select-field w-full pl-12 pr-10 py-4 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-ug-blue focus:outline-none transition-colors text-slate-900 text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+            <select id="pais" class="select-field w-full pl-12 pr-10 py-4 text-sm disabled:opacity-50 disabled:cursor-not-allowed">
               <option value="">— Cargando países… —</option>
             </select>
             <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl pointer-events-none">expand_more</span>
@@ -119,7 +114,7 @@
           </label>
           <div class="relative">
             <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl pointer-events-none">location_on</span>
-            <select id="region" disabled class="select-field w-full pl-12 pr-10 py-4 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-ug-blue focus:outline-none transition-colors text-slate-900 text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+            <select id="region" disabled class="select-field w-full pl-12 pr-10 py-4 text-sm disabled:opacity-50 disabled:cursor-not-allowed">
               <option value="">— Seleccione un país primero —</option>
             </select>
             <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl pointer-events-none">expand_more</span>
@@ -136,7 +131,7 @@
             <input
               id="sede" type="text" autocomplete="off"
               placeholder="Ej: Hospital Civil, Centro DIF, Escuela…"
-              class="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-ug-blue focus:outline-none transition-colors text-slate-900 placeholder:text-slate-400 text-sm"
+              class="w-full pl-12 pr-4 py-4 text-sm"
             />
           </div>
           <p class="text-slate-400 text-xs">Nombre del lugar donde se aplica el estudio.</p>
@@ -148,7 +143,7 @@
         <!-- Submit -->
         <button
           id="btn-continuar" type="button"
-          class="w-full py-4 bg-ug-blue hover:bg-ug-blue/90 active:scale-[0.98] text-white font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 group disabled:opacity-60 disabled:cursor-not-allowed"
+          class="btn-primary w-full py-4 text-sm rounded-xl group disabled:opacity-60 disabled:cursor-not-allowed"
         >
           <span id="btn-text">CONTINUAR</span>
           <span class="material-symbols-outlined text-xl group-hover:translate-x-1 transition-transform">arrow_forward</span>
@@ -169,15 +164,15 @@
 </main>
 
 <!-- Footer -->
-<footer class="w-full bg-gradient-to-b from-ug-yellow via-ug-yellow to-ug-yellow-light">
+<footer class="w-full page-footer">
   <div class="py-4 px-6">
     <div class="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
-      <div class="flex items-center gap-2 text-ug-blue/70">
+      <div class="flex items-center gap-2 text-primary/70">
         <span class="material-symbols-outlined text-base">code</span>
-        <span class="text-xs font-medium">Desarrollado por <strong class="text-ug-blue font-bold">NEUXORA</strong> · León, Gto.</span>
+        <span class="text-xs font-medium">Desarrollado por <strong class="text-primary font-bold">NEUXORA</strong> · León, Gto.</span>
       </div>
-      <div class="flex gap-6 text-[10px] font-bold uppercase tracking-wider text-ug-blue/60">
-        <a class="hover:text-ug-blue transition-colors" href="#">Aviso de Privacidad</a>
+      <div class="flex gap-6 text-[10px] font-bold uppercase tracking-wider text-primary/60">
+        <a class="hover:text-primary transition-colors" href="#">Aviso de Privacidad</a>
       </div>
     </div>
   </div>

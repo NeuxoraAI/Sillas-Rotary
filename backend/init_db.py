@@ -191,6 +191,7 @@ DDL = [
     "ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS telefono TEXT",
     "ALTER TABLE estudios_socioeconomicos ADD COLUMN IF NOT EXISTS finalizado_at TIMESTAMPTZ NULL",
     "ALTER TABLE solicitudes_tecnicas ADD COLUMN IF NOT EXISTS finalizado_at TIMESTAMPTZ NULL",
+    "ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS avatar_url TEXT",
 ]
 
 
