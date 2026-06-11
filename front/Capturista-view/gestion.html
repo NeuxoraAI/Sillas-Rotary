@@ -435,8 +435,104 @@
         };
       }
 
+      function buildGuardarBorradorPayload(draftSocio, draftTecnica, gestionData, status = "borrador") {
+        const estudioId = localStorage.getItem("estudio_id");
+        const solicitudId = localStorage.getItem("solicitud_id");
+        const beneficiarioId = localStorage.getItem("beneficiario_id");
+        const tutor1 = (draftSocio.tutores || []).find((t) => t.numero_tutor === 1) || {};
+        const tutor2 = (draftSocio.tutores || []).find((t) => t.numero_tutor === 2) || {};
+
+        const mapTutor = (prefix, tutor) => ({
+          [`${prefix}_nombres`]: tutor.nombres || null,
+          [`${prefix}_apellido_paterno`]: tutor.apellido_paterno || null,
+          [`${prefix}_apellido_materno`]: tutor.apellido_materno || null,
+          [`${prefix}_email`]: tutor.email || null,
+          [`${prefix}_edad`]: tutor.edad ?? null,
+          [`${prefix}_nivel_estudios`]: tutor.nivel_estudios || null,
+          [`${prefix}_estado_civil`]: tutor.estado_civil || null,
+          [`${prefix}_num_hijos`]: tutor.num_hijos ?? null,
+          [`${prefix}_vivienda`]: tutor.vivienda || null,
+          [`${prefix}_fuente_empleo`]: tutor.fuente_empleo || null,
+          [`${prefix}_antiguedad_aplica`]: tutor.antiguedad_aplica ?? null,
+          [`${prefix}_antiguedad_anios`]: tutor.antiguedad_anios ?? null,
+          [`${prefix}_antiguedad_meses_extra`]: tutor.antiguedad_meses_extra ?? null,
+          [`${prefix}_ingreso_mensual`]: tutor.ingreso_mensual ?? null,
+          [`${prefix}_sin_empleo`]: tutor.sin_empleo ?? null,
+          [`${prefix}_otras_fuentes_aplica`]: tutor.otras_fuentes_aplica ?? null,
+          [`${prefix}_otras_fuentes_ingreso`]: tutor.otras_fuentes_ingreso || null,
+          [`${prefix}_monto_otras_fuentes`]: tutor.monto_otras_fuentes ?? null,
+          [`${prefix}_imss_estatus`]: tutor.imss_estatus || null,
+          [`${prefix}_infonavit_estatus`]: tutor.infonavit_estatus || null,
+        });
+
+        return {
+          estudio_id: estudioId ? parseInt(estudioId, 10) : null,
+          solicitud_id: solicitudId ? parseInt(solicitudId, 10) : null,
+          beneficiario_id: beneficiarioId ? parseInt(beneficiarioId, 10) : null,
+          region_id: draftSocio.region_id || null,
+          sede: draftSocio.sede || null,
+          ciudad_registro: draftSocio.ciudad_registro || null,
+
+          nombres: draftSocio.beneficiario?.nombres || null,
+          apellido_paterno: draftSocio.beneficiario?.apellido_paterno || null,
+          apellido_materno: draftSocio.beneficiario?.apellido_materno || null,
+          fecha_nacimiento: draftSocio.beneficiario?.fecha_nacimiento || null,
+          diagnostico: draftSocio.beneficiario?.diagnostico || null,
+          calle: draftSocio.beneficiario?.calle || null,
+          num_ext: draftSocio.beneficiario?.num_ext || null,
+          num_int: draftSocio.beneficiario?.num_int || null,
+          colonia: draftSocio.beneficiario?.colonia || null,
+          ciudad: draftSocio.beneficiario?.ciudad || null,
+          estado_codigo: draftSocio.beneficiario?.estado_codigo || null,
+          estado_nombre: draftSocio.beneficiario?.estado_nombre || null,
+          sexo: draftSocio.beneficiario?.sexo || null,
+          telefonos: draftSocio.beneficiario?.telefonos || null,
+          email: draftSocio.beneficiario?.email || null,
+
+          tuvo_silla_previa: gestionData.silla_previa === "Sí" ? true : gestionData.silla_previa === "No" ? false : null,
+          como_obtuvo_silla: gestionData.como_obtuvo_silla || null,
+          elaboro_estudio: draftSocio.estudio?.elaboro_estudio || null,
+          voluntario_contacto: draftSocio.estudio?.voluntario_contacto || null,
+          fecha_estudio: gestionData.fecha_estudio || draftSocio.estudio?.fecha_estudio || null,
+          status,
+
+          entorno: draftTecnica.entorno || null,
+          control_tronco: draftTecnica.control_tronco || null,
+          control_cabeza: draftTecnica.control_cabeza || null,
+          control_de_piernas: draftTecnica.control_de_piernas || null,
+          observaciones_posturales: draftTecnica.observaciones_posturales || null,
+          altura_total_in: draftTecnica.altura_total_in || null,
+          peso_kg: draftTecnica.peso_kg || null,
+          medida_cabeza_asiento: draftTecnica.medida_cabeza_asiento || null,
+          medida_hombro_asiento: draftTecnica.medida_hombro_asiento || null,
+          medida_prof_asiento: draftTecnica.medida_prof_asiento || null,
+          medida_rodilla_talon: draftTecnica.medida_rodilla_talon || null,
+          medida_ancho_cadera: draftTecnica.medida_ancho_cadera || null,
+          unidad_medida: draftTecnica.unidad_medida || null,
+          unidad_peso_captura: draftTecnica.unidad_peso_captura || null,
+          foto_path: draftTecnica.foto_path || null,
+          foto_url: draftTecnica.foto_url || null,
+
+          entidad_solicitante: gestionData.entidad_solicitante || null,
+          prioridad: gestionData.prioridad || null,
+          justificacion: gestionData.justificacion || null,
+
+          ...mapTutor("tutor1", tutor1),
+          ...mapTutor("tutor2", tutor2),
+        };
+      }
+
       // -- Handler: REGRESAR --
       function regresarGestion() {
+        const formatErrors = collectDraftFormatErrors("Gestión", "gestion.html");
+        if (formatErrors.length > 0) {
+          showValidationModal(formatErrors, {
+            title: "Revisá el formato antes de regresar",
+            description: "Podés dejar campos vacíos, pero los campos con datos deben tener un formato válido.",
+          });
+          return;
+        }
+
         const formData = getGestionFormData();
         localStorage.setItem("draft_gestion", JSON.stringify(formData));
         window.location.href = "tecnica.html";
@@ -444,6 +540,15 @@
 
       // -- Guardar Borrador Maestro desde Gestión --
       async function guardarBorradorDesdeGestion() {
+        const formatErrors = collectDraftFormatErrors("Gestión", "gestion.html");
+        if (formatErrors.length > 0) {
+          showValidationModal(formatErrors, {
+            title: "Revisá el formato antes de guardar",
+            description: "Podés guardar borradores incompletos, pero primero corregí los campos que ya tienen un valor inválido.",
+          });
+          return;
+        }
+
         const btn = document.getElementById("btn-guardar-borrador-gestion");
         const originalText = btn?.textContent || "Guardar Borrador";
         if (btn) {
@@ -454,7 +559,10 @@
         try {
           const session = JSON.parse(localStorage.getItem("session") || "null");
           if (!session?.token) {
-            alert("Debes iniciar sesión para guardar el borrador.");
+            showValidationModal([{ form: "Sesión", label: "Inicio de sesión", message: "Debes iniciar sesión para guardar el borrador.", url: "../login.html" }], {
+              title: "Sesión requerida",
+              description: "Iniciá sesión nuevamente para continuar.",
+            });
             return;
           }
 
@@ -467,58 +575,8 @@
           const draftSocio = draftSocioRaw ? JSON.parse(draftSocioRaw) : {};
           const draftTecnica = draftTecnicaRaw ? JSON.parse(draftTecnicaRaw) : {};
 
-          // 3. Armar payload para el backend
-          const estudioId = localStorage.getItem("estudio_id");
-          const solicitudId = localStorage.getItem("solicitud_id");
-          const beneficiarioId = localStorage.getItem("beneficiario_id");
-
-          const payload = {
-            estudio_id: estudioId ? parseInt(estudioId, 10) : null,
-            solicitud_id: solicitudId ? parseInt(solicitudId, 10) : null,
-            beneficiario_id: beneficiarioId ? parseInt(beneficiarioId, 10) : null,
-            region_id: draftSocio.region_id || null,
-            sede: draftSocio.sede || null,
-            ciudad_registro: draftSocio.ciudad_registro || null,
-            // Beneficiario (desde socioeconomico)
-            nombres: draftSocio.beneficiario?.nombres || null,
-            apellido_paterno: draftSocio.beneficiario?.apellido_paterno || null,
-            apellido_materno: draftSocio.beneficiario?.apellido_materno || null,
-            fecha_nacimiento: draftSocio.beneficiario?.fecha_nacimiento || null,
-            diagnostico: draftSocio.beneficiario?.diagnostico || null,
-            calle: draftSocio.beneficiario?.calle || null,
-            num_ext: draftSocio.beneficiario?.num_ext || null,
-            num_int: draftSocio.beneficiario?.num_int || null,
-            colonia: draftSocio.beneficiario?.colonia || null,
-            ciudad: draftSocio.beneficiario?.ciudad || null,
-            estado_codigo: draftSocio.beneficiario?.estado_codigo || null,
-            sexo: draftSocio.beneficiario?.sexo || null,
-            telefonos: draftSocio.beneficiario?.telefonos || null,
-            email: draftSocio.beneficiario?.email || null,
-            // Estudio (desde socioeconomico)
-            tuvo_silla_previa: draftSocio.estudio?.tuvo_silla_previa || null,
-            como_obtuvo_silla: draftSocio.estudio?.como_obtuvo_silla || null,
-            elaboro_estudio: draftSocio.estudio?.elaboro_estudio || null,
-            fecha_estudio: draftSocio.estudio?.fecha_estudio || null,
-            status: "borrador",
-            // Solicitud (técnica)
-            entorno: draftTecnica.entorno || null,
-            control_tronco: draftTecnica.control_tronco || null,
-            control_cabeza: draftTecnica.control_cabeza || null,
-            control_de_piernas: draftTecnica.control_de_piernas || null,
-            observaciones_posturales: draftTecnica.observaciones_posturales || null,
-            altura_total_in: draftTecnica.altura_total_in || null,
-            peso_kg: draftTecnica.peso_kg || null,
-            medida_cabeza_asiento: draftTecnica.medida_cabeza_asiento || null,
-            medida_hombro_asiento: draftTecnica.medida_hombro_asiento || null,
-            medida_prof_asiento: draftTecnica.medida_prof_asiento || null,
-            medida_rodilla_talon: draftTecnica.medida_rodilla_talon || null,
-            medida_ancho_cadera: draftTecnica.medida_ancho_cadera || null,
-            unidad_medida: draftTecnica.unidad_medida || null,
-            // Gestion (actual)
-            entidad_solicitante: gestionData.entidad_solicitante || null,
-            prioridad: gestionData.prioridad || null,
-            justificacion: gestionData.justificacion || null,
-          };
+          // 3. Armar payload maestro para el backend
+          const payload = buildGuardarBorradorPayload(draftSocio, draftTecnica, gestionData, "borrador");
 
           const res = await fetch("/api/guardar-borrador", {
             method: "POST",
@@ -534,21 +592,21 @@
             if (data.estudio_id) localStorage.setItem("estudio_id", data.estudio_id);
             if (data.solicitud_id) localStorage.setItem("solicitud_id", data.solicitud_id);
             if (data.beneficiario_id) localStorage.setItem("beneficiario_id", data.beneficiario_id);
-            alert("El borrador ha sido guardado con éxito.");
+            showSuccessToast("El borrador ha sido guardado con éxito.", null);
           } else {
             const errData = await res.json().catch(() => ({}));
             if (res.status === 422 && errData.detail) {
               const errors = Array.isArray(errData.detail)
                 ? errData.detail.map((e) => e.msg || e.message || JSON.stringify(e)).join("; ")
                 : errData.detail;
-              alert("No se pudo guardar el borrador. Verifica los campos: " + errors);
+              showValidationModal([{ form: "Gestión", label: "Borrador", message: "No se pudo guardar el borrador. Verifica los campos: " + errors, url: "gestion.html" }]);
             } else {
-              alert("Ocurrió un error al guardar el borrador. Intenta nuevamente más tarde.");
+              showValidationModal([{ form: "Gestión", label: "Borrador", message: "Ocurrió un error al guardar el borrador. Intenta nuevamente más tarde.", url: "gestion.html" }]);
             }
           }
         } catch (err) {
           console.error("Error guardando borrador:", err);
-          alert("Ocurrió un error al guardar el borrador. Intenta nuevamente más tarde.");
+          showValidationModal([{ form: "Gestión", label: "Borrador", message: "Ocurrió un error al guardar el borrador. Intenta nuevamente más tarde.", url: "gestion.html" }]);
         } finally {
           if (btn) {
             btn.disabled = false;
@@ -575,6 +633,123 @@
             if (redirectUrl) window.location.href = redirectUrl;
           }, 300);
         }, 1800);
+      }
+
+      function getFieldLabel(input) {
+        if (!input || !input.closest) return (input?.name || input?.id || "Campo").replace(/_/g, " ");
+        const explicitLabel = input.id ? document.querySelector(`label[for="${input.id}"]`) : null;
+        if (explicitLabel) return explicitLabel.textContent.replace(/\s+/g, " ").trim();
+        const wrapperLabel = input.closest("label") || input.closest("div")?.querySelector("label");
+        if (wrapperLabel) return wrapperLabel.textContent.replace(/\s+/g, " ").trim();
+        return (input.name || input.id || "Campo").replace(/_/g, " ");
+      }
+
+      function getFieldFormatMessage(input, fallback) {
+        if (input.validity?.typeMismatch) return `${getFieldLabel(input)} tiene un formato inválido`;
+        if (input.validity?.patternMismatch) return `${getFieldLabel(input)} contiene caracteres o formato no permitido`;
+        if (input.validity?.rangeUnderflow || input.validity?.rangeOverflow) return `${getFieldLabel(input)} está fuera del rango permitido`;
+        if (input.validity?.tooShort) return `${getFieldLabel(input)} no cumple la longitud mínima`;
+        if (input.validity?.tooLong) return `${getFieldLabel(input)} excede la longitud máxima`;
+        return fallback || `${getFieldLabel(input)} tiene un formato inválido`;
+      }
+
+      function collectDraftFormatErrors(formName, url) {
+        const form = document.querySelector("form");
+        const errorEl = document.getElementById("error-msg");
+        if (!form) return [];
+        if (errorEl) {
+          errorEl.classList.add("hidden");
+          errorEl.textContent = "";
+        }
+        SR_Validations.clearAllFieldErrors(form);
+        const errorsByField = new Map();
+        SR_Validations.validateHTML5Constraints(form).forEach(({ id, message }) => {
+          errorsByField.set(id, { form: formName, label: getFieldLabel(form.querySelector(`[name="${id}"]`) || { name: id }), message, url });
+        });
+        form.querySelectorAll('input:not([type="radio"]):not([type="checkbox"]), select, textarea').forEach((input) => {
+          const value = (input.value || "").trim();
+          if (!input.name || input.disabled || input.readOnly || !value) return;
+          if (input.validity && !input.validity.valid && !input.validity.valueMissing && !errorsByField.has(input.name)) {
+            errorsByField.set(input.name, { form: formName, label: getFieldLabel(input), message: getFieldFormatMessage(input), url });
+          }
+        });
+        const errors = Array.from(errorsByField.entries());
+        errors.forEach(([fieldName, err]) => SR_Validations.showFieldError(fieldName, err.message));
+        return errors.map(([, err]) => err);
+      }
+
+      function showValidationModal(errors, options = {}) {
+        if (!errors?.length) return;
+        const title = options.title || "Revisá estos datos";
+        const description = options.description || "Encontramos campos que necesitan corrección antes de continuar.";
+        const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#039;",
+        }[char]));
+        let modal = document.getElementById("validation-modal");
+        if (!modal) {
+          modal = document.createElement("div");
+          modal.id = "validation-modal";
+          modal.className = "fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/60 p-4";
+          modal.innerHTML = `
+            <div class="w-full max-w-2xl rounded-2xl bg-white shadow-2xl">
+              <div class="border-b border-slate-200 p-5">
+                <h2 id="validation-modal-title" class="text-lg font-black text-slate-900"></h2>
+                <p id="validation-modal-description" class="mt-1 text-sm text-slate-600"></p>
+              </div>
+              <div id="validation-modal-body" class="max-h-[60vh] overflow-y-auto p-5"></div>
+              <div class="flex flex-col gap-3 border-t border-slate-200 p-5 sm:flex-row sm:justify-end">
+                <button id="validation-modal-close" type="button" class="rounded-lg bg-slate-900 px-5 py-3 text-sm font-bold uppercase tracking-wide text-white">Entendido</button>
+              </div>
+            </div>`;
+          document.body.appendChild(modal);
+          modal.querySelector("#validation-modal-close").addEventListener("click", () => modal.classList.add("hidden"));
+        }
+        const grouped = errors.reduce((acc, err) => {
+          const key = err.form || "Formulario";
+          acc[key] = acc[key] || [];
+          acc[key].push(err);
+          return acc;
+        }, {});
+        modal.querySelector("#validation-modal-title").textContent = title;
+        modal.querySelector("#validation-modal-description").textContent = description;
+        modal.querySelector("#validation-modal-body").innerHTML = Object.entries(grouped).map(([form, items]) => `
+          <section class="mb-5 last:mb-0">
+            <div class="mb-2 flex items-center justify-between gap-3">
+              <h3 class="font-black uppercase tracking-wide text-slate-800">${escapeHtml(form)}</h3>
+              ${items[0].url ? `<button type="button" data-url="${escapeHtml(items[0].url)}" class="validation-jump rounded-lg border border-primary px-3 py-2 text-xs font-bold uppercase text-primary">Ir al formulario</button>` : ""}
+            </div>
+            <ul class="space-y-2 text-sm text-slate-700">${items.map((item) => `<li><strong>${escapeHtml(item.label || "Campo")}:</strong> ${escapeHtml(item.message)}</li>`).join("")}</ul>
+          </section>`).join("");
+        modal.querySelectorAll(".validation-jump").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const url = btn.getAttribute("data-url");
+            if (url) window.location.href = url;
+          });
+        });
+        modal.classList.remove("hidden");
+        modal.classList.add("flex");
+      }
+
+      function collectGestionFinalErrors() {
+        const f = document.querySelector("form");
+        const fd = new FormData(f);
+        const get = (name) => fd.get(name) || "";
+        const errors = [];
+
+        if (!get("silla_previa")) errors.push({ form: "Gestión", label: "¿El paciente ha tenido silla previamente?", message: "Este campo es obligatorio", url: "gestion.html" });
+        if (get("silla_previa") === "Sí" && !get("como_obtuvo_silla")) errors.push({ form: "Gestión", label: "¿Cómo la obtuvo?", message: "Este campo es obligatorio cuando ya tuvo silla", url: "gestion.html" });
+        if (!get("fecha_estudio").trim()) errors.push({ form: "Gestión", label: "Fecha del estudio", message: "Este campo es obligatorio", url: "gestion.html" });
+        if (!get("entidad_solicitante").trim()) errors.push({ form: "Gestión", label: "Entidad Solicitante", message: "Este campo es obligatorio", url: "gestion.html" });
+        if (!document.querySelector('[name="prioridad"]:checked')) errors.push({ form: "Gestión", label: "Prioridad", message: "Este campo es obligatorio", url: "gestion.html" });
+        if (f.querySelector('[name="tiene_justificacion"]')?.checked && !(f.querySelector('[name="justificacion"]')?.value || "").trim()) {
+          errors.push({ form: "Gestión", label: "Justificación", message: "Este campo es obligatorio cuando se marca justificación", url: "gestion.html" });
+        }
+
+        return errors.concat(collectDraftFormatErrors("Gestión", "gestion.html"));
       }
 
       // -- Validación del formulario de gestión (sin enviar al backend) ----
@@ -779,10 +954,12 @@
 
         try {
           // 1. Validate gestion form fields client-side
-          if (!validarFormularioGestion()) {
-            showErrorToast(
-              "No es posible finalizar el registro. Completa todos los campos requeridos."
-            );
+          const gestionErrors = collectGestionFinalErrors();
+          if (gestionErrors.length > 0) {
+            showValidationModal(gestionErrors, {
+              title: "No se puede finalizar todavía",
+              description: "Para finalizar sí necesitamos todos los campos obligatorios y formatos correctos. Corregí estos puntos y volvé a intentar.",
+            });
             if (btn) { btn.disabled = false; btn.textContent = "Finalizar Registro"; }
             return;
           }
@@ -795,12 +972,18 @@
           const draftSocioRaw = localStorage.getItem("draft_socioeconomico");
           const draftTecnicaRaw = localStorage.getItem("draft_tecnica");
           if (!draftSocioRaw) {
-            showErrorToast("No se encontró el estudio socioeconómico. Complete el paso 1.");
+            showValidationModal([{ form: "Socioeconómico", label: "Paso 1", message: "No se encontró el estudio socioeconómico. Complete el paso 1.", url: "socioeconomico.html" }], {
+              title: "Falta información para finalizar",
+              description: "Antes de finalizar, completá o recuperá los pasos anteriores.",
+            });
             if (btn) { btn.disabled = false; btn.textContent = "Finalizar Registro"; }
             return;
           }
           if (!draftTecnicaRaw) {
-            showErrorToast("No se encontró la solicitud técnica. Complete el paso 2.");
+            showValidationModal([{ form: "Técnica", label: "Paso 2", message: "No se encontró la solicitud técnica. Complete el paso 2.", url: "tecnica.html" }], {
+              title: "Falta información para finalizar",
+              description: "Antes de finalizar, completá o recuperá los pasos anteriores.",
+            });
             if (btn) { btn.disabled = false; btn.textContent = "Finalizar Registro"; }
             return;
           }
@@ -808,121 +991,35 @@
           const draftSocio = JSON.parse(draftSocioRaw);
           const draftTecnica = JSON.parse(draftTecnicaRaw);
 
-          // 4. Prepare estudio payload
-          const estudioId = localStorage.getItem("estudio_id");
-          let estudioPayload;
-          if (estudioId) {
-            // PATCH: existing estudio — top-level fields only
-            estudioPayload = {
-              ...(draftSocio.estudio || {}),
-              beneficiario: draftSocio.beneficiario,
-              tutores: draftSocio.tutores,
-            };
-          } else {
-            // POST: new estudio — nested structure
-            estudioPayload = {
-              region_id: draftSocio.region_id,
-              sede: draftSocio.sede,
-              ciudad_registro: draftSocio.ciudad_registro,
-              beneficiario: draftSocio.beneficiario,
-              tutores: draftSocio.tutores,
-              estudio: draftSocio.estudio,
-            };
-          }
+          // 4. Consolidar TODO el borrador usando el endpoint maestro.
+          // Evitamos PATCH /api/estudios/{id}: ese endpoint tiene semántica de completar
+          // y puede devolver 422 si aún faltan campos antes de consolidar técnica/gestión.
+          const payload = buildGuardarBorradorPayload(draftSocio, draftTecnica, gestionData, "borrador");
+          const guardarRes = await fetch("/api/guardar-borrador", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: "Bearer " + session.token,
+            },
+            body: JSON.stringify(payload),
+          });
 
-          // 5. POST or PATCH estudio
-          let estudioRes, estudioData;
-          if (estudioId) {
-            estudioRes = await fetch(`/api/estudios/${estudioId}`, {
-              method: "PATCH",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: "Bearer " + session.token,
-              },
-              body: JSON.stringify(estudioPayload),
-            });
-          } else {
-            estudioRes = await fetch("/api/estudios", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: "Bearer " + session.token,
-              },
-              body: JSON.stringify(estudioPayload),
-            });
-          }
-
-          if (!estudioRes.ok) {
-            const errData = await estudioRes.json().catch(() => ({}));
-            console.error("POST estudio error:", estudioRes.status, errData);
-            showErrorToast(errData.detail || `Error al guardar el estudio socioeconómico (${estudioRes.status}).`);
+          if (!guardarRes.ok) {
+            const errData = await guardarRes.json().catch(() => ({}));
+            console.error("POST guardar-borrador error:", guardarRes.status, errData);
+            showValidationModal([{ form: "Registro", label: "Consolidación", message: errData.detail || `Error al consolidar el borrador (${guardarRes.status}).`, url: "gestion.html" }]);
             if (btn) { btn.disabled = false; btn.textContent = "Finalizar Registro"; }
             return;
           }
-          estudioData = await estudioRes.json();
-          const finalEstudioId = estudioData.estudio_id || estudioId;
-          if (estudioData.estudio_id) localStorage.setItem("estudio_id", estudioData.estudio_id);
-          if (estudioData.beneficiario_id) localStorage.setItem("beneficiario_id", estudioData.beneficiario_id);
 
-          // 6. Prepare solicitud payload (merge tecnica + gestion)
-          const beneficiarioId = parseInt(localStorage.getItem("beneficiario_id"), 10);
-          const solicitudPayload = {
-            beneficiario_id: beneficiarioId,
-            entorno: draftTecnica.entorno,
-            control_tronco: draftTecnica.control_tronco,
-            control_cabeza: draftTecnica.control_cabeza,
-            control_de_piernas: draftTecnica.control_de_piernas,
-            observaciones_posturales: draftTecnica.observaciones_posturales,
-            altura_total_in: draftTecnica.altura_total_in,
-            peso_kg: draftTecnica.peso_kg,
-            medida_cabeza_asiento: draftTecnica.medida_cabeza_asiento,
-            medida_hombro_asiento: draftTecnica.medida_hombro_asiento,
-            medida_prof_asiento: draftTecnica.medida_prof_asiento,
-            medida_rodilla_talon: draftTecnica.medida_rodilla_talon,
-            medida_ancho_cadera: draftTecnica.medida_ancho_cadera,
-            unidad_medida: draftTecnica.unidad_medida,
-            unidad_peso_captura: draftTecnica.unidad_peso_captura,
-            entidad_solicitante: gestionData.entidad_solicitante,
-            prioridad: gestionData.prioridad,
-            justificacion: gestionData.justificacion,
-            status: "borrador",
-          };
+          const guardarData = await guardarRes.json();
+          const finalEstudioId = guardarData.estudio_id || localStorage.getItem("estudio_id");
+          const finalSolicitudId = guardarData.solicitud_id || localStorage.getItem("solicitud_id");
+          if (guardarData.estudio_id) localStorage.setItem("estudio_id", guardarData.estudio_id);
+          if (guardarData.solicitud_id) localStorage.setItem("solicitud_id", guardarData.solicitud_id);
+          if (guardarData.beneficiario_id) localStorage.setItem("beneficiario_id", guardarData.beneficiario_id);
 
-          // 7. POST or PATCH solicitud
-          const solicitudId = localStorage.getItem("solicitud_id");
-          let solicitudRes, solicitudData;
-          if (solicitudId) {
-            solicitudRes = await fetch(`/api/solicitudes/${solicitudId}`, {
-              method: "PATCH",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: "Bearer " + session.token,
-              },
-              body: JSON.stringify(solicitudPayload),
-            });
-          } else {
-            solicitudRes = await fetch("/api/solicitudes", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: "Bearer " + session.token,
-              },
-              body: JSON.stringify(solicitudPayload),
-            });
-          }
-
-          if (!solicitudRes.ok) {
-            const errData = await solicitudRes.json().catch(() => ({}));
-            console.error("POST solicitud error:", solicitudRes.status, errData);
-            showErrorToast(errData.detail || `Error al guardar la solicitud técnica (${solicitudRes.status}).`);
-            if (btn) { btn.disabled = false; btn.textContent = "Finalizar Registro"; }
-            return;
-          }
-          solicitudData = await solicitudRes.json();
-          const finalSolicitudId = solicitudData.solicitud_id || solicitudId;
-          if (solicitudData.solicitud_id) localStorage.setItem("solicitud_id", solicitudData.solicitud_id);
-
-          // 8. Finalizar registro
+          // 5. Finalizar registro
           const finalizarRes = await fetch("/api/finalizar-registro", {
             method: "POST",
             headers: {
@@ -958,18 +1055,54 @@
           if (finalizarRes.status === 422) {
             const detail = errData.detail || {};
             if (detail.missing && Array.isArray(detail.missing)) {
-              const fields = detail.missing.map((m) => `${m.form}.${m.field}`).join(", ");
-              showErrorToast(`No es posible finalizar el registro. Faltan campos: ${fields}`);
+              const estudioGestionFields = new Set(["fecha_estudio", "tuvo_silla_previa", "como_obtuvo_silla"]);
+              const resolveMissingUrl = (item) => {
+                if (item.form === "estudio" && estudioGestionFields.has(item.field)) return "gestion.html";
+                return formUrl[item.form] || "gestion.html";
+              };
+              const resolveMissingLabel = (item) => {
+                if (item.form === "estudio" && estudioGestionFields.has(item.field)) return "Gestión";
+                return formLabel[item.form] || item.form || "Registro";
+              };
+              const formUrl = {
+                beneficiario: "socioeconomico.html",
+                estudio: "socioeconomico.html",
+                socioeconomico: "socioeconomico.html",
+                tutor1: "socioeconomico.html",
+                tutor2: "socioeconomico.html",
+                solicitud: "tecnica.html",
+                tecnica: "tecnica.html",
+                gestion: "gestion.html",
+              };
+              const formLabel = {
+                beneficiario: "Socioeconómico",
+                estudio: "Socioeconómico",
+                socioeconomico: "Socioeconómico",
+                tutor1: "Socioeconómico",
+                tutor2: "Socioeconómico",
+                solicitud: "Técnica",
+                tecnica: "Técnica",
+                gestion: "Gestión",
+              };
+              showValidationModal(detail.missing.map((m) => ({
+                form: resolveMissingLabel(m),
+                label: m.label || m.field || "Campo requerido",
+                message: "Este campo es obligatorio para finalizar",
+                url: resolveMissingUrl(m),
+              })), {
+                title: "No se puede finalizar todavía",
+                description: "El servidor confirmó que faltan estos campos. Andá al formulario correspondiente y completalos.",
+              });
             } else {
-              showErrorToast("No es posible finalizar el registro. Completa todos los campos requeridos.");
+              showValidationModal([{ form: "Registro", label: "Finalización", message: "No es posible finalizar el registro. Completa todos los campos requeridos.", url: "gestion.html" }]);
             }
           } else if (finalizarRes.status === 403) {
-            showErrorToast("No tiene permisos para finalizar este registro.");
+            showValidationModal([{ form: "Sesión", label: "Permisos", message: "No tiene permisos para finalizar este registro.", url: "gestion.html" }]);
           } else {
-            showErrorToast(`Ocurrió un error al finalizar el registro (${finalizarRes.status}). Intenta nuevamente más tarde.`);
+            showValidationModal([{ form: "Registro", label: "Finalización", message: `Ocurrió un error al finalizar el registro (${finalizarRes.status}). Intenta nuevamente más tarde.`, url: "gestion.html" }]);
           }
         } catch (err) {
-          showErrorToast("Ocurrió un error al finalizar el registro. Intenta nuevamente más tarde.");
+          showValidationModal([{ form: "Registro", label: "Finalización", message: "Ocurrió un error al finalizar el registro. Intenta nuevamente más tarde.", url: "gestion.html" }]);
           console.error("Error in finalizarRegistro:", err);
         } finally {
           if (btn) {
