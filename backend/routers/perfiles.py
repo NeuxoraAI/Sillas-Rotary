@@ -83,23 +83,25 @@ def _get_heatmap_data(db: _DBAdapter, usuario_id: int, year: int | None = None) 
         year: Optional calendar year to filter by. Defaults to last 365 days
               if not provided (backward-compatible).
     """
+    # DATE() on a TIMESTAMPTZ truncates using the session TimeZone; force UTC so
+    # buckets always match the UTC range filter and the frontend's UTC day keys.
     if year is not None:
         start = datetime(year, 1, 1, tzinfo=timezone.utc)
         next_start = datetime(year + 1, 1, 1, tzinfo=timezone.utc)
         rows = db.execute(
-            "SELECT DATE(created_at) AS date, COUNT(*) AS count "
+            "SELECT DATE(created_at AT TIME ZONE 'UTC') AS date, COUNT(*) AS count "
             "FROM estudios_socioeconomicos "
             "WHERE usuario_id = %s AND created_at >= %s AND created_at < %s "
-            "GROUP BY DATE(created_at) "
+            "GROUP BY DATE(created_at AT TIME ZONE 'UTC') "
             "ORDER BY date",
             (usuario_id, start, next_start),
         ).fetchall()
     else:
         rows = db.execute(
-            "SELECT DATE(created_at) AS date, COUNT(*) AS count "
+            "SELECT DATE(created_at AT TIME ZONE 'UTC') AS date, COUNT(*) AS count "
             "FROM estudios_socioeconomicos "
             "WHERE usuario_id = %s AND created_at >= NOW() - INTERVAL '1 year' "
-            "GROUP BY DATE(created_at) "
+            "GROUP BY DATE(created_at AT TIME ZONE 'UTC') "
             "ORDER BY date",
             (usuario_id,),
         ).fetchall()
@@ -123,9 +125,11 @@ def get_my_perfil(
 
     stats = _get_user_stats(db, user.usuario_id)
 
-    # Get last activity date (most recent created or resumed/updated estudio)
+    # Get last activity date (most recent created or resumed/updated estudio).
+    # COALESCE: GREATEST returns NULL if any argument is NULL, which would make
+    # MAX() skip rows whose updated_at was never backfilled.
     last_activity_row = db.execute(
-        "SELECT MAX(GREATEST(created_at, updated_at)) AS last_activity_date "
+        "SELECT MAX(GREATEST(created_at, COALESCE(updated_at, created_at))) AS last_activity_date "
         "FROM estudios_socioeconomicos WHERE usuario_id = %s",
         (user.usuario_id,),
     ).fetchone()
