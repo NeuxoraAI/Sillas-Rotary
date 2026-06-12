@@ -528,12 +528,32 @@ footer a:hover {
 }
 
 .login-card .relative > .material-symbols-outlined {
-  animation: icon-breathe 7s ease-in-out infinite;
+  animation: icon-breathe 4.5s ease-in-out infinite;
 }
 
 .login-card .relative:focus-within > .material-symbols-outlined {
-  animation: icon-wiggle 0.55s cubic-bezier(0.22, 1.2, 0.36, 1) 1;
+  animation: icon-wiggle 0.6s cubic-bezier(0.22, 1.2, 0.36, 1) 1;
+  transform: translateY(-50%) scale(1.18);
   color: var(--c-orange);
+  transition: transform 0.2s ease;
+}
+
+/* The heart-wheelchair emblem floats and beats like a heart */
+@keyframes emblem-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-5px); }
+}
+@keyframes emblem-beat {
+  0%, 82%, 100% { transform: scale(1); }
+  86%           { transform: scale(1.09); }
+  90%           { transform: scale(0.98); }
+  94%           { transform: scale(1.06); }
+}
+.login-icon-wrap {
+  animation: emblem-float 4s ease-in-out infinite;
+}
+.login-icon-wrap .login-center-img {
+  animation: emblem-beat 3.2s ease-in-out 1s infinite;
 }
 
 /* The padlock peeks open while the password is visible */
@@ -543,7 +563,9 @@ footer a:hover {
 
 @media (prefers-reduced-motion: reduce) {
   .login-card .relative > .material-symbols-outlined,
-  .login-card .relative:focus-within > .material-symbols-outlined {
+  .login-card .relative:focus-within > .material-symbols-outlined,
+  .login-icon-wrap,
+  .login-icon-wrap .login-center-img {
     animation: none;
   }
 }

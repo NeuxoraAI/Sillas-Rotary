@@ -724,3 +724,77 @@ html.dark .logo-hope-haven,
 html.dark .logo-rotary {
   mix-blend-mode: normal;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Delight micro-animations (profiles, panels)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Icon chips and avatars pop in on page load */
+@keyframes sr-chip-pop {
+  0%   { transform: scale(0.4); opacity: 0; }
+  70%  { transform: scale(1.12); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.topbar-icon,
+#profile-avatar,
+#header-avatar {
+  animation: sr-chip-pop 0.5s cubic-bezier(0.22, 1.4, 0.36, 1) 0.15s both;
+}
+
+/* Topbar icon and avatars wiggle on hover */
+@keyframes sr-icon-wiggle {
+  0%   { transform: rotate(0); }
+  30%  { transform: rotate(-10deg) scale(1.1); }
+  60%  { transform: rotate(8deg) scale(1.06); }
+  100% { transform: rotate(0) scale(1); }
+}
+.topbar-icon:hover,
+#profile-avatar:hover,
+#header-avatar:hover {
+  animation: sr-icon-wiggle 0.5s ease-in-out 1;
+}
+
+/* Sidebar / nav icons nudge forward on hover */
+.nav-link .material-symbols-outlined {
+  transition: transform 0.18s ease;
+}
+.nav-link:hover .material-symbols-outlined {
+  transform: translateX(3px) scale(1.12);
+}
+
+/* Live status dot: soft green pulse (e.g. "Perfil activo") */
+@keyframes sr-dot-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.45); }
+  70%  { box-shadow: 0 0 0 5px rgba(34, 197, 94, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+}
+.status-dot {
+  animation: sr-dot-pulse 2s ease-out infinite;
+}
+
+/* Stat numbers get a tiny celebratory pop when the count-up lands */
+@keyframes sr-stat-pop {
+  0%   { transform: scale(1); }
+  45%  { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
+.sr-stat-pop {
+  display: inline-block;
+  animation: sr-stat-pop 0.35s cubic-bezier(0.22, 1.2, 0.36, 1) 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .topbar-icon,
+  #profile-avatar,
+  #header-avatar,
+  .topbar-icon:hover,
+  #profile-avatar:hover,
+  #header-avatar:hover,
+  .status-dot,
+  .sr-stat-pop {
+    animation: none;
+  }
+  .nav-link:hover .material-symbols-outlined {
+    transform: none;
+  }
+}
