@@ -87,7 +87,8 @@
 </head>
   <body class="font-display min-h-screen flex">
     <!-- Sidebar -->
-    <aside class="w-60 min-h-screen bg-sidebar border-r border-slate-200 shadow-sm flex flex-col shrink-0 hidden md:flex">
+    <div id="sidebar-backdrop" class="hidden fixed inset-0 z-40 bg-slate-900/50 md:hidden"></div>
+    <aside id="admin-sidebar" class="w-60 min-h-screen bg-sidebar border-r border-slate-200 shadow-sm flex flex-col shrink-0 overflow-y-auto fixed inset-y-0 left-0 z-50 -translate-x-full transition-transform duration-200 md:static md:translate-x-0">
       <div class="px-5 py-6 border-b border-slate-200">
         <div class="flex items-center gap-3">
           <div class="w-9 h-9 bg-white rounded-xl flex items-center justify-center overflow-hidden shrink-0 border border-slate-200">
@@ -132,7 +133,18 @@
     <!-- Main -->
     <div class="flex-1 flex flex-col min-w-0">
       <header class="md:hidden bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between">
-        <p class="font-bold text-sm" style="color: var(--c-title);">Panel Admin — Beneficiarios</p>
+        <div class="flex items-center gap-3">
+          <button
+            id="btn-sidebar-toggle"
+            class="text-slate-500 hover:text-ug-orange-pure transition-colors"
+            aria-label="Abrir menú"
+            aria-expanded="false"
+            aria-controls="admin-sidebar"
+          >
+            <span class="material-symbols-outlined">menu</span>
+          </button>
+          <p class="font-bold text-sm" style="color: var(--c-title);">Panel Admin — Beneficiarios</p>
+        </div>
         <button id="btn-logout-mobile" class="text-slate-400 hover:text-ug-orange-pure transition-colors">
           <span class="material-symbols-outlined">logout</span>
         </button>
@@ -2387,6 +2399,33 @@
 
       // Search debounce
       inputSearch.addEventListener("input", _debounce(function () { state.page = 1; loadBeneficiarios(); }, 400));
+
+      // Mobile sidebar (hamburger) toggle
+      (function () {
+        const sidebar = document.getElementById("admin-sidebar");
+        const backdrop = document.getElementById("sidebar-backdrop");
+        const toggle = document.getElementById("btn-sidebar-toggle");
+        if (!sidebar || !backdrop || !toggle) return;
+
+        function openSidebar() {
+          sidebar.classList.remove("-translate-x-full");
+          backdrop.classList.remove("hidden");
+          toggle.setAttribute("aria-expanded", "true");
+        }
+        function closeSidebar() {
+          sidebar.classList.add("-translate-x-full");
+          backdrop.classList.add("hidden");
+          toggle.setAttribute("aria-expanded", "false");
+        }
+        toggle.addEventListener("click", () => {
+          if (sidebar.classList.contains("-translate-x-full")) openSidebar();
+          else closeSidebar();
+        });
+        backdrop.addEventListener("click", closeSidebar);
+        document.addEventListener("keydown", (event) => {
+          if (event.key === "Escape") closeSidebar();
+        });
+      })();
     </script>
   </body>
 </html>
