@@ -617,6 +617,15 @@ def _create_borrador(
             ),
         ).fetchone()["id"]
 
+        # 3b. Register the volunteer capture for organizacion accounts
+        #     (mirrors POST /estudios behavior; only on first insert so
+        #     draft updates don't double-count)
+        if usuario.rol == "organizacion" and body.elaboro_estudio:
+            from routers.socioeconomico import _upsert_voluntario
+            _upsert_voluntario(
+                db, usuario.usuario_id, body.elaboro_estudio, body.voluntario_contacto
+            )
+
         # 4. INSERT solicitud
         solicitud_id = db.execute(
             """

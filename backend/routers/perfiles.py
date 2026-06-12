@@ -76,6 +76,59 @@ def _get_user_stats(db: _DBAdapter, usuario_id: int) -> dict:
     }
 
 
+def _get_org_user_ids(db: _DBAdapter, org_id: int) -> list[int]:
+    """Return every usuario_id whose captures count for an organization:
+    the org's own account (volunteer/guest captures run through it),
+    its leaders, and its members."""
+    rows = db.execute(
+        """
+        SELECT usuario_id FROM organizaciones WHERE id = %s AND usuario_id IS NOT NULL
+        UNION
+        SELECT ol.usuario_id FROM organizaciones_lideres ol WHERE ol.organizacion_id = %s
+        UNION
+        SELECT om.usuario_id FROM organizaciones_miembros om WHERE om.organizacion_id = %s
+        """,
+        (org_id, org_id, org_id),
+    ).fetchall()
+    return [r["usuario_id"] for r in rows]
+
+
+def _get_org_stats(db: _DBAdapter, user_ids: list[int]) -> dict:
+    """Aggregate capture stats across all of an organization's users."""
+    if not user_ids:
+        return {"total_capturas": 0, "this_month": 0, "completados": 0, "pendientes": 0}
+    now = datetime.now(timezone.utc)
+    row = db.execute(
+        "SELECT COUNT(*) AS total, "
+        "COUNT(*) FILTER (WHERE DATE_TRUNC('month', created_at) = DATE_TRUNC('month', %s::timestamptz)) AS this_month, "
+        "COUNT(*) FILTER (WHERE status = 'completo') AS completados, "
+        "COUNT(*) FILTER (WHERE status = 'borrador') AS pendientes "
+        "FROM estudios_socioeconomicos WHERE usuario_id = ANY(%s)",
+        (now, user_ids),
+    ).fetchone()
+    return {
+        "total_capturas": row["total"],
+        "this_month": row["this_month"],
+        "completados": row["completados"],
+        "pendientes": row["pendientes"],
+    }
+
+
+def _get_org_heatmap_data(db: _DBAdapter, user_ids: list[int]) -> list[dict]:
+    """Aggregate last-365-days heatmap across all of an organization's users."""
+    if not user_ids:
+        return []
+    rows = db.execute(
+        "SELECT DATE(created_at AT TIME ZONE 'UTC') AS date, COUNT(*) AS count "
+        "FROM estudios_socioeconomicos "
+        "WHERE usuario_id = ANY(%s) AND created_at >= NOW() - INTERVAL '1 year' "
+        "GROUP BY DATE(created_at AT TIME ZONE 'UTC') "
+        "ORDER BY date",
+        (user_ids,),
+    ).fetchall()
+    return [{"date": str(r["date"]), "count": r["count"]} for r in rows]
+
+
 def _get_heatmap_data(db: _DBAdapter, usuario_id: int, year: int | None = None) -> list[dict]:
     """Return [{date: str, count: int}] for a user's activity.
 
@@ -454,15 +507,9 @@ def list_organizaciones(
         ).fetchone()["count"]
         org["member_count"] = member_count
 
-        # Get total capturas for this org
-        if org.get("usuario_id"):
-            stats_row = db.execute(
-                "SELECT COUNT(*) AS count FROM estudios_socioeconomicos WHERE usuario_id = %s",
-                (org["usuario_id"],),
-            ).fetchone()
-            org["total_capturas"] = stats_row["count"]
-        else:
-            org["total_capturas"] = 0
+        # Total capturas = org account (volunteers) + leaders + members
+        org_user_ids = _get_org_user_ids(db, org["id"])
+        org["total_capturas"] = _get_org_stats(db, org_user_ids)["total_capturas"]
         result.append(org)
 
     return result
@@ -604,13 +651,11 @@ def get_organizacion(
     ).fetchall()
     result["miembros"] = [dict(m) for m in members]
 
-    # Get stats and heatmap for the org's usuario_id
-    if org["usuario_id"]:
-        result["stats"] = _get_user_stats(db, org["usuario_id"])
-        result["heatmap_data"] = _get_heatmap_data(db, org["usuario_id"])
-    else:
-        result["stats"] = {"total_capturas": 0, "this_month": 0}
-        result["heatmap_data"] = []
+    # Aggregate stats across the org account (volunteer captures),
+    # leaders, and members
+    org_user_ids = _get_org_user_ids(db, org_id)
+    result["stats"] = _get_org_stats(db, org_user_ids)
+    result["heatmap_data"] = _get_org_heatmap_data(db, org_user_ids)
 
     return result
 
@@ -780,16 +825,65 @@ def get_org_heatmap(
     db: Annotated[_DBAdapter, Depends(get_db)],
     user: Annotated[CurrentUser, Depends(require_auth)],
 ) -> list[dict]:
-    """Return aggregate heatmap data for an organization."""
+    """Return aggregate heatmap data for an organization (org account +
+    leaders + members)."""
     org = db.execute(
-        "SELECT usuario_id FROM organizaciones WHERE id = %s",
+        "SELECT id FROM organizaciones WHERE id = %s",
         (org_id,),
     ).fetchone()
     if org is None:
         raise HTTPException(status_code=404, detail="Organización no encontrada")
-    if org["usuario_id"] is None:
+    return _get_org_heatmap_data(db, _get_org_user_ids(db, org_id))
+
+
+@router.get("/organizaciones/{org_id}/beneficiarios")
+def get_org_beneficiarios(
+    org_id: int,
+    db: Annotated[_DBAdapter, Depends(get_db)],
+    user: Annotated[CurrentUser, Depends(require_auth)],
+) -> list[dict]:
+    """Beneficiaries captured by the organization: every estudio made by
+    the org account (volunteers), its leaders, or its members."""
+    org = db.execute(
+        "SELECT id FROM organizaciones WHERE id = %s",
+        (org_id,),
+    ).fetchone()
+    if org is None:
+        raise HTTPException(status_code=404, detail="Organización no encontrada")
+
+    user_ids = _get_org_user_ids(db, org_id)
+    if not user_ids:
         return []
-    return _get_heatmap_data(db, org["usuario_id"])
+
+    rows = db.execute(
+        """
+        SELECT
+            e.id AS estudio_id,
+            e.status,
+            e.created_at,
+            COALESCE(e.elaboro_estudio, u.nombre) AS elaboro_estudio,
+            b.nombre AS beneficiario_nombre,
+            b.folio
+        FROM estudios_socioeconomicos e
+        JOIN beneficiarios b ON b.id = e.beneficiario_id
+        LEFT JOIN usuarios u ON u.id = e.usuario_id
+        WHERE e.usuario_id = ANY(%s)
+        ORDER BY e.created_at DESC
+        """,
+        (user_ids,),
+    ).fetchall()
+
+    return [
+        {
+            "estudio_id": r["estudio_id"],
+            "beneficiario_nombre": r["beneficiario_nombre"],
+            "folio": r["folio"],
+            "status": r["status"],
+            "elaboro_estudio": r["elaboro_estudio"],
+            "fecha": r["created_at"].isoformat() if r["created_at"] else None,
+        }
+        for r in rows
+    ]
 
 
 @router.get("/organizaciones/{org_id}/voluntarios")

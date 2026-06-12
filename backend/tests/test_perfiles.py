@@ -573,9 +573,16 @@ class TestOrganizacionesCRUD:
     """Organization CRUD endpoints (admin only)."""
 
     def _create_org(self, client, admin_headers, nombre="Test Org Rotary"):
+        import uuid
+        email = f"org-{uuid.uuid4().hex[:10]}@test.com"
         return client.post(
             "/api/organizaciones",
-            json={"nombre": nombre, "direccion": "Dirección Test"},
+            json={
+                "nombre": nombre,
+                "direccion": "Dirección Test",
+                "email": email,
+                "password": "secret123!",
+            },
             headers=admin_headers,
         )
 
@@ -599,7 +606,7 @@ class TestOrganizacionesCRUD:
         assert res.status_code == 409
 
     def test_admin_lists_orgs(self, client, admin_headers):
-        """Admin can list all organizations."""
+        """Admin can list all organizations with aggregate fields."""
         self._create_org(client, admin_headers, "Org Alpha")
         self._create_org(client, admin_headers, "Org Beta")
 
@@ -607,45 +614,75 @@ class TestOrganizacionesCRUD:
         assert res.status_code == 200
         data = res.json()
         assert len(data) >= 2
+        for org in data:
+            assert "lideres" in org
+            assert "member_count" in org
+            assert "total_capturas" in org
 
     def test_admin_assigns_leader(self, client, admin_headers, capturista_user):
-        """Admin assigns a leader to an org."""
+        """Admin assigns a leader to an org via POST /lider."""
         res = self._create_org(client, admin_headers, "Leader Test Org")
         org_id = res.json()["id"]
 
-        res = client.patch(
+        res = client.post(
             f"/api/organizaciones/{org_id}/lider",
             json={"lider_usuario_id": capturista_user["id"]},
             headers=admin_headers,
         )
         assert res.status_code == 200
-        data = res.json()
-        assert data["lider_usuario_id"] == capturista_user["id"]
+
+        detail = client.get(f"/api/organizaciones/{org_id}", headers=admin_headers).json()
+        assert capturista_user["id"] in [l["id"] for l in detail["lideres"]]
 
     def test_admin_removes_leader(self, client, admin_headers, capturista_user):
-        """Admin removes a leader by setting to null."""
+        """Admin removes a leader via DELETE /lider/{usuario_id}."""
         res = self._create_org(client, admin_headers, "Remove Leader Org")
         org_id = res.json()["id"]
 
-        client.patch(
+        client.post(
             f"/api/organizaciones/{org_id}/lider",
             json={"lider_usuario_id": capturista_user["id"]},
             headers=admin_headers,
         )
-        res = client.patch(
-            f"/api/organizaciones/{org_id}/lider",
-            json={"lider_usuario_id": None},
+        res = client.delete(
+            f"/api/organizaciones/{org_id}/lider/{capturista_user['id']}",
             headers=admin_headers,
         )
         assert res.status_code == 200
-        assert res.json()["lider_usuario_id"] is None
+
+        detail = client.get(f"/api/organizaciones/{org_id}", headers=admin_headers).json()
+        assert capturista_user["id"] not in [l["id"] for l in detail["lideres"]]
+
+    def test_admin_adds_and_removes_member(self, client, admin_headers, capturista_user):
+        """Admin manages members via POST/DELETE /miembros."""
+        res = self._create_org(client, admin_headers, "Member Test Org")
+        org_id = res.json()["id"]
+
+        res = client.post(
+            f"/api/organizaciones/{org_id}/miembros",
+            json={"lider_usuario_id": capturista_user["id"]},
+            headers=admin_headers,
+        )
+        assert res.status_code == 200
+
+        detail = client.get(f"/api/organizaciones/{org_id}", headers=admin_headers).json()
+        assert capturista_user["id"] in [m["id"] for m in detail["miembros"]]
+
+        res = client.delete(
+            f"/api/organizaciones/{org_id}/miembros/{capturista_user['id']}",
+            headers=admin_headers,
+        )
+        assert res.status_code == 200
+
+        detail = client.get(f"/api/organizaciones/{org_id}", headers=admin_headers).json()
+        assert capturista_user["id"] not in [m["id"] for m in detail["miembros"]]
 
     def test_get_org_detail(self, client, admin_headers, capturista_user):
-        """GET /api/organizaciones/{id} returns org detail with stats."""
+        """GET /api/organizaciones/{id} returns detail with aggregate stats."""
         res = self._create_org(client, admin_headers, "Detail Test Org")
         org_id = res.json()["id"]
 
-        client.patch(
+        client.post(
             f"/api/organizaciones/{org_id}/lider",
             json={"lider_usuario_id": capturista_user["id"]},
             headers=admin_headers,
@@ -655,10 +692,70 @@ class TestOrganizacionesCRUD:
         assert res.status_code == 200
         data = res.json()
         assert data["nombre"] == "Detail Test Org"
-        assert "lider_usuario_id" in data
+        assert "lideres" in data
+        assert "miembros" in data
         assert "stats" in data
-        assert "total_capturas" in data["stats"]
-        assert "this_month" in data["stats"]
+        for key in ("total_capturas", "this_month", "completados", "pendientes"):
+            assert key in data["stats"]
+
+    def test_org_stats_aggregate_member_captures(
+        self, client, admin_headers, capturista_user, capturista_headers, region_lon
+    ):
+        """Org stats and beneficiarios include captures made by its members."""
+        res = self._create_org(client, admin_headers, "Aggregate Stats Org")
+        org_id = res.json()["id"]
+
+        client.post(
+            f"/api/organizaciones/{org_id}/miembros",
+            json={"lider_usuario_id": capturista_user["id"]},
+            headers=admin_headers,
+        )
+
+        payload = _build_minimal_estudio(region_lon["id"], "Capturista Test")
+        res = client.post("/api/estudios", json=payload, headers=capturista_headers)
+        assert res.status_code == 201
+
+        detail = client.get(f"/api/organizaciones/{org_id}", headers=admin_headers).json()
+        assert detail["stats"]["total_capturas"] >= 1
+
+        res = client.get(
+            f"/api/organizaciones/{org_id}/beneficiarios", headers=admin_headers
+        )
+        assert res.status_code == 200
+        beneficiarios = res.json()
+        assert len(beneficiarios) >= 1
+        assert any("folio" in b and "beneficiario_nombre" in b for b in beneficiarios)
+
+    def test_voluntario_registered_on_org_capture(
+        self, client, admin_headers, region_lon
+    ):
+        """A capture made through the org account registers the volunteer
+        with name and phone."""
+        res = self._create_org(client, admin_headers, "Voluntarios Capture Org")
+        body = res.json()
+        org_id = body["id"]
+
+        login = client.post(
+            "/api/auth/login",
+            json={"email": body["email"], "password": "secret123!"},
+        )
+        assert login.status_code == 200
+        org_headers = {"Authorization": f"Bearer {login.json()['access_token']}"}
+
+        payload = _build_minimal_estudio(region_lon["id"], "VOLUNTARIO PEREZ")
+        payload["estudio"]["voluntario_contacto"] = "4771234567"
+        res = client.post("/api/estudios", json=payload, headers=org_headers)
+        assert res.status_code == 201
+
+        res = client.get(
+            f"/api/organizaciones/{org_id}/voluntarios", headers=admin_headers
+        )
+        assert res.status_code == 200
+        voluntarios = res.json()
+        assert len(voluntarios) == 1
+        assert voluntarios[0]["nombre"] == "VOLUNTARIO PEREZ"
+        assert voluntarios[0]["contacto"] == "4771234567"
+        assert voluntarios[0]["capturas"] == 1
 
     def test_get_org_detail_not_found(self, client, admin_headers):
         """GET /api/organizaciones/{id} for non-existent org returns 404."""
@@ -666,7 +763,7 @@ class TestOrganizacionesCRUD:
         assert res.status_code == 404
 
     def test_voluntarios_empty_for_unlinked_org(self, client, admin_headers):
-        """GET /api/organizaciones/{id}/voluntarios returns empty for unlinked org."""
+        """GET /api/organizaciones/{id}/voluntarios returns empty for new org."""
         res = self._create_org(client, admin_headers, "Voluntarios Test Org")
         org_id = res.json()["id"]
 
@@ -706,20 +803,51 @@ class TestLeaderBypass:
 class TestOrgHeatmap:
     """Organization heatmap endpoints."""
 
+    def _create_org(self, client, admin_headers, nombre):
+        import uuid
+        return client.post(
+            "/api/organizaciones",
+            json={
+                "nombre": nombre,
+                "email": f"org-{uuid.uuid4().hex[:10]}@test.com",
+                "password": "secret123!",
+            },
+            headers=admin_headers,
+        )
+
     def test_org_heatmap_empty(self, client, admin_headers):
         """GET /api/organizaciones/{id}/heatmap with no studies returns empty."""
         import uuid
         unique = str(uuid.uuid4())[:8]
-        res = client.post(
-            "/api/organizaciones",
-            json={"nombre": f"Heatmap Empty {unique}"},
-            headers=admin_headers,
-        )
+        res = self._create_org(client, admin_headers, f"Heatmap Empty {unique}")
         org_id = res.json()["id"]
 
         res = client.get(f"/api/organizaciones/{org_id}/heatmap", headers=admin_headers)
         assert res.status_code == 200
         assert res.json() == []
+
+    def test_org_heatmap_includes_member_activity(
+        self, client, admin_headers, capturista_user, capturista_headers, region_lon
+    ):
+        """Org heatmap aggregates captures made by members."""
+        import uuid
+        unique = str(uuid.uuid4())[:8]
+        res = self._create_org(client, admin_headers, f"Heatmap Member {unique}")
+        org_id = res.json()["id"]
+
+        client.post(
+            f"/api/organizaciones/{org_id}/miembros",
+            json={"lider_usuario_id": capturista_user["id"]},
+            headers=admin_headers,
+        )
+        payload = _build_minimal_estudio(region_lon["id"], "Capturista Test")
+        res = client.post("/api/estudios", json=payload, headers=capturista_headers)
+        assert res.status_code == 201
+
+        res = client.get(f"/api/organizaciones/{org_id}/heatmap", headers=admin_headers)
+        assert res.status_code == 200
+        data = res.json()
+        assert sum(d["count"] for d in data) >= 1
 
 
 class TestProfileUpdateEdgeCases:

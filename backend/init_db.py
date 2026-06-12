@@ -187,6 +187,28 @@ DDL = [
         PRIMARY KEY (organizacion_id, usuario_id)
     )
     """,
+    """
+    CREATE TABLE IF NOT EXISTS organizaciones_miembros (
+        organizacion_id  INTEGER NOT NULL REFERENCES organizaciones(id) ON DELETE CASCADE,
+        usuario_id       INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+        created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        PRIMARY KEY (organizacion_id, usuario_id)
+    )
+    """,
+    "CREATE INDEX IF NOT EXISTS idx_org_miembros_usuario ON organizaciones_miembros(usuario_id)",
+    """
+    CREATE TABLE IF NOT EXISTS organizaciones_voluntarios (
+        id               SERIAL PRIMARY KEY,
+        organizacion_id  INTEGER NOT NULL REFERENCES organizaciones(id) ON DELETE CASCADE,
+        nombre           TEXT NOT NULL,
+        contacto         TEXT,
+        capturas_count   INTEGER NOT NULL DEFAULT 0,
+        ultima_captura   TIMESTAMPTZ,
+        created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE (organizacion_id, nombre)
+    )
+    """,
+    "CREATE INDEX IF NOT EXISTS idx_org_voluntarios_org ON organizaciones_voluntarios(organizacion_id)",
     "CREATE INDEX IF NOT EXISTS idx_estudios_usuario_created ON estudios_socioeconomicos(usuario_id, created_at)",
     "ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS telefono TEXT",
     "ALTER TABLE estudios_socioeconomicos ADD COLUMN IF NOT EXISTS finalizado_at TIMESTAMPTZ NULL",

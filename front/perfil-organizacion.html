@@ -197,14 +197,14 @@
 
         <div class="space-y-2">
           <label class="block text-sm font-semibold text-slate-700" for="guest-contacto">
-            Teléfono de contacto <span class="text-slate-400 text-xs">(opcional)</span>
+            Teléfono de contacto <span class="text-red-400">*</span>
           </label>
           <div class="relative">
             <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl pointer-events-none">call</span>
             <input
               id="guest-contacto" name="guest-contacto" type="tel" autocomplete="off"
               placeholder="4771234567"
-              maxlength="10" pattern="[0-9]{10}"
+              maxlength="10" pattern="[0-9]{10}" required
               class="w-full pl-12 pr-4 py-4 text-sm"
             />
           </div>
@@ -328,11 +328,12 @@
       _showGuestError('El nombre del voluntario no puede exceder 120 caracteres.');
       return;
     }
-
-    const guestCtx = { nombre };
-    if (contacto) {
-      guestCtx.contacto = contacto;
+    if (!/^[0-9]{10}$/.test(contacto)) {
+      _showGuestError('El teléfono del voluntario es obligatorio (10 dígitos).');
+      return;
     }
+
+    const guestCtx = { nombre, contacto };
 
     localStorage.setItem('guest_ctx', JSON.stringify(guestCtx));
     window.location.href = 'Capturista-view/seleccion-region.html';
@@ -383,16 +384,11 @@
       document.getElementById('org-nombre').textContent = org.nombre;
       document.getElementById('user-nombre-header').textContent = org.nombre;
       document.getElementById('stat-capturas').textContent = org.stats?.total_capturas || 0;
-      document.getElementById('stat-completados').textContent = '—';
+      document.getElementById('stat-completados').textContent = org.stats?.completados ?? 0;
       document.getElementById('stat-this-month').textContent = org.stats?.this_month || 0;
 
-      // Load beneficiaries (hide loading, show empty for now — no per-org endpoint yet)
-      const listEl   = document.getElementById('beneficiarios-list');
-      const loading  = document.getElementById('loading-state');
-      const empty    = document.getElementById('empty-state');
-      loading.classList.add('hidden');
-      empty.classList.remove('hidden');
-      document.getElementById('count-capturas').textContent = '0';
+      // Beneficiaries captured by the org (account + leaders + members)
+      loadOrgBeneficiarios(orgIdFromUrl);
 
       // Render leaders
       if (org.lideres && org.lideres.length > 0) {
@@ -549,6 +545,57 @@
     tip.textContent = text; tip.style.left = ev.pageX + 'px'; tip.style.top = ev.pageY + 'px'; tip.style.display = 'block';
   }
   function hideTip() { const tip = document.getElementById('htip'); if (tip) tip.style.display = 'none'; }
+
+  // ── Beneficiarios de la organización ────────────────────────────────────────
+  async function loadOrgBeneficiarios(orgId) {
+    const listEl  = document.getElementById('beneficiarios-list');
+    const loading = document.getElementById('loading-state');
+    const empty   = document.getElementById('empty-state');
+    if (!orgId) return;
+    try {
+      const res = await fetch(`/api/organizaciones/${orgId}/beneficiarios`, {
+        headers: { 'Authorization': 'Bearer ' + session.token }
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const capturas = await res.json();
+      loading.classList.add('hidden');
+      document.getElementById('count-capturas').textContent = capturas.length;
+
+      if (capturas.length === 0) {
+        empty.classList.remove('hidden');
+        return;
+      }
+
+      listEl.insertAdjacentHTML('beforeend', capturas.map(c => `
+        <div class="px-6 py-4 flex items-center justify-between gap-3">
+          <div class="min-w-0 flex-1">
+            <p class="font-semibold text-slate-900 truncate">${_esc(c.beneficiario_nombre)}</p>
+            <div class="flex flex-wrap gap-x-3 gap-y-1 mt-1 text-xs text-slate-500">
+              <span class="inline-flex items-center gap-1">
+                <span class="material-symbols-outlined text-xs">tag</span>
+                ${_esc(c.folio || 'Sin folio')}
+              </span>
+              <span class="inline-flex items-center gap-1">
+                <span class="material-symbols-outlined text-xs">calendar_today</span>
+                ${c.fecha ? _esc(c.fecha.slice(0, 10)) : '—'}
+              </span>
+              <span class="inline-flex items-center gap-1">
+                <span class="material-symbols-outlined text-xs">person</span>
+                ${_esc(c.elaboro_estudio || '—')}
+              </span>
+            </div>
+          </div>
+          <span class="${c.status === 'completo' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'} text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full shrink-0">
+            ${c.status === 'completo' ? 'Completo' : 'Borrador'}
+          </span>
+        </div>
+      `).join(''));
+    } catch (_) {
+      loading.classList.add('hidden');
+      listEl.insertAdjacentHTML('beforeend',
+        '<div class="px-6 py-8 text-center text-red-500 text-sm">Error al cargar las capturas.</div>');
+    }
+  }
 
   // ── Voluntarios ─────────────────────────────────────────────────────────────
   async function loadOrgVoluntarios(orgId) {
