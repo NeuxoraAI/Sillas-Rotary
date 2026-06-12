@@ -798,3 +798,28 @@ html.dark .logo-rotary {
     transform: none;
   }
 }
+
+/* ── Thinking spark (Claude Code-style loading indicator) ── */
+.sr-thinking {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #94a3b8;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+.sr-spark {
+  color: var(--c-orange);
+  display: inline-block;
+  width: 1.2em;
+  text-align: center;
+  animation: sr-spark-pulse 1.2s ease-in-out infinite;
+}
+@keyframes sr-spark-pulse {
+  0%, 100% { opacity: 0.55; transform: scale(0.92); }
+  50%      { opacity: 1;    transform: scale(1.1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sr-spark { animation: none; }
+}

@@ -49,8 +49,58 @@
     observer.observe(el, { childList: true, characterData: true, subtree: true });
   }
 
+  // ── Thinking spark: Claude Code-style loading indicator ────────────────
+  // Any element with data-thinking="Label" becomes "✻ Label…" with the
+  // spark glyph cycling. Empty data-thinking picks a whimsical verb.
+  var SPARK_GLYPHS = ["✢", "✳", "✶", "✻", "✽", "✻", "✶", "✳"];
+  var SPARK_WORDS = [
+    "Tejiendo", "Hilando", "Acomodando", "Rodando",
+    "Puliendo", "Ordenando", "Sumando", "Despertando",
+  ];
+
+  function sparkify(el) {
+    if (el.dataset.sparkified) return;
+    el.dataset.sparkified = "1";
+    var label =
+      el.getAttribute("data-thinking") ||
+      SPARK_WORDS[Math.floor(Math.random() * SPARK_WORDS.length)];
+    el.classList.add("sr-thinking");
+    el.innerHTML = '<span class="sr-spark" aria-hidden="true">✻</span><span></span>';
+    el.querySelector("span:last-child").textContent = label + "…";
+
+    if (reduceMotion) return;
+    var sparkEl = el.querySelector(".sr-spark");
+    var i = 0;
+    var timer = setInterval(function () {
+      if (!el.isConnected) {
+        clearInterval(timer);
+        return;
+      }
+      i = (i + 1) % SPARK_GLYPHS.length;
+      sparkEl.textContent = SPARK_GLYPHS[i];
+    }, 140);
+  }
+
+  function initThinking(root) {
+    (root || document).querySelectorAll("[data-thinking]").forEach(sparkify);
+  }
+
+  function observeThinking() {
+    new MutationObserver(function (mutations) {
+      mutations.forEach(function (m) {
+        m.addedNodes.forEach(function (node) {
+          if (node.nodeType !== 1) return;
+          if (node.matches && node.matches("[data-thinking]")) sparkify(node);
+          if (node.querySelectorAll) initThinking(node);
+        });
+      });
+    }).observe(document.body, { childList: true, subtree: true });
+  }
+
   function init() {
     document.querySelectorAll("[data-countup]").forEach(watch);
+    initThinking();
+    observeThinking();
   }
 
   if (document.readyState === "loading") {

@@ -29,6 +29,7 @@
 </script>
 <link href="../assets/css/theme.css" rel="stylesheet"/>
 <script src="../assets/js/theme-toggle.js"></script>
+<script src="../assets/js/delight.js"></script>
 <link href="../assets/css/admin-regiones.css" rel="stylesheet"/>
   <style>
     /* Fixed gradient layer (same format as perfil-capturista) */
@@ -183,7 +184,7 @@
             </button>
           </div>
           <ul id="lista-paises" class="divide-y divide-slate-100 text-sm">
-            <li class="px-6 py-6 text-slate-400 text-center">Cargando…</li>
+            <li class="px-6 py-6" data-thinking="Desplegando el mapa"></li>
           </ul>
         </div>
       </div>
@@ -250,7 +251,7 @@
             </button>
           </div>
           <ul id="lista-regiones" class="divide-y divide-slate-100 text-sm">
-            <li class="px-6 py-6 text-slate-400 text-center">Cargando…</li>
+            <li class="px-6 py-6" data-thinking="Desplegando el mapa"></li>
           </ul>
         </div>
       </div>
@@ -291,7 +292,7 @@
 
   async function loadPaises() {
     const list = document.getElementById('lista-paises');
-    list.innerHTML = '<li class="px-6 py-4 text-slate-400 text-center">Cargando…</li>';
+    list.innerHTML = '<li class="px-6 py-4" data-thinking="Desplegando el mapa"></li>';
 
     try {
       const res = await _authFetch('/api/paises');
@@ -361,7 +362,7 @@
   async function loadRegiones() {
     const list = document.getElementById('lista-regiones');
     const countEl = document.getElementById('count-regiones');
-    list.innerHTML = '<li class="px-6 py-6 text-slate-400 text-center">Cargando…</li>';
+    list.innerHTML = '<li class="px-6 py-6" data-thinking="Desplegando el mapa"></li>';
     countEl.classList.add('hidden');
 
     try {
