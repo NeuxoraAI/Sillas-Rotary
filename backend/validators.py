@@ -20,7 +20,9 @@ _NOMBRE_MAX = 60
 _APELLIDO_MAX = 40
 
 # Diagnóstico / calle / colonia / fuente empleo / otras fuentes
-_DIAGNOSTICO_RE = re.compile(r"^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9\s\-().\/,]+$")
+# "$" is allowed because the same charset validates income descriptions
+# ("VENTAS $500") and the frontend DIAGNOSTICO_RE already accepts it.
+_DIAGNOSTICO_RE = re.compile(r"^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9\s\-().\/,$]+$")
 _DIAGNOSTICO_MAX = 160
 
 _CALLE_RE = re.compile(r"^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9.\- ]+$")
@@ -175,6 +177,11 @@ def validate_ciudad(value: str) -> str:
 
 def validate_numero_domicilio(value: Optional[str]) -> Optional[str]:
     if value is None:
+        return None
+    # Canonicalize to uppercase: the regex only accepts A-Z and legacy
+    # drafts may still carry lowercase values like "12a".
+    value = value.strip().upper()
+    if not value:
         return None
     if not _NUM_DOMICILIO_RE.match(value):
         raise ValueError("solo se permiten letras, números, guion y diagonal")

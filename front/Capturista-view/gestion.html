@@ -1010,7 +1010,7 @@
           if (!guardarRes.ok) {
             const errData = await guardarRes.json().catch(() => ({}));
             console.error("POST guardar-borrador error:", guardarRes.status, errData);
-            showValidationModal([{ form: "Registro", label: "Consolidación", message: errData.detail || `Error al consolidar el borrador (${guardarRes.status}).`, url: "gestion.html" }]);
+            showValidationModal([{ form: "Registro", label: "Consolidación", message: SR_Validations.formatBackendError(errData, `Error al consolidar el borrador (${guardarRes.status}).`), url: "gestion.html" }]);
             if (btn) { btn.disabled = false; btn.textContent = "Finalizar Registro"; }
             return;
           }
