@@ -3595,10 +3595,12 @@
         const estudioId = data.estudio_id || data.id;
         const folio = data.folio || data.beneficiario?.folio || estudioId;
 
-        // Show edit banner
-        document.getElementById("edit-banner").classList.remove("hidden");
-        document.getElementById("edit-banner-text").textContent = `Editando estudio #${folio}`;
-        document.getElementById("form-title").textContent = "EDITAR ESTUDIO SOCIOECONÓMICO";
+        // Show edit banner (form-title no longer exists in the redesigned layout)
+        document.getElementById("edit-banner")?.classList.remove("hidden");
+        const editBannerText = document.getElementById("edit-banner-text");
+        if (editBannerText) editBannerText.textContent = `Editando estudio #${folio}`;
+        const formTitle = document.getElementById("form-title");
+        if (formTitle) formTitle.textContent = "EDITAR ESTUDIO SOCIOECONÓMICO";
 
         // Reconstruct region_ctx if missing (edit mode from profile)
         const b = data.beneficiario || {};
