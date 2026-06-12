@@ -34,6 +34,7 @@
     <!-- END: Tailwind CSS & Plugins -->
     <link href="../assets/css/theme.css" rel="stylesheet"/>
     <script src="../assets/js/theme-toggle.js"></script>
+    <script src="../assets/js/mascot.js"></script>
     <link href="../assets/css/gestion.css" rel="stylesheet" />
   </head>
   <body class="page-bg min-h-screen flex flex-col font-display" style="background: #FBF7F5;">
@@ -1045,6 +1046,10 @@
             localStorage.removeItem("beneficiario_id");
             if (finalData.already_completed) {
               showSuccessToast("El registro ya estaba finalizado.", "perfil-capturista.html");
+            } else if (window.SR_Mascot) {
+              SR_Mascot.showSuccess("¡Enviado correctamente!", function () {
+                window.location.href = "perfil-capturista.html";
+              });
             } else {
               showSuccessToast("El registro ha sido finalizado y guardado con éxito.", "perfil-capturista.html");
             }

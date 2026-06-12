@@ -508,3 +508,42 @@ footer a:hover {
     min-height: auto;
   }
 }
+
+/* ── Micro-animations: input icons come alive (Claude Code style) ── */
+
+/* Idle: the mail icon takes a gentle breath every few seconds */
+@keyframes icon-breathe {
+  0%, 86%, 100% { transform: translateY(-50%) scale(1); }
+  90%           { transform: translateY(-54%) scale(1.12); }
+  94%           { transform: translateY(-48%) scale(0.96); }
+}
+
+/* Focus: a happy little wiggle */
+@keyframes icon-wiggle {
+  0%   { transform: translateY(-50%) rotate(0); }
+  25%  { transform: translateY(-55%) rotate(-12deg) scale(1.15); }
+  50%  { transform: translateY(-50%) rotate(10deg) scale(1.1); }
+  75%  { transform: translateY(-52%) rotate(-6deg) scale(1.05); }
+  100% { transform: translateY(-50%) rotate(0) scale(1); }
+}
+
+.login-card .relative > .material-symbols-outlined {
+  animation: icon-breathe 7s ease-in-out infinite;
+}
+
+.login-card .relative:focus-within > .material-symbols-outlined {
+  animation: icon-wiggle 0.55s cubic-bezier(0.22, 1.2, 0.36, 1) 1;
+  color: var(--c-orange);
+}
+
+/* The padlock peeks open while the password is visible */
+.login-card .relative:focus-within #toggle-pwd {
+  transform: translateY(-50%) scale(1.08);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-card .relative > .material-symbols-outlined,
+  .login-card .relative:focus-within > .material-symbols-outlined {
+    animation: none;
+  }
+}
