@@ -680,20 +680,35 @@
         if (!modal) {
           modal = document.createElement("div");
           modal.id = "validation-modal";
-          modal.className = "fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/60 p-4";
+          modal.className = "fixed inset-0 z-50 hidden items-center justify-center p-4";
+          modal.style.background = "rgba(43,6,61,0.5)";
+          modal.style.backdropFilter = "blur(3px)";
           modal.innerHTML = `
-            <div class="w-full max-w-2xl rounded-2xl bg-white shadow-2xl">
-              <div class="border-b border-slate-200 p-5">
-                <h2 id="validation-modal-title" class="text-lg font-black text-slate-900"></h2>
-                <p id="validation-modal-description" class="mt-1 text-sm text-slate-600"></p>
+            <div class="w-full max-w-2xl overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-2xl">
+              <div class="h-1.5 bg-gradient-to-r from-red-500 via-red-400 to-orange-400"></div>
+              <div class="flex items-start gap-4 border-b border-slate-100 p-5">
+                <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-red-100 bg-red-50">
+                  <span class="material-symbols-outlined text-red-600">error</span>
+                </div>
+                <div class="min-w-0">
+                  <h2 id="validation-modal-title" class="text-lg font-black" style="color: var(--c-title);"></h2>
+                  <p id="validation-modal-description" class="mt-1 text-sm text-slate-600"></p>
+                </div>
               </div>
               <div id="validation-modal-body" class="max-h-[60vh] overflow-y-auto p-5"></div>
-              <div class="flex flex-col gap-3 border-t border-slate-200 p-5 sm:flex-row sm:justify-end">
-                <button id="validation-modal-close" type="button" class="rounded-lg bg-slate-900 px-5 py-3 text-sm font-bold uppercase tracking-wide text-white">Entendido</button>
+              <div class="flex flex-col gap-3 border-t border-slate-100 bg-slate-50/60 p-5 sm:flex-row sm:justify-end">
+                <button id="validation-modal-close" type="button" class="rounded-xl bg-gradient-to-r from-[#FF4B0B] to-[#FF681F] px-6 py-3 text-sm font-bold uppercase tracking-wide text-white shadow-md shadow-orange-200/60 transition-all hover:opacity-95 active:scale-[0.98]">Entendido</button>
               </div>
             </div>`;
           document.body.appendChild(modal);
-          modal.querySelector("#validation-modal-close").addEventListener("click", () => modal.classList.add("hidden"));
+          const closeModal = () => {
+            modal.classList.add("hidden");
+            modal.classList.remove("flex");
+          };
+          modal.querySelector("#validation-modal-close").addEventListener("click", closeModal);
+          modal.addEventListener("click", (event) => {
+            if (event.target === modal) closeModal();
+          });
         }
         const grouped = errors.reduce((acc, err) => {
           const key = err.form || "Formulario";
@@ -705,11 +720,18 @@
         modal.querySelector("#validation-modal-description").textContent = description;
         modal.querySelector("#validation-modal-body").innerHTML = Object.entries(grouped).map(([form, items]) => `
           <section class="mb-5 last:mb-0">
-            <div class="mb-2 flex items-center justify-between gap-3">
-              <h3 class="font-black uppercase tracking-wide text-slate-800">${escapeHtml(form)}</h3>
-              ${items[0].url ? `<button type="button" data-url="${escapeHtml(items[0].url)}" class="validation-jump rounded-lg border border-primary px-3 py-2 text-xs font-bold uppercase text-primary">Ir al formulario</button>` : ""}
+            <div class="mb-2.5 flex items-center justify-between gap-3">
+              <div class="flex items-center gap-2">
+                <h3 class="text-sm font-black uppercase tracking-wide" style="color: var(--c-title);">${escapeHtml(form)}</h3>
+                <span class="rounded-full border border-red-200 bg-red-100 px-2 py-0.5 text-[11px] font-bold text-red-700">${items.length} ${items.length === 1 ? "error" : "errores"}</span>
+              </div>
+              ${items[0].url ? `<button type="button" data-url="${escapeHtml(items[0].url)}" class="validation-jump rounded-lg border-2 border-ug-orange-pure/70 px-3 py-1.5 text-xs font-bold uppercase text-ug-orange-pure transition-all hover:bg-orange-50">Ir al formulario</button>` : ""}
             </div>
-            <ul class="space-y-2 text-sm text-slate-700">${items.map((item) => `<li><strong>${escapeHtml(item.label || "Campo")}:</strong> ${escapeHtml(item.message)}</li>`).join("")}</ul>
+            <ul class="space-y-2 text-sm">${items.map((item) => `
+              <li class="flex items-start gap-2.5 rounded-r-lg border-l-4 border-red-500 bg-red-50/70 px-3 py-2.5">
+                <span class="material-symbols-outlined mt-0.5 text-base text-red-500">cancel</span>
+                <span class="text-slate-700"><strong class="font-bold text-red-800">${escapeHtml(item.label || "Campo")}:</strong> ${escapeHtml(item.message)}</span>
+              </li>`).join("")}</ul>
           </section>`).join("");
         modal.querySelectorAll(".validation-jump").forEach((btn) => {
           btn.addEventListener("click", () => {
