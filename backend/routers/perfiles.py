@@ -93,6 +93,24 @@ def _get_org_user_ids(db: _DBAdapter, org_id: int) -> list[int]:
     return [r["usuario_id"] for r in rows]
 
 
+def _assert_org_access(db: _DBAdapter, org_id: int, user: CurrentUser) -> None:
+    """Capture-level data (beneficiarios, voluntarios) is visible only to
+    admins and the organization's own account. Visitors — including leaders
+    and members browsing the org page — see identity and stats only."""
+    if user.rol == "admin":
+        return
+    org = db.execute(
+        "SELECT usuario_id FROM organizaciones WHERE id = %s",
+        (org_id,),
+    ).fetchone()
+    if org is not None and org["usuario_id"] == user.usuario_id:
+        return
+    raise HTTPException(
+        status_code=403,
+        detail="Solo la organización puede ver el detalle de sus capturas",
+    )
+
+
 def _get_org_stats(db: _DBAdapter, user_ids: list[int]) -> dict:
     """Aggregate capture stats across all of an organization's users."""
     if not user_ids:
@@ -851,6 +869,8 @@ def get_org_beneficiarios(
     if org is None:
         raise HTTPException(status_code=404, detail="Organización no encontrada")
 
+    _assert_org_access(db, org_id, user)
+
     user_ids = _get_org_user_ids(db, org_id)
     if not user_ids:
         return []
@@ -899,6 +919,8 @@ def get_org_voluntarios(
     ).fetchone()
     if org is None:
         raise HTTPException(status_code=404, detail="Organización no encontrada")
+
+    _assert_org_access(db, org_id, user)
 
     rows = db.execute(
         """

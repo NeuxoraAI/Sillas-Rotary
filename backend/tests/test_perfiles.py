@@ -757,6 +757,33 @@ class TestOrganizacionesCRUD:
         assert voluntarios[0]["contacto"] == "4771234567"
         assert voluntarios[0]["capturas"] == 1
 
+    def test_visitor_cannot_see_org_captures(
+        self, client, admin_headers, capturista_user, capturista_headers
+    ):
+        """Members/visitors see org identity and stats, never capture detail."""
+        res = self._create_org(client, admin_headers, "Privacy Test Org")
+        org_id = res.json()["id"]
+
+        client.post(
+            f"/api/organizaciones/{org_id}/miembros",
+            json={"lider_usuario_id": capturista_user["id"]},
+            headers=admin_headers,
+        )
+
+        # Detail (identity, leaders, members, stats) is visible
+        res = client.get(f"/api/organizaciones/{org_id}", headers=capturista_headers)
+        assert res.status_code == 200
+
+        # Capture-level data is not
+        res = client.get(
+            f"/api/organizaciones/{org_id}/beneficiarios", headers=capturista_headers
+        )
+        assert res.status_code == 403
+        res = client.get(
+            f"/api/organizaciones/{org_id}/voluntarios", headers=capturista_headers
+        )
+        assert res.status_code == 403
+
     def test_get_org_detail_not_found(self, client, admin_headers):
         """GET /api/organizaciones/{id} for non-existent org returns 404."""
         res = client.get("/api/organizaciones/99999", headers=admin_headers)

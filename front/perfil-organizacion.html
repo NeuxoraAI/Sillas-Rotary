@@ -228,8 +228,8 @@
       <p id="error-text" class="text-red-700 text-sm leading-relaxed"></p>
     </div>
 
-    <!-- Tabs: Beneficiarios / Voluntarios -->
-    <div class="card rise rise-4 overflow-hidden">
+    <!-- Tabs: Beneficiarios / Voluntarios (org members only — hidden for visitors) -->
+    <div id="org-activity-card" class="card rise rise-4 overflow-hidden">
       <div class="px-6 py-3 border-b border-slate-100 flex items-center gap-6">
         <button class="tab-btn active text-sm font-semibold" data-tab="tab-beneficiarios">Beneficiarios</button>
         <button class="tab-btn text-sm font-semibold" data-tab="tab-voluntarios">Voluntarios</button>
@@ -295,9 +295,30 @@
   const urlParams = new URLSearchParams(window.location.search);
   let orgIdFromUrl = urlParams.get('org_id') ? parseInt(urlParams.get('org_id'), 10) : null;
 
-  // Show guest form only for actual organizacion users (not for visitors viewing the org)
-  if (session?.rol === 'organizacion') {
+  // Visitor mode: any non-organizacion user viewing an org sees only the org
+  // identity, leaders/members, and stats — not its captures or volunteers.
+  const isOrgUser = session?.rol === 'organizacion';
+
+  if (isOrgUser) {
     document.getElementById('guest-form-container').classList.remove('hidden');
+  } else {
+    document.getElementById('org-activity-card')?.classList.add('hidden');
+
+    // Header button returns to the visitor's own profile instead of logging out
+    const PROFILE_BY_ROL = {
+      capturista: 'Capturista-view/perfil-capturista.html',
+      admin: 'Admin-view/admin-usuarios.html',
+      tecnico: 'Tecnico-view/vista_tecnicos.html',
+    };
+    const backUrl = PROFILE_BY_ROL[(session?.rol || '').toLowerCase()];
+    const logoutBtn = document.getElementById('btn-logout');
+    if (backUrl && logoutBtn) {
+      logoutBtn.title = 'Volver a mi perfil';
+      logoutBtn.dataset.backUrl = backUrl;
+      logoutBtn.querySelector('.material-symbols-outlined').textContent = 'arrow_back';
+      const badge = document.getElementById('user-rol-badge');
+      if (badge) badge.textContent = 'Vista de organización';
+    }
   }
 
   // Show info banner if redirected due to missing guest_ctx
@@ -306,8 +327,13 @@
     document.getElementById('guest-nombre').focus();
   }
 
-  // ── Logout ──────────────────────────────────────────────────────────────────
+  // ── Logout (org users) / back to own profile (visitors) ────────────────────
   document.getElementById('btn-logout').addEventListener('click', function () {
+    const backUrl = this.dataset.backUrl;
+    if (backUrl) {
+      window.location.href = backUrl;
+      return;
+    }
     _clearAllStorage();
     window.location.href = 'login.html';
   });
@@ -387,8 +413,8 @@
       document.getElementById('stat-completados').textContent = org.stats?.completados ?? 0;
       document.getElementById('stat-this-month').textContent = org.stats?.this_month || 0;
 
-      // Beneficiaries captured by the org (account + leaders + members)
-      loadOrgBeneficiarios(orgIdFromUrl);
+      // Beneficiaries captured by the org (org members only)
+      if (isOrgUser) loadOrgBeneficiarios(orgIdFromUrl);
 
       // Render leaders
       if (org.lideres && org.lideres.length > 0) {
@@ -427,8 +453,8 @@
       // Load org-specific heatmap
       loadOrgHeatmap(orgIdFromUrl);
 
-      // Load org-specific voluntarios
-      loadOrgVoluntarios(orgIdFromUrl);
+      // Load org-specific voluntarios (org members only)
+      if (isOrgUser) loadOrgVoluntarios(orgIdFromUrl);
 
     } catch (_) {
       _showError('No se pudieron cargar los datos de la organización.');
