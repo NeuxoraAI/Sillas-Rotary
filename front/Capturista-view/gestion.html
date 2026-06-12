@@ -55,12 +55,12 @@
             <p id="user-rol" class="text-xs text-slate-500">—</p>
           </div>
           <button
-            id="btn-logout"
+            id="btn-volver-perfil"
             type="button"
-            title="Cerrar sesión"
+            title="Volver a mi perfil"
             class="w-9 h-9 rounded-xl hover:bg-orange-50 flex items-center justify-center text-slate-400 hover:text-ug-orange-pure transition-all"
           >
-            <span class="material-symbols-outlined text-xl">logout</span>
+            <span class="material-symbols-outlined text-xl">account_circle</span>
           </button>
         </div>
       </div>
@@ -310,18 +310,10 @@
       const sessionHeader = JSON.parse(localStorage.getItem("session") || "null");
       document.getElementById("user-nombre").textContent = sessionHeader?.nombre || "—";
       document.getElementById("user-rol").textContent = (sessionHeader?.rol || "capturista").toUpperCase();
-      document.getElementById("btn-logout")?.addEventListener("click", function () {
-        if (!confirm("¿Cerrar sesión y salir del flujo de captura?")) return;
-        localStorage.removeItem("session");
-        localStorage.removeItem("region_ctx");
-        localStorage.removeItem("beneficiario_id");
-        localStorage.removeItem("estudio_id");
-        localStorage.removeItem("solicitud_id");
-        localStorage.removeItem("guest_ctx");
-        localStorage.removeItem("draft_socioeconomico");
-        localStorage.removeItem("draft_tecnica");
-        localStorage.removeItem("draft_gestion");
-        window.location.href = "../login.html";
+      // Volver al perfil sin cerrar sesión (logout lives in the profile)
+      document.getElementById("btn-volver-perfil")?.addEventListener("click", function () {
+        if (!confirm("¿Volver a tu perfil? Los cambios no guardados se perderán.")) return;
+        window.location.href = "perfil-capturista.html";
       });
 
       // Role-gating: hide "Finalizar Registro" for non-capturista roles
