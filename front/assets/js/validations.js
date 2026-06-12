@@ -648,6 +648,45 @@
   }
 
   // ─────────────────────────────────────────────────────────────────
+  // Auto-uppercase: free-text inputs and textareas are uppercased as
+  // the user types, mirroring the backend's normalize_text so data is
+  // stored and displayed in a single canonical format.
+  // Opt out per field with the data-no-uppercase attribute.
+  // ─────────────────────────────────────────────────────────────────
+
+  const UPPERCASE_EXCLUDED_TYPES = new Set([
+    "email", "password", "tel", "number", "date", "time", "url", "search", "file",
+  ]);
+  const UPPERCASE_EXCLUDED_NAME_RE = /(email|password|contrasena|search|buscar)/i;
+
+  function shouldAutoUppercase(el) {
+    const isInput = el instanceof HTMLInputElement;
+    const isTextarea = el instanceof HTMLTextAreaElement;
+    if (!isInput && !isTextarea) return false;
+    if (el.dataset && el.dataset.noUppercase !== undefined) return false;
+    if (isInput && UPPERCASE_EXCLUDED_TYPES.has((el.type || "text").toLowerCase())) return false;
+    if (UPPERCASE_EXCLUDED_NAME_RE.test(el.name || el.id || "")) return false;
+    return true;
+  }
+
+  document.addEventListener("input", (event) => {
+    const el = event.target;
+    if (!shouldAutoUppercase(el)) return;
+    const upper = el.value.toUpperCase();
+    if (upper === el.value) return;
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+    el.value = upper;
+    if (start != null && end != null) {
+      try {
+        el.setSelectionRange(start, end);
+      } catch (_err) {
+        // Some input types do not support selection ranges
+      }
+    }
+  });
+
+  // ─────────────────────────────────────────────────────────────────
   // Export
   // ─────────────────────────────────────────────────────────────────
 

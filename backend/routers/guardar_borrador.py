@@ -169,6 +169,25 @@ class GuardarBorradorRequest(BaseModel):
     tutor2_imss_estatus: Optional[str] = None
     tutor2_infonavit_estatus: Optional[str] = None
 
+    # ── Normalization (mode="before"): uppercase + collapse whitespace,
+    #    mirrors BeneficiarioIn so drafts store the same canonical format ──
+
+    @field_validator("nombres", "tutor1_nombres", "tutor2_nombres",
+                     "apellido_paterno", "apellido_materno",
+                     "tutor1_apellido_paterno", "tutor1_apellido_materno",
+                     "tutor2_apellido_paterno", "tutor2_apellido_materno",
+                     "diagnostico", "calle", "colonia", "ciudad",
+                     "elaboro_estudio", "voluntario_contacto",
+                     "tutor1_fuente_empleo", "tutor2_fuente_empleo",
+                     "tutor1_otras_fuentes_ingreso", "tutor2_otras_fuentes_ingreso",
+                     "observaciones_posturales", "justificacion",
+                     "entidad_solicitante", mode="before")
+    @classmethod
+    def _normalizar_textos_libres(cls, v: Optional[str]) -> Optional[str]:
+        if v is None or v == "":
+            return v
+        return normalize_text(v)
+
     # ── Format-only validation (skip None / "") ──
 
     @field_validator("nombres", "tutor1_nombres", "tutor2_nombres")

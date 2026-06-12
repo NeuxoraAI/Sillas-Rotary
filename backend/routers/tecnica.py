@@ -28,6 +28,7 @@ from validators import (
     validate_status,
     validate_diagnostico,
 )
+from utils.text import normalize_text
 
 router = APIRouter()
 
@@ -441,7 +442,7 @@ class SolicitudCreateRequest(BaseModel):
     def validate_diagnostico_field(cls, v) -> Optional[str]:
         if v is None or (isinstance(v, str) and v.strip() == ""):
             return None
-        return validate_diagnostico(str(v))
+        return validate_diagnostico(normalize_text(str(v)) or "")
 
     @field_validator("control_tronco")
     @classmethod
@@ -463,7 +464,7 @@ class SolicitudCreateRequest(BaseModel):
     def validate_obs_field(cls, v) -> Optional[str]:
         if v is None:
             return None
-        return validate_observaciones_posturales(str(v))
+        return validate_observaciones_posturales(normalize_text(str(v)) or "")
 
     @field_validator("unidad_medida")
     @classmethod
@@ -489,7 +490,7 @@ class SolicitudCreateRequest(BaseModel):
     def validate_entidad_solicitante_field(cls, v) -> Optional[str]:
         if v is None:
             return None
-        return validate_entidad_solicitante(str(v))
+        return validate_entidad_solicitante(normalize_text(str(v)) or "")
 
     @field_validator("prioridad")
     @classmethod
@@ -501,7 +502,7 @@ class SolicitudCreateRequest(BaseModel):
     def validate_justificacion_field(cls, v) -> Optional[str]:
         if v is None:
             return None
-        return validate_justificacion(str(v))
+        return validate_justificacion(normalize_text(str(v)) or "")
 
     @field_validator("status")
     @classmethod
@@ -577,7 +578,7 @@ class SolicitudUpdateRequest(BaseModel):
     def validate_diagnostico_field(cls, v) -> Optional[str]:
         if v is None or (isinstance(v, str) and v.strip() == ""):
             return None
-        return validate_diagnostico(str(v))
+        return validate_diagnostico(normalize_text(str(v)) or "")
 
     @field_validator("control_tronco")
     @classmethod
@@ -605,7 +606,7 @@ class SolicitudUpdateRequest(BaseModel):
     def validate_obs_field(cls, v) -> Optional[str]:
         if v is None:
             return None
-        return validate_observaciones_posturales(str(v))
+        return validate_observaciones_posturales(normalize_text(str(v)) or "")
 
     @field_validator("unidad_medida")
     @classmethod
@@ -635,7 +636,7 @@ class SolicitudUpdateRequest(BaseModel):
     def validate_entidad_solicitante_field(cls, v) -> Optional[str]:
         if v is None:
             return None
-        return validate_entidad_solicitante(str(v))
+        return validate_entidad_solicitante(normalize_text(str(v)) or "")
 
     @field_validator("prioridad")
     @classmethod
@@ -647,7 +648,7 @@ class SolicitudUpdateRequest(BaseModel):
     def validate_justificacion_field(cls, v) -> Optional[str]:
         if v is None:
             return None
-        return validate_justificacion(str(v))
+        return validate_justificacion(normalize_text(str(v)) or "")
 
     @field_validator("status")
     @classmethod
