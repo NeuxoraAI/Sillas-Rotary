@@ -654,9 +654,10 @@
   // Opt out per field with the data-no-uppercase attribute.
   // ─────────────────────────────────────────────────────────────────
 
-  const UPPERCASE_EXCLUDED_TYPES = new Set([
-    "email", "password", "tel", "number", "date", "time", "url", "search", "file",
-  ]);
+  // Allowlist: only free-text controls. Radios/checkboxes are HTMLInputElements
+  // too and fire "input" on selection — uppercasing their value would corrupt
+  // catalog payloads (e.g. prioridad "Alta" -> "ALTA").
+  const UPPERCASE_ALLOWED_TYPES = new Set(["text"]);
   const UPPERCASE_EXCLUDED_NAME_RE = /(email|password|contrasena|search|buscar)/i;
 
   function shouldAutoUppercase(el) {
@@ -664,7 +665,7 @@
     const isTextarea = el instanceof HTMLTextAreaElement;
     if (!isInput && !isTextarea) return false;
     if (el.dataset && el.dataset.noUppercase !== undefined) return false;
-    if (isInput && UPPERCASE_EXCLUDED_TYPES.has((el.type || "text").toLowerCase())) return false;
+    if (isInput && !UPPERCASE_ALLOWED_TYPES.has((el.type || "text").toLowerCase())) return false;
     if (UPPERCASE_EXCLUDED_NAME_RE.test(el.name || el.id || "")) return false;
     return true;
   }
