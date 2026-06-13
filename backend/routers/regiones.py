@@ -2,8 +2,10 @@
 Region catalog router (v2).
 
 Endpoints:
-- POST GET /api/paises          — Country CRUD (admin)
-- POST GET /api/regiones        — Region CRUD (admin)
+- POST  GET   /api/paises          — Country CRUD (admin / auth)
+- PATCH       /api/paises/{id}     — Edit país name/code/activo (admin)
+- POST  GET   /api/regiones        — Region CRUD (admin / auth)
+- PATCH       /api/regiones/{id}   — Edit region name/code/activo (admin)
 
 Also exports generate_folio(db, region_id) for use in socioeconomico router.
 """
@@ -65,6 +67,48 @@ class RegionCreateRequest(BaseModel):
     @classmethod
     def nombre_strip(cls, v: str) -> str:
         return v.strip()
+
+
+class PaisUpdateRequest(BaseModel):
+    nombre: str | None = None
+    codigo: str | None = None
+    activo: bool | None = None
+
+    @field_validator("nombre")
+    @classmethod
+    def nombre_strip(cls, v: str | None) -> str | None:
+        return v.strip() if v is not None else v
+
+    @field_validator("codigo")
+    @classmethod
+    def codigo_uppercase(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
+        v = v.strip().upper()
+        if len(v) < 2 or len(v) > 5:
+            raise ValueError("El código debe tener entre 2 y 5 caracteres")
+        return v
+
+
+class RegionUpdateRequest(BaseModel):
+    nombre: str | None = None
+    codigo: str | None = None
+    activo: bool | None = None
+
+    @field_validator("nombre")
+    @classmethod
+    def nombre_strip(cls, v: str | None) -> str | None:
+        return v.strip() if v is not None else v
+
+    @field_validator("codigo")
+    @classmethod
+    def codigo_uppercase(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
+        v = v.strip().upper()
+        if len(v) < 2 or len(v) > 5:
+            raise ValueError("El código debe tener entre 2 y 5 caracteres")
+        return v
 
 
 class RegionResponse(BaseModel):
@@ -175,12 +219,24 @@ def create_pais(
 @router.get("/paises", response_model=list[PaisResponse])
 def list_paises(
     db: Annotated[_DBAdapter, Depends(get_db)],
-    _user: Annotated[CurrentUser, Depends(require_auth)],
+    user: Annotated[CurrentUser, Depends(require_auth)],
+    include_inactive: bool = Query(default=False, description="Include inactive countries (admin only)"),
 ) -> list[PaisResponse]:
-    """List all active countries. Any authenticated user."""
-    rows = db.execute(
-        "SELECT id, nombre, codigo, activo FROM paises WHERE activo = TRUE ORDER BY nombre"
-    ).fetchall()
+    """
+    List countries. Any authenticated user.
+    Admins may pass include_inactive=true to see all (for management).
+    Non-admins always see only active countries.
+    """
+    show_all = include_inactive and user.rol == "admin"
+
+    if show_all:
+        rows = db.execute(
+            "SELECT id, nombre, codigo, activo FROM paises ORDER BY nombre"
+        ).fetchall()
+    else:
+        rows = db.execute(
+            "SELECT id, nombre, codigo, activo FROM paises WHERE activo = TRUE ORDER BY nombre"
+        ).fetchall()
 
     return [
         PaisResponse(
@@ -188,6 +244,91 @@ def list_paises(
         )
         for r in rows
     ]
+
+
+@router.patch("/paises/{pais_id}", response_model=PaisResponse)
+def update_pais(
+    pais_id: int,
+    body: PaisUpdateRequest,
+    db: Annotated[_DBAdapter, Depends(get_db)],
+    _admin: Annotated[CurrentUser, Depends(require_admin)],
+) -> PaisResponse:
+    """
+    Edit a country's nombre, activo, or codigo. Admin only.
+
+    Editing codigo is allowed only when no region_counters rows reference
+    the current codigo (i.e., no folios have been generated using it).
+    """
+    existing = db.execute(
+        "SELECT id, nombre, codigo, activo FROM paises WHERE id = %s",
+        (pais_id,),
+    ).fetchone()
+
+    if existing is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="País no encontrado",
+        )
+
+    if body.codigo is not None and body.codigo != existing["codigo"]:
+        counter_ref = db.execute(
+            "SELECT 1 FROM region_counters WHERE pais_codigo = %s LIMIT 1",
+            (existing["codigo"],),
+        ).fetchone()
+        if counter_ref is not None:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=(
+                    f"El código '{existing['codigo']}' ya tiene folios generados. "
+                    "No es posible cambiarlo porque alteraría los folios existentes."
+                ),
+            )
+        dup = db.execute(
+            "SELECT id FROM paises WHERE codigo = %s AND id != %s",
+            (body.codigo, pais_id),
+        ).fetchone()
+        if dup is not None:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"El código '{body.codigo}' ya está en uso por otro país",
+            )
+
+    fields: list[str] = []
+    values: list = []
+
+    if body.nombre is not None:
+        fields.append("nombre = %s")
+        values.append(body.nombre)
+    if body.codigo is not None:
+        fields.append("codigo = %s")
+        values.append(body.codigo)
+    if body.activo is not None:
+        fields.append("activo = %s")
+        values.append(body.activo)
+
+    if not fields:
+        return PaisResponse(
+            pais_id=existing["id"],
+            nombre=existing["nombre"],
+            codigo=existing["codigo"],
+            activo=existing["activo"],
+        )
+
+    values.append(pais_id)
+    row = db.execute(
+        f"UPDATE paises SET {', '.join(fields)} WHERE id = %s RETURNING id, nombre, codigo, activo",
+        tuple(values),
+    ).fetchone()
+
+    if row is None:
+        raise HTTPException(status_code=500, detail="Error al actualizar el país")
+
+    return PaisResponse(
+        pais_id=row["id"],
+        nombre=row["nombre"],
+        codigo=row["codigo"],
+        activo=row["activo"],
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -245,24 +386,36 @@ def create_region(
 @router.get("/regiones", response_model=list[RegionResponse])
 def list_regiones(
     db: Annotated[_DBAdapter, Depends(get_db)],
-    _user: Annotated[CurrentUser, Depends(require_auth)],
+    user: Annotated[CurrentUser, Depends(require_auth)],
     pais_id: Optional[int] = Query(default=None, description="Filter by country ID"),
+    include_inactive: bool = Query(default=False, description="Include inactive regions (admin only)"),
 ) -> list[RegionResponse]:
-    """List active regions. Any authenticated user. Optionally filtered by pais_id."""
+    """
+    List regions. Any authenticated user. Optionally filtered by pais_id.
+    Admins may pass include_inactive=true to see all regions for management.
+    """
+    show_all = include_inactive and user.rol == "admin"
+
     if pais_id is not None:
-        rows = db.execute(
-            """
-            SELECT id, pais_id, nombre, codigo, activo
-            FROM regiones
-            WHERE pais_id = %s AND activo = TRUE
-            ORDER BY nombre
-            """,
-            (pais_id,),
-        ).fetchall()
+        if show_all:
+            rows = db.execute(
+                "SELECT id, pais_id, nombre, codigo, activo FROM regiones WHERE pais_id = %s ORDER BY nombre",
+                (pais_id,),
+            ).fetchall()
+        else:
+            rows = db.execute(
+                "SELECT id, pais_id, nombre, codigo, activo FROM regiones WHERE pais_id = %s AND activo = TRUE ORDER BY nombre",
+                (pais_id,),
+            ).fetchall()
     else:
-        rows = db.execute(
-            "SELECT id, pais_id, nombre, codigo, activo FROM regiones WHERE activo = TRUE ORDER BY nombre"
-        ).fetchall()
+        if show_all:
+            rows = db.execute(
+                "SELECT id, pais_id, nombre, codigo, activo FROM regiones ORDER BY nombre"
+            ).fetchall()
+        else:
+            rows = db.execute(
+                "SELECT id, pais_id, nombre, codigo, activo FROM regiones WHERE activo = TRUE ORDER BY nombre"
+            ).fetchall()
 
     return [
         RegionResponse(
@@ -274,3 +427,95 @@ def list_regiones(
         )
         for r in rows
     ]
+
+
+@router.patch("/regiones/{region_id}", response_model=RegionResponse)
+def update_region(
+    region_id: int,
+    body: RegionUpdateRequest,
+    db: Annotated[_DBAdapter, Depends(get_db)],
+    _admin: Annotated[CurrentUser, Depends(require_admin)],
+) -> RegionResponse:
+    """
+    Edit a region's nombre, activo, or codigo. Admin only.
+
+    Editing codigo is allowed only when no region_counters rows reference
+    the current pais/region codigo combination (i.e., no folios generated).
+    """
+    existing = db.execute(
+        """
+        SELECT r.id, r.pais_id, r.nombre, r.codigo, r.activo, p.codigo AS pais_codigo
+        FROM regiones r
+        JOIN paises p ON p.id = r.pais_id
+        WHERE r.id = %s
+        """,
+        (region_id,),
+    ).fetchone()
+
+    if existing is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Región no encontrada",
+        )
+
+    if body.codigo is not None and body.codigo != existing["codigo"]:
+        counter_ref = db.execute(
+            "SELECT 1 FROM region_counters WHERE pais_codigo = %s AND region_codigo = %s LIMIT 1",
+            (existing["pais_codigo"], existing["codigo"]),
+        ).fetchone()
+        if counter_ref is not None:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=(
+                    f"El código '{existing['codigo']}' ya tiene folios generados para esta región. "
+                    "No es posible cambiarlo porque alteraría los folios existentes."
+                ),
+            )
+        dup = db.execute(
+            "SELECT id FROM regiones WHERE pais_id = %s AND codigo = %s AND id != %s",
+            (existing["pais_id"], body.codigo, region_id),
+        ).fetchone()
+        if dup is not None:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"El código '{body.codigo}' ya está en uso en este país",
+            )
+
+    fields: list[str] = []
+    values: list = []
+
+    if body.nombre is not None:
+        fields.append("nombre = %s")
+        values.append(body.nombre)
+    if body.codigo is not None:
+        fields.append("codigo = %s")
+        values.append(body.codigo)
+    if body.activo is not None:
+        fields.append("activo = %s")
+        values.append(body.activo)
+
+    if not fields:
+        return RegionResponse(
+            region_id=existing["id"],
+            pais_id=existing["pais_id"],
+            nombre=existing["nombre"],
+            codigo=existing["codigo"],
+            activo=existing["activo"],
+        )
+
+    values.append(region_id)
+    row = db.execute(
+        f"UPDATE regiones SET {', '.join(fields)} WHERE id = %s RETURNING id, pais_id, nombre, codigo, activo",
+        tuple(values),
+    ).fetchone()
+
+    if row is None:
+        raise HTTPException(status_code=500, detail="Error al actualizar la región")
+
+    return RegionResponse(
+        region_id=row["id"],
+        pais_id=row["pais_id"],
+        nombre=row["nombre"],
+        codigo=row["codigo"],
+        activo=row["activo"],
+    )

@@ -122,6 +122,140 @@ class TestRegiones:
         assert res.status_code == 201
 
 
+class TestUpdatePais:
+    """PATCH /api/paises/{id} — admin only."""
+
+    def test_admin_edits_pais_nombre(self, client, admin_headers, pais_mx):
+        """Admin can rename a country."""
+        res = client.patch(f"/api/paises/{pais_mx['id']}", json={"nombre": "México Renombrado"}, headers=admin_headers)
+        assert res.status_code == 200
+        assert res.json()["nombre"] == "México Renombrado"
+
+    def test_admin_deactivates_pais(self, client, admin_headers, pais_mx):
+        """Admin can deactivate a country."""
+        res = client.patch(f"/api/paises/{pais_mx['id']}", json={"activo": False}, headers=admin_headers)
+        assert res.status_code == 200
+        assert res.json()["activo"] is False
+
+    def test_admin_reactivates_pais(self, client, admin_headers, pais_mx):
+        """Admin can reactivate a deactivated country."""
+        client.patch(f"/api/paises/{pais_mx['id']}", json={"activo": False}, headers=admin_headers)
+        res = client.patch(f"/api/paises/{pais_mx['id']}", json={"activo": True}, headers=admin_headers)
+        assert res.status_code == 200
+        assert res.json()["activo"] is True
+
+    def test_admin_edits_pais_codigo_without_folios(self, client, admin_headers, pais_mx):
+        """Admin can change codigo when no folios exist for it."""
+        res = client.patch(f"/api/paises/{pais_mx['id']}", json={"codigo": "MXX"}, headers=admin_headers)
+        assert res.status_code == 200
+        assert res.json()["codigo"] == "MXX"
+
+    def test_codigo_change_blocked_when_folios_exist(self, client, admin_headers, pais_mx, region_lon,
+                                                      capturista_headers):
+        """Changing codigo is rejected when region_counters already has rows for that code."""
+        payload = _estudio_payload(region_lon["id"], nombre="Bene Folio")
+        client.post("/api/estudios", json=payload, headers=capturista_headers)
+
+        res = client.patch(f"/api/paises/{pais_mx['id']}", json={"codigo": "MXX"}, headers=admin_headers)
+        assert res.status_code == 409
+        assert "folio" in res.json()["detail"].lower()
+
+    def test_duplicate_codigo_on_edit_returns_409(self, client, admin_headers, pais_mx, pais_us):
+        """Editing a pais codigo to a taken code returns 409."""
+        res = client.patch(f"/api/paises/{pais_mx['id']}", json={"codigo": "US"}, headers=admin_headers)
+        assert res.status_code == 409
+
+    def test_nonexistent_pais_returns_404(self, client, admin_headers):
+        """PATCH on non-existent pais returns 404."""
+        res = client.patch("/api/paises/99999", json={"nombre": "No existe"}, headers=admin_headers)
+        assert res.status_code == 404
+
+    def test_capturista_cannot_edit_pais(self, client, capturista_headers, pais_mx):
+        """Non-admin cannot edit paises -> 401 or 403."""
+        res = client.patch(f"/api/paises/{pais_mx['id']}", json={"nombre": "Hack"}, headers=capturista_headers)
+        assert res.status_code in (401, 403)
+
+
+class TestUpdateRegion:
+    """PATCH /api/regiones/{id} — admin only."""
+
+    def test_admin_edits_region_nombre(self, client, admin_headers, region_lon):
+        """Admin can rename a region."""
+        res = client.patch(f"/api/regiones/{region_lon['id']}", json={"nombre": "León Renombrado"}, headers=admin_headers)
+        assert res.status_code == 200
+        assert res.json()["nombre"] == "León Renombrado"
+
+    def test_admin_deactivates_region(self, client, admin_headers, region_lon):
+        """Admin can deactivate a region."""
+        res = client.patch(f"/api/regiones/{region_lon['id']}", json={"activo": False}, headers=admin_headers)
+        assert res.status_code == 200
+        assert res.json()["activo"] is False
+
+    def test_admin_reactivates_region(self, client, admin_headers, region_lon):
+        """Admin can reactivate a deactivated region."""
+        client.patch(f"/api/regiones/{region_lon['id']}", json={"activo": False}, headers=admin_headers)
+        res = client.patch(f"/api/regiones/{region_lon['id']}", json={"activo": True}, headers=admin_headers)
+        assert res.status_code == 200
+        assert res.json()["activo"] is True
+
+    def test_admin_edits_region_codigo_without_folios(self, client, admin_headers, region_lon):
+        """Admin can change region codigo when no folios exist for it."""
+        res = client.patch(f"/api/regiones/{region_lon['id']}", json={"codigo": "LNX"}, headers=admin_headers)
+        assert res.status_code == 200
+        assert res.json()["codigo"] == "LNX"
+
+    def test_region_codigo_change_blocked_when_folios_exist(self, client, admin_headers, region_lon,
+                                                              pais_mx, capturista_headers):
+        """Changing region codigo is rejected when region_counters already has rows."""
+        payload = _estudio_payload(region_lon["id"], nombre="Bene Folio Region")
+        client.post("/api/estudios", json=payload, headers=capturista_headers)
+
+        res = client.patch(f"/api/regiones/{region_lon['id']}", json={"codigo": "LNX"}, headers=admin_headers)
+        assert res.status_code == 409
+        assert "folio" in res.json()["detail"].lower()
+
+    def test_duplicate_codigo_within_pais_on_edit_returns_409(self, client, admin_headers, pais_mx, region_lon, region_ira):
+        """Editing a region codigo to an already-taken code within the same pais returns 409."""
+        res = client.patch(f"/api/regiones/{region_lon['id']}", json={"codigo": "IRA"}, headers=admin_headers)
+        assert res.status_code == 409
+
+    def test_nonexistent_region_returns_404(self, client, admin_headers):
+        """PATCH on non-existent region returns 404."""
+        res = client.patch("/api/regiones/99999", json={"nombre": "No existe"}, headers=admin_headers)
+        assert res.status_code == 404
+
+    def test_capturista_cannot_edit_region(self, client, capturista_headers, region_lon):
+        """Non-admin cannot edit regiones -> 401 or 403."""
+        res = client.patch(f"/api/regiones/{region_lon['id']}", json={"nombre": "Hack"}, headers=capturista_headers)
+        assert res.status_code in (401, 403)
+
+
+class TestListWithInactive:
+    """GET /api/paises?include_inactive=true and GET /api/regiones?include_inactive=true."""
+
+    def test_admin_sees_inactive_paises(self, client, admin_headers, pais_mx, _test_db_conn):
+        """Admin with include_inactive=true sees deactivated countries."""
+        with _test_db_conn.cursor() as cur:
+            cur.execute("UPDATE paises SET activo = FALSE WHERE id = %s", (pais_mx["id"],))
+        _test_db_conn.commit()
+
+        res = client.get("/api/paises?include_inactive=true", headers=admin_headers)
+        assert res.status_code == 200
+        ids = [p["pais_id"] for p in res.json()]
+        assert pais_mx["id"] in ids
+
+    def test_non_admin_cannot_see_inactive_paises(self, client, capturista_headers, pais_mx, _test_db_conn):
+        """Non-admin ignores include_inactive=true — only active countries returned."""
+        with _test_db_conn.cursor() as cur:
+            cur.execute("UPDATE paises SET activo = FALSE WHERE id = %s", (pais_mx["id"],))
+        _test_db_conn.commit()
+
+        res = client.get("/api/paises?include_inactive=true", headers=capturista_headers)
+        assert res.status_code == 200
+        ids = [p["pais_id"] for p in res.json()]
+        assert pais_mx["id"] not in ids
+
+
 class TestFolioGeneration:
     """Folio counter integration via /api/estudios (calls generate_folio inside)."""
 
