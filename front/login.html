@@ -278,6 +278,16 @@
         return;
       }
 
+      // If a different user is logging in, clear role-specific context so the
+      // new user never inherits stale data from a prior session.
+      const _prevSession = _getSession();
+      if (_prevSession && _prevSession.usuario_id !== data.usuario_id) {
+        localStorage.removeItem('region_ctx');
+        localStorage.removeItem('estudio_id');
+        localStorage.removeItem('beneficiario_id');
+        localStorage.removeItem('solicitud_id');
+      }
+
       localStorage.setItem('session', JSON.stringify({
         token:      data.access_token,
         nombre:     data.nombre,

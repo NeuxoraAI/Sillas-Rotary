@@ -29,6 +29,7 @@
       };
     </script>
     <link href="assets/css/theme.css" rel="stylesheet"/>
+    <script src="assets/js/session-guard.js"></script>
     <script src="assets/js/theme-toggle.js"></script>
 <script src="assets/js/delight.js"></script>
     <style>
@@ -503,8 +504,8 @@
       // ═══════════════════════════════════════════════════════════════════════════
       // AUTH BOOT
       // ═══════════════════════════════════════════════════════════════════════════
-      const session = _getSession();
-      if (!session?.token || session.rol !== "admin") { window.location.replace("login.html"); }
+      SessionGuard.requireRole(["admin"], "login.html");
+      const session = SessionGuard.getSession();
       document.getElementById("sidebar-nombre").textContent = session.nombre || "—";
 
       function _logout() {

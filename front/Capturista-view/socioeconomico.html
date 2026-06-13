@@ -34,6 +34,7 @@
     <!-- END: Tailwind CSS & Plugins -->
     <link href="../assets/css/theme.css" rel="stylesheet"/>
     <script src="../assets/js/theme-toggle.js"></script>
+    <script src="../assets/js/session-guard.js"></script>
     <link href="../assets/css/socioeconomico.css" rel="stylesheet" />
   </head>
   <body class="page-bg min-h-screen flex flex-col font-display" style="background: #FBF7F5;">
@@ -2037,18 +2038,16 @@
 
         // Auth guard + Draft Resume
       (async function () {
-        const session = JSON.parse(localStorage.getItem("session") || "null");
+        // Role guard: capturista and organizacion may access this form.
+        SessionGuard.requireRole(["capturista", "organizacion"], "../login.html");
+
+        const session = SessionGuard.getSession();
         const regionCtx = JSON.parse(
           localStorage.getItem("region_ctx") || "null",
         );
         const urlParams = new URLSearchParams(window.location.search);
         const isEditMode = urlParams.get("estudio_id");
-        
-        if (!session?.token) {
-          window.location.href = "../login.html";
-          return;
-        }
-        
+
         // Allow edit mode without region_ctx (we'll load it from the estudio)
         if (!isEditMode && !regionCtx?.region_id) {
           window.location.href = "../login.html";

@@ -913,6 +913,7 @@ def listar_beneficiarios_tecnica(
             st.altura_total_in,
             st.unidad_captura,
             st.foto_url,
+            st.status AS solicitud_status,
             COUNT(*) OVER() AS total_count
         FROM beneficiarios b
         LEFT JOIN estudios_socioeconomicos e ON e.beneficiario_id = b.id
@@ -1373,7 +1374,11 @@ def crear_solicitud(
     db: Annotated[_DBAdapter, Depends(get_db)],
     usuario: Annotated[CurrentUser, Depends(require_roles("capturista", "tecnico", "admin", "organizacion"))],
 ) -> SolicitudCreateResponse:
-    body = _normalize_medidas(body)
+    # Normalize units only on final submission (status=completo).
+    # For borradores, store values exactly as sent so open/save cycles
+    # are idempotent and do not compound conversion errors.
+    if body.status != "borrador":
+        body = _normalize_medidas(body)
     existing = db.execute(
         """
         SELECT id FROM solicitudes_tecnicas
@@ -1473,6 +1478,10 @@ def obtener_solicitud(
         (row["beneficiario_id"],),
     ).fetchone()
     out["diagnostico"] = beneficiario["diagnostico"] if beneficiario else None
+    # Resolve storage URL so the frontend preview can render it without
+    # needing a separate fetch — raw storage:// URIs cannot be used as <img src>.
+    if out.get("foto_url"):
+        out["foto_url_resolved"] = _resolve_storage_url(out["foto_url"], _BUCKET)
     return out
 
 
@@ -1500,7 +1509,12 @@ def actualizar_solicitud(
             "UPDATE beneficiarios SET diagnostico = %s WHERE id = %s",
             (diagnostico, existing["beneficiario_id"]),
         )
-    if fields.get("unidad_medida") in ("cm", "in") or "unidad_peso_captura" in fields:
+    # Normalize units only when finalizing (status becomes completo).
+    # For borradores, store measurement values exactly as sent so that
+    # repeated save/reopen cycles are idempotent.
+    if fields.get("status") != "borrador" and (
+        fields.get("unidad_medida") in ("cm", "in") or "unidad_peso_captura" in fields
+    ):
         fields = _normalize_medidas_patch(fields)
     # Rename to DB column name
     if "unidad_medida" in fields:

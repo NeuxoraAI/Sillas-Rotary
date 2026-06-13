@@ -4,6 +4,7 @@ def _solicitud_payload(beneficiario_id: int) -> dict:
         "entorno": "Urbano / Interiores",
         "control_tronco": "Completo",
         "control_cabeza": "Independiente",
+        "control_de_piernas": "Parcial",
         "status": "borrador",
     }
 
@@ -33,8 +34,11 @@ def _create_user_and_login(client, admin_headers: dict, *, suffix: str, rol: str
 
 
 class TestTecnicaRbac:
-    def test_unidad_cm_convierte_a_pulgadas(self, client, tecnico_headers, sample_estudio):
+    def test_unidad_cm_no_convierte_en_borrador(self, client, tecnico_headers, sample_estudio):
+        """Borradores must store measurement values verbatim (no unit conversion).
+        Conversion to canonical units (inches/lb) happens only at final submission."""
         payload = _solicitud_payload(sample_estudio["beneficiario_id"])
+        # status is "borrador" from _solicitud_payload — values must be stored as-is
         payload.update({"unidad_medida": "cm", "altura_total_in": 25.4})
         create_response = client.post("/api/solicitudes", headers=tecnico_headers, json=payload)
         assert create_response.status_code == 201
@@ -43,7 +47,40 @@ class TestTecnicaRbac:
         assert get_response.status_code == 200
         body = get_response.json()
         assert body["unidad_captura"] == "cm"
-        assert body["altura_total_in"] == 10.0
+        # Value must be stored verbatim — NOT converted to 10.0 inches
+        assert float(body["altura_total_in"]) == pytest.approx(25.4, rel=1e-3)
+
+    def test_unidad_cm_convierte_al_finalizar(self, client, tecnico_headers, sample_estudio):
+        """Unit conversion to canonical (inches/lb) happens only when status becomes completo."""
+        medidas_completo = {
+            "unidad_medida": "cm",
+            "altura_total_in": 25.4,
+            "peso_kg": 70.0,
+            "medida_cabeza_asiento": 30.0,
+            "medida_hombro_asiento": 40.0,
+            "medida_prof_asiento": 45.0,
+            "medida_rodilla_talon": 35.0,
+            "medida_ancho_cadera": 38.0,
+            "unidad_peso_captura": "kg",
+        }
+        payload = {
+            "beneficiario_id": sample_estudio["beneficiario_id"],
+            "entorno": "Urbano / Interiores",
+            "control_tronco": "Completo",
+            "control_cabeza": "Independiente",
+            "control_de_piernas": "Parcial",
+            "status": "completo",
+            **medidas_completo,
+        }
+        create_response = client.post("/api/solicitudes", headers=tecnico_headers, json=payload)
+        assert create_response.status_code == 201
+        solicitud_id = create_response.json()["solicitud_id"]
+        get_response = client.get(f"/api/solicitudes/{solicitud_id}", headers=tecnico_headers)
+        assert get_response.status_code == 200
+        body = get_response.json()
+        assert body["unidad_captura"] == "cm"
+        # 25.4 cm ÷ 2.54 = 10.0 inches — conversion must have happened
+        assert float(body["altura_total_in"]) == pytest.approx(10.0, rel=1e-3)
 
     def test_capturista_cannot_create_solicitud(self, client, capturista_headers, sample_estudio):
         response = client.post(

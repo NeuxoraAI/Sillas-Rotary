@@ -28,6 +28,7 @@
 </script>
 <link href="../assets/css/theme.css" rel="stylesheet"/>
 <script src="../assets/js/theme-toggle.js"></script>
+<script src="../assets/js/session-guard.js"></script>
 <link href="../assets/css/seleccion-region.css" rel="stylesheet"/>
 </head>
 <body class="page-bg font-display min-h-screen flex flex-col" style="background: #FBF7F5;">
@@ -180,15 +181,12 @@
 </footer>
 
 <script>
-  // ── Auth guard ──────────────────────────────────────────────────────────────
-  const session = _getSession();
-  if (!session?.token) {
-    window.location.replace('../login.html');
-  }
+  // ── Auth guard (capturista and tecnico) ──────────────────────────────────────
+  SessionGuard.requireRole(['capturista', 'tecnico', 'organizacion'], '../login.html');
 
   // Populate header user info
-  document.getElementById('user-nombre').textContent = session.nombre  || '—';
-  document.getElementById('user-rol').textContent    = _formatRol(session.rol);
+  document.getElementById('user-nombre').textContent = SessionGuard.getSession().nombre || '—';
+  document.getElementById('user-rol').textContent    = _formatRol(SessionGuard.getSession().rol);
 
   // Logout
   document.getElementById('btn-logout').addEventListener('click', function () {
@@ -296,6 +294,7 @@
     }));
 
     // Route by role
+    const session = SessionGuard.getSession();
     if (session.rol === 'tecnico') {
       localStorage.removeItem('beneficiario_id');
       window.location.href = '../Tecnico-view/vista_tecnicos.html';
@@ -320,9 +319,7 @@
   }
 
   function _authFetch(url, opts) {
-    opts = opts || {};
-    opts.headers = Object.assign({ 'Authorization': 'Bearer ' + session.token }, opts.headers || {});
-    return fetch(url, opts);
+    return SessionGuard.authFetch(url, opts);
   }
 
   function _formatRol(rol) {

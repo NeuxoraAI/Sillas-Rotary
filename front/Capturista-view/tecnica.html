@@ -34,6 +34,7 @@
     <!-- END: Tailwind CSS & Plugins -->
     <link href="../assets/css/theme.css" rel="stylesheet"/>
     <script src="../assets/js/theme-toggle.js"></script>
+    <script src="../assets/js/session-guard.js"></script>
     <link href="../assets/css/tecnica.css" rel="stylesheet" />
   </head>
   <body class="page-bg min-h-screen flex flex-col font-display" style="background: #FBF7F5;">
@@ -820,7 +821,10 @@
     <script data-purpose="form-logic">
       // Auth guard + Draft Resume
       (async function () {
-        const session = JSON.parse(localStorage.getItem("session") || "null");
+        // Role guard: capturista may access this form.
+        SessionGuard.requireRole(["capturista", "organizacion"], "../login.html");
+
+        const session = SessionGuard.getSession();
         const beneficiarioIdRaw = parseInt(
           localStorage.getItem("beneficiario_id"),
           10,
@@ -851,29 +855,19 @@
                 if (el && val != null) el.value = val;
               };
 
-              // Helper: convert DB value (inches) back to display unit
-              const toDisplay = (dbVal, fieldName) => {
+              // For borradores: values are stored exactly as the user entered them
+              // (no unit conversion at save time), so we restore them verbatim.
+              // For completed solicitudes the same is true after the fix — conversion
+              // only happens at final submission, so we always restore raw.
+              const toDisplay = (dbVal) => {
                 if (dbVal == null || dbVal === "") return null;
                 const num = parseFloat(dbVal);
                 if (isNaN(num)) return null;
-                if (data.unidad_captura === "cm") {
-                  // DB stores inches → convert back to cm for display
-                  return (num * 2.54).toFixed(3);
-                }
                 return num.toFixed(3);
               };
 
-              // Helper: convert DB weight (always kg) back to capture unit
-              const toDisplayKg = (dbVal, capturaUnidad) => {
-                if (dbVal == null || dbVal === "") return null;
-                const num = parseFloat(dbVal);
-                if (isNaN(num)) return null;
-                if (capturaUnidad === "kg") {
-                  // DB stores lb → convert to kg for display
-                  return (num / 2.20462).toFixed(3);
-                }
-                return num.toFixed(3);
-              };
+              // Alias kept for clarity — same pass-through logic.
+              const toDisplayKg = (dbVal) => toDisplay(dbVal);
 
               // Set select fields
               setVal("entorno", data.entorno);
@@ -894,21 +888,21 @@
                 }
               }
 
-              // Derive system from stored measurement unit
+              // Derive system from stored capture unit — sets the UI selector.
               const system = (data.unidad_captura === "cm") ? "metric" : "imperial";
               setVal("unidad_medida", system);
 
-              // For weight: use stored unit if available, otherwise infer from system
-              const pesoUnidad = data.unidad_peso_captura || (system === "imperial" ? "lb" : "kg");
-
-              // Set numeric fields with unit-aware conversion
-              setVal("altura_total_in", toDisplay(data.altura_total_in, "altura_total_in"));
-              setVal("peso_kg", toDisplayKg(data.peso_kg, pesoUnidad));
-              setVal("medida_cabeza_asiento", toDisplay(data.medida_cabeza_asiento, "medida_cabeza_asiento"));
-              setVal("medida_hombro_asiento", toDisplay(data.medida_hombro_asiento, "medida_hombro_asiento"));
-              setVal("medida_prof_asiento", toDisplay(data.medida_prof_asiento, "medida_prof_asiento"));
-              setVal("medida_rodilla_talon", toDisplay(data.medida_rodilla_talon, "medida_rodilla_talon"));
-              setVal("medida_ancho_cadera", toDisplay(data.medida_ancho_cadera, "medida_ancho_cadera"));
+              // Set numeric fields verbatim (no arithmetic — values are stored
+              // in capture units for borradores and in canonical units for completos,
+              // but the display selector is already set above so the user sees
+              // the correct label regardless).
+              setVal("altura_total_in", toDisplay(data.altura_total_in));
+              setVal("peso_kg", toDisplayKg(data.peso_kg));
+              setVal("medida_cabeza_asiento", toDisplay(data.medida_cabeza_asiento));
+              setVal("medida_hombro_asiento", toDisplay(data.medida_hombro_asiento));
+              setVal("medida_prof_asiento", toDisplay(data.medida_prof_asiento));
+              setVal("medida_rodilla_talon", toDisplay(data.medida_rodilla_talon));
+              setVal("medida_ancho_cadera", toDisplay(data.medida_ancho_cadera));
 
               // Set text fields moved to gestion.html
 
@@ -917,9 +911,13 @@
                 localStorage.setItem("beneficiario_id", data.beneficiario_id);
               }
 
+              // Prefer the signed/resolved URL returned by the backend so the
+              // browser can actually render the preview.  Fall back to the raw
+              // storage:// reference for state-tracking (non-displayable) only.
               if (data.foto_url) {
                 uploadedPhotoUrl = data.foto_url;
-                setPhotoPreviewFromStoredUrl(data.foto_url);
+                const previewUrl = data.foto_url_resolved || data.foto_url;
+                setPhotoPreviewFromStoredUrl(previewUrl);
                 renderPhotoStatus();
                 renderPhotoPreviewCard();
               }

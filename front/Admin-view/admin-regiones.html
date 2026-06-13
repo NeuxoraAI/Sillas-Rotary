@@ -30,6 +30,7 @@
 <link href="../assets/css/theme.css" rel="stylesheet"/>
 <script src="../assets/js/theme-toggle.js"></script>
 <script src="../assets/js/delight.js"></script>
+<script src="../assets/js/session-guard.js"></script>
 <link href="../assets/css/admin-regiones.css" rel="stylesheet"/>
   <style>
     /* Fixed gradient layer (same format as perfil-capturista) */
@@ -257,22 +258,93 @@
       </div>
     </div>
 
+    <!-- ── Edit País Modal ── -->
+    <div id="edit-pais-modal" class="hidden fixed inset-0 z-50" style="background:rgba(43,6,61,0.6);backdrop-filter:blur(3px);">
+      <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-base font-bold text-slate-900">Editar País</h3>
+            <button id="btn-cerrar-edit-pais" class="w-8 h-8 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-400">
+              <span class="material-symbols-outlined text-xl">close</span>
+            </button>
+          </div>
+          <div class="space-y-3">
+            <div class="space-y-1.5">
+              <label class="block text-xs font-semibold text-slate-600">Nombre</label>
+              <div class="relative">
+                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg pointer-events-none">public</span>
+                <input id="edit-pais-nombre" type="text" class="w-full pl-10 pr-4 py-2.5 text-sm"/>
+              </div>
+            </div>
+            <div class="space-y-1.5">
+              <label class="block text-xs font-semibold text-slate-600">Código ISO</label>
+              <div class="relative">
+                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg pointer-events-none">tag</span>
+                <input id="edit-pais-codigo" type="text" maxlength="3" class="w-full pl-10 pr-4 py-2.5 text-sm uppercase font-mono tracking-wider"/>
+              </div>
+              <p class="text-[11px] text-amber-600">Cambiar el código solo es posible si no hay folios generados.</p>
+            </div>
+          </div>
+          <p id="edit-pais-error" class="hidden text-red-600 text-sm bg-red-50 border border-red-200 rounded-lg px-4 py-2" role="alert"></p>
+          <div class="flex gap-3">
+            <button id="btn-cerrar-edit-pais-2" class="flex-1 py-2.5 border-2 border-slate-200 rounded-xl font-semibold text-slate-600 hover:bg-slate-50 transition-all text-sm">Cancelar</button>
+            <button id="btn-guardar-edit-pais" class="btn-primary flex-1 py-2.5 text-sm rounded-xl flex items-center justify-center gap-2">
+              <span class="material-symbols-outlined text-lg">save</span>Guardar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Edit Región Modal ── -->
+    <div id="edit-region-modal" class="hidden fixed inset-0 z-50" style="background:rgba(43,6,61,0.6);backdrop-filter:blur(3px);">
+      <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-base font-bold text-slate-900">Editar Región</h3>
+            <button id="btn-cerrar-edit-region" class="w-8 h-8 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-400">
+              <span class="material-symbols-outlined text-xl">close</span>
+            </button>
+          </div>
+          <div class="space-y-3">
+            <div class="space-y-1.5">
+              <label class="block text-xs font-semibold text-slate-600">Nombre</label>
+              <div class="relative">
+                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg pointer-events-none">location_on</span>
+                <input id="edit-region-nombre" type="text" class="w-full pl-10 pr-4 py-2.5 text-sm"/>
+              </div>
+            </div>
+            <div class="space-y-1.5">
+              <label class="block text-xs font-semibold text-slate-600">Código (2–5 letras)</label>
+              <div class="relative">
+                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg pointer-events-none">tag</span>
+                <input id="edit-region-codigo" type="text" maxlength="5" class="w-full pl-10 pr-4 py-2.5 text-sm uppercase font-mono tracking-wider"/>
+              </div>
+              <p class="text-[11px] text-amber-600">Cambiar el código solo es posible si no hay folios generados.</p>
+            </div>
+          </div>
+          <p id="edit-region-error" class="hidden text-red-600 text-sm bg-red-50 border border-red-200 rounded-lg px-4 py-2" role="alert"></p>
+          <div class="flex gap-3">
+            <button id="btn-cerrar-edit-region-2" class="flex-1 py-2.5 border-2 border-slate-200 rounded-xl font-semibold text-slate-600 hover:bg-slate-50 transition-all text-sm">Cancelar</button>
+            <button id="btn-guardar-edit-region" class="btn-primary flex-1 py-2.5 text-sm rounded-xl flex items-center justify-center gap-2">
+              <span class="material-symbols-outlined text-lg">save</span>Guardar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </main>
 </div>
 
 <script>
   // ── Auth guard (admin only) ─────────────────────────────────────────────────
-  const session = JSON.parse(localStorage.getItem('session') || 'null');
-  if (!session?.token || session.rol !== 'admin') {
-    window.location.replace('../login.html');
-  }
+  SessionGuard.requireRole(['admin'], '../login.html');
 
-  document.getElementById('sidebar-nombre').textContent = session.nombre || '—';
+  document.getElementById('sidebar-nombre').textContent = SessionGuard.getSession().nombre || '—';
 
   function _authFetch(url, opts) {
-    opts = opts || {};
-    opts.headers = Object.assign({ 'Authorization': 'Bearer ' + session.token }, opts.headers || {});
-    return fetch(url, opts);
+    return SessionGuard.authFetch(url, opts);
   }
 
   function _logout() {
@@ -283,22 +355,25 @@
   document.getElementById('btn-logout').addEventListener('click', _logout);
   document.getElementById('btn-logout-mobile').addEventListener('click', _logout);
 
-  // uppercase on code inputs
+  // uppercase on code inputs (auto-uppercase as the user types)
   document.getElementById('pais-codigo').addEventListener('input', function () { this.value = this.value.toUpperCase(); });
   document.getElementById('region-codigo').addEventListener('input', function () { this.value = this.value.toUpperCase(); });
 
   // ── Load países ──────────────────────────────────────────────────────────────
-  let _paisesCache = [];
+  let _paisesCache = [];    // includes inactive for admin management
+  let _regionesCache = [];
 
   async function loadPaises() {
     const list = document.getElementById('lista-paises');
     list.innerHTML = '<li class="px-6 py-4" data-thinking="Desplegando el mapa"></li>';
 
     try {
-      const res = await _authFetch('/api/paises');
+      // Admin view always fetches all countries (active + inactive)
+      const res = await _authFetch('/api/paises?include_inactive=true');
       if (!res.ok) throw new Error();
       _paisesCache = await res.json();
       renderPaises();
+      // Refresh region select with only active countries
       refreshRegionPaisSelect();
     } catch (_) {
       list.innerHTML = `<li class="px-6 py-10 text-center">
@@ -331,7 +406,7 @@
       return;
     }
     list.innerHTML = _paisesCache.map(p => `
-      <li class="flex items-center gap-4 px-6 py-3.5 hover:bg-orange-50/30 transition-colors">
+      <li class="flex items-center gap-3 px-4 py-3 hover:bg-orange-50/30 transition-colors ${!p.activo ? 'opacity-60' : ''}">
         <div class="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 font-bold font-mono text-sm shadow-sm"
              style="background:#F3EEF9;color:var(--c-purple);border:1px solid rgba(43,6,61,0.10);">
           ${_esc(p.codigo)}
@@ -341,6 +416,25 @@
           <p class="text-[11px] text-slate-400 uppercase tracking-wider mt-0.5">ISO · ${_esc(p.codigo)}</p>
         </div>
         ${_estadoBadge(p.activo)}
+        <div class="flex items-center gap-1 shrink-0 ml-1">
+          <button onclick="openEditPais(${p.pais_id}, ${JSON.stringify(p.nombre)}, ${JSON.stringify(p.codigo)})"
+            class="w-8 h-8 rounded-lg border border-slate-200 text-slate-400 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-200 transition-all flex items-center justify-center"
+            title="Editar país">
+            <span class="material-symbols-outlined" style="font-size:17px">edit</span>
+          </button>
+          ${p.activo
+            ? `<button onclick="togglePais(${p.pais_id}, false)"
+                class="w-8 h-8 rounded-lg border border-amber-100 text-amber-500 hover:bg-amber-50 hover:text-amber-700 hover:border-amber-200 transition-all flex items-center justify-center"
+                title="Desactivar país">
+                <span class="material-symbols-outlined" style="font-size:17px">toggle_on</span>
+              </button>`
+            : `<button onclick="togglePais(${p.pais_id}, true)"
+                class="w-8 h-8 rounded-lg border border-green-100 text-green-500 hover:bg-green-50 hover:text-green-700 hover:border-green-200 transition-all flex items-center justify-center"
+                title="Activar país">
+                <span class="material-symbols-outlined" style="font-size:17px">toggle_off</span>
+              </button>`
+          }
+        </div>
       </li>
     `).join('');
   }
@@ -349,7 +443,8 @@
     const sel = document.getElementById('region-pais');
     const current = sel.value;
     sel.innerHTML = '<option value="">— Seleccione un país —</option>';
-    _paisesCache.forEach(p => {
+    // Only active countries in the create-region dropdown
+    _paisesCache.filter(p => p.activo).forEach(p => {
       const opt = document.createElement('option');
       opt.value = p.pais_id;
       opt.textContent = p.nombre + ' (' + p.codigo + ')';
@@ -366,14 +461,15 @@
     countEl.classList.add('hidden');
 
     try {
-      const res = await _authFetch('/api/regiones');
+      // Admin view fetches all regions (active + inactive)
+      const res = await _authFetch('/api/regiones?include_inactive=true');
       if (!res.ok) throw new Error();
-      const regiones = await res.json();
+      _regionesCache = await res.json();
 
-      countEl.textContent = regiones.length;
-      countEl.classList.toggle('hidden', regiones.length === 0);
+      countEl.textContent = _regionesCache.length;
+      countEl.classList.toggle('hidden', _regionesCache.length === 0);
 
-      if (regiones.length === 0) {
+      if (_regionesCache.length === 0) {
         list.innerHTML = `<li class="px-6 py-12 text-center">
           <div class="inline-flex flex-col items-center gap-2">
             <div class="w-14 h-14 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center mb-1">
@@ -388,7 +484,7 @@
 
       // Group by pais_id for nicer display
       const byPais = {};
-      regiones.forEach(r => {
+      _regionesCache.forEach(r => {
         const pais = _paisesCache.find(p => p.pais_id === r.pais_id);
         const key = pais ? (pais.nombre + '||' + pais.codigo) : ('País #' + r.pais_id + '||??');
         if (!byPais[key]) byPais[key] = [];
@@ -405,7 +501,7 @@
           <span class="ml-auto text-[10px] font-semibold text-slate-500 bg-white border border-slate-200 rounded-full px-2 py-0.5">${rs.length} región${rs.length !== 1 ? 'es' : ''}</span>
         </li>
         ${rs.map(r => `
-          <li class="flex items-center gap-4 px-6 py-3.5 hover:bg-orange-50/30 transition-colors">
+          <li class="flex items-center gap-3 px-4 py-3 hover:bg-orange-50/30 transition-colors ${!r.activo ? 'opacity-60' : ''}">
             <div class="w-11 h-11 rounded-xl font-bold font-mono text-sm flex items-center justify-center shrink-0 shadow-sm"
                  style="background:#EDFAF8;color:#0F766E;border:1px solid rgba(15,118,110,0.15);">
               ${_esc(r.codigo)}
@@ -415,6 +511,25 @@
               <p class="text-[11px] text-slate-400 uppercase tracking-wider mt-0.5 font-mono">Folios · ${_esc(paisCodigo)}-${_esc(r.codigo)}-YYYY-###</p>
             </div>
             ${_estadoBadge(r.activo)}
+            <div class="flex items-center gap-1 shrink-0 ml-1">
+              <button onclick="openEditRegion(${r.region_id}, ${JSON.stringify(r.nombre)}, ${JSON.stringify(r.codigo)})"
+                class="w-8 h-8 rounded-lg border border-slate-200 text-slate-400 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-200 transition-all flex items-center justify-center"
+                title="Editar región">
+                <span class="material-symbols-outlined" style="font-size:17px">edit</span>
+              </button>
+              ${r.activo
+                ? `<button onclick="toggleRegion(${r.region_id}, false)"
+                    class="w-8 h-8 rounded-lg border border-amber-100 text-amber-500 hover:bg-amber-50 hover:text-amber-700 hover:border-amber-200 transition-all flex items-center justify-center"
+                    title="Desactivar región">
+                    <span class="material-symbols-outlined" style="font-size:17px">toggle_on</span>
+                  </button>`
+                : `<button onclick="toggleRegion(${r.region_id}, true)"
+                    class="w-8 h-8 rounded-lg border border-green-100 text-green-500 hover:bg-green-50 hover:text-green-700 hover:border-green-200 transition-all flex items-center justify-center"
+                    title="Activar región">
+                    <span class="material-symbols-outlined" style="font-size:17px">toggle_off</span>
+                  </button>`
+              }
+            </div>
           </li>
         `).join('')}`;
       }).join('');
@@ -429,6 +544,140 @@
       </li>`;
     }
   }
+
+  // ── Toggle país activo ───────────────────────────────────────────────────────
+  window.togglePais = async function (id, activar) {
+    const accion = activar ? 'activar' : 'desactivar';
+    if (!confirm(`¿${accion.charAt(0).toUpperCase() + accion.slice(1)} este país?`)) return;
+    try {
+      const res = await _authFetch(`/api/paises/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ activo: activar }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data.detail || `No se pudo ${accion} el país.`);
+        return;
+      }
+      await loadPaises();
+      await loadRegiones();
+    } catch (_) {
+      alert('No se pudo conectar con el servidor.');
+    }
+  };
+
+  // ── Toggle región activo ─────────────────────────────────────────────────────
+  window.toggleRegion = async function (id, activar) {
+    const accion = activar ? 'activar' : 'desactivar';
+    if (!confirm(`¿${accion.charAt(0).toUpperCase() + accion.slice(1)} esta región?`)) return;
+    try {
+      const res = await _authFetch(`/api/regiones/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ activo: activar }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data.detail || `No se pudo ${accion} la región.`);
+        return;
+      }
+      await loadRegiones();
+    } catch (_) {
+      alert('No se pudo conectar con el servidor.');
+    }
+  };
+
+  // ── Edit país modal ──────────────────────────────────────────────────────────
+  let _editPaisId = null;
+
+  window.openEditPais = function (id, nombre, codigo) {
+    _editPaisId = id;
+    document.getElementById('edit-pais-nombre').value = nombre;
+    document.getElementById('edit-pais-codigo').value = codigo;
+    _hide(document.getElementById('edit-pais-error'));
+    document.getElementById('edit-pais-modal').classList.remove('hidden');
+  };
+
+  document.getElementById('btn-cerrar-edit-pais').addEventListener('click', function () {
+    document.getElementById('edit-pais-modal').classList.add('hidden');
+  });
+  document.getElementById('btn-cerrar-edit-pais-2').addEventListener('click', function () {
+    document.getElementById('edit-pais-modal').classList.add('hidden');
+  });
+  document.getElementById('edit-pais-codigo').addEventListener('input', function () { this.value = this.value.toUpperCase(); });
+
+  document.getElementById('btn-guardar-edit-pais').addEventListener('click', async function () {
+    if (!_editPaisId) return;
+    const errorEl = document.getElementById('edit-pais-error');
+    _hide(errorEl);
+
+    const nombre = document.getElementById('edit-pais-nombre').value.trim();
+    const codigo = document.getElementById('edit-pais-codigo').value.trim().toUpperCase();
+
+    if (!nombre || !codigo) { _show(errorEl, 'Nombre y código son obligatorios.'); return; }
+    if (codigo.length < 2)  { _show(errorEl, 'El código debe tener al menos 2 caracteres.'); return; }
+
+    try {
+      const res = await _authFetch(`/api/paises/${_editPaisId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nombre, codigo }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { _show(errorEl, data.detail || 'Error al guardar.'); return; }
+      document.getElementById('edit-pais-modal').classList.add('hidden');
+      await loadPaises();
+      await loadRegiones();
+    } catch (_) {
+      _show(errorEl, 'No se pudo conectar con el servidor.');
+    }
+  });
+
+  // ── Edit región modal ────────────────────────────────────────────────────────
+  let _editRegionId = null;
+
+  window.openEditRegion = function (id, nombre, codigo) {
+    _editRegionId = id;
+    document.getElementById('edit-region-nombre').value = nombre;
+    document.getElementById('edit-region-codigo').value = codigo;
+    _hide(document.getElementById('edit-region-error'));
+    document.getElementById('edit-region-modal').classList.remove('hidden');
+  };
+
+  document.getElementById('btn-cerrar-edit-region').addEventListener('click', function () {
+    document.getElementById('edit-region-modal').classList.add('hidden');
+  });
+  document.getElementById('btn-cerrar-edit-region-2').addEventListener('click', function () {
+    document.getElementById('edit-region-modal').classList.add('hidden');
+  });
+  document.getElementById('edit-region-codigo').addEventListener('input', function () { this.value = this.value.toUpperCase(); });
+
+  document.getElementById('btn-guardar-edit-region').addEventListener('click', async function () {
+    if (!_editRegionId) return;
+    const errorEl = document.getElementById('edit-region-error');
+    _hide(errorEl);
+
+    const nombre = document.getElementById('edit-region-nombre').value.trim();
+    const codigo = document.getElementById('edit-region-codigo').value.trim().toUpperCase();
+
+    if (!nombre || !codigo) { _show(errorEl, 'Nombre y código son obligatorios.'); return; }
+    if (codigo.length < 2 || codigo.length > 5) { _show(errorEl, 'El código debe tener entre 2 y 5 caracteres.'); return; }
+
+    try {
+      const res = await _authFetch(`/api/regiones/${_editRegionId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nombre, codigo }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { _show(errorEl, data.detail || 'Error al guardar.'); return; }
+      document.getElementById('edit-region-modal').classList.add('hidden');
+      await loadRegiones();
+    } catch (_) {
+      _show(errorEl, 'No se pudo conectar con el servidor.');
+    }
+  });
 
   document.getElementById('btn-refresh-paises').addEventListener('click', loadPaises);
   document.getElementById('btn-refresh-regiones').addEventListener('click', loadRegiones);
@@ -517,6 +766,18 @@
   }
   function _show(el, msg) { el.textContent = msg; el.classList.remove('hidden'); }
   function _hide(el)      { el.textContent = ''; el.classList.add('hidden'); }
+  function _showEl(id, msg) { const el = document.getElementById(id); if (msg !== undefined) el.textContent = msg; el.classList.remove('hidden'); }
+  function _hideEl(id)      { document.getElementById(id).classList.add('hidden'); }
+
+  // Disable the "Agregar Región" button until a país is selected
+  (function () {
+    const sel = document.getElementById('region-pais');
+    const btn = document.getElementById('btn-region');
+    function updateBtn() { btn.disabled = !sel.value; }
+    sel.addEventListener('change', updateBtn);
+    updateBtn();
+  })();
+
   function _estadoBadge(activo) {
     return activo
       ? '<span class="inline-flex items-center gap-1.5 text-xs font-semibold text-green-700 shrink-0"><span class="w-2 h-2 rounded-full bg-green-500 inline-block shadow-[0_0_0_3px_rgba(34,197,94,0.15)]"></span>Activo</span>'

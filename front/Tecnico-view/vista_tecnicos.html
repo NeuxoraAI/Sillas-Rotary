@@ -35,6 +35,7 @@
     <link href="../assets/css/theme.css" rel="stylesheet"/>
     <script src="../assets/js/theme-toggle.js"></script>
 <script src="../assets/js/delight.js"></script>
+    <script src="../assets/js/session-guard.js"></script>
     <link href="../assets/css/vista-tecnicos.css" rel="stylesheet" />
     <style>
       /* Fixed gradient layer (same format as perfil-capturista) */
@@ -510,12 +511,7 @@
       }
 
       function _authFetch(url, opts) {
-        opts = opts || {};
-        opts.headers = Object.assign(
-          { Authorization: "Bearer " + _getSession().token },
-          opts.headers || {},
-        );
-        return fetch(url, opts);
+        return SessionGuard.authFetch(url, opts);
       }
 
       function _formatRol(rol) {
@@ -673,12 +669,10 @@
       // ═══════════════════════════════════════════════════════════════════════════
 
       (function boot() {
-        const session = _getSession();
-        if (!session?.token) {
-          window.location.replace("../login.html");
-          return;
-        }
+        // Role guard: tecnico only.
+        SessionGuard.requireRole(["tecnico"], "../login.html");
 
+        const session = SessionGuard.getSession();
         $("user-nombre").textContent = session.nombre || "—";
         $("user-rol").textContent = _formatRol(session.rol);
 
@@ -1067,6 +1061,11 @@
             ? '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-500 text-white shrink-0">Exportado</span>'
             : "";
 
+          // Badge shown when the solicitud técnica is still a draft
+          const solicitudBorradorBadge = item.solicitud_status === "borrador"
+            ? '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-300 shrink-0">Borrador técnico</span>'
+            : "";
+
           card.innerHTML = `
         <div class="flex items-center gap-3">
           <label class="flex items-center cursor-pointer shrink-0" onclick="event.stopPropagation()">
@@ -1081,8 +1080,9 @@
             <p class="text-xs font-mono text-slate-400">${folio}</p>
             <p class="text-xs text-slate-500 truncate">${pais} · ${ciudad} · ${telefono}</p>
           </div>
-          <div class="flex items-center gap-2 shrink-0 self-center">
+          <div class="flex items-center gap-2 shrink-0 self-center flex-wrap justify-end">
             ${exportedBadge}
+            ${solicitudBorradorBadge}
             <span class="text-[11px] font-bold px-2.5 py-1 rounded-full ${estadoClass}">${_formatEstado(item.estado)}</span>
           </div>
         </div>
@@ -1218,20 +1218,26 @@
     `;
 
         // ── Datos Clínicos ──
+        const solicitudStatusBadge = solicitud.status === "borrador"
+          ? '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-300 ml-2">Borrador técnico</span>'
+          : (solicitud.status === "completo"
+              ? '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-300 ml-2">Completo</span>'
+              : "");
         html += `
       <section>
         <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
           <span class="material-symbols-outlined text-sm">stethoscope</span> Datos Clínicos
+          ${solicitudStatusBadge}
         </h4>
         <div class="bg-slate-50 rounded-xl p-4 space-y-2 text-sm">
           <div class="grid grid-cols-2 gap-2">
-            <div><span class="text-slate-400">Peso:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.peso_kg != null ? solicitud.peso_kg + " lb" : null)}</span></div>
-            <div><span class="text-slate-400">Altura total:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.altura_total_in != null ? solicitud.altura_total_in + " in" : null)}</span></div>
-            <div><span class="text-slate-400">Cabeza-asiento:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.medida_cabeza_asiento != null ? solicitud.medida_cabeza_asiento + " in" : null)}</span></div>
-            <div><span class="text-slate-400">Hombro-asiento:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.medida_hombro_asiento != null ? solicitud.medida_hombro_asiento + " in" : null)}</span></div>
-            <div><span class="text-slate-400">Prof. asiento:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.medida_prof_asiento != null ? solicitud.medida_prof_asiento + " in" : null)}</span></div>
-            <div><span class="text-slate-400">Rodilla-talón:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.medida_rodilla_talon != null ? solicitud.medida_rodilla_talon + " in" : null)}</span></div>
-            <div><span class="text-slate-400">Ancho cadera:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.medida_ancho_cadera != null ? solicitud.medida_ancho_cadera + " in" : null)}</span></div>
+            <div><span class="text-slate-400">Peso:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.peso_kg != null ? solicitud.peso_kg + " " + (solicitud.unidad_peso_captura || "lb") : null)}</span></div>
+            <div><span class="text-slate-400">Altura total:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.altura_total_in != null ? solicitud.altura_total_in + " " + (solicitud.unidad_captura || "in") : null)}</span></div>
+            <div><span class="text-slate-400">Cabeza-asiento:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.medida_cabeza_asiento != null ? solicitud.medida_cabeza_asiento + " " + (solicitud.unidad_captura || "in") : null)}</span></div>
+            <div><span class="text-slate-400">Hombro-asiento:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.medida_hombro_asiento != null ? solicitud.medida_hombro_asiento + " " + (solicitud.unidad_captura || "in") : null)}</span></div>
+            <div><span class="text-slate-400">Prof. asiento:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.medida_prof_asiento != null ? solicitud.medida_prof_asiento + " " + (solicitud.unidad_captura || "in") : null)}</span></div>
+            <div><span class="text-slate-400">Rodilla-talón:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.medida_rodilla_talon != null ? solicitud.medida_rodilla_talon + " " + (solicitud.unidad_captura || "in") : null)}</span></div>
+            <div><span class="text-slate-400">Ancho cadera:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.medida_ancho_cadera != null ? solicitud.medida_ancho_cadera + " " + (solicitud.unidad_captura || "in") : null)}</span></div>
           </div>
           <div class="mt-2 pt-2 border-t border-slate-200">
             <div><span class="text-slate-400">Control tronco:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.control_tronco)}</span></div>
