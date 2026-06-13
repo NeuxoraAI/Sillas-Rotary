@@ -232,6 +232,7 @@ class TestMedidaValidation:
             "entorno": "Urbano / Interiores",
             "control_tronco": "Completo",
             "control_cabeza": "Independiente",
+            "control_de_piernas": "Parcial",
         }
 
     def test_acepta_entero_simple_como_string(self):
@@ -364,6 +365,7 @@ class TestObservacionesPosturalesValidation:
             "entorno": "Urbano / Interiores",
             "control_tronco": "Completo",
             "control_cabeza": "Independiente",
+            "control_de_piernas": "Parcial",
         }
 
     def test_acepta_texto_valido(self):
@@ -371,7 +373,8 @@ class TestObservacionesPosturalesValidation:
         payload = self._base_payload()
         payload["observaciones_posturales"] = "Paciente con escoliosis."
         model = SolicitudCreateRequest(**payload)
-        assert model.observaciones_posturales == "Paciente con escoliosis."
+        # Input is auto-uppercased to align with the backend catalog charset
+        assert model.observaciones_posturales == "PACIENTE CON ESCOLIOSIS."
 
     def test_acepta_null(self):
         """None is accepted."""
@@ -419,6 +422,7 @@ class TestValidationErrorFormat:
             "entorno": "Urbano / Interiores",
             "control_tronco": "Completo",
             "control_cabeza": "Independiente",
+            "control_de_piernas": "Parcial",
         }
 
     def test_error_tiene_loc_field(self):
@@ -463,8 +467,9 @@ class TestValidationErrorFormat:
 class TestWeightUnitConversion:
     """Test lb→kg conversion and unidad_peso_captura validation."""
 
-    def test_post_lb_convierte_a_kg(self, client, tecnico_headers, sample_estudio):
-        """POST with unidad_peso_captura=lb converts 220.462 lb → 100.000 kg."""
+    def test_post_lb_borrador_stores_verbatim(self, client, tecnico_headers, sample_estudio):
+        """POST borrador with unidad_peso_captura=lb stores value verbatim (no conversion).
+        Conversion to canonical lb happens only at final submission (status=completo)."""
         payload = _solicitud_payload(sample_estudio["beneficiario_id"])
         payload.update({
             "unidad_peso_captura": "lb",
@@ -477,7 +482,8 @@ class TestWeightUnitConversion:
         assert get_response.status_code == 200
         body = get_response.json()
         assert body["unidad_peso_captura"] == "lb"
-        assert body["peso_kg"] == 100.0
+        # Borrador: value must be stored as-is, NOT converted
+        assert float(body["peso_kg"]) == pytest.approx(220.462, rel=1e-3)
 
     def test_post_kg_no_conversion(self, client, tecnico_headers, sample_estudio):
         """POST with unidad_peso_captura=kg stores weight unchanged."""
@@ -494,8 +500,9 @@ class TestWeightUnitConversion:
         body = get_response.json()
         assert body["peso_kg"] == 100.0
 
-    def test_patch_lb_convierte_a_kg(self, client, tecnico_headers, sample_estudio):
-        """PATCH with unidad_peso_captura=lb + peso_kg converts before storing."""
+    def test_patch_lb_borrador_stores_verbatim(self, client, tecnico_headers, sample_estudio):
+        """PATCH borrador with unidad_peso_captura=lb stores value verbatim (no conversion).
+        Conversion only happens when the solicitud is finalized (status=completo)."""
         payload = _solicitud_payload(sample_estudio["beneficiario_id"])
         create_response = client.post("/api/solicitudes", headers=tecnico_headers, json=payload)
         assert create_response.status_code == 201
@@ -507,6 +514,7 @@ class TestWeightUnitConversion:
             json={
                 "unidad_peso_captura": "lb",
                 "peso_kg": "220.462",
+                "status": "borrador",
             },
         )
         assert patch_response.status_code == 200
@@ -514,7 +522,8 @@ class TestWeightUnitConversion:
         assert get_response.status_code == 200
         body = get_response.json()
         assert body["unidad_peso_captura"] == "lb"
-        assert body["peso_kg"] == 100.0
+        # Borrador: value must be stored as-is, NOT converted
+        assert float(body["peso_kg"]) == pytest.approx(220.462, rel=1e-3)
 
     def test_rechaza_unidad_peso_invalida(self, client, tecnico_headers, sample_estudio):
         """POST with invalid unidad_peso_captura returns 422."""
@@ -548,3 +557,63 @@ class TestWeightUnitConversion:
         body = get_response.json()
         assert body["unidad_peso_captura"] == "kg"
         assert body["peso_kg"] == 75.0
+
+    def test_patch_finalizar_sin_unidad_medida_convierte_stored_cm(
+        self, client, tecnico_headers, sample_estudio
+    ):
+        """PATCH status=completo with measurements but without unidad_medida uses stored capture unit.
+
+        Scenario: borrador was created in cm/kg. Tecnico finalizes via PATCH resending the same
+        numeric values but omitting unidad_medida — the stored unidad_captura ("cm") must drive
+        the conversion, so values end up in canonical inches/lb.
+        """
+        # 1. Create borrador with cm measurements and kg weight
+        borrador_payload = _solicitud_payload(sample_estudio["beneficiario_id"])
+        borrador_payload.update({
+            "unidad_medida": "cm",
+            "unidad_peso_captura": "kg",
+            "altura_total_in": 25.4,
+            "peso_kg": 100.0,
+            "medida_cabeza_asiento": 30.0,
+            "medida_hombro_asiento": 40.0,
+            "medida_prof_asiento": 45.0,
+            "medida_rodilla_talon": 35.0,
+            "medida_ancho_cadera": 38.0,
+        })
+        create_response = client.post("/api/solicitudes", headers=tecnico_headers, json=borrador_payload)
+        assert create_response.status_code == 201
+        solicitud_id = create_response.json()["solicitud_id"]
+
+        # 2. Finalize: resend same numeric values but omit unidad_medida.
+        #    The backend must use stored unidad_captura ("cm") to convert.
+        patch_response = client.patch(
+            f"/api/solicitudes/{solicitud_id}",
+            headers=tecnico_headers,
+            json={
+                "status": "completo",
+                # No unidad_medida → stored "cm" should be used
+                "altura_total_in": 25.4,
+                "peso_kg": 100.0,
+                "medida_cabeza_asiento": 30.0,
+                "medida_hombro_asiento": 40.0,
+                "medida_prof_asiento": 45.0,
+                "medida_rodilla_talon": 35.0,
+                "medida_ancho_cadera": 38.0,
+            },
+        )
+        assert patch_response.status_code == 200
+        assert patch_response.json()["status"] == "completo"
+
+        # 3. GET and verify canonical values
+        get_response = client.get(f"/api/solicitudes/{solicitud_id}", headers=tecnico_headers)
+        assert get_response.status_code == 200
+        body = get_response.json()
+
+        # unidad_captura must remain as capture audit trail
+        assert body["unidad_captura"] == "cm"
+        assert body["unidad_peso_captura"] == "kg"
+
+        # Measurements must now be in canonical inches/lb
+        assert float(body["altura_total_in"]) == pytest.approx(10.0, rel=1e-3)      # 25.4 cm ÷ 2.54
+        assert float(body["peso_kg"]) == pytest.approx(220.462, rel=1e-3)           # 100 kg × 2.20462
+        assert float(body["medida_cabeza_asiento"]) == pytest.approx(11.811, rel=1e-3)  # 30 cm ÷ 2.54

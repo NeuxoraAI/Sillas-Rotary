@@ -1231,13 +1231,21 @@
         </h4>
         <div class="bg-slate-50 rounded-xl p-4 space-y-2 text-sm">
           <div class="grid grid-cols-2 gap-2">
-            <div><span class="text-slate-400">Peso:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.peso_kg != null ? solicitud.peso_kg + " " + (solicitud.unidad_peso_captura || "lb") : null)}</span></div>
-            <div><span class="text-slate-400">Altura total:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.altura_total_in != null ? solicitud.altura_total_in + " " + (solicitud.unidad_captura || "in") : null)}</span></div>
-            <div><span class="text-slate-400">Cabeza-asiento:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.medida_cabeza_asiento != null ? solicitud.medida_cabeza_asiento + " " + (solicitud.unidad_captura || "in") : null)}</span></div>
-            <div><span class="text-slate-400">Hombro-asiento:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.medida_hombro_asiento != null ? solicitud.medida_hombro_asiento + " " + (solicitud.unidad_captura || "in") : null)}</span></div>
-            <div><span class="text-slate-400">Prof. asiento:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.medida_prof_asiento != null ? solicitud.medida_prof_asiento + " " + (solicitud.unidad_captura || "in") : null)}</span></div>
-            <div><span class="text-slate-400">Rodilla-talón:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.medida_rodilla_talon != null ? solicitud.medida_rodilla_talon + " " + (solicitud.unidad_captura || "in") : null)}</span></div>
-            <div><span class="text-slate-400">Ancho cadera:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.medida_ancho_cadera != null ? solicitud.medida_ancho_cadera + " " + (solicitud.unidad_captura || "in") : null)}</span></div>
+            ${(() => {
+              // Borradores store values verbatim in capture unit; finalized records are canonical in/lb.
+              const isBorrador = solicitud.status === "borrador";
+              const measureUnit = isBorrador ? (solicitud.unidad_captura || "in") : "in";
+              const weightUnit  = isBorrador ? (solicitud.unidad_peso_captura || "lb") : "lb";
+              return `
+            <div><span class="text-slate-400">Peso:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.peso_kg != null ? solicitud.peso_kg + " " + weightUnit : null)}</span></div>
+            <div><span class="text-slate-400">Altura total:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.altura_total_in != null ? solicitud.altura_total_in + " " + measureUnit : null)}</span></div>
+            <div><span class="text-slate-400">Cabeza-asiento:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.medida_cabeza_asiento != null ? solicitud.medida_cabeza_asiento + " " + measureUnit : null)}</span></div>
+            <div><span class="text-slate-400">Hombro-asiento:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.medida_hombro_asiento != null ? solicitud.medida_hombro_asiento + " " + measureUnit : null)}</span></div>
+            <div><span class="text-slate-400">Prof. asiento:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.medida_prof_asiento != null ? solicitud.medida_prof_asiento + " " + measureUnit : null)}</span></div>
+            <div><span class="text-slate-400">Rodilla-talón:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.medida_rodilla_talon != null ? solicitud.medida_rodilla_talon + " " + measureUnit : null)}</span></div>
+            <div><span class="text-slate-400">Ancho cadera:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.medida_ancho_cadera != null ? solicitud.medida_ancho_cadera + " " + measureUnit : null)}</span></div>
+              `;
+            })()}
           </div>
           <div class="mt-2 pt-2 border-t border-slate-200">
             <div><span class="text-slate-400">Control tronco:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.control_tronco)}</span></div>

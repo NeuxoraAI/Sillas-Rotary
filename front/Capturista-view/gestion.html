@@ -33,6 +33,7 @@
     </script>
     <!-- END: Tailwind CSS & Plugins -->
     <link href="../assets/css/theme.css" rel="stylesheet"/>
+    <script src="../assets/js/session-guard.js"></script>
     <script src="../assets/js/theme-toggle.js"></script>
     <script src="../assets/js/mascot.js"></script>
     <link href="../assets/css/gestion.css" rel="stylesheet" />
@@ -309,7 +310,8 @@
     <script data-purpose="form-logic">
       const COMO_OBTUVO_SILLA_CATALOG = ["COMPRA", "DONACION"];
 
-      const sessionHeader = JSON.parse(localStorage.getItem("session") || "null");
+      SessionGuard.requireRole(["capturista", "organizacion"], "../login.html");
+      const sessionHeader = SessionGuard.getSession();
       document.getElementById("user-nombre").textContent = sessionHeader?.nombre || "—";
       document.getElementById("user-rol").textContent = (sessionHeader?.rol || "capturista").toUpperCase();
       // Volver al perfil sin cerrar sesión (logout lives in the profile)
@@ -475,6 +477,11 @@
           elaboro_estudio: draftSocio.estudio?.elaboro_estudio || null,
           voluntario_contacto: draftSocio.estudio?.voluntario_contacto || null,
           fecha_estudio: gestionData.fecha_estudio || draftSocio.estudio?.fecha_estudio || null,
+          // Supporting documents captured in the socioeconomico step.
+          credencial_path: draftSocio.estudio?.credencial_path || null,
+          credencial_url: draftSocio.estudio?.credencial_url || null,
+          comprobante_domicilio_path: draftSocio.estudio?.comprobante_domicilio_path || null,
+          comprobante_domicilio_url: draftSocio.estudio?.comprobante_domicilio_url || null,
           status,
 
           entorno: draftTecnica.entorno || null,
@@ -538,7 +545,7 @@
         }
 
         try {
-          const session = JSON.parse(localStorage.getItem("session") || "null");
+          const session = SessionGuard.getSession();
           if (!session?.token) {
             showValidationModal([{ form: "Sesión", label: "Inicio de sesión", message: "Debes iniciar sesión para guardar el borrador.", url: "../login.html" }], {
               title: "Sesión requerida",
@@ -824,7 +831,7 @@
         errorEl.classList.add("hidden");
         errorEl.textContent = "";
 
-        const session = JSON.parse(localStorage.getItem("session") || "null");
+        const session = SessionGuard.getSession();
         if (!session?.token) {
           window.location.href = "../login.html";
           return;
@@ -943,7 +950,7 @@
         errorEl.classList.add("hidden");
         errorEl.textContent = "";
 
-        const session = JSON.parse(localStorage.getItem("session") || "null");
+        const session = SessionGuard.getSession();
         if (!session?.token) {
           window.location.href = "../login.html";
           return;
@@ -1121,7 +1128,7 @@
 
       // -- Auth guard + Prefill + Draft Resume ------------------------------
       (async function () {
-        const session = JSON.parse(localStorage.getItem("session") || "null");
+        const session = SessionGuard.getSession();
         const regionCtx = JSON.parse(
           localStorage.getItem("region_ctx") || "null",
         );

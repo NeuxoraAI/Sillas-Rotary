@@ -588,7 +588,7 @@ class EstudioUpdateResponse(BaseModel):
 async def upload_documento_estudio(
     tipo: str = Form(...),
     archivo: UploadFile = File(...),
-    _usuario: Annotated[CurrentUser, Depends(require_roles("capturista", "admin"))] = None,
+    _usuario: Annotated[CurrentUser, Depends(require_roles("capturista", "admin", "organizacion"))] = None,
 ) -> dict:
     if tipo not in _DOCUMENT_TYPES:
         raise HTTPException(status_code=422, detail="Tipo de documento no permitido")
@@ -625,7 +625,7 @@ async def upload_documento_estudio(
 @router.get("/documentos")
 def ver_documento_estudio(
     path: str = Query(...),
-    _usuario: Annotated[CurrentUser, Depends(require_roles("capturista", "admin"))] = None,
+    _usuario: Annotated[CurrentUser, Depends(require_roles("capturista", "admin", "organizacion", "tecnico"))] = None,
 ):
     document_path = extract_document_path(path) or path.strip()
     if not document_path:

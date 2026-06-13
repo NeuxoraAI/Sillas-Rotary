@@ -1252,6 +1252,27 @@
           return;
         }
 
+        // Stored documents are served by the auth-protected /api/documentos
+        // endpoint, which an <img> cannot reach (no Authorization header → 401).
+        // Fetch it with the session token, then render it as a blob object URL.
+        // Local (just-picked) previews use an objectUrl and render directly.
+        if (!state.objectUrl && previewUrl.startsWith("/api/")) {
+          media.innerHTML = `<div class="flex h-full w-full items-center justify-center text-slate-400"><span class="material-symbols-outlined animate-pulse">image</span></div>`;
+          SessionGuard.authFetch(previewUrl)
+            .then((r) => (r.ok ? r.blob() : null))
+            .then((blob) => {
+              if (!blob) return;
+              const objUrl = URL.createObjectURL(blob);
+              state.objectUrl = objUrl;
+              const liveMedia = document.getElementById(config.previewMediaId);
+              if (liveMedia) {
+                liveMedia.innerHTML = `<img src="${objUrl}" alt="Vista previa de ${config.label}" class="h-full w-full object-cover" />`;
+              }
+            })
+            .catch(() => {});
+          return;
+        }
+
         media.innerHTML = `<img src="${previewUrl}" alt="Vista previa de ${config.label}" class="h-full w-full object-cover" />`;
       }
 
@@ -2303,9 +2324,7 @@
         const regionCtx = JSON.parse(
           localStorage.getItem("region_ctx") || "null",
         );
-        const session = JSON.parse(
-          localStorage.getItem("session") || "null",
-        );
+        const session = SessionGuard.getSession();
         const guestCtx = JSON.parse(
           localStorage.getItem("guest_ctx") || "null",
         );
@@ -2441,7 +2460,7 @@
         }
 
         try {
-          const session = JSON.parse(localStorage.getItem("session") || "null");
+          const session = SessionGuard.getSession();
           if (!session?.token) {
             showValidationModal([{ form: "Sesión", label: "Inicio de sesión", message: "Debes iniciar sesión para guardar el borrador.", url: "../login.html" }], {
               title: "Sesión requerida",
@@ -2450,8 +2469,19 @@
             return;
           }
 
-          // 1. Recolectar datos del formulario socioeconómico actual
-          const socioData = getFormData("borrador", {});
+          // 1. Upload any pending documents, then collect form data with refs
+          let documentRefs = {
+            credencial: { ...uploadedDocumentRefs.credencial },
+            comprobante_domicilio: { ...uploadedDocumentRefs.comprobante_domicilio },
+          };
+          try {
+            if (hasPendingSupportingDocuments()) {
+              documentRefs = await uploadSupportingDocuments(session.token);
+            }
+          } catch (err) {
+            console.warn("No se pudieron subir los documentos del borrador:", err);
+          }
+          const socioData = getFormData("borrador", documentRefs);
           const tutor1 = (socioData.tutores || []).find((t) => t.numero_tutor === 1) || {};
           const tutor2 = (socioData.tutores || []).find((t) => t.numero_tutor === 2) || {};
           const mapTutor = (prefix, tutor) => ({
@@ -2520,6 +2550,11 @@
             elaboro_estudio: socioData.estudio?.elaboro_estudio || null,
             voluntario_contacto: socioData.estudio?.voluntario_contacto || null,
             fecha_estudio: draftGestion.fecha_estudio || socioData.estudio?.fecha_estudio || null,
+            // Supporting documents captured in this step.
+            credencial_path: socioData.estudio?.credencial_path || null,
+            credencial_url: socioData.estudio?.credencial_url || null,
+            comprobante_domicilio_path: socioData.estudio?.comprobante_domicilio_path || null,
+            comprobante_domicilio_url: socioData.estudio?.comprobante_domicilio_url || null,
             status: "borrador",
             // Solicitud (técnica)
             entorno: draftTecnica.entorno || null,
@@ -3002,7 +3037,7 @@
       }
 
       // -- Handler: CONTINUAR (nuevo flujo offline-first) --
-      function continuarEstudioSocioeconomico() {
+      async function continuarEstudioSocioeconomico() {
         const formatErrors = collectDraftFormatErrors("Socioeconómico", "socioeconomico.html");
         if (formatErrors.length > 0) {
           showValidationModal(formatErrors, {
@@ -3012,8 +3047,24 @@
           return;
         }
 
-        // Collect form data
-        const formData = getFormData("borrador", {});
+        // Upload any pending documents (credencial / comprobante) so they
+        // aren't lost when navigating away, then carry their references in
+        // the saved draft.
+        let documentRefs = {
+          credencial: { ...uploadedDocumentRefs.credencial },
+          comprobante_domicilio: { ...uploadedDocumentRefs.comprobante_domicilio },
+        };
+        try {
+          const session = SessionGuard.getSession();
+          if (session?.token && hasPendingSupportingDocuments()) {
+            documentRefs = await uploadSupportingDocuments(session.token);
+          }
+        } catch (err) {
+          console.warn("No se pudieron subir los documentos antes de continuar:", err);
+        }
+
+        // Collect form data with the resolved document references
+        const formData = getFormData("borrador", documentRefs);
 
         // Save to localStorage
         localStorage.setItem("draft_socioeconomico", JSON.stringify(formData));
@@ -3052,7 +3103,7 @@
       }
 
       async function submitEstudio(status) {
-        const session = JSON.parse(localStorage.getItem("session") || "null");
+        const session = SessionGuard.getSession();
         const errorEl = document.getElementById("error-msg");
         errorEl.classList.add("hidden");
         errorEl.textContent = "";
@@ -3803,7 +3854,7 @@
       }
 
       async function loadExistingEstudio(id) {
-        const sessionData = JSON.parse(localStorage.getItem("session") || "null");
+        const sessionData = SessionGuard.getSession();
         if (!sessionData?.token) {
           console.error("No session token found");
           return;
@@ -3854,7 +3905,7 @@
       };
 
       async function _patchEstudio(status) {
-        const session = JSON.parse(localStorage.getItem("session") || "null");
+        const session = SessionGuard.getSession();
         if (!session?.token) return;
         const id = window._editEstudioId;
         const errorMsg = document.getElementById("error-msg");
@@ -4000,6 +4051,21 @@
               }
             });
             setupTutorConditionalFields();
+          }
+          // Restore previously uploaded documents so their preview reappears
+          // and they are re-sent on the next save.
+          const est = data.estudio || {};
+          if (est.credencial_path) {
+            setDocumentRef("credencial", est.credencial_path, est.credencial_url);
+            setPreviewFromStoredPath("credencial", est.credencial_path);
+            renderDocumentStatus("credencial");
+            renderPreviewCard("credencial");
+          }
+          if (est.comprobante_domicilio_path) {
+            setDocumentRef("comprobante_domicilio", est.comprobante_domicilio_path, est.comprobante_domicilio_url);
+            setPreviewFromStoredPath("comprobante_domicilio", est.comprobante_domicilio_path);
+            renderDocumentStatus("comprobante_domicilio");
+            renderPreviewCard("comprobante_domicilio");
           }
         } catch (err) {
           console.error("Error loading localStorage draft:", err);

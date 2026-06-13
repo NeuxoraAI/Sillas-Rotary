@@ -893,6 +893,13 @@ def listar_beneficiarios_tecnica(
         tiene_foto=tiene_foto,
     )
 
+    # Técnicos only work on finalized captures — never on a capturista's
+    # in-progress draft. Admins keep full visibility through this endpoint
+    # (and the dedicated admin-beneficiarios view) and can still filter by
+    # process estado explicitly.
+    if _usuario.rol == "tecnico":
+        where_clause += " AND COALESCE(e.status, 'borrador') = 'completo'"
+
     offset = (page - 1) * per_page
 
     rows = db.execute(
@@ -1362,9 +1369,13 @@ async def upload_foto(
     except Exception as exc:
         raise HTTPException(status_code=500, detail="Error al subir la imagen") from exc
 
+    canonical_url = _derive_legacy_foto_url(filename)
     return {
         "foto_path": filename,
-        "foto_url": _derive_legacy_foto_url(filename),
+        "foto_url": canonical_url,
+        # Browser-renderable URL for immediate preview — the canonical
+        # storage:// reference above is what gets persisted in the DB.
+        "foto_url_resolved": _resolve_storage_url(canonical_url, _BUCKET),
     }
 
 
@@ -1493,7 +1504,12 @@ def actualizar_solicitud(
     usuario: Annotated[CurrentUser, Depends(require_roles("capturista", "tecnico", "admin", "organizacion"))],
 ) -> SolicitudUpdateResponse:
     existing = db.execute(
-        "SELECT id, usuario_id, beneficiario_id FROM solicitudes_tecnicas WHERE id = %s", (id,)
+        """SELECT id, usuario_id, beneficiario_id,
+                  unidad_captura, unidad_peso_captura,
+                  altura_total_in, medida_cabeza_asiento, medida_hombro_asiento,
+                  medida_prof_asiento, medida_rodilla_talon, medida_ancho_cadera,
+                  peso_kg
+           FROM solicitudes_tecnicas WHERE id = %s""", (id,)
     ).fetchone()
 
     if existing is None:
@@ -1516,6 +1532,38 @@ def actualizar_solicitud(
         fields.get("unidad_medida") in ("cm", "in") or "unidad_peso_captura" in fields
     ):
         fields = _normalize_medidas_patch(fields)
+    elif fields.get("status") == "completo" and "unidad_medida" not in fields:
+        # Finalizing without body-provided measurement unit: use the stored capture unit to
+        # convert measurement values to canonical inches/lb so they are not silently promoted
+        # with the wrong unit.
+        # For each measurement column: if the body provided a value, convert that; otherwise
+        # if the stored DB value needs conversion, promote it so the stored canonical value is
+        # correct after this PATCH.
+        stored_unidad = existing["unidad_captura"] or "in"
+        stored_unidad_peso = existing["unidad_peso_captura"] or "lb"
+        _MEASURE_COLS = (
+            "altura_total_in", "medida_cabeza_asiento", "medida_hombro_asiento",
+            "medida_prof_asiento", "medida_rodilla_talon", "medida_ancho_cadera",
+        )
+        if stored_unidad == "cm":
+            for col in _MEASURE_COLS:
+                if col in fields:
+                    # Body provided a value in cm — convert it
+                    if fields[col] is not None:
+                        fields[col] = _to_inches(Decimal(str(fields[col])), "cm")
+                else:
+                    # No body value; convert the stored DB value and include it in UPDATE
+                    raw = existing[col]
+                    if raw is not None:
+                        fields[col] = _to_inches(Decimal(str(raw)), "cm")
+        if stored_unidad_peso == "kg":
+            if "peso_kg" in fields:
+                if fields["peso_kg"] is not None:
+                    fields["peso_kg"] = _to_kg(Decimal(str(fields["peso_kg"])), "kg")
+            else:
+                raw_peso = existing["peso_kg"]
+                if raw_peso is not None:
+                    fields["peso_kg"] = _to_kg(Decimal(str(raw_peso)), "kg")
     # Rename to DB column name
     if "unidad_medida" in fields:
         fields["unidad_captura"] = fields.pop("unidad_medida")

@@ -14,6 +14,7 @@ from pydantic import BaseModel, field_validator
 from database import get_db, _DBAdapter
 from routers.auth import CurrentUser, assert_resource_owner, require_roles
 from routers.regiones import generate_folio
+from routers.socioeconomico import _resolve_document_refs
 from utils.text import normalize_text
 from validators import (
     validate_nombre,
@@ -102,6 +103,10 @@ class GuardarBorradorRequest(BaseModel):
     voluntario_contacto: Optional[str] = None
     ciudad_registro: Optional[str] = None
     fecha_estudio: Optional[str] = None
+    credencial_path: Optional[str] = None
+    credencial_url: Optional[str] = None
+    comprobante_domicilio_path: Optional[str] = None
+    comprobante_domicilio_url: Optional[str] = None
     status: Optional[str] = "borrador"
 
     # ── Solicitud (técnica) ──
@@ -596,12 +601,22 @@ def _create_borrador(
                 )
 
         # 3. INSERT estudio
+        credencial_path, credencial_url = _resolve_document_refs(
+            document_path=body.credencial_path,
+            document_url=body.credencial_url,
+        )
+        comprobante_path, comprobante_url = _resolve_document_refs(
+            document_path=body.comprobante_domicilio_path,
+            document_url=body.comprobante_domicilio_url,
+        )
         estudio_id = db.execute(
             """
             INSERT INTO estudios_socioeconomicos
                 (beneficiario_id, usuario_id, tuvo_silla_previa, como_obtuvo_silla,
-                 elaboro_estudio, fecha_estudio, sede, ciudad_registro, status)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                 elaboro_estudio, fecha_estudio, sede, ciudad_registro,
+                 credencial_path, credencial_url,
+                 comprobante_domicilio_path, comprobante_domicilio_url, status)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
             """,
             (
@@ -613,6 +628,10 @@ def _create_borrador(
                 body.fecha_estudio,
                 body.sede,
                 body.ciudad_registro,
+                credencial_path,
+                credencial_url,
+                comprobante_path,
+                comprobante_url,
                 body.status or "borrador",
             ),
         ).fetchone()["id"]
@@ -831,6 +850,22 @@ def _patch_estudio(db: _DBAdapter, body: GuardarBorradorRequest, estudio_id: int
         fields["fecha_estudio"] = body.fecha_estudio
     if body.sede is not None:
         fields["sede"] = body.sede
+    if body.credencial_path is not None or body.credencial_url is not None:
+        credencial_path, credencial_url = _resolve_document_refs(
+            document_path=body.credencial_path,
+            document_url=body.credencial_url,
+        )
+        if credencial_path is not None:
+            fields["credencial_path"] = credencial_path
+            fields["credencial_url"] = credencial_url
+    if body.comprobante_domicilio_path is not None or body.comprobante_domicilio_url is not None:
+        comprobante_path, comprobante_url = _resolve_document_refs(
+            document_path=body.comprobante_domicilio_path,
+            document_url=body.comprobante_domicilio_url,
+        )
+        if comprobante_path is not None:
+            fields["comprobante_domicilio_path"] = comprobante_path
+            fields["comprobante_domicilio_url"] = comprobante_url
     if body.status is not None:
         fields["status"] = body.status
 

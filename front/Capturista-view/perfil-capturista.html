@@ -27,6 +27,7 @@
   }
 </script>
 <link href="../assets/css/theme.css" rel="stylesheet"/>
+<script src="../assets/js/session-guard.js"></script>
 <script src="../assets/js/theme-toggle.js"></script>
 <script src="../assets/js/delight.js"></script>
 <style>
@@ -319,10 +320,8 @@
 
 <script>
   // ── Auth guard ──────────────────────────────────────────────────────────────
-  const session = _getSession();
-  if (!session?.token) {
-    window.location.replace('../login.html');
-  }
+  SessionGuard.requireRole(['capturista'], '../login.html');
+  const session = SessionGuard.getSession();
 
   // Populate user info
   document.getElementById('user-nombre').textContent        = session.nombre;
@@ -338,6 +337,11 @@
 
   // ── Nueva captura ──────────────────────────────────────────────────────────
   document.getElementById('btn-nueva-captura').addEventListener('click', function () {
+    // Start from a clean slate so a previous draft (data, IDs and photos)
+    // never leaks into a brand-new registration. Resuming a specific draft
+    // from the list rebuilds this state from the backend, so clearing here
+    // is safe for the edit flow.
+    _clearDraftStorage();
     window.location.href = 'seleccion-region.html';
   });
 
@@ -755,13 +759,22 @@
     el.classList.add('hidden');
   }
 
-  function _clearAllStorage() {
-    localStorage.removeItem('session');
-    localStorage.removeItem('region_ctx');
+  // Clear in-progress draft state (the multi-step registration). Does NOT
+  // touch the session — used when starting a fresh capture.
+  function _clearDraftStorage() {
+    localStorage.removeItem('draft_socioeconomico');
+    localStorage.removeItem('draft_tecnica');
+    localStorage.removeItem('draft_gestion');
     localStorage.removeItem('estudio_id');
     localStorage.removeItem('beneficiario_id');
     localStorage.removeItem('solicitud_id');
+  }
+
+  function _clearAllStorage() {
+    localStorage.removeItem('session');
+    localStorage.removeItem('region_ctx');
     localStorage.removeItem('guest_ctx');
+    _clearDraftStorage();
   }
 </script>
 </body>

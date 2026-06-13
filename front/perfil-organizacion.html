@@ -27,6 +27,7 @@
   }
 </script>
 <link href="assets/css/theme.css" rel="stylesheet"/>
+<script src="assets/js/session-guard.js"></script>
 <script src="assets/js/theme-toggle.js"></script>
 <script src="assets/js/delight.js"></script>
 <style>
@@ -278,10 +279,9 @@
 
 <script>
   // ── Auth guard ──────────────────────────────────────────────────────────────
-  const session = _getSession();
-  if (!session?.token) {
-    window.location.replace('login.html');
-  }
+  // Visitor mode: any authenticated role may view an organization profile.
+  SessionGuard.requireRole(['admin', 'capturista', 'tecnico', 'organizacion'], 'login.html');
+  const session = SessionGuard.getSession();
 
   // Resolve org_id from URL or from user's profile
   const urlParams = new URLSearchParams(window.location.search);
@@ -353,6 +353,9 @@
 
     const guestCtx = { nombre, contacto };
 
+    // Clear any leftover draft so a previous capture (data, IDs, photos)
+    // never leaks into this new guest registration.
+    _clearDraftStorage();
     localStorage.setItem('guest_ctx', JSON.stringify(guestCtx));
     window.location.href = 'Capturista-view/seleccion-region.html';
   });
@@ -687,13 +690,22 @@
     banner.classList.remove('hidden');
   }
 
-  function _clearAllStorage() {
-    localStorage.removeItem('session');
-    localStorage.removeItem('region_ctx');
+  // Clear in-progress draft state (the multi-step registration). Does NOT
+  // touch the session — used when starting a fresh guest capture.
+  function _clearDraftStorage() {
+    localStorage.removeItem('draft_socioeconomico');
+    localStorage.removeItem('draft_tecnica');
+    localStorage.removeItem('draft_gestion');
     localStorage.removeItem('estudio_id');
     localStorage.removeItem('beneficiario_id');
     localStorage.removeItem('solicitud_id');
+  }
+
+  function _clearAllStorage() {
+    localStorage.removeItem('session');
+    localStorage.removeItem('region_ctx');
     localStorage.removeItem('guest_ctx');
+    _clearDraftStorage();
   }
 </script>
 </body>

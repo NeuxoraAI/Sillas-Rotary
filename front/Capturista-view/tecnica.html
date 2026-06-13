@@ -819,6 +819,13 @@
     <!-- BEGIN: Script for Interactivity -->
     <script src="../assets/js/validations.js"></script>
     <script data-purpose="form-logic">
+      // Photo state — declared before the auth-guard IIFE because the draft
+      // resume path (which runs synchronously when there is no solicitud_id)
+      // reads these to restore a previously uploaded photo.
+      let capturedPhotoFile = null;
+      let uploadedPhotoUrl = null;        // canonical storage:// reference (DB)
+      let uploadedPhotoPreviewUrl = null; // browser-renderable URL (preview only)
+
       // Auth guard + Draft Resume
       (async function () {
         // Role guard: capturista may access this form.
@@ -916,8 +923,8 @@
               // storage:// reference for state-tracking (non-displayable) only.
               if (data.foto_url) {
                 uploadedPhotoUrl = data.foto_url;
-                const previewUrl = data.foto_url_resolved || data.foto_url;
-                setPhotoPreviewFromStoredUrl(previewUrl);
+                uploadedPhotoPreviewUrl = data.foto_url_resolved || null;
+                setPhotoPreviewFromStoredUrl(uploadedPhotoPreviewUrl || data.foto_url);
                 renderPhotoStatus();
                 renderPhotoPreviewCard();
               }
@@ -965,6 +972,13 @@
             setVal("medida_prof_asiento", data.medida_prof_asiento);
             setVal("medida_rodilla_talon", data.medida_rodilla_talon);
             setVal("medida_ancho_cadera", data.medida_ancho_cadera);
+            // Restore a previously uploaded photo. This path runs before the
+            // photo machinery is initialized, so only set the state here; the
+            // preview is rendered after setupPhotoInputs() via restorePhotoPreview().
+            if (data.foto_url) {
+              uploadedPhotoUrl = data.foto_url;
+              uploadedPhotoPreviewUrl = data.foto_url_resolved || null;
+            }
           } catch (err) {
             console.error("Error loading localStorage draft:", err);
           }
@@ -1045,8 +1059,6 @@
         return s === "" ? null : s;
       };
 
-      let capturedPhotoFile = null;
-      let uploadedPhotoUrl = null;
       const photoPreviewState = {
         objectUrl: null,
         sourceUrl: null,
@@ -1189,6 +1201,7 @@
       function clearPhotoUpload() {
         capturedPhotoFile = null;
         uploadedPhotoUrl = null;
+        uploadedPhotoPreviewUrl = null;
         const inputEl = document.getElementById("file-upload");
         if (inputEl) inputEl.value = "";
         clearPhotoPreviewState();
@@ -1425,7 +1438,7 @@
           if (file) {
             setPhotoPreviewFromFile(file);
           } else if (uploadedPhotoUrl) {
-            setPhotoPreviewFromStoredUrl(uploadedPhotoUrl);
+            setPhotoPreviewFromStoredUrl(uploadedPhotoPreviewUrl || uploadedPhotoUrl);
           } else {
             clearPhotoPreviewState();
           }
@@ -1554,7 +1567,7 @@
       async function uploadFoto(fileInput) {
         const file = capturedPhotoFile || fileInput?.files?.[0];
         if (!file) return uploadedPhotoUrl || null;
-        const session = JSON.parse(localStorage.getItem("session") || "null");
+        const session = SessionGuard.getSession();
         if (!session?.token) throw new Error("Sesión no válida.");
         const formData = new FormData();
         formData.append("foto", file);
@@ -1566,10 +1579,11 @@
         if (!res.ok) throw new Error("Error al subir la foto.");
         const data = await res.json();
         uploadedPhotoUrl = data.foto_url || null;
+        uploadedPhotoPreviewUrl = data.foto_url_resolved || data.foto_url || null;
         capturedPhotoFile = null;
         if (fileInput) fileInput.value = "";
         if (uploadedPhotoUrl) {
-          setPhotoPreviewFromStoredUrl(uploadedPhotoUrl);
+          setPhotoPreviewFromStoredUrl(uploadedPhotoPreviewUrl);
           renderPhotoStatus();
           renderPhotoPreviewCard();
         }
@@ -1820,11 +1834,17 @@
           medida_ancho_cadera: toStrOrNull(get("medida_ancho_cadera")),
           unidad_medida: get("unidad_medida") === "metric" ? "cm" : "in",
           unidad_peso_captura: get("unidad_medida") === "metric" ? "kg" : "lb",
+          // Persist any already-uploaded photo reference so it survives
+          // navigation between steps (socioeconomico ↔ tecnica ↔ gestion).
+          // foto_url is the canonical storage:// reference (what the DB stores);
+          // foto_url_resolved is a browser-renderable URL kept only for preview.
+          foto_url: uploadedPhotoUrl || null,
+          foto_url_resolved: uploadedPhotoPreviewUrl || null,
         };
       }
 
       // -- Handler: CONTINUAR (offline-first) --
-      function continuarSolicitudTecnica() {
+      async function continuarSolicitudTecnica() {
         const formatErrors = collectDraftFormatErrors("Técnica", "tecnica.html");
         if (formatErrors.length > 0) {
           showValidationModal(formatErrors, {
@@ -1833,13 +1853,19 @@
           });
           return;
         }
+        // Upload any pending photo first so it isn't lost when navigating away.
+        try {
+          await uploadFoto(document.getElementById("file-upload"));
+        } catch (err) {
+          console.warn("No se pudo subir la foto antes de continuar:", err);
+        }
         const formData = getTecnicaFormData();
         localStorage.setItem("draft_tecnica", JSON.stringify(formData));
         window.location.href = "gestion.html";
       }
 
       // -- Handler: REGRESAR --
-      function regresarSolicitudTecnica() {
+      async function regresarSolicitudTecnica() {
         const formatErrors = collectDraftFormatErrors("Técnica", "tecnica.html");
         if (formatErrors.length > 0) {
           showValidationModal(formatErrors, {
@@ -1849,6 +1875,12 @@
           return;
         }
 
+        // Upload any pending photo first so it survives the round-trip.
+        try {
+          await uploadFoto(document.getElementById("file-upload"));
+        } catch (err) {
+          console.warn("No se pudo subir la foto antes de regresar:", err);
+        }
         // Save current form data before leaving
         const formData = getTecnicaFormData();
         localStorage.setItem("draft_tecnica", JSON.stringify(formData));
@@ -1874,7 +1906,7 @@
         }
 
         try {
-          const session = JSON.parse(localStorage.getItem("session") || "null");
+          const session = SessionGuard.getSession();
           if (!session?.token) {
             showValidationModal([{ form: "Sesión", label: "Inicio de sesión", message: "Debes iniciar sesión para guardar el borrador.", url: "../login.html" }], {
               title: "Sesión requerida",
@@ -1883,10 +1915,20 @@
             return;
           }
 
-          // 1. Recolectar datos del formulario técnico actual
+          // 1. Upload any pending photo so the draft keeps its image.
+          //    uploadFoto() pushes a freshly captured/selected file and falls
+          //    back to the already-uploaded URL when there is nothing new.
+          try {
+            await uploadFoto(document.getElementById("file-upload"));
+          } catch (err) {
+            // Photo is optional for a borrador — keep going with whatever we had.
+            console.warn("No se pudo subir la foto del borrador:", err);
+          }
+
+          // 2. Recolectar datos del formulario técnico actual
           const tecnicaData = getTecnicaFormData();
 
-          // 2. Mergear con localStorage de otros formularios
+          // 3. Mergear con localStorage de otros formularios
           const draftSocioRaw = localStorage.getItem("draft_socioeconomico");
           const draftGestionRaw = localStorage.getItem("draft_gestion");
           const draftSocio = draftSocioRaw ? JSON.parse(draftSocioRaw) : {};
@@ -1951,6 +1993,11 @@
             elaboro_estudio: draftSocio.estudio?.elaboro_estudio || null,
             voluntario_contacto: draftSocio.estudio?.voluntario_contacto || null,
             fecha_estudio: draftGestion.fecha_estudio || draftSocio.estudio?.fecha_estudio || null,
+            // Supporting documents captured in the socioeconomico step.
+            credencial_path: draftSocio.estudio?.credencial_path || null,
+            credencial_url: draftSocio.estudio?.credencial_url || null,
+            comprobante_domicilio_path: draftSocio.estudio?.comprobante_domicilio_path || null,
+            comprobante_domicilio_url: draftSocio.estudio?.comprobante_domicilio_url || null,
             status: "borrador",
             // Solicitud (técnica - actual)
             entorno: tecnicaData.entorno || null,
@@ -1967,7 +2014,6 @@
             medida_ancho_cadera: tecnicaData.medida_ancho_cadera || null,
             unidad_medida: tecnicaData.unidad_medida || null,
             unidad_peso_captura: tecnicaData.unidad_peso_captura || null,
-            foto_path: tecnicaData.foto_path || null,
             foto_url: tecnicaData.foto_url || null,
             // Gestion (desde gestion)
             entidad_solicitante: draftGestion.entidad_solicitante || null,
@@ -2028,7 +2074,7 @@
         errorEl.classList.add("hidden");
         errorEl.textContent = "";
 
-        const session = JSON.parse(localStorage.getItem("session") || "null");
+        const session = SessionGuard.getSession();
         if (!session?.token) {
           window.location.href = "../login.html";
           return;
@@ -2476,6 +2522,13 @@
       }
 
       setupPhotoInputs();
+      // Render a photo restored by the synchronous localStorage-draft path,
+      // which sets uploadedPhotoUrl before the photo machinery existed.
+      if (uploadedPhotoUrl && !photoPreviewState.sourceUrl && !photoPreviewState.objectUrl) {
+        setPhotoPreviewFromStoredUrl(uploadedPhotoPreviewUrl || uploadedPhotoUrl);
+        renderPhotoStatus();
+        renderPhotoPreviewCard();
+      }
       setupUnidadMedidaLabels();
       setupImageZoom();
       _setupDiagnosticoValidation();
