@@ -358,14 +358,14 @@ def validate_fecha_estudio(value: str) -> str:
 # Observaciones / entidad / justificación (existing validators preserved)
 # ──────────────────────────────────────────────────────────────────────────
 
-def validate_observaciones_posturales(value: str) -> str:
+def validate_padecimiento(value: str) -> str:
     if len(value) > _OBS_MAX_LENGTH:
         raise ValueError(
-            f"observaciones_posturales: máximo {_OBS_MAX_LENGTH} caracteres permitidos"
+            f"padecimiento: máximo {_OBS_MAX_LENGTH} caracteres permitidos"
         )
     if not _OBS_WHITELIST_RE.match(value):
         raise ValueError(
-            "observaciones_posturales: contiene caracteres no permitidos"
+            "padecimiento: contiene caracteres no permitidos"
         )
     return value
 

@@ -2,7 +2,7 @@
 Unit tests for backend/validators.py — pure function tests, no DB required.
 
 Tests for:
-- validate_observaciones_posturales: whitelist regex, maxlength 500, returns string
+- validate_padecimiento: whitelist regex, maxlength 500, returns string
 - validate_medida_tecnica: digits+single-dot, max 4 integer digits, max 3 decimal
   digits, normalizes to Decimal with 3 decimal places
 - validate_entidad_solicitante: whitelist regex, maxlength 64
@@ -21,27 +21,27 @@ from decimal import Decimal
 
 
 class TestValidateObservacionesPosturales:
-    """Tests for the observaciones_posturales whitelist validator."""
+    """Tests for the padecimiento whitelist validator."""
 
     def test_pasa_texto_valido_basico(self):
         """Valid text with letters, numbers, spaces, and allowed punctuation passes."""
-        from validators import validate_observaciones_posturales
+        from validators import validate_padecimiento
 
-        result = validate_observaciones_posturales("Paciente con escoliosis leve.")
+        result = validate_padecimiento("Paciente con escoliosis leve.")
         assert result == "Paciente con escoliosis leve."
 
     def test_pasa_con_tildes_y_enie(self):
         """Spanish accented characters and ñ are in the whitelist."""
-        from validators import validate_observaciones_posturales
+        from validators import validate_padecimiento
 
-        result = validate_observaciones_posturales("Áéíóú ñÑ üÜ - diagnóstico: cifosis.")
+        result = validate_padecimiento("Áéíóú ñÑ üÜ - diagnóstico: cifosis.")
         assert result == "Áéíóú ñÑ üÜ - diagnóstico: cifosis."
 
     def test_pasa_con_numeros_y_simbolos_permitidos(self):
         """Numbers and allowed symbols () / - . , : ; pass through."""
-        from validators import validate_observaciones_posturales
+        from validators import validate_padecimiento
 
-        result = validate_observaciones_posturales(
+        result = validate_padecimiento(
             "Paciente 2 (3/4): mide 1.50 m, peso: 45; angulo 30."
         )
         assert "Paciente 2" in result
@@ -50,38 +50,38 @@ class TestValidateObservacionesPosturales:
 
     def test_rechaza_caracteres_no_permitidos(self):
         """Characters outside the whitelist (@, #, $, <, >, etc.) raise ValueError."""
-        from validators import validate_observaciones_posturales
+        from validators import validate_padecimiento
 
-        with pytest.raises(ValueError, match="observaciones_posturales"):
-            validate_observaciones_posturales("email@dominio.com")
+        with pytest.raises(ValueError, match="padecimiento"):
+            validate_padecimiento("email@dominio.com")
 
-        with pytest.raises(ValueError, match="observaciones_posturales"):
-            validate_observaciones_posturales("precio: $100")
+        with pytest.raises(ValueError, match="padecimiento"):
+            validate_padecimiento("precio: $100")
 
-        with pytest.raises(ValueError, match="observaciones_posturales"):
-            validate_observaciones_posturales("<script>alert(1)</script>")
+        with pytest.raises(ValueError, match="padecimiento"):
+            validate_padecimiento("<script>alert(1)</script>")
 
     def test_rechaza_excede_maxlength(self):
         """Text longer than 500 characters raises ValueError."""
-        from validators import validate_observaciones_posturales
+        from validators import validate_padecimiento
 
         long_text = "x" * 501
-        with pytest.raises(ValueError, match="observaciones_posturales"):
-            validate_observaciones_posturales(long_text)
+        with pytest.raises(ValueError, match="padecimiento"):
+            validate_padecimiento(long_text)
 
     def test_pasa_exactamente_500_chars(self):
         """Text of exactly 500 characters passes validation."""
-        from validators import validate_observaciones_posturales
+        from validators import validate_padecimiento
 
         text = "a" * 500  # All within whitelist
-        result = validate_observaciones_posturales(text)
+        result = validate_padecimiento(text)
         assert len(result) == 500
 
     def test_pasa_string_vacio(self):
         """Empty string passes (will be treated as None/optional by Pydantic)."""
-        from validators import validate_observaciones_posturales
+        from validators import validate_padecimiento
 
-        result = validate_observaciones_posturales("")
+        result = validate_padecimiento("")
         assert result == ""
 
 

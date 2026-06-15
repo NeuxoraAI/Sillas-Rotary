@@ -345,10 +345,10 @@ class TestAdminSolicitudUpdateRequest:
         with pytest.raises(ValueError, match="máximo 500"):
             AdminSolicitudUpdateRequest(justificacion="X" * 501)
 
-    def test_observaciones_posturales_invalid_chars(self):
-        """observaciones_posturales with invalid chars raises ValueError."""
-        with pytest.raises(ValueError, match="observaciones_posturales: contiene caracteres no permitidos"):
-            AdminSolicitudUpdateRequest(observaciones_posturales="Bad@chars!")
+    def test_padecimiento_invalid_chars(self):
+        """padecimiento with invalid chars raises ValueError."""
+        with pytest.raises(ValueError, match="padecimiento: contiene caracteres no permitidos"):
+            AdminSolicitudUpdateRequest(padecimiento="Bad@chars!")
 
 
 # ---------------------------------------------------------------------------

@@ -207,26 +207,47 @@
               </select>
               <p class="field-error hidden text-red-600 text-xs mt-1" id="control_de_piernas-error" data-error-for="control_de_piernas" role="alert"></p>
             </div>
-            <div class="md:col-span-2 space-y-2">
-                <label class="block text-sm font-semibold text-slate-700"
-                  >Observaciones Posturales (Escoliosis, Cifosis, etc.)</label
-                >
-              <label class="inline-flex items-center gap-2 text-sm font-medium text-slate-700">
-                <input class="h-4 w-4" name="tiene_observaciones" type="checkbox" />
-                <span>Agregar observaciones posturales</span>
-              </label>
-              <textarea
-                class="w-full text-slate-400 cursor-not-allowed"
-                name="observaciones_posturales"
-                minlength="3"
-                maxlength="500"
-                pattern="^[a-zA-ZáéíóúÁÉÍÓÚäëïöüÄËÏÖÜñÑ0-9 ()\/\-.,:;]*$"
-                placeholder="Describa brevemente la condición postural actual para ajustar el respaldo..."
-                rows="3"
-                disabled
-                aria-describedby="observaciones_posturales-error"
-              ></textarea>
-              <p class="field-error hidden text-red-600 text-xs mt-1" id="observaciones_posturales-error" data-error-for="observaciones_posturales" role="alert"></p>
+            <div class="md:col-span-2 space-y-3">
+              <label class="block text-sm font-semibold text-slate-700">Padecimientos</label>
+              <input type="hidden" name="padecimiento" />
+              <div class="grid gap-2 sm:grid-cols-2" data-purpose="padecimientos-lista">
+                <label class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
+                  <input class="h-4 w-4" type="checkbox" data-padecimiento-option value="Distonía" />
+                  <span>Distonía</span>
+                </label>
+                <label class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
+                  <input class="h-4 w-4" type="checkbox" data-padecimiento-option value="Epilepsia" />
+                  <span>Epilepsia</span>
+                </label>
+                <label class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
+                  <input class="h-4 w-4" type="checkbox" data-padecimiento-option value="Escoliosis" />
+                  <span>Escoliosis</span>
+                </label>
+                <label class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
+                  <input class="h-4 w-4" type="checkbox" data-padecimiento-option value="Luxación de cadera" />
+                  <span>Luxación de cadera</span>
+                </label>
+                <label class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 sm:col-span-2">
+                  <input class="h-4 w-4" type="checkbox" data-padecimiento-option value="Disfagia" />
+                  <span>Disfagia</span>
+                </label>
+                <label class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 sm:col-span-2">
+                  <input class="h-4 w-4" type="checkbox" id="padecimiento-otra" data-padecimiento-option value="Otra" />
+                  <span>Otra</span>
+                </label>
+                <div id="padecimiento-otra-container" class="hidden sm:col-span-2">
+                  <input
+                    class="w-full"
+                    type="text"
+                    id="padecimiento-otra-texto"
+                    placeholder="Especifique el padecimiento"
+                    maxlength="160"
+                    pattern="^[A-Za-záéíóúÁÉÍÓÚüÜñÑ0-9\s\-().\/.,]+$"
+                  />
+                  <p class="text-xs text-slate-400 mt-1">Agregue un padecimiento adicional</p>
+                </div>
+              </div>
+              <p class="field-error hidden text-red-600 text-xs mt-1" id="padecimiento-error" data-error-for="padecimiento" role="alert"></p>
             </div>
           </div>
         </section>
@@ -883,17 +904,9 @@
               setVal("control_cabeza", data.control_cabeza);
               setVal("control_de_piernas", data.control_de_piernas);
 
-              // Set textarea
-              setVal("observaciones_posturales", data.observaciones_posturales);
-
-              // Restore checkbox state for draft resume
-              if (data.observaciones_posturales && data.observaciones_posturales.trim()) {
-                const chk = document.querySelector('[name="tiene_observaciones"]');
-                if (chk) {
-                  chk.checked = true;
-                  chk.dispatchEvent(new Event("change"));
-                }
-              }
+              // Set hidden technical field and restore selected padecimientos
+              setVal("padecimiento", data.padecimiento);
+              restorePadecimientosSelection(data.padecimiento);
 
               // Derive system from stored capture unit — sets the UI selector.
               const system = (data.unidad_captura === "cm") ? "metric" : "imperial";
@@ -956,11 +969,8 @@
             setVal("control_tronco", data.control_tronco);
             setVal("control_cabeza", data.control_cabeza);
             setVal("control_de_piernas", data.control_de_piernas);
-            setVal("observaciones_posturales", data.observaciones_posturales);
-            if (data.observaciones_posturales && data.observaciones_posturales.trim()) {
-              const chk = document.querySelector('[name="tiene_observaciones"]');
-              if (chk) { chk.checked = true; chk.dispatchEvent(new Event("change")); }
-            }
+            setVal("padecimiento", data.padecimiento);
+            restorePadecimientosSelection(data.padecimiento);
             if (data.unidad_medida) {
               const system = data.unidad_medida === "cm" ? "metric" : "imperial";
               setVal("unidad_medida", system);
@@ -997,21 +1007,104 @@
         window.location.href = "perfil-capturista.html";
       });
 
-      // -- Setup observaciones textarea validation -------------------------------
+      // -- Setup padecimientos selection sync ------------------------------------
       function _setupDiagnosticoValidation() {
         const input = document.querySelector('[name="diagnostico"]');
         if (!input) return;
         SR_Validations.setupTextField(input, SR_Validations.DIAGNOSTICO_RE);
       }
 
-      function _setupObsValidation() {
-        const textarea = document.querySelector('[name="observaciones_posturales"]');
-        if (!textarea) return;
-        SR_Validations.setupWhitelistField(
-          textarea,
-          SR_Validations.OBS_WHITELIST_RE,
-          SR_Validations.LIMITS.OBS_MAX
-        );
+      function _getPadecimientosSeleccionados() {
+        const checked = Array.from(document.querySelectorAll("[data-padecimiento-option]:checked")).map((el) => el.value);
+        const tieneOtra = document.getElementById("padecimiento-otra")?.checked;
+        const otraTexto = document.getElementById("padecimiento-otra-texto")?.value.trim();
+        if (tieneOtra) {
+          if (otraTexto) {
+            // Reemplazar "Otra" genérico por "Otra: <texto>"
+            const idx = checked.indexOf("Otra");
+            if (idx !== -1) checked[idx] = `Otra: ${otraTexto}`;
+          }
+          // Si no hay texto, dejamos "Otra" tal cual
+        }
+        return checked;
+      }
+
+      function _syncPadecimientosHiddenInput() {
+        const hiddenInput = document.querySelector('[name="padecimiento"]');
+        if (!hiddenInput) return;
+        hiddenInput.value = _getPadecimientosSeleccionados().join(", ");
+      }
+
+      function restorePadecimientosSelection(rawValue) {
+        const items = String(rawValue || "")
+          .split(",")
+          .map((value) => value.trim())
+          .filter(Boolean);
+
+        const selected = new Set();
+
+        let otraTexto = "";
+        items.forEach((item) => {
+          // Detecta "Otra: <texto custom>"
+          const matchOtra = item.match(/^Otra:\s*(.*)/);
+          if (matchOtra) {
+            selected.add("Otra");
+            otraTexto = matchOtra[1].trim();
+          } else {
+            selected.add(item);
+          }
+        });
+
+        document.querySelectorAll("[data-padecimiento-option]").forEach((checkbox) => {
+          checkbox.checked = selected.has(checkbox.value);
+        });
+
+        // Restaurar texto de "Otra" si corresponde
+        const otraInput = document.getElementById("padecimiento-otra-texto");
+        const otraContainer = document.getElementById("padecimiento-otra-container");
+        if (otraInput && otraContainer) {
+          otraInput.value = otraTexto;
+          if (selected.has("Otra")) {
+            otraContainer.classList.remove("hidden");
+          } else {
+            otraContainer.classList.add("hidden");
+          }
+        }
+
+        _syncPadecimientosHiddenInput();
+      }
+
+      function setupPadecimientosSelection() {
+        const checkboxes = document.querySelectorAll("[data-padecimiento-option]");
+        if (!checkboxes.length) return;
+
+        const otraCheckbox = document.getElementById("padecimiento-otra");
+        const otraContainer = document.getElementById("padecimiento-otra-container");
+        const otraTextoInput = document.getElementById("padecimiento-otra-texto");
+
+        checkboxes.forEach((checkbox) => {
+          checkbox.addEventListener("change", () => {
+            // Toggle container para "Otra"
+            if (checkbox === otraCheckbox && otraContainer) {
+              if (checkbox.checked) {
+                otraContainer.classList.remove("hidden");
+                otraTextoInput?.focus();
+              } else {
+                otraContainer.classList.add("hidden");
+                if (otraTextoInput) otraTextoInput.value = "";
+              }
+            }
+            _syncPadecimientosHiddenInput();
+            SR_Validations.clearFieldError("padecimiento");
+          });
+        });
+
+        // Sincronizar cuando se escribe en el campo de texto "Otra"
+        otraTextoInput?.addEventListener("input", () => {
+          _syncPadecimientosHiddenInput();
+        });
+
+        _syncPadecimientosHiddenInput();
       }
 
       // -- Setup all medida validations ------------------------------------------
@@ -1029,28 +1122,6 @@
           const el = document.querySelector(`[name="${name}"]`);
           if (el) SR_Validations.setupMeasureField(el);
         });
-      }
-
-      // -- Toggle observaciones textarea based on checkbox ------------------------
-      function setupObservacionesPosturalesConditional() {
-        const checkbox = document.querySelector('[name="tiene_observaciones"]');
-        const textarea = document.querySelector('[name="observaciones_posturales"]');
-        if (!checkbox || !textarea) return;
-
-        const apply = () => {
-          if (checkbox.checked) {
-            SR_Validations.setFieldDisabled(textarea, false);
-            textarea.required = true;
-          } else {
-            SR_Validations.setFieldDisabled(textarea, true);
-            textarea.required = false;
-            textarea.value = "";
-            SR_Validations.clearFieldError("observaciones_posturales");
-          }
-        };
-
-        checkbox.addEventListener("change", apply);
-        apply();
       }
 
       // Helper: send raw string or null for medida fields (not parseFloat)
@@ -1661,18 +1732,6 @@
           return false;
         }
 
-        // Validate observaciones_posturales if checkbox is checked
-        const tieneObs = f.querySelector('[name="tiene_observaciones"]');
-        if (tieneObs?.checked) {
-          const obsVal = (f.querySelector('[name="observaciones_posturales"]')?.value || "").trim();
-          if (!obsVal) {
-            SR_Validations.showFieldError("observaciones_posturales", "Observaciones posturales es obligatorio");
-            errorEl.textContent = "Complete los campos obligatorios";
-            errorEl.classList.remove("hidden");
-            return false;
-          }
-        }
-
         // Validar constraints HTML5
         const constraintErrors = SR_Validations.validateHTML5Constraints(f);
         if (constraintErrors.length > 0) {
@@ -1824,7 +1883,7 @@
           control_tronco: get("control_tronco"),
           control_cabeza: get("control_cabeza"),
           control_de_piernas: get("control_de_piernas"),
-          observaciones_posturales: get("observaciones_posturales") || null,
+          padecimiento: get("padecimiento") || null,
           altura_total_in: toStrOrNull(get("altura_total_in")),
           peso_kg: toStrOrNull(get("peso_kg")),
           medida_cabeza_asiento: toStrOrNull(get("medida_cabeza_asiento")),
@@ -2004,7 +2063,7 @@
             control_tronco: tecnicaData.control_tronco || null,
             control_cabeza: tecnicaData.control_cabeza || null,
             control_de_piernas: tecnicaData.control_de_piernas || null,
-            observaciones_posturales: tecnicaData.observaciones_posturales || null,
+            padecimiento: tecnicaData.padecimiento || null,
             altura_total_in: tecnicaData.altura_total_in || null,
             peso_kg: tecnicaData.peso_kg || null,
             medida_cabeza_asiento: tecnicaData.medida_cabeza_asiento || null,
@@ -2114,17 +2173,6 @@
             return;
           }
 
-          // Validate observaciones_posturales if checkbox is checked
-          const tieneObs = f.querySelector('[name="tiene_observaciones"]');
-          if (tieneObs?.checked) {
-            const obsVal = (f.querySelector('[name="observaciones_posturales"]')?.value || "").trim();
-            if (!obsVal) {
-              SR_Validations.showFieldError("observaciones_posturales", "Observaciones posturales es obligatorio");
-              errorEl.textContent = "Complete los campos obligatorios";
-              errorEl.classList.remove("hidden");
-              return;
-            }
-          }
         }
 
         // Validar constraints HTML5 (minlength, pattern) replicando validación nativa desactivada por novalidate
@@ -2164,7 +2212,7 @@
           control_tronco: get("control_tronco"),
           control_cabeza: get("control_cabeza"),
           control_de_piernas: get("control_de_piernas"),
-          observaciones_posturales: get("observaciones_posturales"),
+          padecimiento: get("padecimiento"),
           altura_total_in: toStrOrNull(get("altura_total_in")),
           peso_kg: toStrOrNull(get("peso_kg")),
           medida_cabeza_asiento: toStrOrNull(get("medida_cabeza_asiento")),
@@ -2532,9 +2580,8 @@
       setupUnidadMedidaLabels();
       setupImageZoom();
       _setupDiagnosticoValidation();
-      _setupObsValidation();
+      setupPadecimientosSelection();
       _setupAllMedidaValidations();
-      setupObservacionesPosturalesConditional();
 
       // CONTINUAR button: validate + save to localStorage + navigate
       document.getElementById("btn-continuar-tecnica")?.addEventListener("click", () => {

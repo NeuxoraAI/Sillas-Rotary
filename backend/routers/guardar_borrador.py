@@ -45,7 +45,7 @@ from validators import (
     validate_control_tronco,
     validate_control_cabeza,
     validate_control_de_piernas,
-    validate_observaciones_posturales,
+    validate_padecimiento,
     validate_unidad_medida,
     validate_unidad_peso,
     validate_prioridad,
@@ -114,7 +114,7 @@ class GuardarBorradorRequest(BaseModel):
     control_tronco: Optional[str] = None
     control_cabeza: Optional[str] = None
     control_de_piernas: Optional[str] = None
-    observaciones_posturales: Optional[str] = None
+    padecimiento: Optional[str] = None
     unidad_medida: Optional[str] = None
     altura_total_in: Optional[str] = None
     peso_kg: Optional[str] = None
@@ -185,7 +185,7 @@ class GuardarBorradorRequest(BaseModel):
                      "elaboro_estudio", "voluntario_contacto",
                      "tutor1_fuente_empleo", "tutor2_fuente_empleo",
                      "tutor1_otras_fuentes_ingreso", "tutor2_otras_fuentes_ingreso",
-                     "observaciones_posturales", "justificacion",
+                     "padecimiento", "justificacion",
                      "entidad_solicitante", mode="before")
     @classmethod
     def _normalizar_textos_libres(cls, v: Optional[str]) -> Optional[str]:
@@ -374,12 +374,12 @@ class GuardarBorradorRequest(BaseModel):
     def _control_de_piernas_valido(cls, v: Optional[str]) -> Optional[str]:
         return validate_optional(validate_control_de_piernas)(v)
 
-    @field_validator("observaciones_posturales")
+    @field_validator("padecimiento")
     @classmethod
     def _obs_posturales_valida(cls, v: Optional[str]) -> Optional[str]:
         if v is None or v == "":
             return v
-        return validate_observaciones_posturales(v)
+        return validate_padecimiento(v)
 
     @field_validator("unidad_medida")
     @classmethod
@@ -650,7 +650,7 @@ def _create_borrador(
             """
             INSERT INTO solicitudes_tecnicas
                 (beneficiario_id, usuario_id, entorno, control_tronco, control_cabeza,
-                 control_de_piernas, observaciones_posturales, altura_total_in, peso_kg,
+                 control_de_piernas, padecimiento, altura_total_in, peso_kg,
                  medida_cabeza_asiento, medida_hombro_asiento, medida_prof_asiento,
                  medida_rodilla_talon, medida_ancho_cadera, unidad_captura,
                  unidad_peso_captura, foto_url, entidad_solicitante, prioridad,
@@ -665,7 +665,7 @@ def _create_borrador(
                 body.control_tronco,
                 body.control_cabeza,
                 body.control_de_piernas,
-                body.observaciones_posturales,
+                body.padecimiento,
                 _parse_decimal_or_none(body.altura_total_in),
                 _parse_decimal_or_none(body.peso_kg),
                 _parse_decimal_or_none(body.medida_cabeza_asiento),
@@ -888,7 +888,7 @@ def _patch_solicitud(db: _DBAdapter, body: GuardarBorradorRequest, solicitud_id:
         ("control_tronco", body.control_tronco),
         ("control_cabeza", body.control_cabeza),
         ("control_de_piernas", body.control_de_piernas),
-        ("observaciones_posturales", body.observaciones_posturales),
+        ("padecimiento", body.padecimiento),
         ("entidad_solicitante", body.entidad_solicitante),
         ("prioridad", body.prioridad),
         ("justificacion", body.justificacion),

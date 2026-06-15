@@ -97,7 +97,7 @@ DDL = [
         control_tronco              TEXT,
         control_cabeza              TEXT,
         control_de_piernas          TEXT,
-        observaciones_posturales    TEXT,
+        padecimiento    TEXT,
         altura_total_in             NUMERIC(7,3) CHECK(altura_total_in IS NULL OR (altura_total_in >= 0 AND altura_total_in <= 9999.999)),
         peso_kg                     NUMERIC(7,3) CHECK(peso_kg IS NULL OR (peso_kg >= 0 AND peso_kg <= 9999.999)),
         medida_cabeza_asiento       NUMERIC(7,3) CHECK(medida_cabeza_asiento IS NULL OR (medida_cabeza_asiento >= 0 AND medida_cabeza_asiento <= 9999.999)),
