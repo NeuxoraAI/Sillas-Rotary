@@ -159,6 +159,38 @@
                 <option>Mixto</option>
               </select>
             </div>
+            <div class="md:col-span-2 space-y-2">
+              <fieldset>
+                <legend class="block text-sm font-semibold text-slate-700 mb-2"
+                  >¿Requiere soporte para oxígeno?</legend
+                >
+                <div class="flex items-center gap-6">
+                  <label class="inline-flex items-center">
+                    <input
+                      class="text-primary focus:ring-primary h-4 w-4"
+                      name="soporte_oxigeno"
+                      type="radio"
+                      value="true"
+                    />
+                    <span class="ml-2 text-sm font-medium text-slate-700"
+                      >Sí</span
+                    >
+                  </label>
+                  <label class="inline-flex items-center">
+                    <input
+                      checked
+                      class="text-primary focus:ring-primary h-4 w-4"
+                      name="requiere_soporte_oxigeno"
+                      type="radio"
+                      value="false"
+                    />
+                    <span class="ml-2 text-sm font-medium text-slate-700"
+                      >No</span
+                    >
+                  </label>
+                </div>
+              </fieldset>
+            </div>
           </div>
         </section>
         <!-- END: Seccion Entorno -->
@@ -655,6 +687,8 @@
               setVal("entorno", data.entorno);
               setVal("control_tronco", data.control_tronco);
               setVal("control_cabeza", data.control_cabeza);
+              setVal("soporte_oxigeno", data.soporte_oxigeno === true ? "true" : "false");
+            
 
               // Set textarea
               setVal("observaciones_posturales", data.observaciones_posturales);
@@ -680,6 +714,11 @@
                 );
                 if (prioridadRadio) prioridadRadio.checked = true;
               }
+
+              const oxigenoRadio = document.querySelector(
+                `[name="soporte_oxigeno"][value="${data.soporte_oxigeno === true ? "true" : "false"}"]`,
+              );
+              if (oxigenoRadio) oxigenoRadio.checked = true;
 
               // Store beneficiario_id if present
               if (data.beneficiario_id) {
@@ -712,6 +751,8 @@
         const n = parseFloat(v);
         return isNaN(n) ? null : n;
       };
+
+      const toBool = (v) => v === "true" || v === true;
 
       let currentPreviewUrl = null;
 
@@ -820,6 +861,7 @@
           entorno: get("entorno"),
           control_tronco: get("control_tronco"),
           control_cabeza: get("control_cabeza"),
+          soporte_oxigeno: toBool(get("soporte_oxigeno")),
           observaciones_posturales: get("observaciones_posturales"),
           altura_total_in: toFloatOrNull(get("altura_total_in")),
           peso_kg: toFloatOrNull(get("peso_kg")),

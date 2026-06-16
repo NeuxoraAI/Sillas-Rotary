@@ -242,6 +242,7 @@ class SolicitudCreateRequest(BaseModel):
     entorno: str
     control_tronco: str
     control_cabeza: str
+    soporte_oxigeno: bool = False
     observaciones_posturales: Optional[str] = None
     unidad_medida: str = "in"
     altura_total_in: Optional[float] = None
@@ -299,6 +300,7 @@ class SolicitudUpdateRequest(BaseModel):
     entorno: Optional[str] = None
     control_tronco: Optional[str] = None
     control_cabeza: Optional[str] = None
+    soporte_oxigeno: Optional[bool] = None
     observaciones_posturales: Optional[str] = None
     unidad_medida: Optional[str] = None
     altura_total_in: Optional[float] = None
@@ -778,12 +780,13 @@ def crear_solicitud(
         solicitud_id = db.execute(
             """
             INSERT INTO solicitudes_tecnicas
-                (beneficiario_id, usuario_id, entorno, control_tronco, control_cabeza,
+                (beneficiario_id, usuario_id, entorno, control_tronco, control_cabeza, soporte_oxigeno,
                  observaciones_posturales, altura_total_in, peso_kg,
                  medida_cabeza_asiento, medida_hombro_asiento, medida_prof_asiento,
-                 medida_rodilla_talon, medida_ancho_cadera, unidad_captura, foto_url,
+                 medida_rodilla_talon, medida_ancho_cadera, unidad_captura, 
+                 foto_url,
                  entidad_solicitante, prioridad, justificacion, status)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
             """,
             (
@@ -792,6 +795,7 @@ def crear_solicitud(
                 body.entorno,
                 body.control_tronco,
                 body.control_cabeza,
+                body.soporte_oxigeno,
                 body.observaciones_posturales,
                 body.altura_total_in,
                 body.peso_kg,

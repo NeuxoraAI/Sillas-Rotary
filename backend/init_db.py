@@ -87,6 +87,7 @@ DDL = [
         entorno                     TEXT    NOT NULL,
         control_tronco              TEXT    NOT NULL,
         control_cabeza              TEXT    NOT NULL,
+        soporte_oxigeno             BOOLEAN NOT NULL DEFAULT FALSE,
         observaciones_posturales    TEXT,
         altura_total_in             REAL    CHECK(altura_total_in IS NULL OR (altura_total_in >= 0 AND altura_total_in <= 999.999)),
         peso_kg                     REAL    CHECK(peso_kg IS NULL OR (peso_kg >= 0 AND peso_kg <= 999.999)),
