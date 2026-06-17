@@ -1,3 +1,5 @@
+import json
+
 from routers.auth import CurrentUser
 
 
@@ -155,6 +157,19 @@ def test_pdf_base_and_admin_pending_list_contracts():
     pdf = exportar_pdf_base(proceso_id=15, db=db_pdf, _usuario=_tec_user())
     assert pdf["pdf"]["status"] == "base_ready"
     assert pdf["pdf"]["snapshot_included"] is True
+
+    # pdf_snapshot_json is a jsonb column: the snapshot must be written as valid
+    # JSON, not str(dict) (Python repr is rejected by Postgres). Find the UPDATE
+    # call and assert its first param round-trips through json.loads.
+    snapshot_update = next(
+        (params for sql, params in db_pdf.calls if "pdf_snapshot_json" in sql),
+        None,
+    )
+    assert snapshot_update is not None, "expected an UPDATE writing pdf_snapshot_json"
+    written_json = snapshot_update[0]
+    assert isinstance(written_json, str)
+    parsed = json.loads(written_json)  # raises if it is Python repr, not JSON
+    assert "beneficiario" in parsed
 
     pending_rows = [{"proceso_id": 15, "beneficiario_id": 10, "estado": "revision_pendiente"}]
     db_admin = _FakeDB([pending_rows])
