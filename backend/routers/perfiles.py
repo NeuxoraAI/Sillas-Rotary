@@ -58,22 +58,37 @@ class LiderAssignRequest(BaseModel):
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _get_user_stats(db: _DBAdapter, usuario_id: int) -> dict:
-    """Return {total_capturas, this_month, pendientes} for a user."""
+def _get_user_stats(db: _DBAdapter, usuario_id: int) -> tuple[dict, str | None]:
+    """Return ({total_capturas, this_month, pendientes}, last_activity_iso) for a user.
+
+    Stats and last-activity are computed in a single scan of
+    estudios_socioeconomicos — /me/perfil is the most-visited capturista page,
+    so collapsing what were two sequential round-trips into one matters.
+
+    last_activity uses MAX(GREATEST(created_at, COALESCE(updated_at, created_at))):
+    COALESCE guards against GREATEST returning NULL (and MAX skipping the row)
+    when updated_at was never backfilled.
+    """
     now = datetime.now(timezone.utc)
     row = db.execute(
         "SELECT COUNT(*) AS total, "
         "COUNT(*) FILTER (WHERE DATE_TRUNC('month', created_at) = DATE_TRUNC('month', %s::timestamptz)) AS this_month, "
-        "COUNT(*) FILTER (WHERE status = 'borrador') AS pendientes "
+        "COUNT(*) FILTER (WHERE status = 'borrador') AS pendientes, "
+        "MAX(GREATEST(created_at, COALESCE(updated_at, created_at))) AS last_activity_date "
         "FROM estudios_socioeconomicos WHERE usuario_id = %s",
         (now, usuario_id),
     ).fetchone()
 
-    return {
+    last_activity_date = row["last_activity_date"]
+    if last_activity_date is not None:
+        last_activity_date = last_activity_date.isoformat()
+
+    stats = {
         "total_capturas": row["total"],
         "this_month": row["this_month"],
         "pendientes": row["pendientes"],
     }
+    return stats, last_activity_date
 
 
 def _get_org_user_ids(db: _DBAdapter, org_id: int) -> list[int]:
@@ -194,19 +209,8 @@ def get_my_perfil(
         (user.usuario_id,),
     ).fetchone()
 
-    stats = _get_user_stats(db, user.usuario_id)
-
-    # Get last activity date (most recent created or resumed/updated estudio).
-    # COALESCE: GREATEST returns NULL if any argument is NULL, which would make
-    # MAX() skip rows whose updated_at was never backfilled.
-    last_activity_row = db.execute(
-        "SELECT MAX(GREATEST(created_at, COALESCE(updated_at, created_at))) AS last_activity_date "
-        "FROM estudios_socioeconomicos WHERE usuario_id = %s",
-        (user.usuario_id,),
-    ).fetchone()
-    last_activity_date = last_activity_row["last_activity_date"]
-    if last_activity_date is not None:
-        last_activity_date = last_activity_date.isoformat()
+    # Stats and last-activity come from a single scan (see _get_user_stats).
+    stats, last_activity_date = _get_user_stats(db, user.usuario_id)
 
     # Check orgs the user leads (via organizaciones_lideres)
     leader_rows = db.execute(
