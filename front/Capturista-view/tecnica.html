@@ -208,6 +208,21 @@
               <p class="field-error hidden text-red-600 text-xs mt-1" id="control_de_piernas-error" data-error-for="control_de_piernas" role="alert"></p>
             </div>
             <div class="md:col-span-2 space-y-2">
+              <fieldset>
+                <legend class="block text-sm font-semibold text-slate-700 mb-2">¿Requiere soporte para oxígeno?</legend>
+                <div class="flex items-center gap-6">
+                  <label class="inline-flex items-center">
+                    <input class="text-primary focus:ring-primary h-4 w-4" name="soporte_oxigeno" type="radio" value="true" />
+                    <span class="ml-2 text-sm font-medium text-slate-700">Sí</span>
+                  </label>
+                  <label class="inline-flex items-center">
+                    <input class="text-primary focus:ring-primary h-4 w-4" name="soporte_oxigeno" type="radio" value="false" checked />
+                    <span class="ml-2 text-sm font-medium text-slate-700">No</span>
+                  </label>
+                </div>
+              </fieldset>
+            </div>
+            <div class="md:col-span-2 space-y-2">
                 <label class="block text-sm font-semibold text-slate-700"
                   >Observaciones Posturales (Escoliosis, Cifosis, etc.)</label
                 >
@@ -883,6 +898,12 @@
               setVal("control_cabeza", data.control_cabeza);
               setVal("control_de_piernas", data.control_de_piernas);
 
+              // Radio group — restore by checking the matching option
+              const oxiRadioA = document.querySelector(
+                `[name="soporte_oxigeno"][value="${data.soporte_oxigeno === true ? "true" : "false"}"]`,
+              );
+              if (oxiRadioA) oxiRadioA.checked = true;
+
               // Set textarea
               setVal("observaciones_posturales", data.observaciones_posturales);
 
@@ -956,6 +977,10 @@
             setVal("control_tronco", data.control_tronco);
             setVal("control_cabeza", data.control_cabeza);
             setVal("control_de_piernas", data.control_de_piernas);
+            const oxiRadioB = document.querySelector(
+              `[name="soporte_oxigeno"][value="${data.soporte_oxigeno === true ? "true" : "false"}"]`,
+            );
+            if (oxiRadioB) oxiRadioB.checked = true;
             setVal("observaciones_posturales", data.observaciones_posturales);
             if (data.observaciones_posturales && data.observaciones_posturales.trim()) {
               const chk = document.querySelector('[name="tiene_observaciones"]');
@@ -1824,6 +1849,7 @@
           control_tronco: get("control_tronco"),
           control_cabeza: get("control_cabeza"),
           control_de_piernas: get("control_de_piernas"),
+          soporte_oxigeno: get("soporte_oxigeno") === "true",
           observaciones_posturales: get("observaciones_posturales") || null,
           altura_total_in: toStrOrNull(get("altura_total_in")),
           peso_kg: toStrOrNull(get("peso_kg")),
@@ -2004,6 +2030,7 @@
             control_tronco: tecnicaData.control_tronco || null,
             control_cabeza: tecnicaData.control_cabeza || null,
             control_de_piernas: tecnicaData.control_de_piernas || null,
+            soporte_oxigeno: tecnicaData.soporte_oxigeno ?? false,
             observaciones_posturales: tecnicaData.observaciones_posturales || null,
             altura_total_in: tecnicaData.altura_total_in || null,
             peso_kg: tecnicaData.peso_kg || null,
@@ -2164,6 +2191,7 @@
           control_tronco: get("control_tronco"),
           control_cabeza: get("control_cabeza"),
           control_de_piernas: get("control_de_piernas"),
+          soporte_oxigeno: get("soporte_oxigeno") === "true",
           observaciones_posturales: get("observaciones_posturales"),
           altura_total_in: toStrOrNull(get("altura_total_in")),
           peso_kg: toStrOrNull(get("peso_kg")),
