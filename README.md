@@ -85,8 +85,9 @@ Sillas-Rotary/
 ├── backend/                        # API REST — FastAPI + Supabase/PostgreSQL
 │   ├── main.py                     # Punto de entrada: CORS, rutas, static files, security headers
 │   ├── database.py                 # Conexión PostgreSQL + test guardrails
-│   ├── init_db.py                  # DDL: crea tablas e índices al iniciar
-│   ├── migrations/                 # Migraciones SQL incrementales
+│   ├── init_db.py                  # Bootstrap legacy v1 (tablas base) — NO es la fuente de verdad del schema
+│   ├── migrate_v2.sql              # Migración v2 (usuarios, paises, regiones, ...)
+│   ├── migrations/                 # Migraciones SQL incrementales — fuente de verdad del schema
 │   ├── requirements.txt            # Dependencias Python
 │   ├── start.sh                    # Script de arranque (crea venv + levanta servidor)
 │   ├── .env.example                # Plantilla de variables de entorno
@@ -136,7 +137,7 @@ El script hace todo automáticamente:
 ```
 → Crea el entorno virtual con Python 3.12
 → Instala las dependencias de requirements.txt
-→ Inicializa la base de datos (tablas + índices via init_db.py)
+→ Inicializa la base de datos vía setup_db.py (init_db.py v1 → migrate_v2.sql → migrations/)
 → Levanta el servidor en http://localhost:8000
 ```
 

@@ -77,6 +77,13 @@ Every protected fetch MUST include: `Authorization: Bearer {session.token}`
 
 ## Database Schema (PostgreSQL)
 
+> **Schema authority:** the versioned migration set in this repo —
+> `backend/migrate_v2.sql` + `backend/migrations/00xx_*.sql` — applied to Supabase,
+> is the single source of truth. `backend/init_db.py` is only the legacy v1
+> bootstrap layer (10 base tables), **not** authoritative. Add schema changes as a
+> new numbered migration, never by editing `init_db.py` or the Supabase dashboard
+> directly. The block below is a **reference snapshot** of key tables, not exhaustive.
+
 ```
 usuarios               (id, nombre, email, password_hash, rol, activo)
 paises                 (id, nombre, codigo, activo)
