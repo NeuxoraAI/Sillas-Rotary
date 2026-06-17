@@ -114,6 +114,7 @@ class GuardarBorradorRequest(BaseModel):
     control_tronco: Optional[str] = None
     control_cabeza: Optional[str] = None
     control_de_piernas: Optional[str] = None
+    soporte_oxigeno: Optional[bool] = None
     observaciones_posturales: Optional[str] = None
     unidad_medida: Optional[str] = None
     altura_total_in: Optional[str] = None
@@ -650,12 +651,12 @@ def _create_borrador(
             """
             INSERT INTO solicitudes_tecnicas
                 (beneficiario_id, usuario_id, entorno, control_tronco, control_cabeza,
-                 control_de_piernas, observaciones_posturales, altura_total_in, peso_kg,
+                 control_de_piernas, soporte_oxigeno, observaciones_posturales, altura_total_in, peso_kg,
                  medida_cabeza_asiento, medida_hombro_asiento, medida_prof_asiento,
                  medida_rodilla_talon, medida_ancho_cadera, unidad_captura,
                  unidad_peso_captura, foto_url, entidad_solicitante, prioridad,
                  justificacion, status)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
             """,
             (
@@ -665,6 +666,7 @@ def _create_borrador(
                 body.control_tronco,
                 body.control_cabeza,
                 body.control_de_piernas,
+                bool(body.soporte_oxigeno),
                 body.observaciones_posturales,
                 _parse_decimal_or_none(body.altura_total_in),
                 _parse_decimal_or_none(body.peso_kg),
@@ -888,6 +890,7 @@ def _patch_solicitud(db: _DBAdapter, body: GuardarBorradorRequest, solicitud_id:
         ("control_tronco", body.control_tronco),
         ("control_cabeza", body.control_cabeza),
         ("control_de_piernas", body.control_de_piernas),
+        ("soporte_oxigeno", body.soporte_oxigeno),
         ("observaciones_posturales", body.observaciones_posturales),
         ("entidad_solicitante", body.entidad_solicitante),
         ("prioridad", body.prioridad),
