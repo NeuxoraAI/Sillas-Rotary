@@ -783,10 +783,9 @@ def crear_solicitud(
                 (beneficiario_id, usuario_id, entorno, control_tronco, control_cabeza, soporte_oxigeno,
                  observaciones_posturales, altura_total_in, peso_kg,
                  medida_cabeza_asiento, medida_hombro_asiento, medida_prof_asiento,
-                 medida_rodilla_talon, medida_ancho_cadera, unidad_captura, 
-                 foto_url,
+                 medida_rodilla_talon, medida_ancho_cadera, unidad_captura, foto_url,
                  entidad_solicitante, prioridad, justificacion, status)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s,%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
             """,
             (
