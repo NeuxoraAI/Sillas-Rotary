@@ -97,6 +97,7 @@ DDL = [
         control_tronco              TEXT,
         control_cabeza              TEXT,
         control_de_piernas          TEXT,
+        padecimiento    TEXT,
         soporte_oxigeno             BOOLEAN NOT NULL DEFAULT FALSE,
         observaciones_posturales    TEXT,
         altura_total_in             NUMERIC(7,3) CHECK(altura_total_in IS NULL OR (altura_total_in >= 0 AND altura_total_in <= 9999.999)),

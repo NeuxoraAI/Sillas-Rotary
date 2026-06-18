@@ -367,7 +367,7 @@ class TestMedidaValidation:
 
 
 class TestObservacionesPosturalesValidation:
-    """Test Pydantic validation of observaciones_posturales (tasks 5.3-5.4)."""
+    """Test Pydantic validation of padecimiento (tasks 5.3-5.4)."""
 
     def _base_payload(self):
         return {
@@ -381,46 +381,46 @@ class TestObservacionesPosturalesValidation:
     def test_acepta_texto_valido(self):
         """Valid text with allowed chars passes."""
         payload = self._base_payload()
-        payload["observaciones_posturales"] = "Paciente con escoliosis."
+        payload["padecimiento"] = "Paciente con escoliosis."
         model = SolicitudCreateRequest(**payload)
         # Input is auto-uppercased to align with the backend catalog charset
-        assert model.observaciones_posturales == "PACIENTE CON ESCOLIOSIS."
+        assert model.padecimiento == "PACIENTE CON ESCOLIOSIS."
 
     def test_acepta_null(self):
         """None is accepted."""
         payload = self._base_payload()
         model = SolicitudCreateRequest(**payload)
-        assert model.observaciones_posturales is None
+        assert model.padecimiento is None
 
     def test_rechaza_arroba(self):
         """@ symbol raises ValidationError."""
         payload = self._base_payload()
-        payload["observaciones_posturales"] = "email@test.com"
+        payload["padecimiento"] = "email@test.com"
         with pytest.raises(ValidationError) as exc_info:
             SolicitudCreateRequest(**payload)
         errors = exc_info.value.errors()
-        assert any("observaciones_posturales" in str(e.get("loc", [])) for e in errors)
+        assert any("padecimiento" in str(e.get("loc", [])) for e in errors)
 
     def test_rechaza_script_tag(self):
         """HTML tags raise ValidationError."""
         payload = self._base_payload()
-        payload["observaciones_posturales"] = "<script>alert(1)</script>"
+        payload["padecimiento"] = "<script>alert(1)</script>"
         with pytest.raises(ValidationError):
             SolicitudCreateRequest(**payload)
 
     def test_rechaza_excede_500_chars(self):
         """Text exceeding 500 chars raises ValidationError."""
         payload = self._base_payload()
-        payload["observaciones_posturales"] = "x" * 501
+        payload["padecimiento"] = "x" * 501
         with pytest.raises(ValidationError):
             SolicitudCreateRequest(**payload)
 
     def test_acepta_exactamente_500(self):
         """Exactly 500 allowed chars passes."""
         payload = self._base_payload()
-        payload["observaciones_posturales"] = "a" * 500
+        payload["padecimiento"] = "a" * 500
         model = SolicitudCreateRequest(**payload)
-        assert len(model.observaciones_posturales) == 500
+        assert len(model.padecimiento) == 500
 
 
 class TestValidationErrorFormat:

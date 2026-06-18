@@ -347,7 +347,7 @@
         );
       }
 
-      // -- Validación preventiva para justificacion (misma que observaciones_posturales)
+      // -- Validación preventiva para justificacion (misma que padecimiento)
       function _setupJustificacionValidation() {
         const textarea = document.querySelector('[name="justificacion"]');
         if (!textarea) return;
@@ -488,7 +488,7 @@
           control_tronco: draftTecnica.control_tronco || null,
           control_cabeza: draftTecnica.control_cabeza || null,
           control_de_piernas: draftTecnica.control_de_piernas || null,
-          observaciones_posturales: draftTecnica.observaciones_posturales || null,
+          padecimiento: draftTecnica.padecimiento || null,
           altura_total_in: draftTecnica.altura_total_in || null,
           peso_kg: draftTecnica.peso_kg || null,
           medida_cabeza_asiento: draftTecnica.medida_cabeza_asiento || null,
