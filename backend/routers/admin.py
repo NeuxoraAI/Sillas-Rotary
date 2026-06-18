@@ -762,15 +762,6 @@ def actualizar_estudio_admin(
     values.append(estudio["id"])
 
     db.execute(
-        f"UPDATE estudios_socioeconomicos SET {set_clause} WHERE id = %s",
-        values,
-    )
-
-    set_clause = ", ".join(f"{k} = %s" for k in fields)
-    values = list(fields.values())
-    values.append(estudio["id"])
-
-    db.execute(
         f"UPDATE estudios_socioeconomicos SET {set_clause}, updated_at = NOW() WHERE id = %s",
         values,
     )
