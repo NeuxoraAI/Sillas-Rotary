@@ -262,7 +262,7 @@ def finalizar_registro(
 
     # 6. Update both records in the implicit transaction.
     # On error, the exception propagates and get_db rolls back.
-    now_iso = datetime.now(timezone.utc).isoformat()
+    finalizado_at = datetime.now(timezone.utc)
 
     db.execute(
         """
@@ -270,7 +270,7 @@ def finalizar_registro(
         SET status = 'completo', finalizado_at = %s, updated_at = NOW()
         WHERE id = %s
         """,
-        (now_iso, body.estudio_id),
+        (finalizado_at, body.estudio_id),
     )
 
     db.execute(
@@ -279,7 +279,7 @@ def finalizar_registro(
         SET status = 'completo', finalizado_at = %s, updated_at = NOW()
         WHERE id = %s
         """,
-        (now_iso, body.solicitud_id),
+        (finalizado_at, body.solicitud_id),
     )
 
     db.commit()
@@ -288,6 +288,6 @@ def finalizar_registro(
         estudio_id=body.estudio_id,
         solicitud_id=body.solicitud_id,
         status="completo",
-        finalizado_at=now_iso,
+        finalizado_at=finalizado_at.isoformat(),
         already_completed=False,
     )
