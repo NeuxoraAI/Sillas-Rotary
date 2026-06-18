@@ -15,7 +15,7 @@ from supabase import create_client
 from database import get_db, _DBAdapter
 from routers.auth import CurrentUser, assert_resource_owner, require_roles
 from validators import (
-    validate_observaciones_posturales,
+    validate_padecimiento,
     validate_medida_tecnica,
     validate_entidad_solicitante,
     validate_justificacion,
@@ -416,6 +416,7 @@ class SolicitudCreateRequest(BaseModel):
     control_tronco: str
     control_cabeza: str
     control_de_piernas: str
+    padecimiento: Optional[str] = None
     soporte_oxigeno: bool = False
     observaciones_posturales: Optional[str] = None
     unidad_medida: str = "in"
@@ -461,12 +462,12 @@ class SolicitudCreateRequest(BaseModel):
     def _control_de_piernas_valido(cls, v: str) -> str:
         return validate_control_de_piernas(v)
 
-    @field_validator("observaciones_posturales", mode="before")
+    @field_validator("padecimiento", mode="before")
     @classmethod
     def validate_obs_field(cls, v) -> Optional[str]:
         if v is None:
             return None
-        return validate_observaciones_posturales(normalize_text(str(v)) or "")
+        return validate_padecimiento(normalize_text(str(v)) or "")
 
     @field_validator("unidad_medida")
     @classmethod
@@ -551,6 +552,7 @@ class SolicitudUpdateRequest(BaseModel):
     control_tronco: Optional[str] = None
     control_cabeza: Optional[str] = None
     control_de_piernas: Optional[str] = None
+    padecimiento: Optional[str] = None
     soporte_oxigeno: Optional[bool] = None
     observaciones_posturales: Optional[str] = None
     unidad_medida: Optional[str] = None
@@ -604,12 +606,12 @@ class SolicitudUpdateRequest(BaseModel):
             return v
         return validate_control_de_piernas(v)
 
-    @field_validator("observaciones_posturales", mode="before")
+    @field_validator("padecimiento", mode="before")
     @classmethod
     def validate_obs_field(cls, v) -> Optional[str]:
         if v is None:
             return None
-        return validate_observaciones_posturales(normalize_text(str(v)) or "")
+        return validate_padecimiento(normalize_text(str(v)) or "")
 
     @field_validator("unidad_medida")
     @classmethod
@@ -1027,7 +1029,7 @@ def exportar_beneficiarios_tecnica(
             st.peso_kg,
             st.altura_total_in,
             st.unidad_captura,
-            st.observaciones_posturales,
+            st.padecimiento,
             st.justificacion,
             st.entidad_solicitante,
             t.nombre AS tutor_nombre
@@ -1110,7 +1112,7 @@ def exportar_beneficiarios_tecnica(
             row.get("tutor_nombre") or "",
             row.get("entidad_solicitante") or "",  # Club o Asociación — mapeamos a entidad solicitante
             "",  # QUIEN CANALIZA — no hay campo
-            row.get("observaciones_posturales") or "",
+            row.get("padecimiento") or "",
         ])
 
     ws.freeze_panes = "A3"
@@ -1420,6 +1422,7 @@ def crear_solicitud(
             """
             INSERT INTO solicitudes_tecnicas
                 (beneficiario_id, usuario_id, entorno, control_tronco, control_cabeza, control_de_piernas,
+                 padecimiento,
                  soporte_oxigeno, observaciones_posturales, altura_total_in, peso_kg,
                  medida_cabeza_asiento, medida_hombro_asiento, medida_prof_asiento,
                  medida_rodilla_talon, medida_ancho_cadera, unidad_captura, unidad_peso_captura, foto_url,
@@ -1434,6 +1437,7 @@ def crear_solicitud(
                 body.control_tronco,
                 body.control_cabeza,
                 body.control_de_piernas,
+                body.padecimiento,
                 body.soporte_oxigeno,
                 body.observaciones_posturales,
                 body.altura_total_in,

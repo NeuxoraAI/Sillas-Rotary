@@ -36,7 +36,7 @@ from validators import (
     validate_entidad_solicitante,
     validate_justificacion,
     validate_prioridad,
-    validate_observaciones_posturales,
+    validate_padecimiento,
     validate_medida_tecnica,
     validate_entorno,
     validate_control_tronco,
@@ -229,7 +229,7 @@ class AdminSolicitudUpdateRequest(BaseModel):
     control_tronco: Optional[str] = None
     control_cabeza: Optional[str] = None
     control_de_piernas: Optional[str] = None
-    observaciones_posturales: Optional[str] = None
+    padecimiento: Optional[str] = None
     unidad_medida: Optional[str] = None
     altura_total_in: Optional[Decimal] = None
     peso_kg: Optional[Decimal] = None
@@ -272,12 +272,12 @@ class AdminSolicitudUpdateRequest(BaseModel):
             return v
         return validate_control_de_piernas(v)
 
-    @field_validator("observaciones_posturales", mode="before")
+    @field_validator("padecimiento", mode="before")
     @classmethod
     def validate_obs_field(cls, v) -> Optional[str]:
         if v is None or (isinstance(v, str) and v.strip() == ""):
             return None
-        return validate_observaciones_posturales(str(v))
+        return validate_padecimiento(str(v))
 
     @field_validator("unidad_medida")
     @classmethod
@@ -562,7 +562,7 @@ def exportar_beneficiarios_admin(
             st.peso_kg,
             st.altura_total_in,
             st.unidad_captura,
-            st.observaciones_posturales,
+            st.padecimiento,
             st.justificacion,
             st.entidad_solicitante,
             t.nombre AS tutor_nombre
@@ -642,7 +642,7 @@ def exportar_beneficiarios_admin(
             row.get("tutor_nombre") or "",
             row.get("entidad_solicitante") or "",
             "",
-            row.get("observaciones_posturales") or "",
+            row.get("padecimiento") or "",
         ])
 
     ws.freeze_panes = "A3"
