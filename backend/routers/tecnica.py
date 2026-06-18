@@ -416,6 +416,8 @@ class SolicitudCreateRequest(BaseModel):
     control_cabeza: str
     control_de_piernas: str
     padecimiento: Optional[str] = None
+    soporte_oxigeno: bool = False
+    observaciones_posturales: Optional[str] = None
     unidad_medida: str = "in"
     altura_total_in: Optional[Decimal] = None
     peso_kg: Optional[Decimal] = None
@@ -550,6 +552,8 @@ class SolicitudUpdateRequest(BaseModel):
     control_cabeza: Optional[str] = None
     control_de_piernas: Optional[str] = None
     padecimiento: Optional[str] = None
+    soporte_oxigeno: Optional[bool] = None
+    observaciones_posturales: Optional[str] = None
     unidad_medida: Optional[str] = None
     altura_total_in: Optional[Decimal] = None
     peso_kg: Optional[Decimal] = None
@@ -1414,11 +1418,12 @@ def crear_solicitud(
             """
             INSERT INTO solicitudes_tecnicas
                 (beneficiario_id, usuario_id, entorno, control_tronco, control_cabeza, control_de_piernas,
-                 padecimiento, altura_total_in, peso_kg,
+                 padecimiento,
+                 soporte_oxigeno, observaciones_posturales, altura_total_in, peso_kg,
                  medida_cabeza_asiento, medida_hombro_asiento, medida_prof_asiento,
                  medida_rodilla_talon, medida_ancho_cadera, unidad_captura, unidad_peso_captura, foto_url,
                  entidad_solicitante, prioridad, justificacion, status)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
             """,
             (
@@ -1429,6 +1434,8 @@ def crear_solicitud(
                 body.control_cabeza,
                 body.control_de_piernas,
                 body.padecimiento,
+                body.soporte_oxigeno,
+                body.observaciones_posturales,
                 body.altura_total_in,
                 body.peso_kg,
                 body.medida_cabeza_asiento,
