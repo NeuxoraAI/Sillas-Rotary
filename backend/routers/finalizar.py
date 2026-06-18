@@ -282,8 +282,6 @@ def finalizar_registro(
         (finalizado_at, body.solicitud_id),
     )
 
-    db.commit()
-
     return FinalizarRegistroResponse(
         estudio_id=body.estudio_id,
         solicitud_id=body.solicitud_id,

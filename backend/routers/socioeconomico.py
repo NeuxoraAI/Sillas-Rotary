@@ -947,7 +947,6 @@ def actualizar_estudio(
         f"UPDATE estudios_socioeconomicos SET {set_clause}, updated_at = NOW() WHERE id = %s",
         values,
     )
-    db.commit()
 
     row = db.execute(
         "SELECT id, status, updated_at FROM estudios_socioeconomicos WHERE id = %s",

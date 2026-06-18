@@ -730,7 +730,6 @@ def actualizar_beneficiario_admin(
         f"UPDATE beneficiarios SET {set_clause} WHERE id = %s",
         values,
     )
-    db.commit()
 
     return {"beneficiario_id": beneficiario_id, "updated": True}
 
