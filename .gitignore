@@ -41,3 +41,7 @@ backend/server.log
 # Local tool metadata (Claude Code, SDD/Atlassian)
 .atl/
 .claude/
+
+# FIXES and PRD documentation (local audit docs, not for repo)
+FIXES_*.md
+PRD_*.md
