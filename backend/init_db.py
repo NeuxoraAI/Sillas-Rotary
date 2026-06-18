@@ -1,3 +1,25 @@
+"""
+LEGACY v1 BOOTSTRAP — NOT the schema source of truth.
+
+This script creates only the v1 base tables (10 of the ~16 in production).
+It is step 1 of a multi-layer bootstrap orchestrated by `setup_db.py`:
+
+    1. init_db.py      → v1 base tables (this file)
+    2. migrate_v2.sql  → usuarios, paises, regiones, region_counters, ...
+    3. seed_v2.py      → admin user + países + regiones
+    4. migrations/00xx  → incremental schema changes
+
+The authoritative schema is the versioned migration set in this repo
+(`migrate_v2.sql` + `backend/migrations/`), applied to Supabase. Do NOT treat
+this file — or any Supabase dashboard edit — as the source of truth, and do not
+add new tables here: put DDL changes in a new numbered migration instead.
+
+Why this file still exists (do not delete it):
+  - `tests/conftest.py` imports `DDL` to build the test schema.
+  - `setup_db.py` imports `init()` as the v1 bootstrap step.
+  - `_init_storage()` provisions the Supabase Storage buckets.
+"""
+
 import os
 
 import psycopg2

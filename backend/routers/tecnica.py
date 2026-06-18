@@ -1,4 +1,5 @@
 import io
+import json
 import os
 import uuid
 from decimal import Decimal
@@ -1306,7 +1307,10 @@ def exportar_pdf_base(
             updated_at = NOW()
         WHERE id = %s
         """,
-        (str(snapshot), proceso_id),
+        # jsonb column: serialize to real JSON. default=str handles the
+        # datetime/date/Decimal values that _build_snapshot pulls from the DB
+        # rows (str(snapshot) produced a Python repr that Postgres rejected).
+        (json.dumps(snapshot, default=str), proceso_id),
     )
     return {
         "proceso_id": proceso_id,

@@ -9,7 +9,16 @@ def test_init_db_contains_procesos_tecnicos_schema_without_organizacion():
     assert "en_proceso" in ddl_text
     assert "finalizado" in ddl_text
     assert "revision_pendiente" in ddl_text
-    assert "organizacion" not in ddl_text
+
+    # The technical process is owned by a beneficiario, not an organization.
+    # Scope this invariant to the procesos_tecnicos table definition itself:
+    # the organizaciones* tables added later (commit d80b124) are separate and
+    # must not break it. Asserting "organizacion" against the whole DDL text was
+    # a too-broad proxy that became stale once those tables landed in init_db.py.
+    procesos_ddl = next(
+        s for s in DDL if "CREATE TABLE IF NOT EXISTS procesos_tecnicos (" in s
+    )
+    assert "organizacion" not in procesos_ddl.lower()
 
 
 def test_init_db_contains_participantes_append_only_table():
