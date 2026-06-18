@@ -845,7 +845,6 @@ def actualizar_gestion_admin(
             values,
         )
         updated_estudio = True
-        db.commit()
 
     # Build solicitud fields
     solicitud_fields = {}
@@ -865,7 +864,6 @@ def actualizar_gestion_admin(
             values,
         )
         updated_solicitud = True
-        db.commit()
 
     return {
         "beneficiario_id": beneficiario_id,
@@ -942,7 +940,6 @@ def eliminar_beneficiario_admin(
         (beneficiario_id,),
     )
     deleted["beneficiarios"] = result._cur.rowcount
-    db.commit()
 
     return {
         "beneficiario_id": beneficiario_id,
