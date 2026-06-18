@@ -52,7 +52,7 @@ from validators import (
     validate_fuente_empleo,
     validate_otras_fuentes_ingreso,
     ESTADO_CIVIL_CATALOG,
-    TRIESTADO_CATALOG,
+    BOOLEANO_CATALOG,
     VIVIENDA_CATALOG,
     NIVEL_ESTUDIOS_CATALOG,
     COMO_OBTUVO_SILLA_CATALOG,
@@ -330,11 +330,11 @@ class TutorIn(BaseModel):
 
     @field_validator("imss_estatus", "infonavit_estatus")
     @classmethod
-    def _triestado_valido(cls, v: Optional[str]) -> Optional[str]:
+    def _booleano_catalogo_valido(cls, v: Optional[str]) -> Optional[str]:
         if v is None:
             return None
         vv = normalize_text(v)
-        return validate_catalog(vv, TRIESTADO_CATALOG, "estatus")
+        return validate_catalog(vv, BOOLEANO_CATALOG, "estatus")
 
     @field_validator("fuente_empleo")
     @classmethod
@@ -1215,10 +1215,10 @@ def _mapear_a_db(valor: Optional[str]) -> Optional[int]:
     return mapping.get(valor)
 
 
-def _mapear_de_db(valor: Optional[int]) -> str:
-    """Map DB integer to string: 1→SI, 0→NO, NULL→NO."""
+def _mapear_de_db(valor: Optional[int]) -> Optional[str]:
+    """Map DB integer to string: 1→SI, 0→NO, NULL→None."""
     if valor is None:
-        return "NO"
+        return None
     return "SI" if valor == 1 else "NO"
 
 

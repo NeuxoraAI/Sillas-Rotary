@@ -53,7 +53,6 @@ from validators import (
     validate_justificacion,
     validate_optional,
     ESTADO_CIVIL_CATALOG,
-    TRIESTADO_CATALOG,
     VIVIENDA_CATALOG,
     NIVEL_ESTUDIOS_CATALOG,
     COMO_OBTUVO_SILLA_CATALOG,

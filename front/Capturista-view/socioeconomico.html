@@ -2181,18 +2181,16 @@
                     const el = document.querySelector(`[name="${name}"]`);
                     if (el) el.checked = val === 1 || val === true;
                   };
-                  const setTriestado = (name, raw) => {
-                    let value;
+                  const setBooleanStatus = (name, raw) => {
+                    let value = null;
                     if (raw === "SI" || raw === "NO") {
                       value = raw;
                     } else if (raw === true || raw === 1) {
                       value = "SI";
                     } else if (raw === false || raw === 0) {
                       value = "NO";
-                    } else {
-                      // Legacy NO_APLICA or unknown -> default to NO
-                      value = "NO";
                     }
+                    if (value === null) return;
                     const radio = document.querySelector(`[name="${name}"][value="${value}"]`);
                     if (radio) radio.checked = true;
                   };
@@ -2248,8 +2246,8 @@
                   setChecked(`tutor${num}_otras_fuentes_aplica`, t.otras_fuentes_aplica);
                   setVal(`tutor${num}_otras_fuentes_ingreso`, t.otras_fuentes_ingreso);
                   setVal(`tutor${num}_monto_otras_fuentes`, t.monto_otras_fuentes != null ? SR_Validations.formatMoneyDisplay(String(t.monto_otras_fuentes)) : t.monto_otras_fuentes);
-                  setTriestado(`tutor${num}_imss`, t.imss_estatus ?? t.tiene_imss);
-                  setTriestado(`tutor${num}_infonavit`, t.infonavit_estatus ?? t.tiene_infonavit);
+                  setBooleanStatus(`tutor${num}_imss`, t.imss_estatus ?? t.tiene_imss);
+                  setBooleanStatus(`tutor${num}_infonavit`, t.infonavit_estatus ?? t.tiene_infonavit);
                 });
                 const tutor2Data = data.tutores.find(t => t.numero_tutor === 2);
                 if (tutor2Data) {

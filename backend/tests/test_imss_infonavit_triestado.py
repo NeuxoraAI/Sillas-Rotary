@@ -45,10 +45,10 @@ class TestStatusMappingFunctions:
         from routers.socioeconomico import _mapear_de_db
         assert _mapear_de_db(0) == "NO"
 
-    def test_db_to_status_none_returns_no_aplica(self):
-        """DB NULL maps to NO_APLICA string."""
+    def test_db_to_status_none_returns_none(self):
+        """DB NULL remains None so unknown/no aplica is not collapsed to NO."""
         from routers.socioeconomico import _mapear_de_db
-        assert _mapear_de_db(None) == "NO_APLICA"
+        assert _mapear_de_db(None) is None
 
     def test_status_to_db_unknown_returns_none(self):
         """Unknown status string returns None (safe fallback)."""
@@ -76,18 +76,18 @@ class TestBackwardCompatibility:
         assert tutor.imss_estatus == "SI"
         assert tutor.infonavit_estatus == "NO"
 
-    def test_tutorin_accepts_no_aplica(self):
-        """TutorIn accepts NO_APLICA as a valid status."""
+    def test_tutorin_rejects_no_aplica(self):
+        """TutorIn rejects NO_APLICA because IMSS/INFONAVIT uses SI/NO or null."""
         from routers.socioeconomico import TutorIn
+        from pydantic import ValidationError
 
-        tutor = TutorIn(
-            numero_tutor=1,
-            nombre="Test Tutor",
-            imss_estatus="NO_APLICA",
-            infonavit_estatus="NO_APLICA",
-        )
-        assert tutor.imss_estatus == "NO_APLICA"
-        assert tutor.infonavit_estatus == "NO_APLICA"
+        with pytest.raises(ValidationError):
+            TutorIn(
+                numero_tutor=1,
+                nombre="Test Tutor",
+                imss_estatus="NO_APLICA",
+                infonavit_estatus="NO_APLICA",
+            )
 
     def test_tutorin_defaults_to_none_when_not_provided(self):
         """TutorIn default values are None for status fields."""
@@ -208,11 +208,11 @@ class TestIMSSINFONAVITIntegration:
         data = res.json()
         assert "estudio_id" in data
 
-    def test_post_estudio_with_all_three_states(self, client, capturista_headers, region_lon):
-        """POST accepts SI, NO, and NO_APLICA for both fields."""
+    def test_post_estudio_with_boolean_status_values(self, client, capturista_headers, region_lon):
+        """POST accepts SI/NO for both fields."""
         payload = self._triestado_payload(region_lon["id"])
         payload["tutores"][0]["imss_estatus"] = "SI"
-        payload["tutores"][0]["infonavit_estatus"] = "NO_APLICA"
+        payload["tutores"][0]["infonavit_estatus"] = "NO"
 
         # Add a second tutor with different states
         payload["tutores"].append({
@@ -248,8 +248,8 @@ class TestIMSSINFONAVITIntegration:
         assert "tiene_imss" not in tutor
         assert "tiene_infonavit" not in tutor
 
-    def test_get_estudio_returns_no_aplica_for_nulls(self, client, capturista_headers, region_lon):
-        """GET returns NO_APLICA when DB columns are NULL (not provided)."""
+    def test_get_estudio_returns_null_for_nulls(self, client, capturista_headers, region_lon):
+        """GET preserves NULL when DB columns are not provided."""
         payload = self._triestado_payload(region_lon["id"])
         # Don't set imss_estatus or infonavit_estatus at all (default None → DB NULL)
         del payload["tutores"][0]["imss_estatus"]
@@ -263,9 +263,9 @@ class TestIMSSINFONAVITIntegration:
         assert get_res.status_code == 200
         tutor = get_res.json()["tutores"][0]
 
-        # NULL in DB → NO_APLICA in response
-        assert tutor["imss_estatus"] == "NO_APLICA"
-        assert tutor["infonavit_estatus"] == "NO_APLICA"
+        # NULL in DB remains null in the response.
+        assert tutor["imss_estatus"] is None
+        assert tutor["infonavit_estatus"] is None
 
     # --- POST (old backward compatible format) ---
 
@@ -309,7 +309,7 @@ class TestIMSSINFONAVITIntegration:
                     {
                         "numero_tutor": 1,
                         "nombre": "Tutor Triestado Updated",
-                        "imss_estatus": "NO_APLICA",
+                        "imss_estatus": None,
                         "infonavit_estatus": "SI",
                     }
                 ]
@@ -321,7 +321,7 @@ class TestIMSSINFONAVITIntegration:
         get_res = client.get(f"/api/estudios/{estudio_id}", headers=capturista_headers)
         assert get_res.status_code == 200
         tutor = get_res.json()["tutores"][0]
-        assert tutor["imss_estatus"] == "NO_APLICA"
+        assert tutor["imss_estatus"] is None
         assert tutor["infonavit_estatus"] == "SI"
         assert tutor["nombre"] == "TUTOR TRIESTADO UPDATED"  # normalized to uppercase
 
@@ -363,16 +363,16 @@ class TestIMSSINFONAVITIntegration:
         """POST estudio completo properly persists triestado values."""
         payload = self._triestado_payload(region_lon["id"])
         payload["estudio"]["status"] = "completo"
-        payload["tutores"][0]["imss_estatus"] = "NO_APLICA"
-        payload["tutores"][0]["infonavit_estatus"] = "NO_APLICA"
+        payload["tutores"][0]["imss_estatus"] = None
+        payload["tutores"][0]["infonavit_estatus"] = None
 
         res = client.post("/api/estudios", headers=capturista_headers, json=payload)
         assert res.status_code == 201
 
         estudio_id = res.json()["estudio_id"]
         get_res = client.get(f"/api/estudios/{estudio_id}", headers=capturista_headers)
-        assert get_res.json()["tutores"][0]["imss_estatus"] == "NO_APLICA"
-        assert get_res.json()["tutores"][0]["infonavit_estatus"] == "NO_APLICA"
+        assert get_res.json()["tutores"][0]["imss_estatus"] is None
+        assert get_res.json()["tutores"][0]["infonavit_estatus"] is None
 
 
 # =============================================================================
@@ -407,7 +407,7 @@ class TestTriestadoDatabaseIntegrity:
                     "numero_tutor": 1,
                     "nombre": "DB Integrity",
                     "imss_estatus": "SI",
-                    "infonavit_estatus": "NO_APLICA",
+                    "infonavit_estatus": None,
                 }
             ],
             "estudio": {
@@ -424,4 +424,4 @@ class TestTriestadoDatabaseIntegrity:
         get_res = client.get(f"/api/estudios/{estudio_id}", headers=capturista_headers)
         tutor = get_res.json()["tutores"][0]
         assert tutor["imss_estatus"] == "SI"
-        assert tutor["infonavit_estatus"] == "NO_APLICA"
+        assert tutor["infonavit_estatus"] is None
