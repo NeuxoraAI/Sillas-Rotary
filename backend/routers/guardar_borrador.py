@@ -685,12 +685,9 @@ def _create_borrador(
             ),
         ).fetchone()["id"]
 
-        db.commit()
     except HTTPException:
-        db.execute("ROLLBACK")
         raise
     except Exception as exc:
-        db.execute("ROLLBACK")
         raise HTTPException(status_code=500, detail="Error interno al guardar el borrador") from exc
 
     return GuardarBorradorResponse(
@@ -768,12 +765,9 @@ def _update_borrador(
         if solicitud_id is not None:
             _patch_solicitud(db, body, solicitud_id)
 
-        db.commit()
     except HTTPException:
-        db.execute("ROLLBACK")
         raise
     except Exception as exc:
-        db.execute("ROLLBACK")
         raise HTTPException(status_code=500, detail="Error interno al actualizar el borrador") from exc
 
     # Fetch current folio
