@@ -260,34 +260,29 @@ def finalizar_registro(
             },
         )
 
-    # 6. Begin explicit transaction and update both records
+    # 6. Update both records in the implicit transaction.
+    # On error, the exception propagates and get_db rolls back.
     now_iso = datetime.now(timezone.utc).isoformat()
 
-    try:
-        db.execute("BEGIN")
+    db.execute(
+        """
+        UPDATE estudios_socioeconomicos
+        SET status = 'completo', finalizado_at = %s, updated_at = NOW()
+        WHERE id = %s
+        """,
+        (now_iso, body.estudio_id),
+    )
 
-        db.execute(
-            """
-            UPDATE estudios_socioeconomicos
-            SET status = 'completo', finalizado_at = %s, updated_at = NOW()
-            WHERE id = %s
-            """,
-            (now_iso, body.estudio_id),
-        )
+    db.execute(
+        """
+        UPDATE solicitudes_tecnicas
+        SET status = 'completo', finalizado_at = %s, updated_at = NOW()
+        WHERE id = %s
+        """,
+        (now_iso, body.solicitud_id),
+    )
 
-        db.execute(
-            """
-            UPDATE solicitudes_tecnicas
-            SET status = 'completo', finalizado_at = %s, updated_at = NOW()
-            WHERE id = %s
-            """,
-            (now_iso, body.solicitud_id),
-        )
-
-        db.commit()
-    except Exception:
-        # Rollback is handled by get_db's finally block
-        raise
+    db.commit()
 
     return FinalizarRegistroResponse(
         estudio_id=body.estudio_id,

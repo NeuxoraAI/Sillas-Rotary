@@ -547,8 +547,6 @@ def _create_borrador(
     nombre_composed = _compose_nombre(body) or None
 
     try:
-        db.execute("BEGIN")
-
         # 1. INSERT beneficiario
         beneficiario_id = db.execute(
             """
@@ -735,8 +733,6 @@ def _update_borrador(
     solicitud_id = solicitud_existing["id"] if solicitud_existing else None
 
     try:
-        db.execute("BEGIN")
-
         # 1. UPDATE beneficiario (only non-None fields)
         _patch_beneficiario(db, body, beneficiario_id)
 
