@@ -119,6 +119,7 @@ DDL = [
         control_tronco              TEXT,
         control_cabeza              TEXT,
         control_de_piernas          TEXT,
+        soporte_oxigeno             BOOLEAN NOT NULL DEFAULT FALSE,
         observaciones_posturales    TEXT,
         altura_total_in             NUMERIC(7,3) CHECK(altura_total_in IS NULL OR (altura_total_in >= 0 AND altura_total_in <= 9999.999)),
         peso_kg                     NUMERIC(7,3) CHECK(peso_kg IS NULL OR (peso_kg >= 0 AND peso_kg <= 9999.999)),
@@ -236,6 +237,7 @@ DDL = [
     "ALTER TABLE estudios_socioeconomicos ADD COLUMN IF NOT EXISTS finalizado_at TIMESTAMPTZ NULL",
     "ALTER TABLE solicitudes_tecnicas ADD COLUMN IF NOT EXISTS finalizado_at TIMESTAMPTZ NULL",
     "ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS avatar_url TEXT",
+    "ALTER TABLE solicitudes_tecnicas ADD COLUMN IF NOT EXISTS soporte_oxigeno BOOLEAN NOT NULL DEFAULT FALSE",
 ]
 
 
