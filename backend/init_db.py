@@ -176,6 +176,8 @@ DDL = [
     "CREATE INDEX IF NOT EXISTS idx_solicitudes_beneficiario ON solicitudes_tecnicas(beneficiario_id)",
     "CREATE INDEX IF NOT EXISTS idx_procesos_tecnicos_beneficiario ON procesos_tecnicos(beneficiario_id)",
     "CREATE INDEX IF NOT EXISTS idx_procesos_tecnicos_estado ON procesos_tecnicos(estado)",
+    "CREATE INDEX IF NOT EXISTS idx_procesos_tecnicos_responsable_actual_usuario ON procesos_tecnicos(responsable_actual_usuario_id)",
+    "CREATE INDEX IF NOT EXISTS idx_procesos_tecnicos_tecnico_inicio_usuario ON procesos_tecnicos(tecnico_inicio_usuario_id)",
     "CREATE INDEX IF NOT EXISTS idx_procesos_participantes_proceso ON procesos_tecnicos_participantes(proceso_tecnico_id)",
     "CREATE INDEX IF NOT EXISTS idx_procesos_participantes_usuario ON procesos_tecnicos_participantes(usuario_id)",
     "CREATE INDEX IF NOT EXISTS idx_procesos_participantes_created_at ON procesos_tecnicos_participantes(created_at)",
