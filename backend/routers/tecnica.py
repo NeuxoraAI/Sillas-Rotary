@@ -418,7 +418,6 @@ class SolicitudCreateRequest(BaseModel):
     control_de_piernas: str
     padecimiento: Optional[str] = None
     soporte_oxigeno: bool = False
-    observaciones_posturales: Optional[str] = None
     unidad_medida: str = "in"
     altura_total_in: Optional[Decimal] = None
     peso_kg: Optional[Decimal] = None
@@ -554,7 +553,6 @@ class SolicitudUpdateRequest(BaseModel):
     control_de_piernas: Optional[str] = None
     padecimiento: Optional[str] = None
     soporte_oxigeno: Optional[bool] = None
-    observaciones_posturales: Optional[str] = None
     unidad_medida: Optional[str] = None
     altura_total_in: Optional[Decimal] = None
     peso_kg: Optional[Decimal] = None
@@ -1423,7 +1421,7 @@ def crear_solicitud(
             INSERT INTO solicitudes_tecnicas
                 (beneficiario_id, usuario_id, entorno, control_tronco, control_cabeza, control_de_piernas,
                  padecimiento,
-                 soporte_oxigeno, observaciones_posturales, altura_total_in, peso_kg,
+                 soporte_oxigeno, altura_total_in, peso_kg,
                  medida_cabeza_asiento, medida_hombro_asiento, medida_prof_asiento,
                  medida_rodilla_talon, medida_ancho_cadera, unidad_captura, unidad_peso_captura, foto_url,
                  entidad_solicitante, prioridad, justificacion, status)
@@ -1439,7 +1437,6 @@ def crear_solicitud(
                 body.control_de_piernas,
                 body.padecimiento,
                 body.soporte_oxigeno,
-                body.observaciones_posturales,
                 body.altura_total_in,
                 body.peso_kg,
                 body.medida_cabeza_asiento,
@@ -1492,7 +1489,7 @@ def obtener_solicitud(
     if row is None:
         raise HTTPException(status_code=404, detail="Solicitud no encontrada")
 
-    assert_resource_owner(row["usuario_id"], usuario)
+    assert_resource_owner(row["usuario_id"], usuario, db=db, estudio_id=id)
 
     out = dict(row)
     beneficiario = db.execute(
@@ -1526,7 +1523,7 @@ def actualizar_solicitud(
     if existing is None:
         raise HTTPException(status_code=404, detail="Solicitud no encontrada")
 
-    assert_resource_owner(existing["usuario_id"], usuario)
+    assert_resource_owner(existing["usuario_id"], usuario, db=db, estudio_id=id)
 
     fields = body.model_dump(exclude_none=True)
     # Diagnostico lives on beneficiarios, not solicitudes_tecnicas
@@ -1683,7 +1680,7 @@ def obtener_foto_solicitud(
     if row is None:
         raise HTTPException(status_code=404, detail="Solicitud no encontrada")
 
-    assert_resource_owner(row["usuario_id"], usuario)
+    assert_resource_owner(row["usuario_id"], usuario, db=db, estudio_id=id)
 
     foto_path = extract_foto_path(row.get("foto_path")) or extract_foto_path(row.get("foto_url"))
     if foto_path is None:

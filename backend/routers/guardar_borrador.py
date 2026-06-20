@@ -116,7 +116,6 @@ class GuardarBorradorRequest(BaseModel):
     control_de_piernas: Optional[str] = None
     padecimiento: Optional[str] = None
     soporte_oxigeno: Optional[bool] = None
-    observaciones_posturales: Optional[str] = None
     unidad_medida: Optional[str] = None
     altura_total_in: Optional[str] = None
     peso_kg: Optional[str] = None
@@ -650,8 +649,8 @@ def _create_borrador(
             """
             INSERT INTO solicitudes_tecnicas
                 (beneficiario_id, usuario_id, entorno, control_tronco, control_cabeza,
-                 control_de_piernas, padecimiento, altura_total_in, peso_kg,
-                 soporte_oxigeno, observaciones_posturales,
+                 control_de_piernas, padecimiento, soporte_oxigeno,
+                 altura_total_in, peso_kg,
                  medida_cabeza_asiento, medida_hombro_asiento, medida_prof_asiento,
                  medida_rodilla_talon, medida_ancho_cadera, unidad_captura,
                  unidad_peso_captura, foto_url, entidad_solicitante, prioridad,
@@ -668,7 +667,6 @@ def _create_borrador(
                 body.control_de_piernas,
                 body.padecimiento,
                 bool(body.soporte_oxigeno),
-                body.observaciones_posturales,
                 _parse_decimal_or_none(body.altura_total_in),
                 _parse_decimal_or_none(body.peso_kg),
                 _parse_decimal_or_none(body.medida_cabeza_asiento),
@@ -891,7 +889,6 @@ def _patch_solicitud(db: _DBAdapter, body: GuardarBorradorRequest, solicitud_id:
         ("control_de_piernas", body.control_de_piernas),
         ("padecimiento", body.padecimiento),
         ("soporte_oxigeno", body.soporte_oxigeno),
-        ("observaciones_posturales", body.observaciones_posturales),
         ("entidad_solicitante", body.entidad_solicitante),
         ("prioridad", body.prioridad),
         ("justificacion", body.justificacion),

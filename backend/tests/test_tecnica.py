@@ -223,6 +223,62 @@ class TestTecnicaRbac:
         )
         assert close_response.status_code == 403
 
+    def test_org_leader_can_read_solicitud(
+        self,
+        client,
+        admin_headers,
+        tecnico_user,
+        tecnico_headers,
+        capturista_user,
+        capturista_headers,
+        sample_estudio,
+    ):
+        """Regression #54: an org leader must read solicitudes técnicas captured
+        under their organization. The endpoint previously called
+        assert_resource_owner without db/estudio_id, so the leader bypass never
+        ran and leaders got 403."""
+        create_response = client.post(
+            "/api/solicitudes",
+            headers=tecnico_headers,
+            json=_solicitud_payload(sample_estudio["beneficiario_id"]),
+        )
+        assert create_response.status_code == 201, create_response.text
+        solicitud_id = create_response.json()["solicitud_id"]
+
+        # Link the org to the capturing account so org-owned solicitudes match
+        # the leader-bypass query (organizaciones.usuario_id == solicitud.usuario_id).
+        org_response = client.post(
+            "/api/organizaciones",
+            headers=admin_headers,
+            json={"nombre": "Rotary Líder Test", "usuario_id": tecnico_user["id"]},
+        )
+        assert org_response.status_code == 201, org_response.text
+        org_id = org_response.json()["id"]
+
+        leader_assign = client.post(
+            f"/api/organizaciones/{org_id}/lider",
+            headers=admin_headers,
+            json={"lider_usuario_id": capturista_user["id"]},
+        )
+        assert leader_assign.status_code == 200
+
+        # Leader bypass: capturista_user leads the org that owns the solicitud → 200
+        leader_response = client.get(
+            f"/api/solicitudes/{solicitud_id}",
+            headers=capturista_headers,
+        )
+        assert leader_response.status_code == 200
+
+        # Boundary: an unrelated user (not owner, not leader, not admin) → 403
+        outsider_headers = _create_user_and_login(
+            client, admin_headers, suffix="outsider", rol="tecnico"
+        )
+        outsider_response = client.get(
+            f"/api/solicitudes/{solicitud_id}",
+            headers=outsider_headers,
+        )
+        assert outsider_response.status_code == 403
+
 
 # ---------------------------------------------------------------------------
 # Phase 5: Measura validation tests (Pydantic model-level, no DB needed)
