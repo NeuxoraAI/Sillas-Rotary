@@ -664,11 +664,25 @@ html.dark .captura-card:hover         { border-color: rgba(255, 255, 255, 0.20);
 /* ── Dark mode refinements (logos, inline-styled headers, tint opacities,
       select/input text, login surfaces) ── */
 
-/* Form controls: light text always; native dropdown list dark */
+/* Form controls: light text always; native dropdown list dark.
+   -webkit-text-fill-color must be overridden too — login.css forces it to a
+   near-black value, which on WebKit paints over `color` and makes typed text
+   invisible on the dark input background. */
 html.dark input,
 html.dark select,
 html.dark textarea {
   color: #E8DFEE !important;
+  -webkit-text-fill-color: #E8DFEE !important;
+}
+
+/* Input prefix/suffix chips (phone "+52", money "$") hardcode a light slate-100
+   background with slate-600 text — a light chip welded to a dark input. Recolor
+   to match the dark input surface. */
+html.dark .input-prefix,
+html.dark .input-suffix {
+  background-color: var(--c-input-bg);
+  border-color: var(--c-input-border);
+  color: #B4AAC2;
 }
 html.dark select option {
   background-color: #1B1529;
@@ -716,6 +730,10 @@ html.dark .login-card {
 html.dark .login-video {
   background: #1B1529;
 }
+html.dark .login-footer {
+  background: rgba(20, 16, 31, 0.88);
+  border-top-color: rgba(255, 255, 255, 0.08);
+}
 
 /* Sidebar active/hover pill (light #FFF1EB in light mode) */
 html.dark .nav-link.active,
@@ -737,6 +755,19 @@ html.dark .logo-rotary {
   padding: 8px 12px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
 }
+
+/* Login footer: NEUXORA + links hardcode var(--c-purple-bold) (#3A0A4F), which
+   is a brand token NOT remapped in dark, so it reads as near-black on the dark
+   footer. Lighten the text only; hover keeps the orange accent. */
+html.dark .login-footer .footer-neuxora strong,
+html.dark .login-footer .footer-links a { color: #E5DCEE; }
+html.dark .login-footer .footer-links a:hover { color: var(--c-orange); }
+
+/* Status badges (técnico list) use light pastel chips with dark ink — fine on
+   cream, muddy on dark. Re-tint to the dark palette. */
+html.dark .badge-sin_iniciar { background: #2E2744; color: #B4AAC2; }
+html.dark .badge-en_proceso  { background: rgba(147, 51, 234, 0.18); color: #D8B4FE; }
+html.dark .badge-finalizado  { background: rgba(34, 197, 94, 0.20); color: #86EFAC; }
 
 /* ═══════════════════════════════════════════════════════════════════════════
    Delight micro-animations (profiles, panels)
