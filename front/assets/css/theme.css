@@ -627,11 +627,18 @@ html.dark .text-slate-700      { color: #CFC7DB; }
 html.dark .text-slate-600      { color: #B4AAC2; }
 html.dark .text-slate-500      { color: #A89FB3; }
 html.dark .text-slate-400      { color: #8D8499; }
+html.dark .text-red-500,
+html.dark .text-red-600,
 html.dark .text-red-700,
 html.dark .text-red-800        { color: #FCA5A5; }
+html.dark .text-green-600,
 html.dark .text-green-700      { color: #86EFAC; }
+html.dark .text-amber-600,
 html.dark .text-amber-700,
-html.dark .text-amber-800      { color: #FCD34D; }
+html.dark .text-amber-800,
+html.dark .text-amber-900      { color: #FCD34D; }
+html.dark .text-blue-600,
+html.dark .text-blue-800,
 html.dark .text-blue-900       { color: #BFDBFE; }
 
 html.dark .border-slate-100    { border-color: rgba(255, 255, 255, 0.07); }
@@ -717,12 +724,18 @@ html.dark .nav-link:hover {
 }
 
 /* Login logos use mix-blend-mode: multiply to blend into the warm light
-   background — on dark it makes them nearly invisible. Show them on
-   their light chip instead. */
+   background — on dark that drops out the multiply and leaves dark ink on a
+   dark surface, so they read as muddy/invisible. Disable the blend AND seat
+   each logo on a subtle light chip (same treatment as .brand-header img) so
+   the brand colors stay legible. */
 html.dark .logo-vida-ug,
 html.dark .logo-hope-haven,
 html.dark .logo-rotary {
   mix-blend-mode: normal;
+  background: #F6F2FA;
+  border-radius: 10px;
+  padding: 8px 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
