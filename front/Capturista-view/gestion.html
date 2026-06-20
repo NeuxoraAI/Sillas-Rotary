@@ -35,6 +35,7 @@
     <link href="../assets/css/theme.css" rel="stylesheet"/>
     <script src="../assets/js/session-guard.js"></script>
     <script src="../assets/js/theme-toggle.js"></script>
+    <script src="../assets/js/confirmation-modal.js"></script>
     <script src="../assets/js/mascot.js"></script>
     <link href="../assets/css/gestion.css" rel="stylesheet" />
   </head>
@@ -315,8 +316,8 @@
       document.getElementById("user-nombre").textContent = sessionHeader?.nombre || "—";
       document.getElementById("user-rol").textContent = (sessionHeader?.rol || "capturista").toUpperCase();
       // Volver al perfil sin cerrar sesión (logout lives in the profile)
-      document.getElementById("btn-volver-perfil")?.addEventListener("click", function () {
-        if (!confirm("¿Volver a tu perfil? Los cambios no guardados se perderán.")) return;
+      document.getElementById("btn-volver-perfil")?.addEventListener("click", async function () {
+        if (!(await AppConfirmation.confirmUnsavedNavigation())) return;
         window.location.href = "perfil-capturista.html";
       });
 

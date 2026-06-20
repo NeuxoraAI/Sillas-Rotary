@@ -28,6 +28,7 @@
 </script>
 <link href="assets/css/theme.css" rel="stylesheet"/>
 <script src="assets/js/session-guard.js"></script>
+<script src="assets/js/confirmation-modal.js"></script>
 <script src="assets/js/theme-toggle.js"></script>
 <script src="assets/js/delight.js"></script>
 <style>
@@ -320,12 +321,13 @@
   }
 
   // ── Logout (org users) / back to own profile (visitors) ────────────────────
-  document.getElementById('btn-logout').addEventListener('click', function () {
+  document.getElementById('btn-logout').addEventListener('click', async function () {
     const backUrl = this.dataset.backUrl;
     if (backUrl) {
       window.location.href = backUrl;
       return;
     }
+    if (!(await AppConfirmation.confirmLogout())) return;
     _clearAllStorage();
     window.location.href = 'login.html';
   });
