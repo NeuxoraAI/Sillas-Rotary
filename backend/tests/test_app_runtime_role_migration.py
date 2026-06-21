@@ -3,6 +3,9 @@ from pathlib import Path
 MIGRATION = (
     Path(__file__).resolve().parents[1] / "migrations" / "0014_app_runtime_role.sql"
 )
+RLS_MIGRATION = (
+    Path(__file__).resolve().parents[1] / "migrations" / "0003_rls_policies.sql"
+)
 
 
 def _sql() -> str:
@@ -44,3 +47,11 @@ def test_permissive_policy_keeps_nobypassrls_role_functional() -> None:
 def test_future_tables_inherit_grants_via_default_privileges() -> None:
     sql = _sql()
     assert "alter default privileges for role postgres in schema public" in sql
+
+
+def test_rls_posture_docs_do_not_reference_dead_tables() -> None:
+    sql = RLS_MIGRATION.read_text(encoding="utf-8").lower()
+    assert "capturistas" not in sql
+    assert "historial_estados" not in sql
+    assert "create rls policies for all public tables" not in sql
+    assert "app_runtime" in sql

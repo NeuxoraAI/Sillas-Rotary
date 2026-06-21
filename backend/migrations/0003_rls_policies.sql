@@ -1,16 +1,18 @@
 -- ============================================================================
 -- Migration: 0003_rls_policies.sql
--- Purpose:  Create RLS policies for all public tables.
---           The backend operates via SUPABASE_SERVICE_KEY (bypasses RLS).
---           These policies enforce defense-in-depth: deny anonymous access,
---           allow authenticated access for catalog reads, and restrict
---           write access to the service role only.
+-- Purpose:  Define the direct-access RLS posture for Supabase/PostgREST roles.
+--           Business authorization is enforced by FastAPI. Direct table access
+--           through anon/authenticated PostgREST roles is denied except for
+--           explicit catalog reads needed by the frontend.
 --
 -- Pattern:
---   - service role:  bypasses RLS entirely (no policy needed)
---   - anon role:     denied everywhere (no policies = deny when RLS enabled)
---   - authenticated: read-only on catalogs (paises, regiones);
---                    denied on all other tables
+--   - backend runtime: connects directly through psycopg2; see
+--                      0014_app_runtime_role.sql for the bounded runtime role
+--                      and its explicit app_runtime_all policy.
+--   - service role:    bypasses RLS entirely; used only for Supabase Storage.
+--   - anon role:       denied everywhere (no policies = deny when RLS enabled).
+--   - authenticated:   read-only on catalogs (paises, regiones);
+--                      denied on all other business tables.
 -- ============================================================================
 
 -- ============================================================================
@@ -27,25 +29,23 @@ CREATE POLICY "Authenticated users can read regiones"
   USING (true);
 
 -- ============================================================================
--- Region counters: only service role needs access
---   (no policies = default deny for anon/authenticated)
---   The service role bypasses RLS, so no policy needed here.
+-- Region counters: only the trusted backend runtime needs access
+--   (no policies here = default deny for anon/authenticated).
 -- ============================================================================
 
 -- ============================================================================
 -- Core business tables: deny direct access from PostgREST.
---   The backend uses the service key which bypasses RLS.
+--   The backend enforces RBAC/resource ownership in FastAPI and uses the
+--   app_runtime policy from 0014_app_runtime_role.sql for direct DB access.
 --   No SELECT/INSERT/UPDATE/DELETE policies = total deny for
 --   anon and authenticated roles via PostgREST.
 -- ============================================================================
--- usuarios          — no policies needed (service key only)
--- capturistas      — no policies needed (service key only; legacy table)
--- beneficiarios    — no policies needed (service key only)
--- tutores          — no policies needed (service key only)
--- estudios_socioeconomicos — no policies needed (service key only)
--- solicitudes_tecnicas     — no policies needed (service key only)
--- historial_estados         — no policies needed (service key only)
--- region_counters          — no policies needed (service key only)
+-- usuarios          — no direct PostgREST policies needed
+-- beneficiarios    — no direct PostgREST policies needed
+-- tutores          — no direct PostgREST policies needed
+-- estudios_socioeconomicos — no direct PostgREST policies needed
+-- solicitudes_tecnicas     — no direct PostgREST policies needed
+-- region_counters          — no direct PostgREST policies needed
 
 -- ============================================================================
 -- Storage: restrict access to fotos-tecnica bucket
