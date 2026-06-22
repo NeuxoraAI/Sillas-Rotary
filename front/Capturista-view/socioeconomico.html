@@ -35,6 +35,7 @@
     <link href="../assets/css/theme.css" rel="stylesheet"/>
     <script src="../assets/js/theme-toggle.js"></script>
     <script src="../assets/js/session-guard.js"></script>
+    <script src="../assets/js/confirmation-modal.js"></script>
     <link href="../assets/css/socioeconomico.css" rel="stylesheet" />
   </head>
   <body class="page-bg min-h-screen flex flex-col font-display" style="background: #FBF7F5;">
@@ -1059,6 +1060,11 @@
         selectedDeviceId: null,
       };
 
+      // Two normalizers on purpose — do NOT merge them:
+      // - normalizeMunicipioValue strips accents for LOOSE MATCHING only
+      //   (so "Merida" matches catalog "Mérida" when reloading saved data).
+      // - normalizeMunicipioForPersistence keeps accents and is the CANONICAL
+      //   form we store/display. Stripping accents here would lose data.
       function normalizeMunicipioValue(value) {
         return String(value || "")
           .normalize("NFD")
@@ -1066,6 +1072,13 @@
           .replace(/\s+/g, " ")
           .trim()
           .toUpperCase();
+      }
+
+      function normalizeMunicipioForPersistence(value) {
+        return String(value || "")
+          .replace(/\s+/g, " ")
+          .trim()
+          .toLocaleUpperCase("es-MX");
       }
 
       async function loadMunicipiosCatalog() {
@@ -1095,9 +1108,10 @@
         ciudadSelect.innerHTML = '<option value="">Selecciona un municipio</option>';
 
         municipios.forEach((municipio) => {
+          const municipioNormalizado = normalizeMunicipioForPersistence(municipio);
           const option = document.createElement("option");
-          option.value = municipio;
-          option.textContent = municipio;
+          option.value = municipioNormalizado;
+          option.textContent = municipioNormalizado;
           ciudadSelect.appendChild(option);
         });
 
@@ -1108,18 +1122,18 @@
           );
 
           if (matchingMunicipio) {
-            ciudadSelect.value = matchingMunicipio;
+            ciudadSelect.value = normalizeMunicipioForPersistence(matchingMunicipio);
             return;
           }
 
-          const exists = municipios.includes(municipioSeleccionado);
-          if (!exists) {
-            const option = document.createElement("option");
-            option.value = municipioSeleccionado;
-            option.textContent = `${municipioSeleccionado} (registro previo)`;
-            ciudadSelect.appendChild(option);
-          }
-          ciudadSelect.value = municipioSeleccionado;
+          const municipioPrevioNormalizado = normalizeMunicipioForPersistence(municipioSeleccionado);
+
+          const option = document.createElement("option");
+          option.value = municipioPrevioNormalizado;
+          option.textContent = `${municipioPrevioNormalizado} (registro previo)`;
+          ciudadSelect.appendChild(option);
+
+          ciudadSelect.value = municipioPrevioNormalizado;
         }
       }
 
@@ -1703,7 +1717,9 @@
             return;
           }
 
-          values[field.name] = field.value;
+          values[field.name] = field.name === "ciudad"
+            ? normalizeMunicipioForPersistence(field.value)
+            : field.value;
         });
 
         return {
@@ -2181,18 +2197,16 @@
                     const el = document.querySelector(`[name="${name}"]`);
                     if (el) el.checked = val === 1 || val === true;
                   };
-                  const setTriestado = (name, raw) => {
-                    let value;
+                  const setBooleanStatus = (name, raw) => {
+                    let value = null;
                     if (raw === "SI" || raw === "NO") {
                       value = raw;
                     } else if (raw === true || raw === 1) {
                       value = "SI";
                     } else if (raw === false || raw === 0) {
                       value = "NO";
-                    } else {
-                      // Legacy NO_APLICA or unknown -> default to NO
-                      value = "NO";
                     }
+                    if (value === null) return;
                     const radio = document.querySelector(`[name="${name}"][value="${value}"]`);
                     if (radio) radio.checked = true;
                   };
@@ -2248,8 +2262,8 @@
                   setChecked(`tutor${num}_otras_fuentes_aplica`, t.otras_fuentes_aplica);
                   setVal(`tutor${num}_otras_fuentes_ingreso`, t.otras_fuentes_ingreso);
                   setVal(`tutor${num}_monto_otras_fuentes`, t.monto_otras_fuentes != null ? SR_Validations.formatMoneyDisplay(String(t.monto_otras_fuentes)) : t.monto_otras_fuentes);
-                  setTriestado(`tutor${num}_imss`, t.imss_estatus ?? t.tiene_imss);
-                  setTriestado(`tutor${num}_infonavit`, t.infonavit_estatus ?? t.tiene_infonavit);
+                  setBooleanStatus(`tutor${num}_imss`, t.imss_estatus ?? t.tiene_imss);
+                  setBooleanStatus(`tutor${num}_infonavit`, t.infonavit_estatus ?? t.tiene_infonavit);
                 });
                 const tutor2Data = data.tutores.find(t => t.numero_tutor === 2);
                 if (tutor2Data) {
@@ -2314,10 +2328,9 @@
       // Volver al perfil sin cerrar sesión (logout lives in the profile)
       document
         .getElementById("btn-volver-perfil")
-        .addEventListener("click", function () {
-          if (confirm("¿Volver a tu perfil? Los cambios no guardados se perderán.")) {
-            window.location.href = "perfil-capturista.html";
-          }
+        .addEventListener("click", async function () {
+          if (!(await AppConfirmation.confirmUnsavedNavigation())) return;
+          window.location.href = "perfil-capturista.html";
         });
 
       function getFormData(status, documentRefs) {
@@ -2414,7 +2427,7 @@
             num_ext: get("num_ext"),
             num_int: document.querySelector('[name="tiene_num_interior"]')?.checked ? (get("num_int") || null) : null,
             colonia: get("colonia"),
-            ciudad: get("ciudad"),
+            ciudad: normalizeMunicipioForPersistence(get("ciudad")),
             estado_codigo: get("estado_codigo"),
             estado_nombre: ESTADOS_INEGI.find((x) => x[0] === get("estado_codigo"))?.[1] || null,
             sexo: get("sexo"),
@@ -3705,11 +3718,7 @@
         }
         if (b.estado_codigo) {
           _setVal("estado_codigo", b.estado_codigo);
-          const evt = new Event("change", { bubbles: true });
-          document.getElementById("estado_codigo")?.dispatchEvent(evt);
-          setTimeout(() => {
-            if (b.ciudad) _setVal("ciudad", b.ciudad);
-          }, 500);
+          renderMunicipiosSelect(b.estado_codigo, b.ciudad || "");
         }
 
         // Pre-populate ESTUDIO fields (silla previa, etc.)
@@ -3873,6 +3882,12 @@
             return;
           }
           const data = await res.json();
+          // Best-effort: a failed catalog must not block loading the draft.
+          // Without it the municipio dropdown degrades, but the rest of the
+          // form still populates instead of aborting into the error banner.
+          await loadMunicipiosCatalog().catch((err) =>
+            console.error("Municipios catalog failed to load:", err),
+          );
           cacheLoadedDraftForContinuation(data);
           populateFormWithData(data);
         } catch (err) {

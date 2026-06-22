@@ -36,6 +36,7 @@
     <script src="../assets/js/theme-toggle.js"></script>
 <script src="../assets/js/delight.js"></script>
     <script src="../assets/js/session-guard.js"></script>
+    <script src="../assets/js/confirmation-modal.js"></script>
     <link href="../assets/css/vista-tecnicos.css" rel="stylesheet" />
     <style>
       /* Fixed gradient layer (same format as perfil-capturista) */
@@ -692,7 +693,15 @@
         }
 
         // Logout
-        $("btn-logout").addEventListener("click", function () {
+        $("btn-logout").addEventListener("click", async function () {
+          if (!window.AppConfirmation) {
+            localStorage.removeItem("session");
+            localStorage.removeItem("region_ctx");
+            window.location.href = "../login.html";
+            return;
+          }
+
+          if (!(await AppConfirmation.confirmLogout())) return;
           localStorage.removeItem("session");
           localStorage.removeItem("region_ctx");
           window.location.href = "../login.html";

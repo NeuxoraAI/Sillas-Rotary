@@ -17,7 +17,7 @@ import pytest
 # ---------------------------------------------------------------------------
 
 @pytest.fixture
-def beneficiario_fixture(client, admin_headers, capturista_user, region_lon, pais_mx):
+def beneficiario_fixture(client, admin_headers, capturista_user, region_lon, pais_mx, _test_db_conn):
     """Create a sample beneficiario with estudio via capturista, return the snapshot."""
     # Login as capturista
     cap_token_res = client.post("/api/auth/login", json={
@@ -74,6 +74,16 @@ def beneficiario_fixture(client, admin_headers, capturista_user, region_lon, pai
     assert res.status_code == 201, f"beneficiario_fixture failed: {res.text}"
     estudio_data = res.json()
     beneficiario_id = estudio_data["beneficiario_id"]
+
+    with _test_db_conn.cursor() as cur:
+        cur.execute(
+            """
+            INSERT INTO solicitudes_tecnicas (beneficiario_id, usuario_id, status)
+            VALUES (%s, %s, %s)
+            """,
+            (beneficiario_id, capturista_user["id"], "borrador"),
+        )
+    _test_db_conn.commit()
 
     # Get full detail via admin
     detail_res = client.get(
