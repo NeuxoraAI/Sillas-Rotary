@@ -720,12 +720,6 @@ def actualizar_beneficiario_admin(
     values = list(fields.values())
     values.append(beneficiario_id)
 
-    import logging
-    logging.basicConfig(level=logging.DEBUG)
-    logger = logging.getLogger(__name__)
-    logger.debug(f"[ADMIN PATCH] SQL: UPDATE beneficiarios SET {set_clause} WHERE id = %s")
-    logger.debug(f"[ADMIN PATCH] Values: {values}")
-
     db.execute(
         f"UPDATE beneficiarios SET {set_clause} WHERE id = %s",
         values,
