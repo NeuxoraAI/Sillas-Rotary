@@ -153,7 +153,12 @@ def override_db(_test_db_conn):
     adapter = _TestDBAdapter(cur, connection=_test_db_conn)
 
     def _test_get_db():
-        yield adapter
+        try:
+            yield adapter
+            _test_db_conn.commit()
+        except Exception:
+            _test_db_conn.rollback()
+            raise
 
     app.dependency_overrides[get_db] = _test_get_db
     yield
