@@ -1121,15 +1121,12 @@
           }
 
           const municipioPrevioNormalizado = normalizeMunicipioForPersistence(municipioSeleccionado);
-          const exists = municipios.some(
-            (municipio) => normalizeMunicipioValue(municipio) === normalizedTarget,
-          );
-          if (!exists) {
-            const option = document.createElement("option");
-            option.value = municipioPrevioNormalizado;
-            option.textContent = `${municipioPrevioNormalizado} (registro previo)`;
-            ciudadSelect.appendChild(option);
-          }
+
+          const option = document.createElement("option");
+          option.value = municipioPrevioNormalizado;
+          option.textContent = `${municipioPrevioNormalizado} (registro previo)`;
+          ciudadSelect.appendChild(option);
+
           ciudadSelect.value = municipioPrevioNormalizado;
         }
       }
