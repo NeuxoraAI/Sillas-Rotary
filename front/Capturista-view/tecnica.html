@@ -257,7 +257,7 @@
                     <span class="ml-2 text-sm font-medium text-slate-700">Sí</span>
                   </label>
                   <label class="inline-flex items-center">
-                    <input class="text-primary focus:ring-primary h-4 w-4" name="soporte_oxigeno" type="radio" value="false" checked />
+                    <input class="text-primary focus:ring-primary h-4 w-4" name="soporte_oxigeno" type="radio" value="false" />
                     <span class="ml-2 text-sm font-medium text-slate-700">No</span>
                   </label>
                 </div>
@@ -1915,6 +1915,12 @@
         const toStrOrNull = (v) => {
           const s = (v || "").trim();
           return s === "" ? null : s;
+        const getRadioBoolOrNull = (name) => {
+          const value = fd.get(name);
+          if (value === "true") return true;
+          if (value === "false") return false;
+          return null;
+        }
         };
 
         return {
@@ -1924,7 +1930,7 @@
           control_cabeza: get("control_cabeza"),
           control_de_piernas: get("control_de_piernas"),
           padecimiento: get("padecimiento") || null,
-          soporte_oxigeno: get("soporte_oxigeno") === "true",
+          soporte_oxigeno: getRadioBoolOrNull("soporte_oxigeno"),,
           observaciones_posturales: get("observaciones_posturales") || null,
           altura_total_in: toStrOrNull(get("altura_total_in")),
           peso_kg: toStrOrNull(get("peso_kg")),
@@ -2106,7 +2112,10 @@
             control_cabeza: tecnicaData.control_cabeza || null,
             control_de_piernas: tecnicaData.control_de_piernas || null,
             padecimiento: tecnicaData.padecimiento || null,
-            soporte_oxigeno: tecnicaData.soporte_oxigeno ?? false,
+            soporte_oxigeno:
+              typeof tecnicaData.soporte_oxigeno === "boolean"
+                ? tecnicaData.soporte_oxigeno
+                : null,
             observaciones_posturales: tecnicaData.observaciones_posturales || null,
             altura_total_in: tecnicaData.altura_total_in || null,
             peso_kg: tecnicaData.peso_kg || null,
@@ -2257,7 +2266,7 @@
           control_cabeza: get("control_cabeza"),
           control_de_piernas: get("control_de_piernas"),
           padecimiento: get("padecimiento"),
-          soporte_oxigeno: get("soporte_oxigeno") === "true",
+          soporte_oxigeno: getRadioBoolOrNull("soporte_oxigeno"),
           observaciones_posturales: get("observaciones_posturales"),
           altura_total_in: toStrOrNull(get("altura_total_in")),
           peso_kg: toStrOrNull(get("peso_kg")),
@@ -2631,6 +2640,15 @@
 
       // CONTINUAR button: validate + save to localStorage + navigate
       document.getElementById("btn-continuar-tecnica")?.addEventListener("click", () => {
+        const soporteOxigeno = document.querySelector('[name="soporte_oxigeno"]:checked');
+        if (!soporteOxigeno) {
+          alert("Debes indicar si requiere soporte para oxígeno.");
+          document
+            .querySelector('[name="soporte_oxigeno"]')
+            ?.closest("fieldset")
+            ?.scrollIntoView({ behavior: "smooth", block: "center" });
+          return;
+        }
         continuarSolicitudTecnica();
       });
 
