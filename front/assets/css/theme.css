@@ -627,11 +627,18 @@ html.dark .text-slate-700      { color: #CFC7DB; }
 html.dark .text-slate-600      { color: #B4AAC2; }
 html.dark .text-slate-500      { color: #A89FB3; }
 html.dark .text-slate-400      { color: #8D8499; }
+html.dark .text-red-500,
+html.dark .text-red-600,
 html.dark .text-red-700,
 html.dark .text-red-800        { color: #FCA5A5; }
+html.dark .text-green-600,
 html.dark .text-green-700      { color: #86EFAC; }
+html.dark .text-amber-600,
 html.dark .text-amber-700,
-html.dark .text-amber-800      { color: #FCD34D; }
+html.dark .text-amber-800,
+html.dark .text-amber-900      { color: #FCD34D; }
+html.dark .text-blue-600,
+html.dark .text-blue-800,
 html.dark .text-blue-900       { color: #BFDBFE; }
 
 html.dark .border-slate-100    { border-color: rgba(255, 255, 255, 0.07); }
@@ -657,12 +664,31 @@ html.dark .captura-card:hover         { border-color: rgba(255, 255, 255, 0.20);
 /* ── Dark mode refinements (logos, inline-styled headers, tint opacities,
       select/input text, login surfaces) ── */
 
-/* Form controls: light text always; native dropdown list dark */
-html.dark input,
+/* Form controls: light text always; keep the dark surface even on focus.
+   -webkit-text-fill-color must be overridden too — login.css forces it to a
+   near-black value, which on WebKit paints over `color` and makes typed text
+   invisible on the dark input background. */
+html.dark input:not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="radio"]):not([type="checkbox"]),
 html.dark select,
 html.dark textarea {
+  background-color: var(--c-input-bg) !important;
   color: #E8DFEE !important;
+  -webkit-text-fill-color: #E8DFEE !important;
 }
+
+/* Input prefix/suffix chips (phone "+52", money "$") hardcode a light slate-100
+   background with slate-600 text — a light chip welded to a dark input. Recolor
+   to match the dark input surface. */
+html.dark .input-prefix,
+html.dark .input-suffix {
+  background-color: var(--c-input-bg);
+  border-color: var(--c-input-border);
+  color: #B4AAC2;
+}
+
+/* .text-primary is the deep-purple brand color (#2B063D) used for icons (stat
+   cards, avatar face). Invisible on dark surfaces — lift to a light purple. */
+html.dark .text-primary { color: #D8B4FE; }
 html.dark select option {
   background-color: #1B1529;
   color: #E8DFEE;
@@ -709,6 +735,10 @@ html.dark .login-card {
 html.dark .login-video {
   background: #1B1529;
 }
+html.dark .login-footer {
+  background: rgba(20, 16, 31, 0.88);
+  border-top-color: rgba(255, 255, 255, 0.08);
+}
 
 /* Sidebar active/hover pill (light #FFF1EB in light mode) */
 html.dark .nav-link.active,
@@ -717,13 +747,32 @@ html.dark .nav-link:hover {
 }
 
 /* Login logos use mix-blend-mode: multiply to blend into the warm light
-   background — on dark it makes them nearly invisible. Show them on
-   their light chip instead. */
+   background — on dark that drops out the multiply and leaves dark ink on a
+   dark surface, so they read as muddy/invisible. Disable the blend AND seat
+   each logo on a subtle light chip (same treatment as .brand-header img) so
+   the brand colors stay legible. */
 html.dark .logo-vida-ug,
 html.dark .logo-hope-haven,
 html.dark .logo-rotary {
   mix-blend-mode: normal;
+  background: #F6F2FA;
+  border-radius: 10px;
+  padding: 8px 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
 }
+
+/* Login footer: NEUXORA + links hardcode var(--c-purple-bold) (#3A0A4F), which
+   is a brand token NOT remapped in dark, so it reads as near-black on the dark
+   footer. Lighten the text only; hover keeps the orange accent. */
+html.dark .login-footer .footer-neuxora strong,
+html.dark .login-footer .footer-links a { color: #E5DCEE; }
+html.dark .login-footer .footer-links a:hover { color: var(--c-orange); }
+
+/* Status badges (técnico list) use light pastel chips with dark ink — fine on
+   cream, muddy on dark. Re-tint to the dark palette. */
+html.dark .badge-sin_iniciar { background: #2E2744; color: #B4AAC2; }
+html.dark .badge-en_proceso  { background: rgba(147, 51, 234, 0.18); color: #D8B4FE; }
+html.dark .badge-finalizado  { background: rgba(34, 197, 94, 0.20); color: #86EFAC; }
 
 /* ═══════════════════════════════════════════════════════════════════════════
    Delight micro-animations (profiles, panels)
