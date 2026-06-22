@@ -655,7 +655,7 @@ def _create_borrador(
                  medida_rodilla_talon, medida_ancho_cadera, unidad_captura,
                  unidad_peso_captura, foto_url, entidad_solicitante, prioridad,
                  justificacion, status)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
             """,
             (
@@ -666,10 +666,10 @@ def _create_borrador(
                 body.control_cabeza,
                 body.control_de_piernas,
                 body.padecimiento,
-                bool(body.soporte_oxigeno),
-                body.observaciones_posturales,
                 _parse_decimal_or_none(body.altura_total_in),
                 _parse_decimal_or_none(body.peso_kg),
+                bool(body.soporte_oxigeno),
+                body.observaciones_posturales,
                 _parse_decimal_or_none(body.medida_cabeza_asiento),
                 _parse_decimal_or_none(body.medida_hombro_asiento),
                 _parse_decimal_or_none(body.medida_prof_asiento),

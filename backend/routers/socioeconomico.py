@@ -1004,10 +1004,6 @@ def _validar_tutores(tutores: list[TutorIn]) -> None:
         missing.append("estado_civil")
     if not tutor1.vivienda:
         missing.append("vivienda")
-    if not tutor1.imss_estatus:
-        missing.append("imss_estatus")
-    if not tutor1.infonavit_estatus:
-        missing.append("infonavit_estatus")
 
     if missing:
         raise HTTPException(
@@ -1107,10 +1103,6 @@ def _validar_tutores_update(tutores: list[TutorUpdateIn]) -> None:
         missing.append("estado_civil")
     if not tutor1.vivienda:
         missing.append("vivienda")
-    if not tutor1.imss_estatus:
-        missing.append("imss_estatus")
-    if not tutor1.infonavit_estatus:
-        missing.append("infonavit_estatus")
 
     if missing:
         raise HTTPException(

@@ -69,7 +69,9 @@ class TestBackwardCompatibility:
 
         tutor = TutorIn(
             numero_tutor=1,
-            nombre="Test Tutor",
+            nombres="Test",
+            apellido_paterno="Tutor",
+            apellido_materno="Prueba",
             imss_estatus="SI",
             infonavit_estatus="NO",
         )
@@ -84,7 +86,9 @@ class TestBackwardCompatibility:
         with pytest.raises(ValidationError):
             TutorIn(
                 numero_tutor=1,
-                nombre="Test Tutor",
+                nombres="Test",
+                apellido_paterno="Tutor",
+                apellido_materno="Prueba",
                 imss_estatus="NO_APLICA",
                 infonavit_estatus="NO_APLICA",
             )
@@ -93,7 +97,12 @@ class TestBackwardCompatibility:
         """TutorIn default values are None for status fields."""
         from routers.socioeconomico import TutorIn
 
-        tutor = TutorIn(numero_tutor=1, nombre="Test Tutor")
+        tutor = TutorIn(
+            numero_tutor=1,
+            nombres="Test",
+            apellido_paterno="Tutor",
+            apellido_materno="Prueba",
+        )
         assert tutor.imss_estatus is None
         assert tutor.infonavit_estatus is None
 
@@ -105,7 +114,9 @@ class TestBackwardCompatibility:
         with pytest.raises(ValidationError):
             TutorIn(
                 numero_tutor=1,
-                nombre="Test Tutor",
+                nombres="Test",
+                apellido_paterno="Tutor",
+                apellido_materno="Prueba",
                 imss_estatus="TAL_VEZ",
             )
 
@@ -115,7 +126,9 @@ class TestBackwardCompatibility:
 
         tutor = TutorIn(
             numero_tutor=1,
-            nombre="Test Tutor",
+            nombres="Test",
+            apellido_paterno="Tutor",
+            apellido_materno="Prueba",
             tiene_imss=True,
         )
         assert tutor.imss_estatus == "SI"
@@ -126,7 +139,9 @@ class TestBackwardCompatibility:
 
         tutor = TutorIn(
             numero_tutor=1,
-            nombre="Test Tutor",
+            nombres="Test",
+            apellido_paterno="Tutor",
+            apellido_materno="Prueba",
             tiene_imss=False,
         )
         assert tutor.imss_estatus == "NO"
@@ -137,7 +152,9 @@ class TestBackwardCompatibility:
 
         tutor = TutorIn(
             numero_tutor=1,
-            nombre="Test Tutor",
+            nombres="Test",
+            apellido_paterno="Tutor",
+            apellido_materno="Prueba",
             tiene_infonavit=True,
         )
         assert tutor.infonavit_estatus == "SI"
@@ -148,7 +165,9 @@ class TestBackwardCompatibility:
 
         tutor = TutorIn(
             numero_tutor=1,
-            nombre="Test Tutor",
+            nombres="Test",
+            apellido_paterno="Tutor",
+            apellido_materno="Prueba",
             imss_estatus="NO",
             tiene_imss=True,  # should be ignored since imss_estatus is provided
         )
@@ -186,7 +205,16 @@ class TestIMSSINFONAVITIntegration:
             "tutores": [
                 {
                     "numero_tutor": 1,
-                    "nombre": "Tutor Triestado",
+                    "nombres": "Tutor",
+                    "apellido_paterno": "Triestado",
+                    "apellido_materno": "Prueba",
+                    "edad": 40,
+                    "nivel_estudios": "LICENCIATURA",
+                    "estado_civil": "CASADO",
+                    "vivienda": "PROPIA",
+                    "fuente_empleo": "Empleado",
+                    "ingreso_mensual": 10000,
+                    "antiguedad_anios": 5,
                     "imss_estatus": "SI",
                     "infonavit_estatus": "NO",
                 }
@@ -217,7 +245,16 @@ class TestIMSSINFONAVITIntegration:
         # Add a second tutor with different states
         payload["tutores"].append({
             "numero_tutor": 2,
-            "nombre": "Tutor 2 Triestado",
+            "nombres": "Tutor Dos",
+            "apellido_paterno": "Triestado",
+            "apellido_materno": "Prueba",
+            "edad": 41,
+            "nivel_estudios": "LICENCIATURA",
+            "estado_civil": "CASADO",
+            "vivienda": "PROPIA",
+            "fuente_empleo": "Empleado",
+            "ingreso_mensual": 11000,
+            "antiguedad_anios": 6,
             "imss_estatus": "NO",
             "infonavit_estatus": "SI",
         })
@@ -308,7 +345,16 @@ class TestIMSSINFONAVITIntegration:
                 "tutores": [
                     {
                         "numero_tutor": 1,
-                        "nombre": "Tutor Triestado Updated",
+                        "nombres": "Tutor",
+                        "apellido_paterno": "Triestado",
+                        "apellido_materno": "Updated",
+                        "edad": 40,
+                        "nivel_estudios": "LICENCIATURA",
+                        "estado_civil": "CASADO",
+                        "vivienda": "PROPIA",
+                        "fuente_empleo": "Empleado",
+                        "ingreso_mensual": 10000,
+                        "antiguedad_anios": 5,
                         "imss_estatus": None,
                         "infonavit_estatus": "SI",
                     }
@@ -349,7 +395,9 @@ class TestIMSSINFONAVITIntegration:
                 "tutores": [
                     {
                         "numero_tutor": 1,
-                        "nombre": "Tutor Triestado",
+                        "nombres": "Tutor",
+                        "apellido_paterno": "Triestado",
+                        "apellido_materno": "Prueba",
                         "imss_estatus": "INVALIDO",
                     }
                 ]
@@ -405,7 +453,16 @@ class TestTriestadoDatabaseIntegrity:
             "tutores": [
                 {
                     "numero_tutor": 1,
-                    "nombre": "DB Integrity",
+                    "nombres": "DB",
+                    "apellido_paterno": "Integrity",
+                    "apellido_materno": "Check",
+                    "edad": 40,
+                    "nivel_estudios": "LICENCIATURA",
+                    "estado_civil": "CASADO",
+                    "vivienda": "PROPIA",
+                    "fuente_empleo": "Empleado",
+                    "ingreso_mensual": 10000,
+                    "antiguedad_anios": 5,
                     "imss_estatus": "SI",
                     "infonavit_estatus": None,
                 }
