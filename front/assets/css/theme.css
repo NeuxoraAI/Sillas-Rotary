@@ -664,13 +664,14 @@ html.dark .captura-card:hover         { border-color: rgba(255, 255, 255, 0.20);
 /* ── Dark mode refinements (logos, inline-styled headers, tint opacities,
       select/input text, login surfaces) ── */
 
-/* Form controls: light text always; native dropdown list dark.
+/* Form controls: light text always; keep the dark surface even on focus.
    -webkit-text-fill-color must be overridden too — login.css forces it to a
    near-black value, which on WebKit paints over `color` and makes typed text
    invisible on the dark input background. */
 html.dark input:not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="radio"]):not([type="checkbox"]),
 html.dark select,
 html.dark textarea {
+  background-color: var(--c-input-bg) !important;
   color: #E8DFEE !important;
   -webkit-text-fill-color: #E8DFEE !important;
 }
@@ -683,15 +684,6 @@ html.dark .input-suffix {
   background-color: var(--c-input-bg);
   border-color: var(--c-input-border);
   color: #B4AAC2;
-}
-
-/* Focus forces background:#fff in light mode (theme.css :focus block). On dark
-   that turns the field solid white and the light text vanishes — keep the dark
-   input surface on focus instead. */
-html.dark input:not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="radio"]):not([type="checkbox"]):focus,
-html.dark select:focus,
-html.dark textarea:focus {
-  background-color: var(--c-input-bg) !important;
 }
 
 /* .text-primary is the deep-purple brand color (#2B063D) used for icons (stat
