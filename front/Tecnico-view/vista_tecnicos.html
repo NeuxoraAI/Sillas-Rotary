@@ -694,6 +694,13 @@
 
         // Logout
         $("btn-logout").addEventListener("click", async function () {
+          if (!window.AppConfirmation) {
+            localStorage.removeItem("session");
+            localStorage.removeItem("region_ctx");
+            window.location.href = "../login.html";
+            return;
+          }
+
           if (!(await AppConfirmation.confirmLogout())) return;
           localStorage.removeItem("session");
           localStorage.removeItem("region_ctx");
