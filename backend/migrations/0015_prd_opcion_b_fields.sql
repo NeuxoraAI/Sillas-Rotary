@@ -1,3 +1,5 @@
+-- 0015_prd_opcion_b_fields.sql
+
 ALTER TABLE public.beneficiarios
 ADD COLUMN IF NOT EXISTS num_ext TEXT,
 ADD COLUMN IF NOT EXISTS num_int TEXT,

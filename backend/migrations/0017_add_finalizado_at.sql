@@ -1,4 +1,4 @@
--- 0010_add_finalizado_at.sql
+-- 0017_add_finalizado_at.sql
 -- Objetivo:
 --   Agregar columna finalizado_at a estudios_socioeconomicos y solicitudes_tecnicas
 --   para registrar el timestamp de finalización (transición borrador → completo).

@@ -1,4 +1,4 @@
--- Migration 0008: Add unidad_peso_captura column to solicitudes_tecnicas
+-- Migration 0016: Add unidad_peso_captura column to solicitudes_tecnicas
 -- Feature: Unidades de Peso y Zoom de Imagen
 -- Field technicians can now record weight in pounds (lb) or kilograms (kg).
 -- The DB always stores the canonical kg value; unidad_peso_captura records
