@@ -9,6 +9,33 @@ Este directorio es la única fuente válida para cambios de esquema.
 3. **Sin big-bang**: cambios aditivos primero (compatibilidad temporal), limpieza después.
 4. **Nombres ordenados**: usar prefijo secuencial (`0001_`, `0002_`, etc.).
 
+## Orden canónico actual
+
+Los prefijos deben ser únicos. Si una migración ya fue aplicada en un entorno
+con un nombre anterior, validar primero el contenido de la tabla de control del
+runner (`supabase_migrations` o equivalente) antes de renombrar el historial en
+ese entorno.
+
+| Prefijo | Migración |
+| --- | --- |
+| `0002` | `add_foto_path_to_solicitudes_tecnicas` |
+| `0003` | `rls_policies` |
+| `0004` | `add_documento_refs_to_estudios_socioeconomicos` |
+| `0005` | `prd_ajustes_nombre_estructurado` |
+| `0006` | `prd_ajustes_imss_infonavit_triestado` |
+| `0007` | `medidas_decimal_7_3` |
+| `0008` | `add_tutor_email` |
+| `0009` | `prevent_duplicate_estudios_solicitudes` |
+| `0010` | `add_avatar_url_to_usuarios` |
+| `0011` | `make_draft_columns_nullable` |
+| `0012` | `organizaciones_membership_voluntarios` |
+| `0013` | `rename_observaciones_posturales_to_padecimiento` |
+| `0014` | `app_runtime_role` |
+| `0015` | `prd_opcion_b_fields` |
+| `0016` | `add_unidad_peso_captura` |
+| `0017` | `add_finalizado_at` |
+| `0018` | `add_soporte_oxigeno_to_solicitudes_tecnicas` |
+
 ## Deprecación de legado
 
 `backend/migrate_v2.sql` queda marcado como **LEGACY / DO NOT EXECUTE**.

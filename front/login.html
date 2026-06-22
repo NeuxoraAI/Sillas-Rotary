@@ -37,7 +37,10 @@
   <div class="max-w-[1500px] mx-auto flex items-center justify-center gap-0">
     <!-- Vida UG -->
     <div class="flex items-center justify-center overflow-hidden">
-      <img alt="Ecosistema VIDA UG" class="logo-vida-ug object-contain" src="assets/logo_vida_ug.png"/>
+      <picture>
+        <source srcset="assets/logo_vida_ug.webp" type="image/webp"/>
+        <img alt="Ecosistema VIDA UG" class="logo-vida-ug object-contain" src="assets/logo_vida_ug.png"/>
+      </picture>
     </div>
 
     <!-- Separator 1 -->
@@ -45,7 +48,10 @@
 
     <!-- Hope Haven -->
     <div class="flex items-center justify-center overflow-hidden">
-      <img alt="Hope Haven" class="logo-hope-haven object-contain" src="assets/logo_hope_haven_h.png"/>
+      <picture>
+        <source srcset="assets/logo_hope_haven_h.webp" type="image/webp"/>
+        <img alt="Hope Haven" class="logo-hope-haven object-contain" src="assets/logo_hope_haven_h.png"/>
+      </picture>
     </div>
 
     <!-- Separator 2 -->
@@ -199,8 +205,8 @@
       <div class="flex-1 flex items-center justify-center p-0">
         <div class="video-player w-full h-full relative overflow-hidden">
           <video
-            autoplay loop muted playsinline controls
-            poster="assets/logo_hope_haven_h.png"
+            loop muted playsinline controls preload="metadata"
+            poster="assets/logo_hope_haven_h.webp"
             class="w-full h-full object-cover"
           >
             <source src="assets/video/VIDEOLOGIN.mp4" type="video/mp4"/>
