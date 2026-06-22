@@ -35,6 +35,7 @@
     <link href="../assets/css/theme.css" rel="stylesheet"/>
     <script src="../assets/js/theme-toggle.js"></script>
     <script src="../assets/js/session-guard.js"></script>
+    <script src="../assets/js/confirmation-modal.js"></script>
     <link href="../assets/css/socioeconomico.css" rel="stylesheet" />
   </head>
   <body class="page-bg min-h-screen flex flex-col font-display" style="background: #FBF7F5;">
@@ -2329,10 +2330,9 @@
       // Volver al perfil sin cerrar sesión (logout lives in the profile)
       document
         .getElementById("btn-volver-perfil")
-        .addEventListener("click", function () {
-          if (confirm("¿Volver a tu perfil? Los cambios no guardados se perderán.")) {
-            window.location.href = "perfil-capturista.html";
-          }
+        .addEventListener("click", async function () {
+          if (!(await AppConfirmation.confirmUnsavedNavigation())) return;
+          window.location.href = "perfil-capturista.html";
         });
 
       function getFormData(status, documentRefs) {

@@ -180,6 +180,7 @@
   </div>
 </footer>
 
+<script src="../assets/js/confirmation-modal.js"></script>
 <script>
   // ── Auth guard (capturista and tecnico) ──────────────────────────────────────
   SessionGuard.requireRole(['capturista', 'tecnico', 'organizacion'], '../login.html');
@@ -189,7 +190,15 @@
   document.getElementById('user-rol').textContent    = _formatRol(SessionGuard.getSession().rol);
 
   // Logout
-  document.getElementById('btn-logout').addEventListener('click', function () {
+  document.getElementById('btn-logout').addEventListener('click', async function () {
+    if (!window.AppConfirmation) {
+      localStorage.removeItem("session");
+      localStorage.removeItem("region_ctx");
+      window.location.href = "../login.html";
+      return;
+    }
+
+    if (!(await AppConfirmation.confirmLogout())) return;
     localStorage.removeItem('session');
     localStorage.removeItem('region_ctx');
     window.location.href = '../login.html';
