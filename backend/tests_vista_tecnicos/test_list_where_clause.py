@@ -16,27 +16,15 @@ def _call(**kwargs) -> tuple[str, list]:
 # ── Existing params still work ───────────────────────────────────────────────
 
 def test_existing_q_param():
-    where, params = _call(q="ana", sede=None, estado=None, revision_pendiente=None)
+    where, params = _call(q="ana", sede=None)
     assert "b.nombre ILIKE" in where
     assert "%ana%" in params
 
 
 def test_existing_sede_param():
-    where, params = _call(q=None, sede="León", estado=None, revision_pendiente=None)
+    where, params = _call(q=None, sede="León")
     assert "COALESCE(e.sede, '') = %s" in where
     assert "León" in params
-
-
-def test_existing_estado_param():
-    where, params = _call(q=None, sede=None, estado="en_proceso", revision_pendiente=None)
-    assert "COALESCE(pt.estado, 'sin_iniciar') = %s" in where
-    assert "en_proceso" in params
-
-
-def test_existing_revision_pendiente_param():
-    where, params = _call(q=None, sede=None, estado=None, revision_pendiente=True)
-    assert "COALESCE(pt.revision_pendiente, FALSE) = %s" in where
-    assert params[-1] is True
 
 
 # ── NEW: pais_id param ───────────────────────────────────────────────────────
@@ -44,7 +32,7 @@ def test_existing_revision_pendiente_param():
 def test_pais_id_filter():
     """GIVEN pais_id=5 WHEN called THEN SQL has b.region_id IN (SELECT ...) clause."""
     where, params = _call(
-        q=None, sede=None, estado=None, revision_pendiente=None,
+        q=None, sede=None,
         pais_id=5,
     )
     assert "pais_id" in where or "b.region_id IN" in where
@@ -56,7 +44,7 @@ def test_pais_id_filter():
 def test_region_id_filter():
     """GIVEN region_id=12 WHEN called THEN exact match on b.region_id."""
     where, params = _call(
-        q=None, sede=None, estado=None, revision_pendiente=None,
+        q=None, sede=None,
         region_id=12,
     )
     assert "b.region_id" in where
@@ -68,7 +56,7 @@ def test_region_id_filter():
 def test_ciudad_filter():
     """GIVEN ciudad='León' WHEN called THEN ILIKE on b.ciudad."""
     where, params = _call(
-        q=None, sede=None, estado=None, revision_pendiente=None,
+        q=None, sede=None,
         ciudad="León",
     )
     assert "b.ciudad ILIKE" in where
@@ -80,7 +68,7 @@ def test_ciudad_filter():
 def test_peso_kg_min_filter():
     """GIVEN peso_kg_min=50.0 WHEN called THEN st.peso_kg >= %s."""
     where, params = _call(
-        q=None, sede=None, estado=None, revision_pendiente=None,
+        q=None, sede=None,
         peso_kg_min=50.0,
     )
     assert "st.peso_kg" in where
@@ -90,7 +78,7 @@ def test_peso_kg_min_filter():
 def test_peso_kg_max_filter():
     """GIVEN peso_kg_max=80.0 WHEN called THEN st.peso_kg <= %s."""
     where, params = _call(
-        q=None, sede=None, estado=None, revision_pendiente=None,
+        q=None, sede=None,
         peso_kg_max=80.0,
     )
     assert "st.peso_kg" in where
@@ -100,7 +88,7 @@ def test_peso_kg_max_filter():
 def test_peso_kg_range_filter():
     """GIVEN both min and max WHEN called THEN range clause with both."""
     where, params = _call(
-        q=None, sede=None, estado=None, revision_pendiente=None,
+        q=None, sede=None,
         peso_kg_min=50.0, peso_kg_max=80.0,
     )
     assert "st.peso_kg" in where
@@ -113,7 +101,7 @@ def test_peso_kg_range_filter():
 
 def test_altura_in_min_filter():
     where, params = _call(
-        q=None, sede=None, estado=None, revision_pendiente=None,
+        q=None, sede=None,
         altura_in_min=60.0,
     )
     assert "st.altura_total_in" in where
@@ -122,7 +110,7 @@ def test_altura_in_min_filter():
 
 def test_altura_in_max_filter():
     where, params = _call(
-        q=None, sede=None, estado=None, revision_pendiente=None,
+        q=None, sede=None,
         altura_in_max=70.0,
     )
     assert "st.altura_total_in" in where
@@ -134,7 +122,7 @@ def test_altura_in_max_filter():
 def test_tiene_foto_true_filter():
     """GIVEN tiene_foto=True WHEN called THEN foto_url IS NOT NULL."""
     where, params = _call(
-        q=None, sede=None, estado=None, revision_pendiente=None,
+        q=None, sede=None,
         tiene_foto=True,
     )
     assert "foto_url IS NOT NULL" in where
@@ -143,7 +131,7 @@ def test_tiene_foto_true_filter():
 def test_tiene_foto_false_filter():
     """GIVEN tiene_foto=False WHEN called THEN foto_url IS NULL."""
     where, params = _call(
-        q=None, sede=None, estado=None, revision_pendiente=None,
+        q=None, sede=None,
         tiene_foto=False,
     )
     assert "foto_url IS NULL" in where
@@ -156,7 +144,7 @@ def test_invalid_peso_range_raises_422():
     from fastapi import HTTPException
     try:
         _call(
-            q=None, sede=None, estado=None, revision_pendiente=None,
+            q=None, sede=None,
             peso_kg_min=80.0, peso_kg_max=50.0,
         )
         assert False, "Should have raised HTTPException 422"
@@ -170,7 +158,7 @@ def test_invalid_altura_range_raises_422():
     from fastapi import HTTPException
     try:
         _call(
-            q=None, sede=None, estado=None, revision_pendiente=None,
+            q=None, sede=None,
             altura_in_min=70.0, altura_in_max=60.0,
         )
         assert False, "Should have raised HTTPException 422"
@@ -182,7 +170,7 @@ def test_invalid_altura_range_raises_422():
 def test_valid_range_does_not_raise():
     """GIVEN min <= max WHEN called THEN no exception."""
     result = _call(
-        q=None, sede=None, estado=None, revision_pendiente=None,
+        q=None, sede=None,
         peso_kg_min=50.0, peso_kg_max=80.0,
         altura_in_min=60.0, altura_in_max=70.0,
     )
@@ -193,20 +181,20 @@ def test_valid_range_does_not_raise():
 
 def test_q_matches_ciudad():
     """GIVEN q='León' WHEN called THEN WHERE includes b.ciudad ILIKE."""
-    where, params = _call(q="León", sede=None, estado=None, revision_pendiente=None)
+    where, params = _call(q="León", sede=None)
     assert "b.ciudad ILIKE" in where
     assert "%León%" in params
 
 
 def test_q_matches_region_nombre():
     """GIVEN q='Guanajuato' WHEN called THEN WHERE includes r.nombre ILIKE."""
-    where, params = _call(q="Guanajuato", sede=None, estado=None, revision_pendiente=None)
+    where, params = _call(q="Guanajuato", sede=None)
     assert "r.nombre ILIKE" in where
     assert "%Guanajuato%" in params
 
 
 def test_q_matches_pais_nombre():
     """GIVEN q='México' WHEN called THEN WHERE includes p.nombre ILIKE."""
-    where, params = _call(q="México", sede=None, estado=None, revision_pendiente=None)
+    where, params = _call(q="México", sede=None)
     assert "p.nombre ILIKE" in where
     assert "%México%" in params

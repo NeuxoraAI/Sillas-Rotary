@@ -42,12 +42,7 @@
       .animate-fade-in { animation: fadeIn 0.2s ease-out; }
       @keyframes spin { to { transform: rotate(360deg); } }
       .animate-spin { animation: spin 1s linear infinite; }
-      /* Badges */
-      .badge-sin_iniciar { background: #f1f5f9; color: #475569; }
-      .badge-en_proceso { background: #dbeafe; color: #1d4ed8; }
-      .badge-finalizado { background: #dcfce7; color: #15803d; }
       .field-modified { border-color: #ef4444 !important; background-color: #fef2f2 !important; }
-      .badge-revision_pendiente { background: #fef3c7; color: #b45309; }
       .modal-body::-webkit-scrollbar { width: 4px; }
       .modal-body::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
       /* Delete animation */
@@ -192,16 +187,6 @@
                 <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Sede</label>
                 <input id="filter-sede" type="text" autocomplete="off" placeholder="Ej: Hospital"
                   class="w-full text-sm py-2 px-3"/>
-              </div>
-              <div class="space-y-1">
-                <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Fase</label>
-                <select id="filter-estado" class="w-full text-sm py-2">
-                  <option value="">Todos</option>
-                  <option value="sin_iniciar">Sin iniciar</option>
-                  <option value="en_proceso">En proceso</option>
-                  <option value="finalizado">Finalizado</option>
-                  <option value="revision_pendiente">Revisión pendiente</option>
-                </select>
               </div>
               <div class="space-y-1">
                 <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Peso mínimo (lb)</label>
@@ -421,7 +406,7 @@
             <h3 class="text-lg font-bold text-slate-900">Eliminar beneficiario</h3>
             <p class="text-sm text-slate-500 mt-1" id="delete-ben-name">¿Está seguro?</p>
           </div>
-          <p class="text-sm text-slate-600 mb-4">Esta acción es <strong>irreversible</strong>. Se eliminará el beneficiario y todos sus registros asociados (estudio, solicitud, tutores, procesos).</p>
+          <p class="text-sm text-slate-600 mb-4">Esta acción es <strong>irreversible</strong>. Se eliminará el beneficiario y todos sus registros asociados (estudio, solicitud, tutores).</p>
           <p class="text-xs font-semibold text-slate-500 mb-3">Escriba <span class="text-red-600 font-bold">ELIMINAR</span> para confirmar.</p>
           <input id="delete-confirm-input" type="text" autocomplete="off" placeholder="ELIMINAR" class="w-full px-4 py-3 focus:border-red-500 text-sm font-bold text-red-600 mb-4"/>
           <div class="flex items-center justify-end gap-3">
@@ -476,10 +461,6 @@
       }
       function _valOrNaHtml(val) {
         return val != null && val !== "" ? _escapeHtml(String(val)) : '<span class="text-slate-300 italic">No capturado</span>';
-      }
-      function _formatEstado(estado) {
-        const map = { sin_iniciar: "Sin iniciar", en_proceso: "En proceso", finalizado: "Finalizado", revision_pendiente: "Revisión pendiente" };
-        return map[estado] || estado || "—";
       }
       function _formatDate(iso) {
         if (!iso) return "—";
@@ -546,7 +527,6 @@
       const filterRegion = $("filter-region");
       const filterCiudad = $("filter-ciudad");
       const filterSede = $("filter-sede");
-      const filterEstado = $("filter-estado");
       const filterPesoMin = $("filter-peso-min");
       const filterPesoMax = $("filter-peso-max");
       const filterAlturaMin = $("filter-altura-min");
@@ -646,7 +626,7 @@
       function clearAllFilters() {
         inputSearch.value = "";
         filterPais.value = ""; filterRegion.innerHTML = '<option value="">Todos</option>'; filterRegion.disabled = true;
-        filterCiudad.value = ""; filterSede.value = ""; filterEstado.value = "";
+        filterCiudad.value = ""; filterSede.value = "";
         filterPesoMin.value = ""; filterPesoMax.value = ""; filterAlturaMin.value = ""; filterAlturaMax.value = ""; filterFoto.value = "";
         state.page = 1; updateFilterCount(); loadBeneficiarios();
       }
@@ -663,7 +643,6 @@
         if (filterRegion.value) count++;
         if (filterCiudad.value.trim()) count++;
         if (filterSede.value.trim()) count++;
-        if (filterEstado.value) count++;
         if (filterPesoMin.value || filterPesoMax.value) count++;
         if (filterAlturaMin.value || filterAlturaMax.value) count++;
         if (filterFoto.value) count++;
@@ -678,7 +657,6 @@
           region_id: filterRegion.value ? _parseIntSafe(filterRegion.value, undefined) : undefined,
           ciudad: filterCiudad.value.trim() || undefined,
           sede: filterSede.value.trim() || undefined,
-          estado: filterEstado.value || undefined,
           peso_kg_min: filterPesoMin.value ? _parseFloatSafe(filterPesoMin.value, undefined) : undefined,
           peso_kg_max: filterPesoMax.value ? _parseFloatSafe(filterPesoMax.value, undefined) : undefined,
           altura_in_min: filterAlturaMin.value ? _parseFloatSafe(filterAlturaMin.value, undefined) : undefined,
@@ -733,8 +711,6 @@
       function renderList() {
         listContainer.innerHTML = state.items.map(function (item) {
           const isSelected = state.selectedIds.has(item.beneficiario_id);
-          const estado = item.estado || "sin_iniciar";
-          const estadoLabel = _formatEstado(estado);
           const paisRegion = (item.pais_nombre || "") + " / " + (item.region_nombre || "");
           const fotoUrl = item.foto_url ? _resolveFotoUrl(item.foto_url) : null;
           return `<div class="bg-white rounded-2xl shadow-sm border ${isSelected ? 'border-primary ring-1 ring-primary' : 'border-slate-200'} p-4 flex items-start gap-3 hover:shadow-md transition-shadow cursor-pointer" data-id="${item.beneficiario_id}">
@@ -745,7 +721,6 @@
                   <p class="font-semibold text-slate-900 text-sm truncate">${_escapeHtml(item.nombre)}</p>
                   <p class="text-xs text-slate-500 mt-0.5">${_escapeHtml(item.folio || 'Sin folio')}</p>
                 </div>
-                <span class="badge-${estado} text-xs font-bold px-2.5 py-0.5 rounded-full shrink-0">${estadoLabel}</span>
               </div>
               <div class="flex flex-wrap gap-2 mt-2 text-[11px] text-slate-500">
                 <span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">location_on</span>${_escapeHtml(item.ciudad || '—')}</span>
@@ -886,9 +861,6 @@
         const e = data.estudio || {};
         const s = data.solicitud || {};
         const tutores = data.tutores || [];
-        const proceso = data.proceso_tecnico || {};
-        const participantes = data.participantes || [];
-
         // Helper: render a field row
         function _fd(label, value) {
           var display = value != null && value !== "" ? _escapeHtml(String(value)) : '<span class="text-slate-300 italic text-xs">No capturado</span>';
@@ -958,18 +930,6 @@
           _fd("Unidad captura", s.unidad_captura || s.unidad_medida) +
         '</div>';
 
-        // ── Participantes ──
-        var partHtml = "";
-        if (participantes.length === 0) {
-          partHtml = '<p class="text-slate-300 italic text-sm">Sin participantes registrados</p>';
-        } else {
-          partHtml = '<div class="space-y-2">';
-          participantes.forEach(function (p) {
-            partHtml += '<div class="flex items-center gap-2 text-sm"><span class="w-2 h-2 rounded-full bg-primary"></span><span class="font-medium text-slate-700">' + _escapeHtml(p.nombre || "—") + '</span><span class="text-slate-400 text-xs">' + _escapeHtml(p.accion || "—") + '</span><span class="text-slate-300 text-xs">' + _formatDate(p.created_at) + '</span></div>';
-          });
-          partHtml += '</div>';
-        }
-
         modalContent.innerHTML =
           // 1. Identificación
           _sec("Identificación",
@@ -1028,18 +988,7 @@
             '</div>') +
           // 9. Fotografía
           _sec("Fotografía Técnica",
-            s.foto_url_resolved ? '<img src="' + _escapeHtml(s.foto_url_resolved) + '" alt="Foto técnica" class="w-full max-w-xs rounded-xl border border-slate-200"/>' : '<p class="text-slate-300 italic text-sm">Sin fotografía</p>') +
-          // 10. Proceso Técnico
-          _sec("Proceso Técnico",
-            '<div class="flex items-center gap-2 mb-3"><span class="badge-' + (proceso.estado || 'sin_iniciar') + ' text-xs font-bold px-2.5 py-0.5 rounded-full">' + _formatEstado(proceso.estado || 'sin_iniciar') + '</span>' +
-            (proceso.revision_pendiente ? '<span class="ml-2 text-xs font-bold text-amber-700 bg-amber-100 rounded-full px-2.5 py-0.5">Revisión pendiente</span>' : '') + '</div>' +
-            '<div class="grid grid-cols-2 gap-3 text-sm mb-3">' +
-              _fd("Responsable actual", proceso.responsable_nombre) +
-              _fd("Técnico inicio", proceso.tecnico_nombre) +
-              _fd("Fecha inicio", _formatDate(proceso.fecha_inicio)) +
-              _fd("Último movimiento", _formatDate(proceso.fecha_ultimo_movimiento)) +
-            '</div>' +
-            '<p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Participantes</p>' + partHtml);
+            s.foto_url_resolved ? '<img src="' + _escapeHtml(s.foto_url_resolved) + '" alt="Foto técnica" class="w-full max-w-xs rounded-xl border border-slate-200"/>' : '<p class="text-slate-300 italic text-sm">Sin fotografía</p>');
       }
 
       // Modal close (only via X button — no outside click)

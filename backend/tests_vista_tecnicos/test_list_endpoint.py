@@ -105,9 +105,7 @@ def test_enriched_response_shape():
         "altura_total_in": 63.0,
         "unidad_captura": "in",
         "foto_url": "storage://fotos-tecnica/uuid.jpg",
-        "estado": "en_proceso",
-        "revision_pendiente": False,
-        "proceso_id": 7,
+        "solicitud_status": "completo",
         "total_count": 1,
     }]
     db = _FakeDB([rows])
@@ -126,7 +124,7 @@ def test_enriched_response_shape():
 
 
 def test_beneficiario_without_solicitud():
-    """GIVEN beneficiario without solicitud_tecnica WHEN listed THEN technical fields are null and estado=sin_iniciar."""
+    """GIVEN beneficiario without solicitud_tecnica WHEN listed THEN technical fields are null."""
     from routers.tecnica import listar_beneficiarios_tecnica
 
     rows = [{
@@ -141,9 +139,7 @@ def test_beneficiario_without_solicitud():
         "altura_total_in": None,
         "unidad_captura": None,
         "foto_url": None,
-        "estado": "sin_iniciar",
-        "revision_pendiente": False,
-        "proceso_id": None,
+        "solicitud_status": None,
         "total_count": 1,
     }]
     db = _FakeDB([rows])
@@ -153,7 +149,6 @@ def test_beneficiario_without_solicitud():
     item = result["items"][0]
     assert item["peso_kg"] is None
     assert item["foto_url"] is None
-    assert item["estado"] == "sin_iniciar"
 
 
 def test_response_has_new_pagination_shape():
@@ -164,8 +159,7 @@ def test_response_has_new_pagination_shape():
         {"beneficiario_id": 1, "nombre": "A", "folio": "F1", "pais_nombre": "MX",
          "region_nombre": "Gto", "ciudad": "León", "sede": "S1",
          "peso_kg": None, "altura_total_in": None, "unidad_captura": None, "foto_url": None,
-         "estado": "sin_iniciar", "revision_pendiente": False, "proceso_id": None,
-         "total_count": 3},
+         "solicitud_status": None, "total_count": 3},
     ]
     db = _FakeDB([rows])
     result = listar_beneficiarios_tecnica(

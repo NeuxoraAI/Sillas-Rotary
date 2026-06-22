@@ -189,23 +189,6 @@
                 class="w-full text-sm py-2 px-3"
               />
             </div>
-            <!-- Estado -->
-            <div class="space-y-1">
-              <label
-                class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider"
-                >Fase</label
-              >
-              <select
-                id="filter-estado"
-                class="w-full text-sm py-2"
-              >
-                <option value="">Todos</option>
-                <option value="sin_iniciar">Sin iniciar</option>
-                <option value="en_proceso">En proceso</option>
-                <option value="finalizado">Finalizado</option>
-                <option value="revision_pendiente">Revisión pendiente</option>
-              </select>
-            </div>
             <!-- Peso min -->
             <div class="space-y-1">
               <label
@@ -524,16 +507,6 @@
         return map[rol] || rol || "—";
       }
 
-      function _formatEstado(estado) {
-        const map = {
-          sin_iniciar: "Sin iniciar",
-          en_proceso: "En proceso",
-          finalizado: "Finalizado",
-          revision_pendiente: "Revisión pendiente",
-        };
-        return map[estado] || estado || "—";
-      }
-
       function _formatDate(iso) {
         if (!iso) return "—";
         try {
@@ -629,7 +602,6 @@
       const filterRegion = $("filter-region");
       const filterCiudad = $("filter-ciudad");
       const filterSede = $("filter-sede");
-      const filterEstado = $("filter-estado");
       const filterPesoMin = $("filter-peso-min");
       const filterPesoMax = $("filter-peso-max");
       const filterAlturaMin = $("filter-altura-min");
@@ -663,7 +635,7 @@
       const btnExportSelected = $("btn-export-selected");
       const btnClearSelection = $("btn-clear-selection");
 
-      let currentDetail = null; // { beneficiario_id, proceso_id, estado }
+      let currentDetail = null; // { beneficiario_id }
 
       // ═══════════════════════════════════════════════════════════════════════════
       // AUTH BOOT
@@ -788,7 +760,6 @@
         filterRegion.disabled = true;
         filterCiudad.value = "";
         filterSede.value = "";
-        filterEstado.value = "";
         filterPesoMin.value = "";
         filterPesoMax.value = "";
         filterAlturaMin.value = "";
@@ -903,7 +874,6 @@
         if (filterRegion.value) count++;
         if (filterCiudad.value.trim()) count++;
         if (filterSede.value.trim()) count++;
-        if (filterEstado.value) count++;
         if (filterPesoMin.value || filterPesoMax.value) count++;
         if (filterAlturaMin.value || filterAlturaMax.value) count++;
         if (filterFoto.value) count++;
@@ -923,7 +893,6 @@
             : undefined,
           ciudad: filterCiudad.value.trim() || undefined,
           sede: filterSede.value.trim() || undefined,
-          estado: filterEstado.value || undefined,
           peso_kg_min: _parseFloatSafe(filterPesoMin.value, undefined),
           peso_kg_max: _parseFloatSafe(filterPesoMax.value, undefined),
           altura_in_min: _parseFloatSafe(filterAlturaMin.value, undefined),
@@ -1045,7 +1014,6 @@
               ? "border-green-400 bg-green-50/30"
               : "border-slate-200");
 
-          const estadoClass = "badge-" + (item.estado || "sin_iniciar");
           const initials = _getInitials(item.nombre);
           const name = _escapeHtml(item.nombre || "—");
           const folio = _escapeHtml(item.folio || "—");
@@ -1092,7 +1060,6 @@
           <div class="flex items-center gap-2 shrink-0 self-center flex-wrap justify-end">
             ${exportedBadge}
             ${solicitudBorradorBadge}
-            <span class="text-[11px] font-bold px-2.5 py-1 rounded-full ${estadoClass}">${_formatEstado(item.estado)}</span>
           </div>
         </div>
       `;
@@ -1190,19 +1157,10 @@
         const ben = data.beneficiario || {};
         const estudio = data.estudio || {};
         const solicitud = data.solicitud || {};
-        const proceso = data.proceso_tecnico;
-        const participantes = data.participantes || [];
         const tutores = data.tutores || [];
-
-        currentDetail.proceso_id = proceso ? proceso.id : null;
-        currentDetail.estado = proceso ? proceso.estado : "sin_iniciar";
 
         modalTitle.textContent = ben.nombre || "—";
         modalFolio.textContent = "Folio: " + (ben.folio || "—");
-
-        // Estado badge
-        const estadoActual = proceso ? proceso.estado : "sin_iniciar";
-        const estadoClass = "badge-" + estadoActual;
 
         let html = "";
 
@@ -1355,156 +1313,10 @@
       </section>
     `;
 
-        // ── Estado timeline ──
-        html += `
-      <section>
-        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-          <span class="material-symbols-outlined text-sm">timeline</span> Estado
-        </h4>
-        <div class="bg-slate-50 rounded-xl p-4 text-sm">
-          <div class="flex items-center gap-2 mb-3">
-            <span class="text-xs font-bold px-2.5 py-1 rounded-full ${estadoClass}">${_formatEstado(estadoActual)}</span>
-            ${proceso?.fecha_inicio ? '<span class="text-xs text-slate-400">Iniciado: ' + _formatDate(proceso.fecha_inicio) + "</span>" : ""}
-          </div>
-          ${
-            participantes.length > 0
-              ? `
-            <div class="space-y-2 mt-3 pt-3 border-t border-slate-200">
-              <span class="text-xs font-semibold text-slate-400">Participantes</span>
-              ${participantes
-                .map(function (p) {
-                  return (
-                    '<div class="flex items-center justify-between text-xs"><span class="font-medium text-slate-700">' +
-                    _escapeHtml(p.nombre || "Técnico") +
-                    '</span><span class="text-slate-400">' +
-                    _escapeHtml(p.accion || "—") +
-                    " · " +
-                    _formatDate(p.created_at) +
-                    "</span></div>"
-                  );
-                })
-                .join("")}
-            </div>
-          `
-              : ""
-          }
-        </div>
-      </section>
-    `;
-
         modalContent.innerHTML = html;
-
-        // ── Footer actions ──
-        renderModalActions(estadoActual, proceso ? proceso.id : null);
-      }
-
-      function renderModalActions(estado, procesoId) {
-        modalFooter.classList.remove("hidden");
+        // Vista de solo lectura: el técnico ya no opera el proceso de manufactura.
+        modalFooter.classList.add("hidden");
         modalFooter.innerHTML = "";
-
-        const estadoLower = (estado || "sin_iniciar").toLowerCase();
-
-        if (estadoLower === "sin_iniciar") {
-          modalFooter.innerHTML = `
-        <button id="action-iniciar" class="btn-primary w-full py-3 text-sm rounded-xl flex items-center justify-center gap-2">
-          <span class="material-symbols-outlined text-lg">play_arrow</span> Iniciar proceso técnico
-        </button>
-      `;
-        } else if (estadoLower === "en_proceso" && procesoId) {
-          modalFooter.innerHTML = `
-        <button id="action-finalizar" class="w-full py-3 bg-green-600 hover:bg-green-700 active:scale-[0.98] text-white font-bold text-sm rounded-xl transition-all flex items-center justify-center gap-2">
-          <span class="material-symbols-outlined text-lg">check_circle</span> Finalizar proceso
-        </button>
-        <p class="text-[11px] text-slate-400 text-center">Después de finalizar no se podrán realizar más cambios.</p>
-      `;
-        } else if (estadoLower === "revision_pendiente" && procesoId) {
-          modalFooter.innerHTML = `
-        <button id="action-continuar" class="w-full py-3 bg-amber-500 hover:bg-amber-600 active:scale-[0.98] text-white font-bold text-sm rounded-xl transition-all flex items-center justify-center gap-2">
-          <span class="material-symbols-outlined text-lg">refresh</span> Reanudar proceso
-        </button>
-      `;
-        } else if (estadoLower === "finalizado") {
-          modalFooter.innerHTML = `
-        <div class="text-center text-sm text-slate-400 py-2">
-          <span class="material-symbols-outlined text-lg align-middle">lock</span>
-          Proceso finalizado
-        </div>
-      `;
-        }
-
-        // Bind action buttons
-        const btnIniciar = $("action-iniciar");
-        const btnFinalizar = $("action-finalizar");
-        const btnContinuar = $("action-continuar");
-
-        if (btnIniciar) {
-          btnIniciar.addEventListener("click", function () {
-            executeAction("iniciar", currentDetail.beneficiario_id, null);
-          });
-        }
-        if (btnFinalizar) {
-          btnFinalizar.addEventListener("click", function () {
-            executeAction("finalizar", null, currentDetail.proceso_id);
-          });
-        }
-        if (btnContinuar) {
-          btnContinuar.addEventListener("click", function () {
-            executeAction("continuar", null, currentDetail.proceso_id);
-          });
-        }
-      }
-
-      // ═══════════════════════════════════════════════════════════════════════════
-      // STATE ACTIONS
-      // ═══════════════════════════════════════════════════════════════════════════
-
-      async function executeAction(action, beneficiarioId, procesoId) {
-        const buttons = modalFooter.querySelectorAll("button");
-        buttons.forEach(function (b) {
-          b.disabled = true;
-          b.classList.add("opacity-60", "cursor-not-allowed");
-        });
-
-        let url;
-        let method = "POST";
-
-        if (action === "iniciar" && beneficiarioId) {
-          url = "/api/tecnica/beneficiarios/" + beneficiarioId + "/iniciar";
-        } else if (action === "finalizar" && procesoId) {
-          url = "/api/tecnica/procesos/" + procesoId + "/finalizar";
-        } else if (action === "continuar" && procesoId) {
-          url = "/api/tecnica/procesos/" + procesoId + "/continuar";
-        } else {
-          showToast("Acción no válida", "error");
-          buttons.forEach(function (b) {
-            b.disabled = false;
-            b.classList.remove("opacity-60", "cursor-not-allowed");
-          });
-          return;
-        }
-
-        try {
-          const res = await _authFetch(url, { method: "POST" });
-          if (!res.ok) {
-            const errData = await res.json().catch(() => ({}));
-            const detail = errData.detail;
-            const msg =
-              typeof detail === "object"
-                ? detail.message || "Error del servidor"
-                : detail || "Error del servidor";
-            throw new Error(msg);
-          }
-
-          showToast("Operación exitosa", "success");
-          closeModal();
-          loadBeneficiarios();
-        } catch (err) {
-          showToast(err.message || "Error al ejecutar la acción", "error");
-          buttons.forEach(function (b) {
-            b.disabled = false;
-            b.classList.remove("opacity-60", "cursor-not-allowed");
-          });
-        }
       }
 
       // ═══════════════════════════════════════════════════════════════════════════

@@ -440,8 +440,6 @@ def listar_beneficiarios_admin(
     _usuario: Annotated[CurrentUser, Depends(require_roles("admin"))],
     q: Optional[str] = None,
     sede: Optional[str] = None,
-    estado: Optional[str] = None,
-    revision_pendiente: Optional[bool] = None,
     pais_id: Optional[int] = None,
     region_id: Optional[int] = None,
     ciudad: Optional[str] = None,
@@ -460,7 +458,7 @@ def listar_beneficiarios_admin(
         raise HTTPException(status_code=422, detail={"type": "invalid_filter", "message": "per_page debe ser >= 1"})
 
     where_clause, params = _build_list_where_clause(
-        q=q, sede=sede, estado=estado, revision_pendiente=revision_pendiente,
+        q=q, sede=sede,
         pais_id=pais_id, region_id=region_id, ciudad=ciudad,
         peso_kg_min=peso_kg_min, peso_kg_max=peso_kg_max,
         altura_in_min=altura_in_min, altura_in_max=altura_in_max,
@@ -480,9 +478,6 @@ def listar_beneficiarios_admin(
             COALESCE(p.nombre, '') AS pais_nombre,
             COALESCE(r.nombre, '') AS region_nombre,
             COALESCE(e.sede, '') AS sede,
-            COALESCE(pt.estado, 'sin_iniciar') AS estado,
-            COALESCE(pt.revision_pendiente, FALSE) AS revision_pendiente,
-            pt.id AS proceso_id,
             st.peso_kg,
             st.altura_total_in,
             st.unidad_captura,
@@ -490,7 +485,6 @@ def listar_beneficiarios_admin(
             COUNT(*) OVER() AS total_count
         FROM beneficiarios b
         LEFT JOIN estudios_socioeconomicos e ON e.beneficiario_id = b.id
-        LEFT JOIN procesos_tecnicos pt ON pt.beneficiario_id = b.id
         LEFT JOIN solicitudes_tecnicas st ON st.beneficiario_id = b.id
         LEFT JOIN regiones r ON r.id = b.region_id
         LEFT JOIN paises p ON p.id = r.pais_id
@@ -512,8 +506,6 @@ def exportar_beneficiarios_admin(
     _usuario: Annotated[CurrentUser, Depends(require_roles("admin"))],
     q: Optional[str] = None,
     sede: Optional[str] = None,
-    estado: Optional[str] = None,
-    revision_pendiente: Optional[bool] = None,
     pais_id: Optional[int] = None,
     region_id: Optional[int] = None,
     ciudad: Optional[str] = None,
@@ -526,7 +518,7 @@ def exportar_beneficiarios_admin(
 ) -> StreamingResponse:
     """Export beneficiarios to Excel. Admin only."""
     where_clause, params = _build_list_where_clause(
-        q=q, sede=sede, estado=estado, revision_pendiente=revision_pendiente,
+        q=q, sede=sede,
         pais_id=pais_id, region_id=region_id, ciudad=ciudad,
         peso_kg_min=peso_kg_min, peso_kg_max=peso_kg_max,
         altura_in_min=altura_in_min, altura_in_max=altura_in_max,
@@ -568,7 +560,6 @@ def exportar_beneficiarios_admin(
             t.nombre AS tutor_nombre
         FROM beneficiarios b
         LEFT JOIN estudios_socioeconomicos e ON e.beneficiario_id = b.id
-        LEFT JOIN procesos_tecnicos pt ON pt.beneficiario_id = b.id
         LEFT JOIN solicitudes_tecnicas st ON st.beneficiario_id = b.id
         LEFT JOIN regiones r ON r.id = b.region_id
         LEFT JOIN paises p ON p.id = r.pais_id

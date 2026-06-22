@@ -39,8 +39,6 @@ _MAX_SIZE_BYTES = 10 * 1024 * 1024  # 10 MB
 _BUCKET = "fotos-tecnica"
 _SIGNED_URL_TTL_SECONDS = 60
 _STORAGE_URL_PREFIX = f"storage://{_BUCKET}/"
-_PROCESS_STATES = {"sin_iniciar", "en_proceso", "finalizado", "revision_pendiente"}
-_PROCESS_ACTIONS = {"iniciar", "continuar", "finalizar", "solicitar_revision"}
 
 
 def _utc_now_iso() -> str:
@@ -110,8 +108,6 @@ def _build_list_where_clause(
     *,
     q: Optional[str],
     sede: Optional[str],
-    estado: Optional[str],
-    revision_pendiente: Optional[bool],
     pais_id: Optional[int] = None,
     region_id: Optional[int] = None,
     ciudad: Optional[str] = None,
@@ -158,21 +154,6 @@ def _build_list_where_clause(
         clauses.append("COALESCE(e.sede, '') = %s")
         params.append(sede.strip())
 
-    # ── Estado ────────────────────────────────────────────────────────────
-    if estado and estado.strip():
-        if estado not in _PROCESS_STATES:
-            raise HTTPException(
-                status_code=422,
-                detail={"type": "invalid_filter", "message": "estado no válido"},
-            )
-        clauses.append("COALESCE(pt.estado, 'sin_iniciar') = %s")
-        params.append(estado)
-
-    # ── Revision pendiente ───────────────────────────────────────────────
-    if revision_pendiente is not None:
-        clauses.append("COALESCE(pt.revision_pendiente, FALSE) = %s")
-        params.append(revision_pendiente)
-
     # ── Pais (via region) ─────────────────────────────────────────────────
     if pais_id is not None:
         clauses.append("r.pais_id = %s")
@@ -212,31 +193,6 @@ def _build_list_where_clause(
         clauses.append("st.foto_url IS NULL")
 
     return " AND ".join(clauses), params
-
-
-def _upsert_participant(
-    db: _DBAdapter,
-    *,
-    proceso_id: int,
-    usuario_id: int,
-    accion: str,
-) -> None:
-    db.execute(
-        """
-        INSERT INTO procesos_tecnicos_participantes (proceso_tecnico_id, usuario_id, accion)
-        VALUES (%s, %s, %s)
-        """,
-        (proceso_id, usuario_id, accion),
-    )
-
-
-def _load_proceso(db: _DBAdapter, proceso_id: int) -> dict:
-    row = _row_to_dict(
-        db.execute("SELECT * FROM procesos_tecnicos WHERE id = %s", (proceso_id,)).fetchone()
-    )
-    if row is None:
-        raise HTTPException(status_code=404, detail="Proceso técnico no encontrado")
-    return row
 
 
 def _build_snapshot(db: _DBAdapter, beneficiario_id: int) -> dict:
@@ -296,33 +252,12 @@ def _build_snapshot(db: _DBAdapter, beneficiario_id: int) -> dict:
         solicitud["foto_url_resolved"] = _resolve_storage_url(
             solicitud["foto_url"], "fotos-tecnica"
         )
-    proceso = _row_to_dict(
-        db.execute(
-            "SELECT * FROM procesos_tecnicos WHERE beneficiario_id = %s",
-            (beneficiario_id,),
-        ).fetchone()
-    )
-
-    participantes: list[dict] = []
-    if proceso is not None:
-        participantes = db.execute(
-            """
-            SELECT p.usuario_id, u.nombre, p.accion, p.created_at
-            FROM procesos_tecnicos_participantes p
-            JOIN usuarios u ON u.id = p.usuario_id
-            WHERE p.proceso_tecnico_id = %s
-            ORDER BY p.created_at ASC
-            """,
-            (proceso["id"],),
-        ).fetchall()
 
     return {
         "beneficiario": beneficiario,
         "tutores": tutores,
         "estudio": estudio,
         "solicitud": solicitud,
-        "proceso_tecnico": proceso,
-        "participantes": participantes,
     }
 
 
@@ -795,70 +730,12 @@ def _load_solicitud_for_foto(db: _DBAdapter, solicitud_id: int) -> Optional[dict
     return row
 
 
-def apply_tecnico_transition(current_state: str, action: str) -> str:
-    if current_state not in _PROCESS_STATES:
-        raise HTTPException(
-            status_code=422,
-            detail={
-                "type": "invalid_state",
-                "message": "Estado operativo no reconocido",
-            },
-        )
-
-    if action not in _PROCESS_ACTIONS:
-        raise HTTPException(
-            status_code=422,
-            detail={
-                "type": "invalid_action",
-                "message": "Acción operativa no reconocida",
-            },
-        )
-
-    transitions = {
-        ("sin_iniciar", "iniciar"): "en_proceso",
-        ("en_proceso", "continuar"): "en_proceso",
-        ("en_proceso", "finalizar"): "finalizado",
-        ("en_proceso", "solicitar_revision"): "revision_pendiente",
-    }
-
-    next_state = transitions.get((current_state, action))
-    if next_state is None:
-        raise HTTPException(
-            status_code=409,
-            detail={
-                "type": "invalid_transition",
-                "message": f"No se permite '{action}' desde estado '{current_state}'",
-            },
-        )
-    return next_state
-
-
-def ensure_single_process_per_beneficiario(existing_process: Optional[dict]) -> None:
-    if existing_process is None:
-        return
-    raise HTTPException(
-        status_code=409,
-        detail={
-            "type": "unique_violation",
-            "message": "Ya existe un proceso técnico para este beneficiario",
-        },
-    )
-
-
-def merge_participant_ids(current_participants: list[int], actor_user_id: int) -> list[int]:
-    if actor_user_id in current_participants:
-        return current_participants
-    return [*current_participants, actor_user_id]
-
-
 @router.get("/tecnica/beneficiarios")
 def listar_beneficiarios_tecnica(
     db: Annotated[_DBAdapter, Depends(get_db)],
     _usuario: Annotated[CurrentUser, Depends(require_roles("tecnico", "admin"))],
     q: Optional[str] = None,
     sede: Optional[str] = None,
-    estado: Optional[str] = None,
-    revision_pendiente: Optional[bool] = None,
     pais_id: Optional[int] = None,
     region_id: Optional[int] = None,
     ciudad: Optional[str] = None,
@@ -884,8 +761,6 @@ def listar_beneficiarios_tecnica(
     where_clause, params = _build_list_where_clause(
         q=q,
         sede=sede,
-        estado=estado,
-        revision_pendiente=revision_pendiente,
         pais_id=pais_id,
         region_id=region_id,
         ciudad=ciudad,
@@ -898,8 +773,7 @@ def listar_beneficiarios_tecnica(
 
     # Técnicos only work on finalized captures — never on a capturista's
     # in-progress draft. Admins keep full visibility through this endpoint
-    # (and the dedicated admin-beneficiarios view) and can still filter by
-    # process estado explicitly.
+    # (and the dedicated admin-beneficiarios view).
     if _usuario.rol == "tecnico":
         where_clause += " AND COALESCE(e.status, 'borrador') = 'completo'"
 
@@ -916,9 +790,6 @@ def listar_beneficiarios_tecnica(
             COALESCE(p.nombre, '') AS pais_nombre,
             COALESCE(r.nombre, '') AS region_nombre,
             COALESCE(e.sede, '') AS sede,
-            COALESCE(pt.estado, 'sin_iniciar') AS estado,
-            COALESCE(pt.revision_pendiente, FALSE) AS revision_pendiente,
-            pt.id AS proceso_id,
             st.peso_kg,
             st.altura_total_in,
             st.unidad_captura,
@@ -927,7 +798,6 @@ def listar_beneficiarios_tecnica(
             COUNT(*) OVER() AS total_count
         FROM beneficiarios b
         LEFT JOIN estudios_socioeconomicos e ON e.beneficiario_id = b.id
-        LEFT JOIN procesos_tecnicos pt ON pt.beneficiario_id = b.id
         LEFT JOIN solicitudes_tecnicas st ON st.beneficiario_id = b.id
         LEFT JOIN regiones r ON r.id = b.region_id
         LEFT JOIN paises p ON p.id = r.pais_id
@@ -968,8 +838,6 @@ def exportar_beneficiarios_tecnica(
     _usuario: Annotated[CurrentUser, Depends(require_roles("tecnico", "admin"))],
     q: Optional[str] = None,
     sede: Optional[str] = None,
-    estado: Optional[str] = None,
-    revision_pendiente: Optional[bool] = None,
     pais_id: Optional[int] = None,
     region_id: Optional[int] = None,
     ciudad: Optional[str] = None,
@@ -983,8 +851,6 @@ def exportar_beneficiarios_tecnica(
     where_clause, params = _build_list_where_clause(
         q=q,
         sede=sede,
-        estado=estado,
-        revision_pendiente=revision_pendiente,
         pais_id=pais_id,
         region_id=region_id,
         ciudad=ciudad,
@@ -1033,7 +899,6 @@ def exportar_beneficiarios_tecnica(
             t.nombre AS tutor_nombre
         FROM beneficiarios b
         LEFT JOIN estudios_socioeconomicos e ON e.beneficiario_id = b.id
-        LEFT JOIN procesos_tecnicos pt ON pt.beneficiario_id = b.id
         LEFT JOIN solicitudes_tecnicas st ON st.beneficiario_id = b.id
         LEFT JOIN regiones r ON r.id = b.region_id
         LEFT JOIN paises p ON p.id = r.pais_id
@@ -1173,175 +1038,6 @@ def obtener_detalle_tecnico(
         "can_operate": usuario.rol == "tecnico",
     }
     return snapshot
-
-
-@router.post("/tecnica/beneficiarios/{beneficiario_id}/iniciar", status_code=201)
-def iniciar_proceso_tecnico(
-    beneficiario_id: int,
-    db: Annotated[_DBAdapter, Depends(get_db)],
-    usuario: Annotated[CurrentUser, Depends(require_roles("tecnico"))],
-) -> dict:
-    existente = _row_to_dict(
-        db.execute("SELECT * FROM procesos_tecnicos WHERE beneficiario_id = %s", (beneficiario_id,)).fetchone()
-    )
-    if existente is not None:
-        ensure_single_process_per_beneficiario(existente)
-
-    row = _row_to_dict(
-        db.execute(
-            """
-            INSERT INTO procesos_tecnicos (
-                beneficiario_id,
-                estado,
-                responsable_actual_usuario_id,
-                tecnico_inicio_usuario_id,
-                fecha_inicio,
-                fecha_ultimo_movimiento,
-                revision_pendiente,
-                pdf_snapshot_json
-            )
-            VALUES (%s, %s, %s, %s, NOW(), NOW(), FALSE, %s)
-            RETURNING *
-            """,
-            (
-                beneficiario_id,
-                "en_proceso",
-                usuario.usuario_id,
-                usuario.usuario_id,
-                "{}",
-            ),
-        ).fetchone()
-    )
-    if row is None:
-        raise HTTPException(status_code=500, detail="No se pudo iniciar el proceso técnico")
-
-    _upsert_participant(db, proceso_id=row["id"], usuario_id=usuario.usuario_id, accion="inicio")
-    return {"proceso": row, "event": "inicio"}
-
-
-@router.post("/tecnica/procesos/{proceso_id}/continuar")
-def continuar_proceso_tecnico(
-    proceso_id: int,
-    db: Annotated[_DBAdapter, Depends(get_db)],
-    usuario: Annotated[CurrentUser, Depends(require_roles("tecnico"))],
-) -> dict:
-    proceso = _load_proceso(db, proceso_id)
-    next_state = apply_tecnico_transition(proceso["estado"], "continuar")
-    db.execute(
-        """
-        UPDATE procesos_tecnicos
-        SET estado = %s,
-            responsable_actual_usuario_id = %s,
-            fecha_ultimo_movimiento = NOW(),
-            updated_at = NOW()
-        WHERE id = %s
-        """,
-        (next_state, usuario.usuario_id, proceso_id),
-    )
-    _upsert_participant(db, proceso_id=proceso_id, usuario_id=usuario.usuario_id, accion="continuacion")
-    return {"proceso_id": proceso_id, "estado": next_state, "event": "continuacion"}
-
-
-@router.post("/tecnica/procesos/{proceso_id}/finalizar")
-def finalizar_proceso_tecnico(
-    proceso_id: int,
-    db: Annotated[_DBAdapter, Depends(get_db)],
-    usuario: Annotated[CurrentUser, Depends(require_roles("tecnico"))],
-) -> dict:
-    proceso = _load_proceso(db, proceso_id)
-    next_state = apply_tecnico_transition(proceso["estado"], "finalizar")
-    db.execute(
-        """
-        UPDATE procesos_tecnicos
-        SET estado = %s,
-            responsable_actual_usuario_id = %s,
-            revision_pendiente = FALSE,
-            fecha_ultimo_movimiento = NOW(),
-            updated_at = NOW()
-        WHERE id = %s
-        """,
-        (next_state, usuario.usuario_id, proceso_id),
-    )
-    _upsert_participant(db, proceso_id=proceso_id, usuario_id=usuario.usuario_id, accion="finalizacion")
-    return {"proceso_id": proceso_id, "estado": next_state, "event": "finalizacion"}
-
-
-@router.post("/tecnica/procesos/{proceso_id}/solicitar-revision")
-def solicitar_revision_tecnica(
-    proceso_id: int,
-    db: Annotated[_DBAdapter, Depends(get_db)],
-    usuario: Annotated[CurrentUser, Depends(require_roles("tecnico"))],
-) -> dict:
-    proceso = _load_proceso(db, proceso_id)
-    next_state = apply_tecnico_transition(proceso["estado"], "solicitar_revision")
-    db.execute(
-        """
-        UPDATE procesos_tecnicos
-        SET estado = %s,
-            responsable_actual_usuario_id = %s,
-            revision_pendiente = TRUE,
-            fecha_ultimo_movimiento = NOW(),
-            updated_at = NOW()
-        WHERE id = %s
-        """,
-        (next_state, usuario.usuario_id, proceso_id),
-    )
-    _upsert_participant(db, proceso_id=proceso_id, usuario_id=usuario.usuario_id, accion="revision")
-    return {"proceso_id": proceso_id, "estado": next_state, "revision_pendiente": True}
-
-
-@router.get("/tecnica/procesos/{proceso_id}/pdf")
-def exportar_pdf_base(
-    proceso_id: int,
-    db: Annotated[_DBAdapter, Depends(get_db)],
-    _usuario: Annotated[CurrentUser, Depends(require_roles("tecnico", "admin"))],
-) -> dict:
-    proceso = _load_proceso(db, proceso_id)
-    snapshot = _build_snapshot(db, proceso["beneficiario_id"])
-    db.execute(
-        """
-        UPDATE procesos_tecnicos
-        SET pdf_snapshot_json = %s,
-            updated_at = NOW()
-        WHERE id = %s
-        """,
-        # jsonb column: serialize to real JSON. default=str handles the
-        # datetime/date/Decimal values that _build_snapshot pulls from the DB
-        # rows (str(snapshot) produced a Python repr that Postgres rejected).
-        (json.dumps(snapshot, default=str), proceso_id),
-    )
-    return {
-        "proceso_id": proceso_id,
-        "pdf": {
-            "status": "base_ready",
-            "generated_at": _utc_now_iso(),
-            "snapshot_included": True,
-        },
-    }
-
-
-@router.get("/admin/tecnica/revisiones-pendientes")
-def listar_revisiones_pendientes_admin(
-    db: Annotated[_DBAdapter, Depends(get_db)],
-    _usuario: Annotated[CurrentUser, Depends(require_roles("admin"))],
-) -> dict:
-    rows = db.execute(
-        """
-        SELECT
-            pt.id AS proceso_id,
-            pt.beneficiario_id,
-            b.nombre,
-            b.folio,
-            pt.estado,
-            pt.revision_pendiente,
-            pt.updated_at
-        FROM procesos_tecnicos pt
-        JOIN beneficiarios b ON b.id = pt.beneficiario_id
-        WHERE pt.revision_pendiente = TRUE
-        ORDER BY pt.updated_at DESC
-        """
-    ).fetchall()
-    return {"items": rows, "total": len(rows)}
 
 
 # ---------------------------------------------------------------------------
