@@ -1059,6 +1059,11 @@
         selectedDeviceId: null,
       };
 
+      // Two normalizers on purpose — do NOT merge them:
+      // - normalizeMunicipioValue strips accents for LOOSE MATCHING only
+      //   (so "Merida" matches catalog "Mérida" when reloading saved data).
+      // - normalizeMunicipioForPersistence keeps accents and is the CANONICAL
+      //   form we store/display. Stripping accents here would lose data.
       function normalizeMunicipioValue(value) {
         return String(value || "")
           .normalize("NFD")
@@ -3879,7 +3884,12 @@
             return;
           }
           const data = await res.json();
-          await loadMunicipiosCatalog();
+          // Best-effort: a failed catalog must not block loading the draft.
+          // Without it the municipio dropdown degrades, but the rest of the
+          // form still populates instead of aborting into the error banner.
+          await loadMunicipiosCatalog().catch((err) =>
+            console.error("Municipios catalog failed to load:", err),
+          );
           cacheLoadedDraftForContinuation(data);
           populateFormWithData(data);
         } catch (err) {
