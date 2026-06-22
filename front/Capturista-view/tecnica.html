@@ -1915,12 +1915,12 @@
         const toStrOrNull = (v) => {
           const s = (v || "").trim();
           return s === "" ? null : s;
+        };
         const getRadioBoolOrNull = (name) => {
           const value = fd.get(name);
           if (value === "true") return true;
           if (value === "false") return false;
           return null;
-        }
         };
 
         return {
@@ -1930,7 +1930,7 @@
           control_cabeza: get("control_cabeza"),
           control_de_piernas: get("control_de_piernas"),
           padecimiento: get("padecimiento") || null,
-          soporte_oxigeno: getRadioBoolOrNull("soporte_oxigeno"),,
+          soporte_oxigeno: getRadioBoolOrNull("soporte_oxigeno"),
           observaciones_posturales: get("observaciones_posturales") || null,
           altura_total_in: toStrOrNull(get("altura_total_in")),
           peso_kg: toStrOrNull(get("peso_kg")),
@@ -2243,6 +2243,12 @@
 
         const fd = new FormData(f);
         const get = (name) => fd.get(name) || "";
+        const getRadioBoolOrNull = (name) => {
+          const value = fd.get(name);
+          if (value === "true") return true;
+          if (value === "false") return false;
+          return null;
+        };
 
         let foto_url = null;
         const fileInput = document.getElementById("file-upload");
