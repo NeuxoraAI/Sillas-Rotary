@@ -378,6 +378,26 @@ solicitudes_tecnicas  ──→  beneficiarios + usuarios
 | Headers de seguridad | X-Frame-Options, X-Content-Type-Options, Cache-Control |
 | Docs en producción | `/docs`, `/redoc`, `/openapi.json` desactivados cuando `ENV=production` |
 
+### Postura RLS y acceso a base de datos
+
+La autorización de negocio vive en FastAPI: cada endpoint protegido valida JWT,
+rol y propiedad de recursos antes de ejecutar consultas. PostgreSQL/Supabase RLS
+se usa como control de exposición directa para roles PostgREST (`anon` y
+`authenticated`), no como motor granular de autorización por usuario final.
+
+La aplicación debe conectarse con el rol `app_runtime` definido en
+`backend/migrations/0014_app_runtime_role.sql`, no con `postgres`. Ese rol tiene
+privilegios DML acotados, no puede hacer DDL, no es superusuario y no puede
+bypassear RLS. Para que el backend siga funcionando con RLS habilitado, la
+migración crea una política permisiva `app_runtime_all` por tabla existente; el
+filtrado por rol, propietario, región u organización sigue ocurriendo en FastAPI.
+
+Riesgo aceptado: si se filtra la credencial de `app_runtime`, la base de datos no
+aporta defensa granular por fila sobre las tablas de negocio. La mitigación
+operativa es mantener el secreto fuera del repositorio, rotarlo ante sospecha,
+restringir su alcance a DML y evitar conexiones de producción con `postgres` o
+roles con `BYPASSRLS`.
+
 ---
 
 ## Gates por Fase (Cleanup v2)

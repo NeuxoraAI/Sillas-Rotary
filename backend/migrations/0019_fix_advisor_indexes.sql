@@ -1,4 +1,4 @@
--- 0014: Resolve Supabase advisor index findings.
+-- 0019: Resolve Supabase advisor index findings.
 -- - Drop duplicate organizaciones_miembros(usuario_id) index.
 -- - Add missing coverage indexes for procesos_tecnicos user foreign keys.
 

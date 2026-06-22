@@ -46,3 +46,11 @@ No debe usarse en ningún entorno.
 - Migración `0002_add_foto_path_to_solicitudes_tecnicas.sql` agrega `foto_path` como campo canónico.
 - Durante la transición, la API mantiene **dual-write** (`foto_path` + `foto_url` derivada como `storage://fotos-tecnica/<path>`).
 - El endpoint autenticado de foto técnica (`GET /api/solicitudes/{id}/foto`) realiza backfill oportunista si encuentra registros legacy con solo `foto_url`.
+
+## Postura RLS y rol runtime
+
+- La autorización de negocio se implementa en FastAPI (`require_roles`, `assert_resource_owner` y validaciones por endpoint).
+- RLS restringe el acceso directo de roles PostgREST (`anon`/`authenticated`) a tablas de negocio; no modela permisos por usuario final.
+- Producción debe usar `DB_USER=app_runtime`, creado por `0014_app_runtime_role.sql`, en lugar de `postgres`.
+- `app_runtime` es `NOBYPASSRLS`, por lo que necesita una política permisiva `app_runtime_all` para cada tabla que use el backend.
+- Al crear una tabla nueva, la migración debe agregar también su política `app_runtime_all`; los grants futuros se heredan por default privileges, pero las políticas RLS no.
