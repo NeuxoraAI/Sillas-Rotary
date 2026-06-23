@@ -872,6 +872,21 @@
         }
         // Helper: boolean display
         function _bool(val) { return val ? '<span class="text-emerald-600 font-semibold">Sí</span>' : '<span class="text-slate-400">No</span>'; }
+        // Compose the tutor seniority from antiguedad_meses (total months stored
+        // by the backend as anios*12 + meses_extra). The legacy `antiguedad`
+        // column is always NULL, so derive years/months from the total.
+        function _formatAntiguedad(t) {
+          var total = t.antiguedad_meses;
+          if (total == null || total === "") return "—";
+          var n = Number(total);
+          if (!Number.isFinite(n) || n <= 0) return "—";
+          var anios = Math.floor(n / 12);
+          var meses = n % 12;
+          var parts = [];
+          if (anios) parts.push(anios + " " + (anios === 1 ? "año" : "años"));
+          if (meses) parts.push(meses + " " + (meses === 1 ? "mes" : "meses"));
+          return parts.length ? parts.join(" ") : "—";
+        }
 
         // ── Tutores ──
         var tutoresHtml = "";
@@ -897,7 +912,7 @@
                 _fd("Fuente empleo", sinEmp ? null : t.fuente_empleo) +
                 _fd("Ingreso mensual", t.ingreso_mensual != null ? "$" + Number(t.ingreso_mensual).toLocaleString("es-MX") : null) +
                 _fd("Antigüedad aplica", antAplica ? "Sí" : "No aplica") +
-                _fd("Antigüedad", antAplica ? (t.antiguedad || "—") : null) +
+                _fd("Antigüedad", antAplica ? _formatAntiguedad(t) : null) +
                 _fd("Otras fuentes", otrasAplica ? "Sí" : "No") +
                 _fd("Otra fuente", otrasAplica ? t.otras_fuentes_ingreso : null) +
                 _fd("Monto adicional", otrasAplica && t.monto_otras_fuentes ? "$" + Number(t.monto_otras_fuentes).toLocaleString("es-MX") : null) +
@@ -1073,8 +1088,13 @@
           r[prefix + "num_hijos"] = t.num_hijos != null ? String(t.num_hijos) : "";
           r[prefix + "vivienda"] = t.vivienda || "";
           r[prefix + "fuente_empleo"] = t.fuente_empleo || "";
-          r[prefix + "antiguedad_anios"] = t.antiguedad_anios != null ? String(t.antiguedad_anios) : "";
-          r[prefix + "antiguedad_meses_extra"] = t.antiguedad_meses_extra != null ? String(t.antiguedad_meses_extra) : "";
+          // Backend stores total months in antiguedad_meses; split it back into
+          // years + extra months for the edit form (the antiguedad_anios /
+          // antiguedad_meses_extra response fields do not exist).
+          var _antTotal = Number(t.antiguedad_meses);
+          var _antOk = Number.isFinite(_antTotal) && _antTotal > 0;
+          r[prefix + "antiguedad_anios"] = _antOk ? String(Math.floor(_antTotal / 12)) : "";
+          r[prefix + "antiguedad_meses_extra"] = _antOk ? String(_antTotal % 12) : "";
           r[prefix + "ingreso_mensual"] = t.ingreso_mensual != null ? String(t.ingreso_mensual) : "";
           r[prefix + "otras_fuentes_ingreso"] = t.otras_fuentes_ingreso || "";
           r[prefix + "monto_otras_fuentes"] = t.monto_otras_fuentes != null ? String(t.monto_otras_fuentes) : "";
