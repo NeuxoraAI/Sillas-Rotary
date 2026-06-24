@@ -1264,6 +1264,11 @@
             };
             setVal("silla_previa", data.silla_previa);
             setVal("como_obtuvo_silla", data.como_obtuvo_silla);
+            // setVal asigna .value sin disparar "change", así que re-sincronizamos
+            // el estado habilitado/deshabilitado de "¿Cómo la obtuvo?" según el
+            // valor restaurado de silla_previa (issue #120).
+            const sillaPreviaEl = document.querySelector('[name="silla_previa"]');
+            if (sillaPreviaEl) sillaPreviaEl.dispatchEvent(new Event("change"));
             setVal("fecha_estudio", data.fecha_estudio);
             setVal("entidad_solicitante", data.entidad_solicitante);
             if (data.prioridad) {
