@@ -24,6 +24,7 @@ Este documento define TODAS las reglas de validación del sistema. Cualquier cam
 | `unidad_medida` | in, cm | Sí |
 | `status` | borrador, completo | Sí |
 | `imss_estatus` / `infonavit_estatus` | SI, NO | Sí (para Tutor 1) |
+| `curp` | 18 caracteres `A-Z`/`0-9` con estructura CURP + dígito verificador | Sí |
 
 *Condicional: obligatorio cuando `tuvo_silla_previa = true`.
 
@@ -44,6 +45,7 @@ Este documento define TODAS las reglas de validación del sistema. Cualquier cam
 | `justificacion` | `^[a-zA-ZáéíóúÁÉÍÓÚäëïöüÄËÏÖÜñÑ0-9 ()\/\-.,:;]*$` | idéntica | ✅ |
 | `entidad_solicitante` | `^[a-zA-ZáéíóúÁÉÍÓÚäëïöüÄËÏÖÜñÑ0-9 ()\/\-.,]*$` | idéntica | ✅ |
 | `medida_*` | `^[0-9]+(\.[0-9]{1,3})?$` | idéntica | ✅ |
+| `curp` | `_CURP_RE` (ver abajo) | `CURP_RE` idéntica | ✅ |
 
 *Nota: El frontend permite minúsculas porque el backend normaliza a mayúsculas antes de validar.
 
@@ -61,6 +63,7 @@ Este documento define TODAS las reglas de validación del sistema. Cualquier cam
 | `ciudad` | 2 | 80 | longitud |
 | `num_ext` / `num_int` | 1 | 10 | longitud |
 | `telefonos` | 10 | 10 | dígitos exactos |
+| `curp` | 18 | 18 | caracteres exactos |
 | `observaciones_posturales` | 0 | 500 | longitud |
 | `justificacion` | 0 | 500 | longitud |
 | `entidad_solicitante` | 0 | 64 | longitud |
@@ -188,6 +191,37 @@ Este documento define TODAS las reglas de validación del sistema. Cualquier cam
 ## Estilo visual de campos deshabilitados
 
 > Los campos `disabled` dinámicamente usan la función `SR_Validations.setFieldDisabled(el, bool)` que agrega/remueve las clases `bg-slate-100 text-slate-400 cursor-not-allowed` junto con el atributo `disabled`. Campos `readonly` permanentes usan `bg-slate-100` en HTML estático.
+
+---
+
+## CURP (beneficiario) — Issue #32
+
+La **CURP** (`beneficiarios.curp_benef`) es el **identificador natural** del beneficiario
+y **sustituye al folio**. Es obligatoria al finalizar el estudio (opcional en borrador) y
+**única** a nivel de base de datos (`UNIQUE (curp_benef)` + `CHECK` de formato, migración
+`0020_curp_natural_key.sql`).
+
+**Normalización:** se recortan espacios y se convierte a **mayúsculas** en frontend y backend.
+Solo se permiten `A-Z` y `0-9` (18 caracteres exactos).
+
+**Regex (idéntica en `validators.py::_CURP_RE` y `validations.js::CURP_RE`):**
+
+```
+^[A-Z][AEIOUX][A-Z]{2}\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])[HM](AS|BC|BS|CC|CL|CM|CS|CH|DF|DG|GT|GR|HG|JC|MC|MN|MS|NT|NL|OC|PL|QT|QR|SP|SL|SR|TC|TS|TL|VZ|YN|ZS|NE)[B-DF-HJ-NP-TV-Z]{3}[A-Z\d]\d$
+```
+
+Estructura validada: 4 letras iniciales · 6 dígitos de fecha (mes 01–12, día 01–31) ·
+sexo `H`/`M` · código de entidad federativa (incluye `NE` = nacido en el extranjero) ·
+3 consonantes internas · homoclave · dígito verificador.
+
+**Dígito verificador:** además del formato, se valida el **dígito verificador oficial**
+en ambos lados (`_curp_digito_verificador` / `curpDigitoVerificador`), usando el
+diccionario `0123456789ABCDEFGHIJKLMNÑOPQRSTUVWXYZ` y los factores `18 - i` sobre los
+primeros 17 caracteres.
+
+**Duplicados:** al crear/actualizar un beneficiario, una CURP ya registrada produce
+**HTTP 409** (`detail.type = "curp_duplicada"`), que el frontend presenta con un modal
+amigable (`mostrarModalCurpDuplicada`).
 
 ---
 
