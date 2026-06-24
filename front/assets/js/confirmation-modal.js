@@ -75,6 +75,8 @@
     message.textContent = opts.message || "¿Deseas continuar?";
     icon.textContent = opts.icon || "warning";
     cancelBtn.textContent = opts.cancelText || "Cancelar";
+    // Alert mode: a single acknowledge button (e.g. blocking duplicate errors).
+    cancelBtn.classList.toggle("hidden", !!opts.hideCancel);
     confirmBtn.textContent = opts.confirmText || "Confirmar";
     setTone(overlay, opts.tone || "warning");
 

@@ -243,7 +243,7 @@
             <thead>
               <tr class="text-left text-xs text-slate-400 border-b border-slate-100">
                 <th class="font-semibold px-6 sm:px-8 py-3">Beneficiario</th>
-                <th class="font-semibold px-4 py-3">Folio</th>
+                <th class="font-semibold px-4 py-3">CURP</th>
                 <th class="font-semibold px-4 py-3">Fecha</th>
                 <th class="font-semibold px-4 py-3">Capturista</th>
                 <th class="font-semibold px-4 py-3">Estatus</th>
@@ -488,6 +488,7 @@
     const filtered = captures.filter(c => {
       const matchQ = !q
         || String(c.beneficiario_nombre || '').toLowerCase().includes(q)
+        || String(c.curp_benef || '').toLowerCase().includes(q)
         || String(c.folio || '').toLowerCase().includes(q);
       const matchSt = !st || c.status === st;
       return matchQ && matchSt;
@@ -511,7 +512,7 @@
             <span class="font-bold truncate" style="color: var(--c-title);">${_esc(c.beneficiario_nombre)}</span>
           </div>
         </td>
-        <td class="px-4 py-3.5 text-slate-500 font-medium whitespace-nowrap">${_esc(c.folio)}</td>
+        <td class="px-4 py-3.5 text-slate-500 font-medium whitespace-nowrap">${_esc(c.curp_benef || c.folio || '—')}</td>
         <td class="px-4 py-3.5 text-slate-500 whitespace-nowrap">
           <span class="inline-flex items-center gap-1.5">
             <span class="material-symbols-outlined text-base text-slate-400">calendar_today</span>
