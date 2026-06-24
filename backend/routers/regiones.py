@@ -128,6 +128,11 @@ def generate_folio(db: _DBAdapter, region_id: int) -> str:
     """
     Generate the next folio for the given region and current year.
 
+    DEPRECATED (Issue #32): folio is no longer the beneficiario identifier —
+    CURP (beneficiarios.curp_benef) replaced it. New estudios/borradores no
+    longer call this function; it is kept only for legacy/reporting use and is
+    no longer wired into the capture flow.
+
     Uses a single atomic INSERT ... ON CONFLICT DO UPDATE to safely
     increment the counter without race conditions.
 

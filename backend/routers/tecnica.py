@@ -146,12 +146,12 @@ def _build_list_where_clause(
     if q and q.strip():
         term = f"%{q.strip()}%"
         clauses.append(
-            "(b.nombre ILIKE %s OR b.folio ILIKE %s OR "
+            "(b.nombre ILIKE %s OR b.curp_benef ILIKE %s OR b.folio ILIKE %s OR "
             "b.ciudad ILIKE %s OR "
             "r.nombre ILIKE %s OR "
             "p.nombre ILIKE %s)"
         )
-        params.extend([term, term, term, term, term])
+        params.extend([term, term, term, term, term, term])
 
     # ── Sede ──────────────────────────────────────────────────────────────
     if sede and sede.strip():

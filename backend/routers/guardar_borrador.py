@@ -13,11 +13,11 @@ from pydantic import BaseModel, field_validator
 
 from database import get_db, _DBAdapter
 from routers.auth import CurrentUser, assert_resource_owner, require_roles
-from routers.regiones import generate_folio
-from routers.socioeconomico import _resolve_document_refs
+from routers.socioeconomico import _assert_curp_disponible, _resolve_document_refs
 from utils.text import normalize_text
 from validators import (
     validate_nombre,
+    validate_curp,
     validate_apellido,
     validate_diagnostico,
     validate_calle,
@@ -82,6 +82,7 @@ class GuardarBorradorRequest(BaseModel):
     nombres: Optional[str] = None
     apellido_paterno: Optional[str] = None
     apellido_materno: Optional[str] = None
+    curp: Optional[str] = None
     fecha_nacimiento: Optional[str] = None
     diagnostico: Optional[str] = None
     calle: Optional[str] = None
@@ -206,6 +207,11 @@ class GuardarBorradorRequest(BaseModel):
     @classmethod
     def _validar_apellidos(cls, v: Optional[str]) -> Optional[str]:
         return validate_optional(lambda x: validate_apellido(x, "apellido"))(v)
+
+    @field_validator("curp")
+    @classmethod
+    def _curp_valida(cls, v: Optional[str]) -> Optional[str]:
+        return validate_optional(validate_curp)(v)
 
     @field_validator("fecha_nacimiento")
     @classmethod
@@ -415,7 +421,8 @@ class GuardarBorradorResponse(BaseModel):
     estudio_id: int
     solicitud_id: int
     beneficiario_id: int
-    folio: str
+    curp: Optional[str] = None
+    folio: Optional[str] = None
     status: str
 
 
@@ -536,26 +543,25 @@ def _create_borrador(
     if body.region_id is None:
         raise HTTPException(status_code=422, detail="region_id es obligatorio para crear un borrador")
 
-    # Generate folio
-    try:
-        folio = generate_folio(db, body.region_id)
-    except HTTPException:
-        raise
-    except Exception:
-        raise HTTPException(status_code=422, detail="No se pudo generar el folio")
+    # Folio is no longer generated — CURP is the natural identifier (Issue #32).
+    folio = None
 
     nombre_composed = _compose_nombre(body) or None
 
+    # Reject a draft whose CURP already belongs to another beneficiario.
+    if body.curp:
+        _assert_curp_disponible(db, body.curp)
+
     try:
-        # 1. INSERT beneficiario
+        # 1. INSERT beneficiario (folio NULL — curp_benef is the identifier)
         beneficiario_id = db.execute(
             """
             INSERT INTO beneficiarios
-                (nombre, nombres, apellido_paterno, apellido_materno,
+                (nombre, nombres, apellido_paterno, apellido_materno, curp_benef,
                  fecha_nacimiento, diagnostico, calle, num_ext, num_int, colonia, ciudad,
                  estado_codigo, estado_nombre, sexo, telefonos, email,
                  folio, region_id, sede)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
             """,
             (
@@ -563,6 +569,7 @@ def _create_borrador(
                 body.nombres,
                 body.apellido_paterno,
                 body.apellido_materno,
+                body.curp,
                 body.fecha_nacimiento,
                 body.diagnostico,
                 body.calle,
@@ -692,6 +699,7 @@ def _create_borrador(
         estudio_id=estudio_id,
         solicitud_id=solicitud_id,
         beneficiario_id=beneficiario_id,
+        curp=body.curp,
         folio=folio,
         status=body.status or "borrador",
     )
@@ -768,16 +776,18 @@ def _update_borrador(
     except Exception as exc:
         raise HTTPException(status_code=500, detail="Error interno al actualizar el borrador") from exc
 
-    # Fetch current folio
+    # Fetch current CURP / folio for the response
     ben_row = db.execute(
-        "SELECT folio FROM beneficiarios WHERE id = %s", (beneficiario_id,)
+        "SELECT curp_benef, folio FROM beneficiarios WHERE id = %s", (beneficiario_id,)
     ).fetchone()
-    folio = ben_row["folio"] if ben_row else ""
+    curp = ben_row["curp_benef"] if ben_row else None
+    folio = ben_row["folio"] if ben_row else None
 
     return GuardarBorradorResponse(
         estudio_id=body.estudio_id,
         solicitud_id=solicitud_id or 0,
         beneficiario_id=beneficiario_id,
+        curp=curp,
         folio=folio,
         status="borrador",
     )
@@ -786,10 +796,14 @@ def _update_borrador(
 def _patch_beneficiario(db: _DBAdapter, body: GuardarBorradorRequest, ben_id: int) -> None:
     """Build and execute a partial UPDATE for beneficiario."""
     fields: dict[str, any] = {}
+    # CURP changes go through the duplicate check (excluding this beneficiario).
+    if body.curp is not None:
+        _assert_curp_disponible(db, body.curp, exclude_id=ben_id)
     ben_mappings = [
         ("nombres", body.nombres),
         ("apellido_paterno", body.apellido_paterno),
         ("apellido_materno", body.apellido_materno),
+        ("curp_benef", body.curp),
         ("fecha_nacimiento", body.fecha_nacimiento),
         ("diagnostico", body.diagnostico),
         ("calle", body.calle),

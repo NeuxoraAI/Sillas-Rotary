@@ -79,6 +79,7 @@ def _validate_all_complete(
     # ── Beneficiario required fields ───────────────────────────────────────
     ben_required = [
         "nombres", "apellido_paterno", "apellido_materno",
+        "curp_benef",
         "fecha_nacimiento", "diagnostico",
         "calle", "colonia", "ciudad", "estado_codigo",
         "sexo", "telefonos",

@@ -346,9 +346,9 @@ def get_my_beneficiarios(
         params.append(status)
 
     if q is not None:
-        conditions.append("(b.nombre ILIKE %s OR b.folio ILIKE %s)")
+        conditions.append("(b.nombre ILIKE %s OR b.curp_benef ILIKE %s OR b.folio ILIKE %s)")
         search_pattern = f"%{q}%"
-        params.extend([search_pattern, search_pattern])
+        params.extend([search_pattern, search_pattern, search_pattern])
 
     where_clause = " AND ".join(conditions)
 
@@ -391,6 +391,7 @@ def get_my_beneficiarios(
             b.sexo,
             b.telefonos,
             b.email,
+            b.curp_benef,
             b.folio,
             b.region_id,
             b.created_at              AS beneficiario_created_at
@@ -442,6 +443,7 @@ def get_my_beneficiarios(
             "telefonos": r["telefonos"],
             "email": r["email"],
             "sexo": r["sexo"],
+            "curp_benef": r["curp_benef"],
             "folio": r["folio"],
             "region_id": r["region_id"],
         }
