@@ -27,9 +27,17 @@ from conftest import (
 class TestTablesOrder:
     """Verify _TABLES_ORDER is in correct dependency order (children first)."""
 
-    def test_organizaciones_lideres_is_first(self) -> None:
-        """organizaciones_lideres should be first — child of organizaciones/usuarios."""
+    def test_dead_historial_estados_not_in_cleanup(self) -> None:
+        """historial_estados is a dead table (no runtime use, no DDL/migration);
+        it must NOT appear in the cleanup ordering. See issue #116."""
+        assert "historial_estados" not in _TABLES_ORDER
+
+    def test_first_table_is_a_leaf_child(self) -> None:
+        """The first table to clean must be a leaf child — organizaciones_lideres
+        (FK to organizaciones/usuarios), deleted before its parents."""
         assert _TABLES_ORDER[0] == "organizaciones_lideres"
+        assert _TABLES_ORDER.index("organizaciones_lideres") < _TABLES_ORDER.index("organizaciones")
+        assert _TABLES_ORDER.index("organizaciones_lideres") < _TABLES_ORDER.index("usuarios")
 
     def test_beneficiarios_before_paises(self) -> None:
         """beneficiarios must be deleted before paises (FK via regiones)."""
