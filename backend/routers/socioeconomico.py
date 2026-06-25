@@ -968,10 +968,15 @@ def actualizar_estudio(
             _insertar_tutores(db, existing["beneficiario_id"], tutores_a_insertar)
 
     fields = body.model_dump(exclude_none=True, exclude={"tutores", "elaboro_estudio", "ciudad_registro", "beneficiario"})
-    # Conditional elaboro_estudio: org users can provide their own value
+    # Conditional elaboro_estudio (autoría del estudio):
+    # - org users can provide their own value (nombre del voluntario);
+    # - el dueño (capturista) fija su propio nombre;
+    # - un editor que NO es el dueño (admin / líder de organización sobre un
+    #   registro ajeno) NO debe pisar la autoría: se omite el campo del UPDATE.
+    is_owner = existing["usuario_id"] == usuario.usuario_id
     if usuario.rol == "organizacion" and body.elaboro_estudio:
         fields["elaboro_estudio"] = normalize_text(body.elaboro_estudio)[:120]
-    else:
+    elif is_owner:
         fields["elaboro_estudio"] = usuario.nombre
     if "tuvo_silla_previa" in fields:
         fields["tuvo_silla_previa"] = int(fields["tuvo_silla_previa"])
