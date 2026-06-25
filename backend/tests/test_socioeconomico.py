@@ -365,6 +365,51 @@ class TestSocioeconomicoRbac:
         assert get_response.status_code == 200
         assert get_response.json()["id"] == estudio_id
 
+    def test_admin_patch_preserves_elaboro_estudio(self, client, admin_headers, capturista_headers, region_lon):
+        """Issue #107: el admin editando un estudio ajeno no debe pisar la autoría
+        (`elaboro_estudio`) con su propio nombre."""
+        create_response = client.post(
+            "/api/estudios",
+            headers=capturista_headers,
+            json=_estudio_payload(region_lon["id"]),
+        )
+        assert create_response.status_code == 201
+        estudio_id = create_response.json()["estudio_id"]
+
+        # El capturista dueño dejó la autoría como "Capturista Test"
+        before = client.get(f"/api/estudios/{estudio_id}", headers=admin_headers).json()
+        assert before["elaboro_estudio"] == "Capturista Test"
+
+        # El admin edita un campo cualquiera sin enviar elaboro_estudio
+        patch_response = client.patch(
+            f"/api/estudios/{estudio_id}",
+            headers=admin_headers,
+            json={"monto_otras_fuentes": 1500},
+        )
+        assert patch_response.status_code == 200
+
+        after = client.get(f"/api/estudios/{estudio_id}", headers=admin_headers).json()
+        assert after["elaboro_estudio"] == "Capturista Test"
+
+    def test_owner_patch_sets_own_name_as_elaboro_estudio(self, client, capturista_headers, region_lon):
+        """El dueño (capturista) sí fija su propio nombre en `elaboro_estudio` al
+        editar su estudio (contrato existente, sin cambios)."""
+        payload = _estudio_payload(region_lon["id"])
+        payload["estudio"]["elaboro_estudio"] = "VALOR VIEJO"
+        create_response = client.post("/api/estudios", headers=capturista_headers, json=payload)
+        assert create_response.status_code == 201
+        estudio_id = create_response.json()["estudio_id"]
+
+        patch_response = client.patch(
+            f"/api/estudios/{estudio_id}",
+            headers=capturista_headers,
+            json={"monto_otras_fuentes": 1500},
+        )
+        assert patch_response.status_code == 200
+
+        after = client.get(f"/api/estudios/{estudio_id}", headers=capturista_headers).json()
+        assert after["elaboro_estudio"] == "Capturista Test"
+
 
 class TestSocioeconomicoMonetaryContract:
     def test_post_persists_clean_numeric_monetary_fields(self, client, capturista_headers, region_lon):
