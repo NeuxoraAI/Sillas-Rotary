@@ -206,56 +206,39 @@ class TestAdminEstudioUpdateRequest:
         body = AdminEstudioUpdateRequest()
         assert body.model_dump(exclude_none=True) == {}
 
-    def test_status_valid(self):
-        """Valid status passes (model_validator requires fecha_estudio when completo)."""
-        body = AdminEstudioUpdateRequest(status="borrador")
-        assert body.status == "borrador"
-
-    def test_status_completo_requires_fecha(self):
-        """status=completo requires fecha_estudio due to model_validator."""
-        with pytest.raises(ValueError, match="fecha_estudio es obligatorio cuando status es completo"):
-            AdminEstudioUpdateRequest(status="completo")
-
-    def test_status_invalid(self):
-        """Invalid status raises ValueError."""
-        with pytest.raises(ValueError, match="status fuera de catálogo"):
-            AdminEstudioUpdateRequest(status="invalido")
+    def test_status_is_ignored(self):
+        """Issue #106: el admin no puede mutar `status`. El campo ya no existe
+        en el modelo y un `status` enviado por un cliente legado se descarta.
+        """
+        body = AdminEstudioUpdateRequest(status="completo")
+        assert "status" not in body.model_dump(exclude_none=True)
+        assert not hasattr(body, "status")
+        assert "status" not in AdminEstudioUpdateRequest.model_fields
 
     def test_fecha_estudio_no_validator_in_model(self):
         """fecha_estudio has no field_validator in AdminEstudioUpdateRequest
         (validation happens at router level via validate_fecha_estudio).
         """
-        body = AdminEstudioUpdateRequest(fecha_estudio="15-01-2026", status="borrador")
+        body = AdminEstudioUpdateRequest(fecha_estudio="15-01-2026")
         assert body.fecha_estudio == "15-01-2026"  # no validation in model
 
-    def test_tuvo_silla_previa_requires_como_obtuvo(self):
-        """If status=completo and tuvo_silla_previa=True, como_obtuvo_silla is required."""
-        with pytest.raises(ValueError, match="como_obtuvo_silla es obligatorio"):
-            AdminEstudioUpdateRequest(
-                status="completo",
-                tuvo_silla_previa=True,
-                fecha_estudio="2026-01-15",
-            )
-
     def test_tuvo_silla_previa_valid(self):
-        """tuvo_silla_previa=False with status=completo passes."""
+        """tuvo_silla_previa is accepted without status coupling (Issue #106)."""
         body = AdminEstudioUpdateRequest(
-            status="completo",
             tuvo_silla_previa=False,
             fecha_estudio="2026-01-15",
         )
         assert body.tuvo_silla_previa is False
 
-    def test_como_obtuvo_silla_no_validator_when_borrador(self):
-        """como_obtuvo_silla is NOT validated when status != completo.
-        The catalog validation only happens in the router endpoint via _resolve_como_obtuvo_silla.
+    def test_como_obtuvo_silla_no_validator_in_model(self):
+        """como_obtuvo_silla catalog validation only happens in the router endpoint
+        via _resolve_como_obtuvo_silla, not in the model.
         """
         body = AdminEstudioUpdateRequest(
             tuvo_silla_previa=True,
             como_obtuvo_silla="ROBADA",
-            status="borrador",
         )
-        assert body.como_obtuvo_silla == "ROBADA"  # no validation in model when borrador
+        assert body.como_obtuvo_silla == "ROBADA"  # no validation in model
 
 
 # ---------------------------------------------------------------------------
@@ -407,10 +390,14 @@ class TestAdminGestionUpdateRequest:
         with pytest.raises(ValueError, match="prioridad fuera de catálogo"):
             AdminGestionUpdateRequest(prioridad="Baja")
 
-    def test_status_estudio_invalid(self):
-        """Invalid status_estudio raises ValueError (validate_status uses 'status' as field name)."""
-        with pytest.raises(ValueError, match="status fuera de catálogo"):
-            AdminGestionUpdateRequest(status_estudio="rechazado")
+    def test_status_estudio_is_ignored(self):
+        """Issue #106: el admin no puede mutar el status del estudio desde /gestion.
+        `status_estudio` ya no existe en el modelo y se descarta si se envía.
+        """
+        body = AdminGestionUpdateRequest(status_estudio="completo")
+        assert "status_estudio" not in body.model_dump(exclude_none=True)
+        assert not hasattr(body, "status_estudio")
+        assert "status_estudio" not in AdminGestionUpdateRequest.model_fields
 
 
 # ---------------------------------------------------------------------------
