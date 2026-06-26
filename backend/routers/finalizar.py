@@ -217,7 +217,10 @@ def finalizar_registro(
         estudio_row["usuario_id"], usuario,
         db=db, estudio_id=body.estudio_id,
     )
-    assert_resource_owner(solicitud_row["usuario_id"], usuario)
+    assert_resource_owner(
+        solicitud_row["usuario_id"], usuario,
+        db=db, estudio_id=body.estudio_id,
+    )
 
     # 3. Idempotency: if both already completo, return early
     if estudio_row["status"] == "completo" and solicitud_row["status"] == "completo":
