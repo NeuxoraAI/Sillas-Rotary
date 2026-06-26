@@ -630,6 +630,81 @@ class TestFinalizarRegistroEndpoint:
 
         assert res.status_code == 403, f"Expected 403, got {res.status_code}: {res.text}"
 
+    def test_org_leader_can_finalize_linked_registration(
+        self, client, admin_headers, organizacion_user,
+        capturista_user, capturista_headers, _test_db_conn, region_lon,
+    ):
+        """Regression #109: an org leader authorized for the estudio must also
+        pass the solicitud ownership check when finalizing. Previously the
+        solicitud check called assert_resource_owner without db/estudio_id, so
+        the leader bypass never ran and the leader got 403 on the linked
+        technical request."""
+        # Estudio + solicitud owned by the organization account.
+        ids = self._seed_borrador_estudio(_test_db_conn, region_lon, organizacion_user)
+
+        # Link the org to the capturing account so org-owned records match the
+        # leader-bypass query (organizaciones.usuario_id == row.usuario_id).
+        org_response = client.post(
+            "/api/organizaciones",
+            headers=admin_headers,
+            json={"nombre": "Rotary Finalizar Test", "usuario_id": organizacion_user["id"]},
+        )
+        assert org_response.status_code == 201, org_response.text
+        org_id = org_response.json()["id"]
+
+        # capturista_user is the leader of that organization (distinct from owner).
+        leader_assign = client.post(
+            f"/api/organizaciones/{org_id}/lider",
+            headers=admin_headers,
+            json={"lider_usuario_id": capturista_user["id"]},
+        )
+        assert leader_assign.status_code == 200, leader_assign.text
+
+        # Leader finalizes the full registration (estudio + linked solicitud) → 200
+        res = client.post(
+            "/api/finalizar-registro",
+            json={"estudio_id": ids["estudio_id"], "solicitud_id": ids["solicitud_id"]},
+            headers=capturista_headers,
+        )
+        assert res.status_code == 200, f"Expected 200, got {res.status_code}: {res.text}"
+        assert res.json()["status"] == "completo"
+
+    def test_non_leader_non_owner_returns_403_on_finalize(
+        self, client, organizacion_user, _test_db_conn, region_lon,
+    ):
+        """Boundary for #109: a user who is neither owner, nor org leader, nor
+        admin still gets 403 — the leader bypass must not over-grant."""
+        ids = self._seed_borrador_estudio(_test_db_conn, region_lon, organizacion_user)
+
+        # Unrelated capturista: not the owner, not a leader, not admin.
+        import psycopg2.extras
+        from passlib.context import CryptContext
+        pwd_ctx = CryptContext(schemes=["bcrypt"], deprecated="auto")
+        with _test_db_conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                """
+                INSERT INTO usuarios (nombre, email, password_hash, rol)
+                VALUES (%s, %s, %s, %s) RETURNING id
+                """,
+                ("Outsider 109", "outsider109@test.mx",
+                 pwd_ctx.hash("outsider109pass"), "capturista"),
+            )
+        _test_db_conn.commit()
+
+        login_res = client.post(
+            "/api/auth/login",
+            json={"email": "outsider109@test.mx", "password": "outsider109pass"},
+        )
+        assert login_res.status_code == 200
+        outsider_headers = {"Authorization": f"Bearer {login_res.json()['access_token']}"}
+
+        res = client.post(
+            "/api/finalizar-registro",
+            json={"estudio_id": ids["estudio_id"], "solicitud_id": ids["solicitud_id"]},
+            headers=outsider_headers,
+        )
+        assert res.status_code == 403, f"Expected 403, got {res.status_code}: {res.text}"
+
     def test_already_completed_returns_200_idempotent(self, client, capturista_headers, _test_db_conn, region_lon, capturista_user):
         """TRIANGULATE: second call returns already_completed=true."""
         ids = self._seed_borrador_estudio(_test_db_conn, region_lon, capturista_user)
