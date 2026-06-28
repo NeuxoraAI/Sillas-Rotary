@@ -8,7 +8,7 @@ from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel, field_validator, model_validator, ValidationInfo
+from pydantic import BaseModel, field_validator, ValidationInfo
 from decimal import Decimal
 
 from database import get_db, _DBAdapter
@@ -45,7 +45,6 @@ from validators import (
     validate_control_de_piernas,
     validate_unidad_medida,
     validate_unidad_peso,
-    validate_status,
 )
 
 from utils.text import normalize_text
@@ -197,21 +196,18 @@ class AdminBeneficiarioUpdateRequest(BaseModel):
 
 
 class AdminEstudioUpdateRequest(BaseModel):
-    """Admin edit of estudio fields (no owner check)."""
+    """Admin edit of estudio fields (no owner check).
+
+    Issue #106: el admin NO puede mutar `status` (completo <-> borrador). El
+    campo se omite deliberadamente; al usar `extra="ignore"` (default de
+    Pydantic) un `status` enviado por un cliente legado se descarta en silencio.
+    """
     tuvo_silla_previa: Optional[bool] = None
     como_obtuvo_silla: Optional[str] = None
     fecha_estudio: Optional[str] = None
     sede: Optional[str] = None
     ciudad_registro: Optional[str] = None
-    status: Optional[str] = None
     elaboro_estudio: Optional[str] = None
-
-    @field_validator("status")
-    @classmethod
-    def _status_valido(cls, v: Optional[str]) -> Optional[str]:
-        if v is None or v == "":
-            return v
-        return validate_status(v)
 
     @field_validator("como_obtuvo_silla", "ciudad_registro", mode="before")
     @classmethod
@@ -219,17 +215,6 @@ class AdminEstudioUpdateRequest(BaseModel):
         if v is None or v == "":
             return v
         return normalize_text(v)
-
-    @model_validator(mode="after")
-    def _validar_fecha_estudio_completo(self):
-        if self.status == "completo":
-            if not self.fecha_estudio:
-                raise ValueError("fecha_estudio es obligatorio cuando status es completo")
-            if self.tuvo_silla_previa is None:
-                raise ValueError("tuvo_silla_previa es obligatorio cuando status es completo")
-            if self.tuvo_silla_previa is True and (self.como_obtuvo_silla is None or self.como_obtuvo_silla == ""):
-                raise ValueError("como_obtuvo_silla es obligatorio cuando tuvo_silla_previa es verdadero")
-        return self
 
 
 class AdminSolicitudUpdateRequest(BaseModel):
@@ -251,7 +236,7 @@ class AdminSolicitudUpdateRequest(BaseModel):
     entidad_solicitante: Optional[str] = None
     prioridad: Optional[str] = None
     justificacion: Optional[str] = None
-    status: Optional[str] = None
+    # Issue #106: `status` se omite — el admin no puede revertir completo->borrador.
 
     @field_validator("entorno")
     @classmethod
@@ -332,13 +317,6 @@ class AdminSolicitudUpdateRequest(BaseModel):
             return None
         return validate_justificacion(str(v))
 
-    @field_validator("status")
-    @classmethod
-    def _status_valido(cls, v: Optional[str]) -> Optional[str]:
-        if v is None or v == "":
-            return v
-        return validate_status(v)
-
 
 class AdminGestionUpdateRequest(BaseModel):
     """Atomic update of estudio + solicitud in one transaction."""
@@ -349,7 +327,7 @@ class AdminGestionUpdateRequest(BaseModel):
     sede: Optional[str] = None
     ciudad_registro: Optional[str] = None
     elaboro_estudio: Optional[str] = None
-    status_estudio: Optional[str] = None
+    # Issue #106: `status_estudio` se omite — el admin no puede mutar el status.
     # Solicitud fields
     entidad_solicitante: Optional[str] = None
     prioridad: Optional[str] = None
@@ -361,13 +339,6 @@ class AdminGestionUpdateRequest(BaseModel):
         if v is None or v == "":
             return v
         return normalize_text(v)
-
-    @field_validator("status_estudio")
-    @classmethod
-    def _status_valido(cls, v: Optional[str]) -> Optional[str]:
-        if v is None or v == "":
-            return v
-        return validate_status(v)
 
     @field_validator("entidad_solicitante", mode="before")
     @classmethod
@@ -389,17 +360,6 @@ class AdminGestionUpdateRequest(BaseModel):
         if v is None or (isinstance(v, str) and v.strip() == ""):
             return None
         return validate_justificacion(str(v))
-
-    @model_validator(mode="after")
-    def _validar_estudio_completo(self):
-        if self.status_estudio == "completo":
-            if not self.fecha_estudio:
-                raise ValueError("fecha_estudio es obligatorio cuando status es completo")
-            if self.tuvo_silla_previa is None:
-                raise ValueError("tuvo_silla_previa es obligatorio cuando status es completo")
-            if self.tuvo_silla_previa is True and (self.como_obtuvo_silla is None or self.como_obtuvo_silla == ""):
-                raise ValueError("como_obtuvo_silla es obligatorio cuando tuvo_silla_previa es verdadero")
-        return self
 
 
 # ---------------------------------------------------------------------------
@@ -828,9 +788,7 @@ def actualizar_gestion_admin(
         if val is not None:
             estudio_fields[key] = val
 
-    # status_estudio mapped to estudio's status
-    if body.status_estudio is not None:
-        estudio_fields["status"] = body.status_estudio
+    # Issue #106: el admin no puede mutar el status del estudio desde /gestion.
 
     if "tuvo_silla_previa" in estudio_fields:
         estudio_fields["tuvo_silla_previa"] = int(estudio_fields["tuvo_silla_previa"])
