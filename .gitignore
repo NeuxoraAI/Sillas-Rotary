@@ -52,3 +52,4 @@ backend/server.log
 # FIXES and PRD documentation (local audit docs, not for repo)
 FIXES_*.md
 PRD_*.md
+FIX_*.md
