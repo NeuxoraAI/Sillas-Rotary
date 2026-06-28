@@ -941,6 +941,8 @@ html.dark .badge-finalizado  { background: rgba(34, 197, 94, 0.20); color: #86EF
   white-space: nowrap;
 }
 .badge .material-symbols-outlined { font-size: 13px; }
+.badge--lg { padding: 6px 14px; font-size: var(--text-sm); }
+.badge--lg .material-symbols-outlined { font-size: 16px; }
 .badge--neutral { background: var(--c-neutral-bg); color: var(--c-neutral); }
 .badge--success { background: var(--c-success-bg); color: var(--c-success); }
 .badge--warning { background: var(--c-warning-bg); color: var(--c-warning); }
