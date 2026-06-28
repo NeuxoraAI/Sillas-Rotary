@@ -628,34 +628,34 @@
             <div class="flex items-center justify-end gap-1">
               ${u.rol === 'organizacion' && u.activo
                 ? `<button onclick="gestionarOrganizacion(${u.usuario_id})"
-                  class="w-9 h-9 rounded-xl border border-primary/10 text-primary hover:bg-purple-50 hover:border-primary/20 transition-all inline-flex items-center justify-center"
+                  class="btn-icon hover:bg-purple-50 hover:text-primary hover:border-primary/30"
                   title="Gestionar organización">
-                  <span class="material-symbols-outlined text-xl">settings</span>
+                  <span class="material-symbols-outlined">settings</span>
                 </button>`
                 : ''
               }
               <button onclick="openEditUser(${u.usuario_id}, ${JSON.stringify(u.nombre)}, ${JSON.stringify(u.email)}, ${JSON.stringify(u.rol)})"
-                class="w-9 h-9 rounded-xl border border-slate-200 text-slate-500 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-all inline-flex items-center justify-center"
+                class="btn-icon hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200"
                 title="Editar usuario">
-                <span class="material-symbols-outlined text-xl">edit</span>
+                <span class="material-symbols-outlined">edit</span>
               </button>
               ${
                 u.activo
                   ? `<button onclick="deactivateUsuario(${u.usuario_id})"
-                class="w-9 h-9 rounded-xl border border-amber-100 text-amber-500 hover:bg-amber-50 hover:text-amber-700 hover:border-amber-200 transition-all inline-flex items-center justify-center"
+                class="btn-icon hover:bg-amber-50 hover:text-amber-700 hover:border-amber-200"
                 title="Desactivar usuario">
-                <span class="material-symbols-outlined text-xl">person_off</span>
+                <span class="material-symbols-outlined">person_off</span>
               </button>`
                   : `<button onclick="reactivateUsuario(${u.usuario_id})"
-                class="w-9 h-9 rounded-xl border border-green-100 text-green-500 hover:bg-green-50 hover:text-green-700 hover:border-green-200 transition-all inline-flex items-center justify-center"
+                class="btn-icon hover:bg-green-50 hover:text-green-700 hover:border-green-200"
                 title="Reactivar usuario">
-                <span class="material-symbols-outlined text-xl">person_check</span>
+                <span class="material-symbols-outlined">person_check</span>
               </button>`
               }
               <button onclick="hardDeleteUsuario(${u.usuario_id}, ${JSON.stringify(u.nombre)})"
-                class="w-9 h-9 rounded-xl border border-red-100 text-red-400 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all inline-flex items-center justify-center"
+                class="btn-icon hover:bg-red-50 hover:text-red-600 hover:border-red-200"
                 title="Eliminar permanentemente">
-                <span class="material-symbols-outlined text-xl">delete_forever</span>
+                <span class="material-symbols-outlined">delete_forever</span>
               </button>
             </div>
           </td>
@@ -1158,47 +1158,24 @@
       }
 
       function _rolBadge(rol) {
+        // Fixed category scale (system tokens only): roles stay distinguishable
+        // but share one component and harmonized visual weight.
         const map = {
-          admin: {
-            cls: "text-purple-700 border border-purple-200",
-            bg: "#F3EEF9",
-            icon: "shield_person",
-            label: "Admin",
-          },
-          capturista: {
-            cls: "text-orange-700 border border-orange-200",
-            bg: "#FFF1EB",
-            icon: "edit_note",
-            label: "Capturista",
-          },
-          tecnico: {
-            cls: "text-teal-700 border border-teal-200",
-            bg: "#EDFAF8",
-            icon: "build",
-            label: "Técnico",
-          },
-          organizacion: {
-            cls: "text-amber-700 border border-amber-200",
-            bg: "#FFFBEB",
-            icon: "groups",
-            label: "Organización",
-          },
+          admin:        { variant: "badge--role",    icon: "shield_person", label: "Admin" },
+          capturista:   { variant: "badge--brand",   icon: "edit_note",     label: "Capturista" },
+          tecnico:      { variant: "badge--info",     icon: "build",         label: "Técnico" },
+          organizacion: { variant: "badge--warning", icon: "groups",        label: "Organización" },
         };
-        const m = map[rol] || {
-          cls: "text-slate-600 border border-slate-200",
-          bg: "#F8FAFC",
-          icon: "person",
-          label: rol || "—",
-        };
-        return `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${m.cls}" style="background:${m.bg};">
-      <span class="material-symbols-outlined" style="font-size:13px">${m.icon}</span>${_esc(m.label)}
+        const m = map[rol] || { variant: "badge--neutral", icon: "person", label: rol || "—" };
+        return `<span class="badge ${m.variant}">
+      <span class="material-symbols-outlined">${m.icon}</span>${_esc(m.label)}
     </span>`;
       }
 
       function _estadoBadge(activo) {
         return activo
-          ? '<span class="inline-flex items-center gap-1.5 text-xs font-semibold text-green-700"><span class="w-2 h-2 rounded-full bg-green-500 inline-block shadow-[0_0_0_3px_rgba(34,197,94,0.15)]"></span>Activo</span>'
-          : '<span class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-400"><span class="w-2 h-2 rounded-full bg-slate-300 inline-block"></span>Inactivo</span>';
+          ? '<span class="badge badge--success"><span class="material-symbols-outlined">check_circle</span>Activo</span>'
+          : '<span class="badge badge--neutral">Inactivo</span>';
       }
 
       function _initial(nombre) {

@@ -927,6 +927,26 @@ html.dark .badge-finalizado  { background: rgba(34, 197, 94, 0.20); color: #86EF
 .btn-tertiary:active { transform: scale(0.98); }
 .btn-tertiary:disabled { opacity: 0.5; cursor: not-allowed; }
 
+/* ── Square icon-action button (toolbars, table row actions) ── */
+.btn-icon {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  border: 1px solid var(--c-separator);
+  background: transparent;
+  color: var(--c-gray);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s, border-color 0.15s, transform 0.15s;
+}
+.btn-icon:hover  { transform: translateY(-1px); }
+.btn-icon:active { transform: scale(0.95); }
+.btn-icon:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-icon .material-symbols-outlined { font-size: 20px; }
+
 /* ── Badge — one component, variants by category (estado / rol / organización) ── */
 .badge {
   display: inline-flex;
@@ -1025,6 +1045,7 @@ html.dark {
 }
 html.dark .t-body { color: #C9C2D6; }
 html.dark .btn-tertiary:hover { background: rgba(255, 255, 255, 0.07); color: var(--c-title); }
+html.dark .btn-icon { border-color: rgba(255, 255, 255, 0.12); color: #A89FB3; }
 html.dark .badge--outline { border-color: rgba(255, 255, 255, 0.16); color: var(--c-label); }
 html.dark .stat-card { background: rgba(27, 21, 41, 0.94); border-color: rgba(255, 255, 255, 0.07); }
 html.dark .stat-card__icon { background: rgba(255, 90, 31, 0.14); color: #FFB088; }
