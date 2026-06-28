@@ -118,17 +118,26 @@
         </div>
 
         <div class="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div class="rounded-xl p-5 bg-purple-50/70 border border-purple-100">
-            <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Capturas totales</p>
-            <p class="text-3xl font-bold mt-1" style="color: var(--c-title);" id="stat-capturas" data-countup>0</p>
+          <div class="stat-card">
+            <div class="stat-card__icon"><span class="material-symbols-outlined">content_paste</span></div>
+            <div class="stat-card__body">
+              <span class="stat-card__value" id="stat-capturas" data-countup>0</span>
+              <span class="stat-card__label">Capturas totales</span>
+            </div>
           </div>
-          <div class="bg-green-50 rounded-xl p-5 border border-green-100">
-            <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Completados</p>
-            <p class="text-3xl font-bold text-green-600 mt-1" id="stat-completados" data-countup>0</p>
+          <div class="stat-card stat-card--success">
+            <div class="stat-card__icon"><span class="material-symbols-outlined">task_alt</span></div>
+            <div class="stat-card__body">
+              <span class="stat-card__value" id="stat-completados" data-countup>0</span>
+              <span class="stat-card__label">Completados</span>
+            </div>
           </div>
-          <div class="bg-amber-50 rounded-xl p-5 border border-amber-100">
-            <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Este mes</p>
-            <p class="text-3xl font-bold text-amber-600 mt-1" id="stat-this-month" data-countup>0</p>
+          <div class="stat-card stat-card--info">
+            <div class="stat-card__icon"><span class="material-symbols-outlined">calendar_month</span></div>
+            <div class="stat-card__body">
+              <span class="stat-card__value" id="stat-this-month" data-countup>0</span>
+              <span class="stat-card__label">Este mes</span>
+            </div>
           </div>
         </div>
       </div>
@@ -433,7 +442,7 @@
               <p class="text-sm font-semibold text-slate-900 truncate">${_esc(l.nombre)}</p>
               <p class="text-xs text-slate-500 truncate">${_esc(l.email)}</p>
             </div>
-            <span class="text-xs font-medium text-amber-700 bg-amber-50 rounded-full px-2.5 py-0.5">Líder</span>
+            <span class="badge badge--brand">Líder</span>
           </div>
         `).join('');
       }
@@ -450,7 +459,7 @@
               <p class="text-sm font-semibold text-slate-900 truncate">${_esc(m.nombre)}</p>
               <p class="text-xs text-slate-500 truncate">${_esc(m.email)}</p>
             </div>
-            <span class="text-xs font-medium text-blue-700 bg-blue-50 rounded-full px-2.5 py-0.5">Miembro</span>
+            <span class="badge badge--info">Miembro</span>
           </div>
         `).join('');
       }
@@ -487,7 +496,7 @@
               <p class="text-sm font-semibold text-slate-900 truncate">${_esc(l.nombre)}</p>
               <p class="text-xs text-slate-500 truncate">${_esc(l.email)}</p>
             </div>
-            <span class="text-xs font-medium text-amber-700 bg-amber-50 rounded-full px-2.5 py-0.5">Líder</span>
+            <span class="badge badge--brand">Líder</span>
           </div>
         `).join('');
       }
@@ -505,7 +514,7 @@
               <p class="text-sm font-semibold text-slate-900 truncate">${_esc(m.nombre)}</p>
               <p class="text-xs text-slate-500 truncate">${_esc(m.email)}</p>
             </div>
-            <span class="text-xs font-medium text-blue-700 bg-blue-50 rounded-full px-2.5 py-0.5">Miembro</span>
+            <span class="badge badge--info">Miembro</span>
           </div>
         `).join('');
       }
@@ -547,7 +556,9 @@
       days.push({ date: d, dateStr, count: lookup[dateStr] || 0 });
     }
 
-    const heatColors = ['#ebedf0','#9be9a8','#40c463','#30a14e','#216e39'];
+    // Brand-aligned orange ramp (matches perfil-capturista; ties heatmap to UI).
+    const _dark = document.documentElement.classList.contains('dark');
+    const heatColors = [_dark ? '#2A2340' : '#F0E7E2', '#FFD3BE', '#FF9E70', '#FF6A2C', _dark ? '#FF5A1F' : '#E8410A'];
     let svg = `<svg width="${svgW}" height="${svgH}" xmlns="http://www.w3.org/2000/svg">`;
     const months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
     let lastMonth = -1;
