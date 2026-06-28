@@ -872,3 +872,165 @@ html.dark .badge-finalizado  { background: rgba(34, 197, 94, 0.20); color: #86EF
 @media (prefers-reduced-motion: reduce) {
   .sr-spark { animation: none; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FASE 0 — UNIFIED FOUNDATIONS
+   Type scale, semantic color scale, button hierarchy, Badge, stat-card and
+   micro-interaction primitives. Additive: pages opt in by using these classes.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── Type scale (single ramp, all modules) ── */
+  --text-page:   clamp(1.5rem, 1.15rem + 1.4vw, 1.875rem); /* page title  24→30 */
+  --text-h2:     1.25rem;    /* section title            20 */
+  --text-h3:     1.0625rem;  /* card title               17 */
+  --text-body:   0.9375rem;  /* body (matches inputs)    15 */
+  --text-sm:     0.8125rem;  /* secondary / table        13 */
+  --text-xs:     0.6875rem;  /* caption / eyebrow        11 */
+
+  /* ── Semantic status scale (AA ink on its own bg) ── */
+  --c-success:    #15803D;  --c-success-bg: #DCFCE7;
+  --c-warning:    #B45309;  --c-warning-bg: #FEF3C7;
+  --c-danger:     #B91C1C;  --c-danger-bg:  #FEE2E2;
+  --c-info:       #1D4ED8;  --c-info-bg:    #DBEAFE;
+  --c-neutral:    #475569;  --c-neutral-bg: #F1F5F9;
+  --c-role:       #7E22CE;  --c-role-bg:    rgba(147, 51, 234, 0.12);
+
+  /* ── Spacing rhythm ── */
+  --space-card:   1.25rem;   /* canonical inner card padding */
+}
+
+/* ── Type scale utilities ── */
+.t-page-title    { font-size: var(--text-page); font-weight: 800; line-height: 1.15; letter-spacing: -0.02em; color: var(--c-title); }
+.t-section-title { font-size: var(--text-h2);   font-weight: 700; line-height: 1.25; color: var(--c-title); }
+.t-card-title    { font-size: var(--text-h3);   font-weight: 700; line-height: 1.3;  color: var(--c-title); }
+.t-subtitle      { font-size: var(--text-body); font-weight: 400; line-height: 1.5;  color: var(--c-subtitle); }
+.t-body          { font-size: var(--text-body); line-height: 1.6; color: #334155; }
+.t-label         { font-size: var(--text-sm);   font-weight: 600; letter-spacing: 0.01em; color: var(--c-label); }
+.t-caption       { font-size: var(--text-xs);   font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--c-gray); }
+
+/* ── Tertiary / ghost button (third level under primary + secondary) ── */
+.btn-tertiary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: transparent;
+  color: var(--c-label);
+  font-weight: 600;
+  border: none;
+  border-radius: var(--radius-btn);
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s, transform 0.15s;
+}
+.btn-tertiary:hover  { background: rgba(43, 6, 61, 0.06); color: var(--c-title); }
+.btn-tertiary:active { transform: scale(0.98); }
+.btn-tertiary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Badge — one component, variants by category (estado / rol / organización) ── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.badge .material-symbols-outlined { font-size: 13px; }
+.badge--neutral { background: var(--c-neutral-bg); color: var(--c-neutral); }
+.badge--success { background: var(--c-success-bg); color: var(--c-success); }
+.badge--warning { background: var(--c-warning-bg); color: var(--c-warning); }
+.badge--danger  { background: var(--c-danger-bg);  color: var(--c-danger); }
+.badge--info    { background: var(--c-info-bg);    color: var(--c-info); }
+.badge--brand   { background: var(--c-orange-light); color: var(--c-orange-hover); }
+.badge--role    { background: var(--c-role-bg);    color: var(--c-role); }       /* rol */
+.badge--outline { background: transparent; border: 1px solid var(--c-separator); color: var(--c-label); } /* organización */
+
+/* ── Stat card — uniform metric tile (perfil, organización, admin) ── */
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-card);
+  transition: box-shadow 0.2s ease-out, transform 0.2s ease-out;
+}
+.stat-card:hover { box-shadow: var(--shadow-card-lg); transform: translateY(-2px); }
+.stat-card__icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--c-orange-light);
+  color: var(--c-orange);
+}
+.stat-card__icon .material-symbols-outlined { font-size: 22px; }
+.stat-card__body  { display: flex; flex-direction: column; line-height: 1.1; }
+.stat-card__value { font-size: 1.5rem; font-weight: 800; color: var(--c-title); letter-spacing: -0.01em; }
+.stat-card__label { font-size: var(--text-xs); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--c-gray); margin-top: 2px; }
+.stat-card--success .stat-card__icon { background: var(--c-success-bg); color: var(--c-success); }
+.stat-card--warning .stat-card__icon { background: var(--c-warning-bg); color: var(--c-warning); }
+.stat-card--info    .stat-card__icon { background: var(--c-info-bg);    color: var(--c-info); }
+.stat-card--danger  .stat-card__icon { background: var(--c-danger-bg);  color: var(--c-danger); }
+
+/* ── Interactive surface (clickable cards / rows) ── */
+.interactive { cursor: pointer; transition: transform 0.15s ease, box-shadow 0.2s ease, background-color 0.15s ease; }
+.interactive:hover { transform: translateY(-2px); }
+
+/* ── Skeleton loader ── */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: #ECE6E3;
+  border-radius: 8px;
+}
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+  animation: sr-shimmer 1.3s infinite;
+}
+@keyframes sr-shimmer { 100% { transform: translateX(100%); } }
+
+/* ── Success check pop ── */
+@keyframes sr-check-pop {
+  0%   { transform: scale(0); }
+  60%  { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+.sr-check { display: inline-block; animation: sr-check-pop 0.4s cubic-bezier(0.22, 1.4, 0.36, 1) both; }
+
+/* ── Dark-mode treatment for Fase 0 components ── */
+html.dark {
+  --c-success-bg: rgba(34, 197, 94, 0.18);  --c-success: #86EFAC;
+  --c-warning-bg: rgba(245, 158, 11, 0.18); --c-warning: #FCD34D;
+  --c-danger-bg:  rgba(239, 68, 68, 0.18);  --c-danger:  #FCA5A5;
+  --c-info-bg:    rgba(59, 130, 246, 0.18); --c-info:    #BFDBFE;
+  --c-neutral-bg: #2E2744;                  --c-neutral: #B4AAC2;
+  --c-role-bg:    rgba(147, 51, 234, 0.20); --c-role:    #D8B4FE;
+}
+html.dark .t-body { color: #C9C2D6; }
+html.dark .btn-tertiary:hover { background: rgba(255, 255, 255, 0.07); color: var(--c-title); }
+html.dark .badge--outline { border-color: rgba(255, 255, 255, 0.16); color: var(--c-label); }
+html.dark .stat-card { background: rgba(27, 21, 41, 0.94); border-color: rgba(255, 255, 255, 0.07); }
+html.dark .stat-card__icon { background: rgba(255, 90, 31, 0.14); color: #FFB088; }
+html.dark .skeleton { background: #2A2340; }
+html.dark .skeleton::after { background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent); }
+
+@media (prefers-reduced-motion: reduce) {
+  .stat-card:hover, .interactive:hover { transform: none; }
+  .skeleton::after { animation: none; }
+  .sr-check { animation: none; }
+}

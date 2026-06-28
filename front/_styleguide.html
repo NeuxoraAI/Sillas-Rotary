@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Style Guide — Fase 0 · Ecosistema VIDA UG</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block" rel="stylesheet"/>
+    <link href="assets/css/theme.css" rel="stylesheet"/>
+    <style>
+      body { padding: 2rem 1.5rem 4rem; }
+      .wrap { max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem; }
+      .panel { padding: 1.5rem 1.75rem; }
+      .row { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; }
+      .grid-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 1rem; }
+      .swatch { display: flex; flex-direction: column; gap: 4px; }
+      .swatch__chip { height: 44px; border-radius: 10px; border: 1px solid rgba(0,0,0,0.06); }
+    </style>
+  </head>
+  <body class="page-bg">
+    <div class="wrap">
+      <header class="row" style="justify-content: space-between;">
+        <div>
+          <p class="t-caption">Sistema de diseño · Fase 0</p>
+          <h1 class="t-page-title">Fundaciones visuales</h1>
+          <p class="t-subtitle">Escala tipográfica, color, botones, badges, stat-cards y microinteracciones.</p>
+        </div>
+        <button class="btn-tertiary" onclick="document.documentElement.classList.toggle('dark')">
+          <span class="material-symbols-outlined">dark_mode</span> Alternar tema
+        </button>
+      </header>
+
+      <!-- Type scale -->
+      <section class="card panel">
+        <h2 class="t-section-title" style="margin-bottom: 1rem;">Escala tipográfica</h2>
+        <p class="t-page-title">Page title — t-page-title</p>
+        <p class="t-section-title">Section title — t-section-title</p>
+        <p class="t-card-title">Card title — t-card-title</p>
+        <p class="t-body">Body — t-body. Texto de lectura con contraste alto y line-height cómodo para párrafos largos.</p>
+        <p class="t-subtitle">Subtitle — t-subtitle, para descripciones secundarias.</p>
+        <p class="t-label">Label — t-label</p>
+        <p class="t-caption">Caption / eyebrow — t-caption</p>
+      </section>
+
+      <!-- Buttons -->
+      <section class="card panel">
+        <h2 class="t-section-title" style="margin-bottom: 1rem;">Jerarquía de botones</h2>
+        <div class="row">
+          <button class="btn-primary" style="padding: 0.6rem 1.25rem;">Primario</button>
+          <button class="btn-secondary" style="padding: 0.6rem 1.25rem;">Secundario</button>
+          <button class="btn-tertiary" style="padding: 0.6rem 1.25rem;">Terciario / ghost</button>
+          <button class="btn-primary" style="padding: 0.6rem 1.25rem;" disabled>Deshabilitado</button>
+        </div>
+      </section>
+
+      <!-- Color scale -->
+      <section class="card panel">
+        <h2 class="t-section-title" style="margin-bottom: 1rem;">Escala de color semántica</h2>
+        <div class="grid-stats">
+          <div class="swatch"><div class="swatch__chip" style="background: var(--c-success-bg);"></div><span class="t-label" style="color: var(--c-success);">success</span></div>
+          <div class="swatch"><div class="swatch__chip" style="background: var(--c-warning-bg);"></div><span class="t-label" style="color: var(--c-warning);">warning</span></div>
+          <div class="swatch"><div class="swatch__chip" style="background: var(--c-danger-bg);"></div><span class="t-label" style="color: var(--c-danger);">danger</span></div>
+          <div class="swatch"><div class="swatch__chip" style="background: var(--c-info-bg);"></div><span class="t-label" style="color: var(--c-info);">info</span></div>
+          <div class="swatch"><div class="swatch__chip" style="background: var(--c-neutral-bg);"></div><span class="t-label" style="color: var(--c-neutral);">neutral</span></div>
+          <div class="swatch"><div class="swatch__chip" style="background: var(--c-role-bg);"></div><span class="t-label" style="color: var(--c-role);">role</span></div>
+        </div>
+      </section>
+
+      <!-- Badges -->
+      <section class="card panel">
+        <h2 class="t-section-title" style="margin-bottom: 1rem;">Badge — variantes por categoría</h2>
+        <div class="row">
+          <span class="badge badge--success"><span class="material-symbols-outlined">check_circle</span>Completado</span>
+          <span class="badge badge--warning">Borrador</span>
+          <span class="badge badge--danger">Vencido</span>
+          <span class="badge badge--info">En revisión</span>
+          <span class="badge badge--neutral">Sin iniciar</span>
+          <span class="badge badge--role">Capturista</span>
+          <span class="badge badge--brand">Admin</span>
+          <span class="badge badge--outline">Rotary León</span>
+        </div>
+      </section>
+
+      <!-- Stat cards -->
+      <section>
+        <h2 class="t-section-title" style="margin-bottom: 1rem;">Stat cards</h2>
+        <div class="grid-stats">
+          <div class="stat-card">
+            <div class="stat-card__icon"><span class="material-symbols-outlined">groups</span></div>
+            <div class="stat-card__body"><span class="stat-card__value">128</span><span class="stat-card__label">Total</span></div>
+          </div>
+          <div class="stat-card stat-card--success">
+            <div class="stat-card__icon"><span class="material-symbols-outlined">task_alt</span></div>
+            <div class="stat-card__body"><span class="stat-card__value">96</span><span class="stat-card__label">Completados</span></div>
+          </div>
+          <div class="stat-card stat-card--warning">
+            <div class="stat-card__icon"><span class="material-symbols-outlined">edit_note</span></div>
+            <div class="stat-card__body"><span class="stat-card__value">32</span><span class="stat-card__label">Borradores</span></div>
+          </div>
+          <div class="stat-card stat-card--info">
+            <div class="stat-card__icon"><span class="material-symbols-outlined">schedule</span></div>
+            <div class="stat-card__body"><span class="stat-card__value">7</span><span class="stat-card__label">Pendientes</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Skeleton + check -->
+      <section class="card panel">
+        <h2 class="t-section-title" style="margin-bottom: 1rem;">Microinteracciones</h2>
+        <div style="display: flex; flex-direction: column; gap: 0.6rem; max-width: 320px;">
+          <div class="skeleton" style="height: 16px; width: 70%;"></div>
+          <div class="skeleton" style="height: 16px; width: 90%;"></div>
+          <div class="skeleton" style="height: 16px; width: 50%;"></div>
+        </div>
+        <p class="t-body" style="margin-top: 1rem;">
+          Check de éxito:
+          <span class="sr-check material-symbols-outlined" style="color: var(--c-success); vertical-align: middle;">check_circle</span>
+        </p>
+      </section>
+    </div>
+  </body>
+</html>
