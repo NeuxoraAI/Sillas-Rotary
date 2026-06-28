@@ -1157,6 +1157,13 @@ html.dark .modal-scroll-hint { background: linear-gradient(to top, rgba(27, 21, 
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 .sr-select__trigger:hover { border-color: var(--c-orange); }
+.sr-select__trigger--disabled,
+.sr-select__trigger:disabled {
+  background: #f1f5f9;
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+.sr-select__trigger--disabled:hover { border-color: var(--c-input-border); }
 .sr-select__trigger[aria-expanded="true"] {
   border-color: var(--c-orange);
   box-shadow: 0 0 0 3px rgba(241, 90, 36, 0.18);

@@ -151,11 +151,25 @@
     });
     document.addEventListener("click", function (e) { if (!wrap.contains(e.target)) close(); });
 
-    // Keep the trigger label in sync when value changes or options repopulate
+    function syncDisabled() {
+      trigger.disabled = select.disabled;
+      trigger.classList.toggle("sr-select__trigger--disabled", select.disabled);
+      if (select.disabled) close();
+    }
+
+    // Keep the trigger in sync when value/options/disabled change (incl. async
+    // population like municipios, and enable/disable on estado selection)
     select.addEventListener("change", syncLabel);
-    new MutationObserver(syncLabel).observe(select, { childList: true });
+    // Forms that set .value programmatically (no native change) can dispatch
+    // a "sr:refresh" event to resync the trigger.
+    select.addEventListener("sr:refresh", function () { syncLabel(); syncDisabled(); });
+    new MutationObserver(function () { syncLabel(); syncDisabled(); }).observe(
+      select,
+      { childList: true, attributes: true, attributeFilter: ["disabled"] }
+    );
 
     syncLabel();
+    syncDisabled();
   }
 
   function enhanceAll(root) {
