@@ -300,6 +300,31 @@
 
     <!-- ── Main Content ────────────────────────────────────────────────────── -->
     <main class="flex-1 max-w-7xl mx-auto w-full px-4 py-6">
+      <!-- Summary -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">
+        <div class="stat-card">
+          <div class="stat-card__icon"><span class="material-symbols-outlined">assignment_ind</span></div>
+          <div class="stat-card__body">
+            <span class="stat-card__value" id="summary-asignados">0</span>
+            <span class="stat-card__label">Asignados</span>
+          </div>
+        </div>
+        <div class="stat-card stat-card--info">
+          <div class="stat-card__icon"><span class="material-symbols-outlined">visibility</span></div>
+          <div class="stat-card__body">
+            <span class="stat-card__value" id="summary-shown">0</span>
+            <span class="stat-card__label">En esta página</span>
+          </div>
+        </div>
+        <div class="stat-card stat-card--warning">
+          <div class="stat-card__icon"><span class="material-symbols-outlined">edit_note</span></div>
+          <div class="stat-card__body">
+            <span class="stat-card__value" id="summary-borradores">0</span>
+            <span class="stat-card__label">Borradores en página</span>
+          </div>
+        </div>
+      </div>
+
       <!-- Loading state -->
       <div
         id="state-loading"
@@ -971,6 +996,7 @@
           state.items = data.items || [];
           state.total = data.total || 0;
           state.page = data.page || 1;
+          updateSummary();
 
           if (state.items.length === 0) {
             showEmpty();
@@ -984,6 +1010,15 @@
         } finally {
           state.loading = false;
         }
+      }
+
+      // Top summary: assigned total, shown on this page, drafts on this page.
+      function updateSummary() {
+        const byId = function (id) { return document.getElementById(id); };
+        byId("summary-asignados").textContent = state.total;
+        byId("summary-shown").textContent = state.items.length;
+        byId("summary-borradores").textContent =
+          state.items.filter(function (i) { return i.solicitud_status === "borrador"; }).length;
       }
 
       // ═══════════════════════════════════════════════════════════════════════════
