@@ -1130,6 +1130,75 @@ html.dark .modal-scroll-hint { background: linear-gradient(to top, rgba(27, 21, 
 
 @media (prefers-reduced-motion: reduce) { .modal-scroll-hint::after { animation: none; } }
 
+/* ── Searchable select (combobox) — see assets/js/sr-select.js ── */
+.sr-select { position: relative; }
+.sr-select__native {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  min-height: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none;
+}
+.sr-select__trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  text-align: left;
+  background: var(--c-input-bg);
+  border: 1px solid var(--c-input-border);
+  border-radius: var(--radius-input);
+  color: #0f172a;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.sr-select__trigger:hover { border-color: var(--c-orange); }
+.sr-select__trigger[aria-expanded="true"] {
+  border-color: var(--c-orange);
+  box-shadow: 0 0 0 3px rgba(241, 90, 36, 0.18);
+}
+.sr-select__label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--text-body); }
+.sr-select__placeholder { color: var(--c-placeholder); }
+.sr-select__caret { font-size: 20px; color: var(--c-gray); flex-shrink: 0; }
+.sr-select__pop {
+  position: absolute;
+  z-index: 40;
+  left: 0;
+  right: 0;
+  top: calc(100% + 4px);
+  background: #fff;
+  border: 1px solid var(--c-input-border);
+  border-radius: var(--radius-input);
+  box-shadow: var(--shadow-card);
+  padding: 6px;
+  max-height: 280px;
+  display: flex;
+  flex-direction: column;
+  animation: fade-in 0.12s ease-out;
+}
+.sr-select__search { width: 100%; margin-bottom: 6px; }
+.sr-select__list { overflow-y: auto; }
+.sr-select__opt {
+  padding: 9px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: var(--text-body);
+  color: var(--c-label);
+}
+.sr-select__opt:hover,
+.sr-select__opt.active { background: var(--c-orange-light); color: var(--c-orange-hover); }
+.sr-select__opt[aria-selected="true"] { font-weight: 700; color: var(--c-orange-hover); }
+.sr-select__empty { padding: 12px; text-align: center; color: var(--c-gray); font-size: var(--text-sm); }
+
+html.dark .sr-select__trigger { background: var(--c-input-bg); color: #E8DFEE; }
+html.dark .sr-select__pop { background: #1B1529; border-color: var(--c-input-border); }
+html.dark .sr-select__opt { color: #C9C2D6; }
+@media (prefers-reduced-motion: reduce) { .sr-select__pop { animation: none; } }
+
 /* ── Dark-mode treatment for Fase 0 components ── */
 html.dark {
   --c-success-bg: rgba(34, 197, 94, 0.18);  --c-success: #86EFAC;
