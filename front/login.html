@@ -205,9 +205,10 @@
       <div class="flex-1 flex items-center justify-center p-0">
         <div class="video-player w-full h-full relative overflow-hidden">
           <video
-            loop muted playsinline controls preload="metadata"
+            autoplay loop muted playsinline preload="auto"
+            disablepictureinpicture tabindex="-1" aria-hidden="true"
             poster="assets/logo_hope_haven_h.webp"
-            class="w-full h-full object-cover"
+            class="w-full h-full object-cover pointer-events-none"
           >
             <source src="assets/video/VIDEOLOGIN.mp4" type="video/mp4"/>
             Tu navegador no soporta video HTML5.
