@@ -335,6 +335,17 @@
         window.location.href = "perfil-capturista.html";
       });
 
+      // Step-bar back links: warn before leaving with unsaved changes (no data loss)
+      document.querySelectorAll(".step-bar a.step-pill").forEach(function (a) {
+        a.addEventListener("click", async function (e) {
+          if (!formDirty) return;
+          e.preventDefault();
+          if (await AppConfirmation.confirmUnsavedNavigation()) {
+            window.location.href = a.getAttribute("href");
+          }
+        });
+      });
+
       // Role-gating: hide "Finalizar Registro" for non-capturista roles
       (function () {
         const rol = (sessionHeader?.rol || "").toLowerCase();
