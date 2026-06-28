@@ -256,38 +256,6 @@ class TestListWithInactive:
         assert pais_mx["id"] not in ids
 
 
-class TestFolioGeneration:
-    """Folio counter integration via /api/estudios (calls generate_folio inside)."""
-
-    def test_first_beneficiario_gets_001(self, client, capturista_headers, region_lon, pais_mx):
-        """First registration in MX/LON/2026 gets folio MX-LON-2026-001."""
-        payload = _estudio_payload(region_lon["id"], nombre="Bene Uno")
-        res = client.post("/api/estudios", json=payload, headers=capturista_headers)
-
-        assert res.status_code == 201
-        assert res.json()["folio"] == "MX-LON-2026-001"
-
-    def test_second_beneficiario_gets_002(self, client, capturista_headers, region_lon, pais_mx):
-        """Second registration in same region/year gets MX-LON-2026-002."""
-        payload1 = _estudio_payload(region_lon["id"], nombre="Bene Uno")
-        payload2 = _estudio_payload(region_lon["id"], nombre="Bene Dos", tel="4629999999")
-        client.post("/api/estudios", json=payload1, headers=capturista_headers)
-        res = client.post("/api/estudios", json=payload2, headers=capturista_headers)
-
-        assert res.status_code == 201
-        assert res.json()["folio"] == "MX-LON-2026-002"
-
-    def test_folio_counter_independent_per_region(self, client, capturista_headers, region_lon, region_ira, pais_mx):
-        """Different regions have independent counters."""
-        payload_lon = _estudio_payload(region_lon["id"], nombre="Bene LON")
-        payload_ira = _estudio_payload(region_ira["id"], nombre="Bene IRA", tel="4629999998")
-        client.post("/api/estudios", json=payload_lon, headers=capturista_headers)
-        res = client.post("/api/estudios", json=payload_ira, headers=capturista_headers)
-
-        assert res.status_code == 201
-        assert res.json()["folio"] == "MX-IRA-2026-001"
-
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

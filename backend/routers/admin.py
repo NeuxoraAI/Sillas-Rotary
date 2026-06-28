@@ -18,9 +18,10 @@ from routers.tecnica import (
     _build_snapshot,
     _calcular_edad,
 )
-from routers.socioeconomico import _resolve_como_obtuvo_silla
+from routers.socioeconomico import _assert_curp_disponible, _resolve_como_obtuvo_silla
 from validators import (
     validate_nombre,
+    validate_curp,
     validate_apellido,
     validate_email_format,
     validate_diagnostico,
@@ -67,6 +68,7 @@ class AdminBeneficiarioUpdateRequest(BaseModel):
     nombres: Optional[str] = None
     apellido_paterno: Optional[str] = None
     apellido_materno: Optional[str] = None
+    curp: Optional[str] = None
     fecha_nacimiento: Optional[str] = None
     diagnostico: Optional[str] = None
     calle: Optional[str] = None
@@ -115,6 +117,13 @@ class AdminBeneficiarioUpdateRequest(BaseModel):
         if v is None or v == "":
             return v
         return validate_apellido(v, "apellido_materno")
+
+    @field_validator("curp")
+    @classmethod
+    def _curp_valida(cls, v: Optional[str]) -> Optional[str]:
+        if v is None or v == "":
+            return v
+        return validate_curp(v)
 
     @field_validator("fecha_nacimiento")
     @classmethod
@@ -472,6 +481,7 @@ def listar_beneficiarios_admin(
         SELECT
             b.id AS beneficiario_id,
             b.nombre,
+            b.curp_benef,
             b.folio,
             b.telefonos,
             b.ciudad,
@@ -540,6 +550,7 @@ def exportar_beneficiarios_admin(
         f"""
         SELECT
             b.id AS beneficiario_id,
+            b.curp_benef,
             b.folio,
             b.nombre,
             b.email,
@@ -617,7 +628,7 @@ def exportar_beneficiarios_admin(
         edad = _calcular_edad(row.get("fecha_nacimiento"))
 
         ws.append([
-            row.get("folio") or row.get("beneficiario_id"),
+            row.get("curp_benef") or row.get("folio") or row.get("beneficiario_id"),
             row.get("nombre") or "",
             row.get("email") or "Sin correo",
             direccion,
@@ -698,6 +709,13 @@ def actualizar_beneficiario_admin(
         return {"beneficiario_id": beneficiario_id, "updated": False}
 
     fields = _nullify_empty_strings(fields)
+
+    # CURP maps to the curp_benef column; reject duplicates before updating.
+    if "curp" in fields:
+        curp_val = fields.pop("curp")
+        if curp_val is not None:
+            _assert_curp_disponible(db, curp_val, exclude_id=beneficiario_id)
+        fields["curp_benef"] = curp_val
 
     # Rebuild nombre from structured fields if all three are provided
     if "nombres" in fields or "apellido_paterno" in fields or "apellido_materno" in fields:

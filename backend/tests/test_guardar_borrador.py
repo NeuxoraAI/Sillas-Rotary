@@ -82,7 +82,7 @@ class TestCrearBorrador:
     """Integration tests for creating a new borrador."""
 
     def test_create_with_all_empty_fields_returns_201(self, client, capturista_headers, region_lon):
-        """CREATE mode: all null fields → 201 with folio generated."""
+        """CREATE mode: all null fields → 201 (folio ya no se genera; CURP es el identificador)."""
         payload = {
             "region_id": region_lon["id"],
             "sede": "León sede Forum",
@@ -98,7 +98,9 @@ class TestCrearBorrador:
         assert data["estudio_id"] > 0
         assert data["solicitud_id"] > 0
         assert data["beneficiario_id"] > 0
-        assert data["folio"] is not None and len(data["folio"]) > 0
+        # Issue #32: folio is no longer generated; CURP is the natural identifier.
+        assert data["folio"] is None
+        assert "curp" in data
         assert data["status"] == "borrador"
 
     def test_create_with_partial_beneficiario_data(self, client, capturista_headers, region_lon):
@@ -122,7 +124,8 @@ class TestCrearBorrador:
         assert res.status_code == 201, f"Expected 201, got {res.status_code}: {res.text}"
         data = res.json()
         assert data["beneficiario_id"] > 0
-        assert data["folio"] is not None
+        # Issue #32: folio is no longer generated for new drafts.
+        assert data["folio"] is None
 
     def test_create_with_tutor1_data(self, client, capturista_headers, region_lon):
         """CREATE mode: include tutor 1 data → 201."""
@@ -262,7 +265,8 @@ class TestActualizarBorrador:
         assert res.status_code == 201, f"Expected 201, got {res.status_code}: {res.text}"
         data = res.json()
         assert data["estudio_id"] == ids["estudio_id"]
-        assert data["folio"] is not None
+        # Issue #32: legacy draft created in this test has no folio (not generated).
+        assert "folio" in data
 
     def test_update_adds_tutor(self, client, capturista_headers, region_lon):
         """UPDATE mode: add tutor data to existing borrador."""
@@ -372,6 +376,26 @@ class TestObtenerBorrador:
         assert data["tutores"][0]["imss_estatus"] == "SI"
         assert data["solicitud"] is not None
         assert data["solicitud"]["entorno"] == "Urbano / Interiores"
+
+    def test_curp_persists_and_is_recovered(self, client, capturista_headers, region_lon):
+        """Issue #32: CURP saved in a draft must come back on GET (prefill)."""
+        payload = {
+            "region_id": region_lon["id"],
+            "sede": "León sede Forum",
+            "nombres": "CURP",
+            "apellido_paterno": "Test",
+            "apellido_materno": "Recupera",
+            "curp": "HEGG560427MVZRRL04",
+            "sexo": "M",
+            "telefonos": "4625556666",
+        }
+        res = client.post("/api/guardar-borrador", json=payload, headers=capturista_headers)
+        assert res.status_code == 201, res.text
+        assert res.json()["curp"] == "HEGG560427MVZRRL04"
+
+        got = client.get(f"/api/borrador/{res.json()['estudio_id']}", headers=capturista_headers)
+        assert got.status_code == 200, got.text
+        assert got.json()["beneficiario"]["curp_benef"] == "HEGG560427MVZRRL04"
 
     def test_non_owner_returns_403(self, client, capturista_headers, admin_headers, region_lon):
         """GET borrador: non-owner capturista gets 403."""

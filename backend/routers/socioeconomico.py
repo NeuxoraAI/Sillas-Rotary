@@ -12,6 +12,8 @@ Changes from v1:
 import os
 import re
 import uuid
+
+import psycopg2.errors
 from typing import Annotated, Optional
 from urllib.parse import urlparse, unquote
 
@@ -22,10 +24,10 @@ from supabase import create_client
 
 from database import get_db, _DBAdapter
 from routers.auth import CurrentUser, assert_resource_owner, require_roles
-from routers.regiones import generate_folio
 from utils.text import normalize_text
 from validators import (
     validate_nombre,
+    validate_curp,
     validate_apellido,
     validate_email_format,
     validate_diagnostico,
@@ -129,6 +131,9 @@ class BeneficiarioIn(BaseModel):
     nombres: str
     apellido_paterno: str
     apellido_materno: str
+    # CURP is the natural identifier (replaces folio). Optional at the model
+    # level so drafts can be saved incomplete; required at finalization.
+    curp: Optional[str] = None
     fecha_nacimiento: str
     diagnostico: Optional[str] = ""
     calle: str
@@ -174,6 +179,14 @@ class BeneficiarioIn(BaseModel):
     @classmethod
     def _validar_apellido_materno(cls, v: str) -> str:
         return validate_apellido(v, "apellido_materno")
+
+    @field_validator("curp")
+    @classmethod
+    def _curp_valida(cls, v: Optional[str]) -> Optional[str]:
+        # Optional for drafts; validate format + check digit when provided.
+        if v is None or v == "":
+            return None
+        return validate_curp(v)
 
     @field_validator("fecha_nacimiento")
     @classmethod
@@ -528,7 +541,9 @@ class EstudioCreateRequest(BaseModel):
 class EstudioCreateResponse(BaseModel):
     estudio_id: int
     beneficiario_id: int
-    folio: str
+    # CURP is the natural identifier shown to users (replaces folio).
+    curp: Optional[str] = None
+    folio: Optional[str] = None
     status: str
 
 
@@ -659,46 +674,53 @@ def crear_estudio(
         document_url=body.estudio.comprobante_domicilio_url,
     )
 
-    # 1. Generate structured folio (atomic counter per region/year)
-    folio = generate_folio(db, body.region_id)
-
-    # 2. Compose canonical nombre from normalized structured fields
+    # 1. Compose canonical nombre from normalized structured fields
     b = body.beneficiario
     nombre_composed = f"{b.nombres} {b.apellido_paterno} {b.apellido_materno}"
 
-    # 3. INSERT beneficiario (with folio + region + sede + structured name)
-    beneficiario_id = db.execute(
-        """
-        INSERT INTO beneficiarios
-             (nombre, nombres, apellido_paterno, apellido_materno,
-              fecha_nacimiento, diagnostico, calle, num_ext, num_int, colonia, ciudad,
-              estado_codigo, estado_nombre, sexo,
-              telefonos, email, folio, region_id, sede)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-        RETURNING id
-        """,
-        (
-            nombre_composed,
-            b.nombres,
-            b.apellido_paterno,
-            b.apellido_materno,
-            b.fecha_nacimiento,
-            b.diagnostico,
-            b.calle,
-            b.num_ext,
-            b.num_int,
-            b.colonia,
-            b.ciudad,
-            b.estado_codigo,
-            b.estado_nombre,
-            b.sexo,
-            b.telefonos,
-            b.email,
-            folio,
-            body.region_id,
-            body.sede,
-        ),
-    ).fetchone()["id"]
+    # 2. CURP is the natural identifier (folio is no longer generated). Reject
+    #    duplicates up front with a friendly 409 before attempting the INSERT.
+    if b.curp:
+        _assert_curp_disponible(db, b.curp)
+
+    # 3. INSERT beneficiario (folio left NULL — CURP is the identifier now)
+    try:
+        beneficiario_id = db.execute(
+            """
+            INSERT INTO beneficiarios
+                 (nombre, nombres, apellido_paterno, apellido_materno, curp_benef,
+                  fecha_nacimiento, diagnostico, calle, num_ext, num_int, colonia, ciudad,
+                  estado_codigo, estado_nombre, sexo,
+                  telefonos, email, region_id, sede)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            RETURNING id
+            """,
+            (
+                nombre_composed,
+                b.nombres,
+                b.apellido_paterno,
+                b.apellido_materno,
+                b.curp,
+                b.fecha_nacimiento,
+                b.diagnostico,
+                b.calle,
+                b.num_ext,
+                b.num_int,
+                b.colonia,
+                b.ciudad,
+                b.estado_codigo,
+                b.estado_nombre,
+                b.sexo,
+                b.telefonos,
+                b.email,
+                body.region_id,
+                body.sede,
+            ),
+        ).fetchone()["id"]
+    except psycopg2.errors.UniqueViolation as exc:
+        # Safety net: a concurrent insert raced past the pre-check.
+        db.rollback()
+        raise _curp_duplicada_error(db, b.curp) from exc
 
     # 4. INSERT tutores
     _insertar_tutores(db, beneficiario_id, body.tutores)
@@ -744,9 +766,48 @@ def crear_estudio(
     return EstudioCreateResponse(
         estudio_id=estudio_id,
         beneficiario_id=beneficiario_id,
-        folio=folio,
+        curp=b.curp,
+        folio=None,
         status=estudio.status,
     )
+
+
+def _curp_duplicada_error(db: _DBAdapter, curp: str) -> HTTPException:
+    """Build a structured 409 describing the beneficiario that already owns CURP."""
+    existente = db.execute(
+        "SELECT id, nombre, folio FROM beneficiarios WHERE curp_benef = %s",
+        (curp,),
+    ).fetchone()
+    detalle = {
+        "type": "curp_duplicada",
+        "message": "Ya existe un beneficiario registrado con esta CURP.",
+        "curp": curp,
+    }
+    if existente:
+        detalle["beneficiario_existente"] = {
+            "id": existente["id"],
+            "nombre": existente.get("nombre"),
+            "folio": existente.get("folio"),
+        }
+    return HTTPException(status_code=409, detail=detalle)
+
+
+def _assert_curp_disponible(
+    db: _DBAdapter, curp: str, exclude_id: Optional[int] = None
+) -> None:
+    """Raise a 409 if the CURP is already registered for another beneficiario."""
+    if exclude_id is None:
+        existente = db.execute(
+            "SELECT 1 FROM beneficiarios WHERE curp_benef = %s",
+            (curp,),
+        ).fetchone()
+    else:
+        existente = db.execute(
+            "SELECT 1 FROM beneficiarios WHERE curp_benef = %s AND id <> %s",
+            (curp, exclude_id),
+        ).fetchone()
+    if existente:
+        raise _curp_duplicada_error(db, curp)
 
 
 def _upsert_voluntario(
@@ -845,6 +906,7 @@ def mis_capturas(
             e.created_at,
             b.id         AS beneficiario_id,
             b.nombre     AS beneficiario_nombre,
+            b.curp_benef,
             b.folio,
             b.ciudad     AS beneficiario_ciudad,
             b.telefonos  AS beneficiario_telefonos
@@ -887,6 +949,10 @@ def actualizar_estudio(
         if b.email is not None:
             ben_fields.append("email = %s")
             ben_values.append(b.email)
+        if b.curp is not None:
+            _assert_curp_disponible(db, b.curp, exclude_id=existing["beneficiario_id"])
+            ben_fields.append("curp_benef = %s")
+            ben_values.append(b.curp)
         if ben_fields:
             ben_values.append(existing["beneficiario_id"])
             db.execute(

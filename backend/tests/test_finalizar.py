@@ -44,6 +44,7 @@ class TestValidateAllComplete:
             "nombres": "BENEFICIARIO",
             "apellido_paterno": "TEST",
             "apellido_materno": "MUESTRA",
+            "curp_benef": "HEGG560427MVZRRL04",
             "fecha_nacimiento": "2000-01-15",
             "diagnostico": "Parálisis cerebral",
             "calle": "Calle Test 123",
@@ -117,6 +118,7 @@ class TestValidateAllComplete:
             "nombres": "BENEFICIARIO",
             "apellido_paterno": "TEST",
             "apellido_materno": "MUESTRA",
+            "curp_benef": "HEGG560427MVZRRL04",
             "fecha_nacimiento": "2000-01-15",
             "diagnostico": "Parálisis cerebral",
             "calle": "Calle Test 123",
@@ -267,6 +269,7 @@ class TestValidateAllComplete:
             "nombres": "BENEFICIARIO",
             "apellido_paterno": "TEST",
             "apellido_materno": "MUESTRA",
+            "curp_benef": "HEGG560427MVZRRL04",
             "fecha_nacimiento": "2000-01-15",
             "diagnostico": "Parálisis cerebral",
             "calle": "Calle Test 123",
@@ -344,6 +347,7 @@ class TestValidateAllComplete:
             "nombres": "BENEFICIARIO",
             "apellido_paterno": "TEST",
             "apellido_materno": "MUESTRA",
+            "curp_benef": "HEGG560427MVZRRL04",
             "fecha_nacimiento": "2000-01-15",
             "diagnostico": "Parálisis cerebral",
             "calle": "Calle Test 123",
@@ -404,15 +408,15 @@ class TestFinalizarRegistroEndpoint:
             cur.execute(
                 """
                 INSERT INTO beneficiarios
-                    (nombre, nombres, apellido_paterno, apellido_materno,
+                    (nombre, nombres, apellido_paterno, apellido_materno, curp_benef,
                      fecha_nacimiento, diagnostico, calle, colonia, ciudad,
                      estado_codigo, estado_nombre, sexo, telefonos, folio, region_id, sede)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 RETURNING id
                 """,
                 (
                     "BENEFICIARIO TEST MUESTRA",
-                    "BENEFICIARIO", "TEST", "MUESTRA",
+                    "BENEFICIARIO", "TEST", "MUESTRA", "HEGG560427MVZRRL04",
                     "2000-01-15", "Parálisis cerebral",
                     "Calle Test 123", "Centro", "León",
                     "11", "GUANAJUATO", "M", "4621234567",

@@ -39,6 +39,20 @@ _NUM_DOMICILIO_MAX = 10
 _TELEFONO_RE = re.compile(r"^[0-9]{10}$")
 _TELEFONO_LEN = 10
 
+# CURP (Clave Única de Registro de Población) — 18 chars, uppercase A-Z/0-9.
+# Structure: 4 letters · 6-digit birthdate · sex (H/M) · 2-letter state code
+# (incl. NE = nacido en el extranjero) · 3 consonants · homoclave · check digit.
+# Frontend mirror must stay identical (see docs/VALIDATION_RULES.md).
+_CURP_RE = re.compile(
+    r"^[A-Z][AEIOUX][A-Z]{2}\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])"
+    r"[HM](AS|BC|BS|CC|CL|CM|CS|CH|DF|DG|GT|GR|HG|JC|MC|MN|MS|NT|NL|OC|"
+    r"PL|QT|QR|SP|SL|SR|TC|TS|TL|VZ|YN|ZS|NE)"
+    r"[B-DF-HJ-NP-TV-Z]{3}[A-Z\d]\d$"
+)
+_CURP_LEN = 18
+# Dictionary for the check-digit (dígito verificador) algorithm.
+_CURP_DICT = "0123456789ABCDEFGHIJKLMNÑOPQRSTUVWXYZ"
+
 # Observaciones / justificación whitelist
 _OBS_WHITELIST_RE = re.compile(
     r"^[a-zA-ZáéíóúÁÉÍÓÚäëïöüÄËÏÖÜñÑ0-9 ()\/\-.,:;]*$"
@@ -352,6 +366,29 @@ def validate_fecha_estudio(value: str) -> str:
     if not re.match(r"^\d{4}-\d{2}-\d{2}$", value):
         raise ValueError("fecha_estudio debe tener formato YYYY-MM-DD")
     return value
+
+
+def _curp_digito_verificador(curp: str) -> str:
+    """Compute the official CURP check digit from its first 17 characters."""
+    suma = sum(_CURP_DICT.index(ch) * (18 - i) for i, ch in enumerate(curp[:17]))
+    return str((10 - (suma % 10)) % 10)
+
+
+def validate_curp(value: str) -> str:
+    """Validate and normalize a Mexican CURP (format + check digit).
+
+    Returns the uppercased, trimmed CURP. Raises ValueError on any failure.
+    """
+    if value is None:
+        raise ValueError("curp es obligatoria")
+    curp = value.strip().upper()
+    if len(curp) != _CURP_LEN:
+        raise ValueError(f"curp debe tener exactamente {_CURP_LEN} caracteres")
+    if not _CURP_RE.match(curp):
+        raise ValueError("curp tiene un formato inválido")
+    if _curp_digito_verificador(curp) != curp[17]:
+        raise ValueError("curp inválida: el dígito verificador no coincide")
+    return curp
 
 
 # ──────────────────────────────────────────────────────────────────────────

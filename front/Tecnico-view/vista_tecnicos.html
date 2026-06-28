@@ -116,7 +116,7 @@
               id="input-search"
               type="search"
               autocomplete="off"
-              placeholder="Buscar por nombre, folio, ciudad, región, país…"
+              placeholder="Buscar por nombre, CURP, ciudad, región, país…"
               class="w-full pl-10 pr-4 py-2.5 text-sm"
             />
           </div>
@@ -1016,7 +1016,7 @@
 
           const initials = _getInitials(item.nombre);
           const name = _escapeHtml(item.nombre || "—");
-          const folio = _escapeHtml(item.folio || "—");
+          const folio = _escapeHtml(item.curp_benef || item.folio || "—");
           const pais = _escapeHtml(item.pais_nombre || "—");
           const ciudad = _escapeHtml(item.ciudad || "—");
           const telefono =
@@ -1160,7 +1160,7 @@
         const tutores = data.tutores || [];
 
         modalTitle.textContent = ben.nombre || "—";
-        modalFolio.textContent = "Folio: " + (ben.folio || "—");
+        modalFolio.textContent = "CURP: " + (ben.curp_benef || ben.folio || "—");
 
         let html = "";
 
@@ -1173,7 +1173,7 @@
         <div class="bg-slate-50 rounded-xl p-4 space-y-2 text-sm">
           <div class="grid grid-cols-2 gap-2">
             <div><span class="text-slate-400">Nombre:</span><br/><span class="font-medium">${_escapeHtml(ben.nombre || "—")}</span></div>
-            <div><span class="text-slate-400">Folio:</span><br/><span class="font-medium">${_escapeHtml(ben.folio || "—")}</span></div>
+            <div><span class="text-slate-400">CURP:</span><br/><span class="font-medium">${_escapeHtml(ben.curp_benef || ben.folio || "—")}</span></div>
             <div><span class="text-slate-400">País:</span><br/><span class="font-medium">${_escapeHtml(ben.pais_nombre || "—")}</span></div>
             <div><span class="text-slate-400">Región:</span><br/><span class="font-medium">${_escapeHtml(ben.region_nombre || "—")}</span></div>
             <div><span class="text-slate-400">Ciudad:</span><br/><span class="font-medium">${_escapeHtml(ben.ciudad || "—")}</span></div>

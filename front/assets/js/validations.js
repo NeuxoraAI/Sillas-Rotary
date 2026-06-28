@@ -20,6 +20,8 @@
   const COLONIA_RE = CALLE_RE;
   const NUM_DOMICILIO_RE = /^[A-Za-z0-9\-/]+$/;
   const TELEFONO_RE = /^[0-9]{10}$/;
+  // CURP — must stay identical to validators.py _CURP_RE (Issue #32).
+  const CURP_RE = /^[A-Z][AEIOUX][A-Z]{2}\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])[HM](AS|BC|BS|CC|CL|CM|CS|CH|DF|DG|GT|GR|HG|JC|MC|MN|MS|NT|NL|OC|PL|QT|QR|SP|SL|SR|TC|TS|TL|VZ|YN|ZS|NE)[B-DF-HJ-NP-TV-Z]{3}[A-Z\d]\d$/;
   const EMAIL_RE = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   const OBS_WHITELIST_RE =
     /^[a-zA-ZáéíóúÁÉÍÓÚäëïöüÄËÏÖÜñÑ0-9 ()\/\-.,:;]*$/;
@@ -373,6 +375,43 @@
   }
 
   // ─────────────────────────────────────────────────────────────────
+  // CURP — formato + dígito verificador (espejo de validators.py)
+  // ─────────────────────────────────────────────────────────────────
+
+  const CURP_DICT = "0123456789ABCDEFGHIJKLMNÑOPQRSTUVWXYZ";
+
+  /** Calcula el dígito verificador oficial a partir de los 17 primeros chars. */
+  function curpDigitoVerificador(curp) {
+    let suma = 0;
+    for (let i = 0; i < 17; i++) {
+      suma += CURP_DICT.indexOf(curp[i]) * (18 - i);
+    }
+    return String((10 - (suma % 10)) % 10);
+  }
+
+  /** Valida formato (18 chars) + dígito verificador. Devuelve true/false. */
+  function isValidCurp(value) {
+    if (!value) return false;
+    const curp = value.trim().toUpperCase();
+    if (curp.length !== 18) return false;
+    if (!CURP_RE.test(curp)) return false;
+    return curpDigitoVerificador(curp) === curp[17];
+  }
+
+  /** Configura un input de CURP: sólo A-Z/0-9, mayúsculas, máx 18 chars. */
+  function setupCurpField(inputEl) {
+    if (!inputEl) return;
+    const sanitize = () => {
+      inputEl.value = inputEl.value
+        .toUpperCase()
+        .replace(/[^A-Z0-9]/g, "")
+        .slice(0, 18);
+    };
+    inputEl.addEventListener("input", sanitize);
+    sanitize();
+  }
+
+  // ─────────────────────────────────────────────────────────────────
   // Validación de campos obligatorios
   // ─────────────────────────────────────────────────────────────────
 
@@ -699,6 +738,7 @@
     COLONIA_RE,
     NUM_DOMICILIO_RE,
     TELEFONO_RE,
+    CURP_RE,
     EMAIL_RE,
     OBS_WHITELIST_RE,
     ENTIDAD_WHITELIST_RE,
@@ -733,6 +773,9 @@
     setupEmailField,
     setupIntegerField,
     setupTextField,
+    setupCurpField,
+    curpDigitoVerificador,
+    isValidCurp,
     validateRequired,
     validateHTML5Constraints,
     showFieldError,

@@ -460,6 +460,7 @@
           nombres: draftSocio.beneficiario?.nombres || null,
           apellido_paterno: draftSocio.beneficiario?.apellido_paterno || null,
           apellido_materno: draftSocio.beneficiario?.apellido_materno || null,
+          curp: draftSocio.beneficiario?.curp || null,
           fecha_nacimiento: draftSocio.beneficiario?.fecha_nacimiento || null,
           diagnostico: draftTecnica.diagnostico || draftSocio.beneficiario?.diagnostico || null,
           calle: draftSocio.beneficiario?.calle || null,
@@ -584,7 +585,12 @@
             showSuccessToast("El borrador ha sido guardado con éxito.", null);
           } else {
             const errData = await res.json().catch(() => ({}));
-            if (res.status === 422 && errData.detail) {
+            if (esCurpDuplicada(res, errData)) {
+              showValidationModal([curpDuplicadaError(errData)], {
+                title: "CURP ya registrada",
+                description: "No es posible duplicar el registro de un mismo beneficiario.",
+              });
+            } else if (res.status === 422 && errData.detail) {
               const errors = Array.isArray(errData.detail)
                 ? errData.detail.map((e) => e.msg || e.message || JSON.stringify(e)).join("; ")
                 : errData.detail;
@@ -665,6 +671,27 @@
         const errors = Array.from(errorsByField.entries());
         errors.forEach(([fieldName, err]) => SR_Validations.showFieldError(fieldName, err.message));
         return errors.map(([, err]) => err);
+      }
+
+      // Detecta el 409 estructurado del backend cuando la CURP ya existe.
+      function esCurpDuplicada(res, errData) {
+        return res && res.status === 409 &&
+          errData && errData.detail && errData.detail.type === "curp_duplicada";
+      }
+
+      // Construye el ítem de error (para showValidationModal) describiendo el duplicado.
+      function curpDuplicadaError(errData) {
+        const d = (errData && errData.detail) || {};
+        const existente = d.beneficiario_existente || {};
+        const quien = existente.nombre ? existente.nombre : "otro beneficiario";
+        const ref = existente.folio ? ` (folio ${existente.folio})` : "";
+        return {
+          form: "Socioeconómico",
+          label: "CURP duplicada",
+          message: `La CURP ${d.curp || ""} ya está registrada a nombre de ${quien}${ref}. ` +
+                   `No es posible duplicar el registro de un mismo beneficiario.`,
+          url: "socioeconomico.html",
+        };
       }
 
       function showValidationModal(errors, options = {}) {
@@ -1018,7 +1045,14 @@
           if (!guardarRes.ok) {
             const errData = await guardarRes.json().catch(() => ({}));
             console.error("POST guardar-borrador error:", guardarRes.status, errData);
-            showValidationModal([{ form: "Registro", label: "Consolidación", message: SR_Validations.formatBackendError(errData, `Error al consolidar el borrador (${guardarRes.status}).`), url: "gestion.html" }]);
+            if (esCurpDuplicada(guardarRes, errData)) {
+              showValidationModal([curpDuplicadaError(errData)], {
+                title: "CURP ya registrada",
+                description: "No es posible duplicar el registro de un mismo beneficiario.",
+              });
+            } else {
+              showValidationModal([{ form: "Registro", label: "Consolidación", message: SR_Validations.formatBackendError(errData, `Error al consolidar el borrador (${guardarRes.status}).`), url: "gestion.html" }]);
+            }
             if (btn) { btn.disabled = false; btn.textContent = "Finalizar Registro"; }
             return;
           }

@@ -151,6 +151,23 @@
               />
               <p class="field-error hidden text-red-600 text-xs mt-1" id="apellido_materno-error" data-error-for="apellido_materno" role="alert"></p>
             </div>
+            <!-- CURP -->
+            <div class="space-y-2">
+              <label class="block text-sm font-semibold text-slate-700">CURP</label>
+              <input
+                class="w-full uppercase"
+                name="curp"
+                type="text"
+                minlength="18"
+                maxlength="18"
+                pattern="^[A-Z][AEIOUX][A-Z]{2}\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])[HM](AS|BC|BS|CC|CL|CM|CS|CH|DF|DG|GT|GR|HG|JC|MC|MN|MS|NT|NL|OC|PL|QT|QR|SP|SL|SR|TC|TS|TL|VZ|YN|ZS|NE)[B-DF-HJ-NP-TV-Z]{3}[A-Z\d]\d$"
+                inputmode="text"
+                autocapitalize="characters"
+                required
+                aria-describedby="curp-error"
+              />
+              <p class="field-error hidden text-red-600 text-xs mt-1" id="curp-error" data-error-for="curp" role="alert"></p>
+            </div>
             <div class="space-y-2">
               <label class="block text-sm font-semibold text-slate-700"
                 >Fecha de nacimiento del beneficiario</label
@@ -1605,6 +1622,39 @@
           return Boolean(capturedDocumentFiles[config.key] || inputEl?.files?.[0]);
         });
       }
+      // Detect the structured 409 emitted by the backend when a CURP is already
+      // registered, and present it as a friendly blocking modal.
+      function esCurpDuplicada(res, errData) {
+        return res && res.status === 409 &&
+          errData && errData.detail && errData.detail.type === "curp_duplicada";
+      }
+
+      // Construye el ítem de error de CURP duplicada para showValidationModal.
+      function curpDuplicadaError(errData) {
+        const d = (errData && errData.detail) || {};
+        const existente = d.beneficiario_existente || {};
+        const quien = existente.nombre ? existente.nombre : "otro beneficiario";
+        const ref = existente.folio ? ` (folio ${existente.folio})` : "";
+        return {
+          form: "Socioeconómico",
+          label: "CURP duplicada",
+          message: `La CURP ${d.curp || ""} ya está registrada a nombre de ${quien}${ref}. ` +
+                   `No es posible duplicar el registro de un mismo beneficiario.`,
+          url: "socioeconomico.html",
+        };
+      }
+
+      // Presenta el duplicado en el mismo modal de validación que el resto de
+      // las advertencias de la página (el modal de AppConfirmation no se aprecia
+      // en este flujo, por lo que se reutiliza showValidationModal).
+      function mostrarModalCurpDuplicada(errData) {
+        showValidationModal([curpDuplicadaError(errData)], {
+          title: "CURP ya registrada",
+          description: "No es posible duplicar el registro de un mismo beneficiario.",
+        });
+        return Promise.resolve(true);
+      }
+
       function formatBackendErrorMessage(errData, fallbackMessage) {
         const telefonoMsg =
           "El teléfono debe contener exactamente 10 dígitos numéricos";
@@ -2151,6 +2201,7 @@
                     setVal("nombres", parts.join(" "));
                   }
                 }
+                setVal("curp", b.curp_benef || b.curp);
                 setVal("fecha_nacimiento", b.fecha_nacimiento);
                 setVal("calle", b.calle);
                 setVal("colonia", b.colonia);
@@ -2422,6 +2473,7 @@
             nombres: get("nombres"),
             apellido_paterno: get("apellido_paterno"),
             apellido_materno: get("apellido_materno"),
+            curp: (get("curp") || "").toUpperCase() || null,
             fecha_nacimiento: get("fecha_nacimiento"),
             calle: get("calle"),
             num_ext: get("num_ext"),
@@ -2545,6 +2597,7 @@
             nombres: socioData.beneficiario?.nombres || null,
             apellido_paterno: socioData.beneficiario?.apellido_paterno || null,
             apellido_materno: socioData.beneficiario?.apellido_materno || null,
+            curp: socioData.beneficiario?.curp || null,
             fecha_nacimiento: socioData.beneficiario?.fecha_nacimiento || null,
             diagnostico: socioData.beneficiario?.diagnostico || null,
             calle: socioData.beneficiario?.calle || null,
@@ -2613,7 +2666,10 @@
             showSuccessToast("El borrador ha sido guardado con éxito.", null);
           } else {
             const errData = await res.json().catch(() => ({}));
-            if (res.status === 422 && errData.detail) {
+            if (esCurpDuplicada(res, errData)) {
+              SR_Validations.showFieldError("curp", "Esta CURP ya está registrada");
+              await mostrarModalCurpDuplicada(errData);
+            } else if (res.status === 422 && errData.detail) {
               const errors = Array.isArray(errData.detail)
                 ? errData.detail.map((e) => e.msg || e.message || JSON.stringify(e)).join("; ")
                 : errData.detail;
@@ -2647,6 +2703,7 @@
           { id: "nombres", label: "Nombre(s)" },
           { id: "apellido_paterno", label: "Apellido Paterno" },
           { id: "apellido_materno", label: "Apellido Materno" },
+          { id: "curp", label: "CURP" },
           { id: "fecha_nacimiento", label: "Fecha de nacimiento" },
         ];
         for (const { id, label } of personalFields) {
@@ -2681,6 +2738,11 @@
             SR_Validations.showFieldError("telefonos", "El teléfono debe contener exactamente 10 dígitos numéricos");
             beneficiarioMissing.push({ id: "telefonos", label: "Teléfono" });
           }
+        }
+        const curpInput = form.querySelector('[name="curp"]');
+        if (curpInput && curpInput.value.trim() && !SR_Validations.isValidCurp(curpInput.value)) {
+          SR_Validations.showFieldError("curp", "La CURP no es válida (revise formato y dígito verificador)");
+          beneficiarioMissing.push({ id: "curp", label: "CURP" });
         }
         if (beneficiarioMissing.length > 0) {
           errorEl.textContent = "Complete los campos obligatorios del beneficiario: " + beneficiarioMissing.map(m => m.label).join(", ");
@@ -3462,6 +3524,11 @@
 
             if (!res.ok) {
               const errData = await res.json().catch(() => ({}));
+              if (esCurpDuplicada(res, errData)) {
+                SR_Validations.showFieldError("curp", "Esta CURP ya está registrada");
+                await mostrarModalCurpDuplicada(errData);
+                return;
+              }
               errorEl.textContent = SR_Validations.formatBackendError(
                 errData,
                 "Error al actualizar el estudio. Intente de nuevo.",
@@ -3527,6 +3594,11 @@
             if (!res.ok) {
               const errData = await res.json().catch(() => ({}));
               console.error('[DEBUG] Backend error:', errData);
+              if (esCurpDuplicada(res, errData)) {
+                SR_Validations.showFieldError("curp", "Esta CURP ya está registrada");
+                await mostrarModalCurpDuplicada(errData);
+                return;
+              }
               errorEl.textContent = SR_Validations.formatBackendError(
                 errData,
                 "Error al guardar el estudio. Intente de nuevo.",
@@ -3596,6 +3668,7 @@
       setupCalleValidation();
       setupColoniaValidation();
       setupNumeroDomicilioValidation();
+      SR_Validations.setupCurpField(document.querySelector('[name="curp"]'));
       setupTutorTextValidation();
       setupIntegerFieldLimits();
       setupMonetaryFieldFormatting();
@@ -3698,6 +3771,7 @@
         _setVal("nombres", b.nombres || b.nombre || "");
         _setVal("apellido_paterno", b.apellido_paterno || "");
         _setVal("apellido_materno", b.apellido_materno || "");
+        _setVal("curp", b.curp_benef || b.curp || "");
         _setVal("fecha_nacimiento", b.fecha_nacimiento || "");
         _setVal("calle", b.calle || "");
         _setVal("num_ext", b.num_ext || "");
@@ -3990,6 +4064,7 @@
             _setVal("nombres", b.nombres || "");
             _setVal("apellido_paterno", b.apellido_paterno || "");
             _setVal("apellido_materno", b.apellido_materno || "");
+            _setVal("curp", b.curp_benef || b.curp || "");
             _setVal("fecha_nacimiento", b.fecha_nacimiento || "");
             _setVal("calle", b.calle || "");
             _setVal("num_ext", b.num_ext || "");

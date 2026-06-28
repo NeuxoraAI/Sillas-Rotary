@@ -523,3 +523,49 @@ class TestValidateNumericLimits:
         from validators import validate_monto_otras_fuentes
         with pytest.raises(ValueError, match="monto_otras_fuentes"):
             validate_monto_otras_fuentes(1000000)
+
+
+class TestValidateCurp:
+    """CURP: format regex + official check digit (Issue #32)."""
+
+    VALID = "HEGG560427MVZRRL04"  # check digit 4
+
+    def test_curp_valida(self):
+        from validators import validate_curp
+        assert validate_curp(self.VALID) == self.VALID
+
+    def test_curp_normaliza_minusculas_y_espacios(self):
+        from validators import validate_curp
+        assert validate_curp("  hegg560427mvzrrl04 ") == self.VALID
+
+    def test_curp_longitud_incorrecta(self):
+        from validators import validate_curp
+        with pytest.raises(ValueError, match="18 caracteres"):
+            validate_curp("HEGG560427MVZRRL0")
+
+    def test_curp_formato_invalido(self):
+        from validators import validate_curp
+        # First character must be a letter; a digit breaks the structure.
+        with pytest.raises(ValueError, match="formato"):
+            validate_curp("1EGG560427MVZRRL04")
+
+    def test_curp_mes_invalido(self):
+        from validators import validate_curp
+        with pytest.raises(ValueError, match="formato"):
+            validate_curp("HEGG561327MVZRRL04")
+
+    def test_curp_digito_verificador_incorrecto(self):
+        from validators import validate_curp
+        with pytest.raises(ValueError, match="dígito verificador"):
+            validate_curp("HEGG560427MVZRRL05")
+
+    def test_curp_none(self):
+        from validators import validate_curp
+        with pytest.raises(ValueError, match="obligatoria"):
+            validate_curp(None)
+
+    def test_curp_extranjero_ne(self):
+        from validators import validate_curp, _curp_digito_verificador
+        base = "TOBA900101HNELRN0"  # 17 chars, NE = nacido en el extranjero
+        curp = base + _curp_digito_verificador(base)
+        assert validate_curp(curp) == curp

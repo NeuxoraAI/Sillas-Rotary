@@ -599,3 +599,37 @@ class TestSocioeconomicoDocumentContracts:
         assert data["credencial_url"] == "storage://documentos-estudio/credencial/nueva-credencial.pdf"
         assert data["comprobante_domicilio_path"] == "comprobante_domicilio/nuevo-comprobante.jpg"
         assert data["comprobante_domicilio_url"] == "storage://documentos-estudio/comprobante_domicilio/nuevo-comprobante.jpg"
+
+
+class TestCurpDedup:
+    """CURP uniqueness / duplicate handling (Issue #32)."""
+
+    VALID_CURP = "HEGG560427MVZRRL04"
+
+    def test_post_rejects_invalid_curp(self, client, capturista_headers, region_lon):
+        payload = _estudio_payload(region_lon["id"])
+        payload["beneficiario"]["curp"] = "NOT-A-VALID-CURP1"
+        res = client.post("/api/estudios", headers=capturista_headers, json=payload)
+        assert res.status_code == 422
+
+    def test_post_accepts_valid_curp(self, client, capturista_headers, region_lon):
+        payload = _estudio_payload(region_lon["id"])
+        payload["beneficiario"]["curp"] = self.VALID_CURP
+        res = client.post("/api/estudios", headers=capturista_headers, json=payload)
+        assert res.status_code == 201, res.text
+        assert res.json()["curp"] == self.VALID_CURP
+
+    def test_duplicate_curp_returns_409(self, client, capturista_headers, region_lon):
+        first = _estudio_payload(region_lon["id"])
+        first["beneficiario"]["curp"] = self.VALID_CURP
+        r1 = client.post("/api/estudios", headers=capturista_headers, json=first)
+        assert r1.status_code == 201, r1.text
+
+        second = _estudio_payload(region_lon["id"])
+        second["beneficiario"]["curp"] = self.VALID_CURP
+        r2 = client.post("/api/estudios", headers=capturista_headers, json=second)
+        assert r2.status_code == 409, r2.text
+        detail = r2.json()["detail"]
+        assert detail["type"] == "curp_duplicada"
+        assert detail["curp"] == self.VALID_CURP
+        assert "beneficiario_existente" in detail
