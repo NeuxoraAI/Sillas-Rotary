@@ -49,7 +49,9 @@ backend/server.log
 .atl/
 .claude/
 
-# FIXES and PRD documentation (local audit docs, not for repo)
+# FIXES, ISSUES and PRD documentation (local audit docs, not for repo)
 FIXES_*.md
 PRD_*.md
 FIX_*.md
+ISSUES_*.md
+issues/
