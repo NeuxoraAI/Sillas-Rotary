@@ -1043,6 +1043,67 @@ html.dark .badge-finalizado  { background: rgba(34, 197, 94, 0.20); color: #86EF
 }
 .sr-check { display: inline-block; animation: sr-check-pop 0.4s cubic-bezier(0.22, 1.4, 0.36, 1) both; }
 
+/* ── Tabs (modal detail, org panels) — underline-active, reusable ── */
+.modal-tabs {
+  display: flex;
+  gap: 2px;
+  border-bottom: 1.5px solid #e2e8f0;
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 5;
+  overflow-x: auto;
+}
+.modal-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 9px 11px;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--c-gray);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1.5px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s;
+}
+.modal-tab .material-symbols-outlined { font-size: 16px; }
+.modal-tab:hover { color: var(--c-title); }
+.modal-tab.active { color: var(--c-orange-hover); border-bottom-color: var(--c-orange); }
+
+/* ── Scroll-more indicator (bottom fade + bouncing chevron) ── */
+.modal-scroll-hint {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 44px;
+  pointer-events: none;
+  border-radius: 0 0 1rem 1rem;
+  background: linear-gradient(to top, rgba(255, 255, 255, 0.96) 15%, rgba(255, 255, 255, 0));
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 5px;
+}
+.modal-scroll-hint::after {
+  content: 'expand_more';
+  font-family: 'Material Symbols Outlined';
+  font-size: 20px;
+  color: var(--c-gray);
+  animation: sr-bounce 1.4s ease-in-out infinite;
+}
+@keyframes sr-bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(3px); } }
+
+html.dark .modal-tabs { background: #1B1529; border-bottom-color: rgba(255, 255, 255, 0.10); }
+html.dark .modal-tab.active { color: #FFB088; }
+html.dark .modal-scroll-hint { background: linear-gradient(to top, rgba(27, 21, 41, 0.96) 15%, rgba(27, 21, 41, 0)); }
+
+@media (prefers-reduced-motion: reduce) { .modal-scroll-hint::after { animation: none; } }
+
 /* ── Dark-mode treatment for Fase 0 components ── */
 html.dark {
   --c-success-bg: rgba(34, 197, 94, 0.18);  --c-success: #86EFAC;
