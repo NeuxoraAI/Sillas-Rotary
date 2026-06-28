@@ -569,3 +569,29 @@ footer a:hover {
     animation: none;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Dark mode — the warm-cream decorative layers (white/orange glows, header arcs,
+   waves) look muddy on a dark background. Kill the white glow and soften the rest
+   so the dark login reads clean instead of "asqueroso".
+   ═══════════════════════════════════════════════════════════════════════════ */
+html.dark .bg-glow-topleft { display: none; }            /* white glow — wrong on dark */
+html.dark .bg-glow-topright {
+  background: radial-gradient(ellipse at 70% 30%, rgba(255, 138, 77, 0.10) 0%, transparent 70%);
+}
+html.dark .bg-arc-topright { opacity: 0.30; }
+html.dark .brand-header::before { opacity: 0; }          /* faint left arc — drop it */
+html.dark .brand-header::after {
+  border-top-color: rgba(255, 138, 77, 0.22);
+  border-right-color: rgba(255, 138, 77, 0.10);
+}
+html.dark .wave-band,
+html.dark .wave-orange,
+html.dark .wave-purple { opacity: 0.40; }
+/* Logo chips: a softer, less stark surface than the bright off-white */
+html.dark .logo-vida-ug,
+html.dark .logo-hope-haven,
+html.dark .logo-rotary {
+  background: #ECE7F2;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.30);
+}
