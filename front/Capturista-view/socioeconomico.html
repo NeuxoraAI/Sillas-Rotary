@@ -2376,11 +2376,25 @@
 
       })();
 
+      // Track unsaved user edits so we only warn on real changes. Programmatic
+      // form fills during draft load dispatch synthetic events (isTrusted=false),
+      // which must NOT mark the form dirty.
+      let formDirty = false;
+      (function () {
+        const formEl = document.querySelector("form");
+        if (!formEl) return;
+        ["input", "change"].forEach(function (evt) {
+          formEl.addEventListener(evt, function (e) {
+            if (e.isTrusted) formDirty = true;
+          });
+        });
+      })();
+
       // Volver al perfil sin cerrar sesión (logout lives in the profile)
       document
         .getElementById("btn-volver-perfil")
         .addEventListener("click", async function () {
-          if (!(await AppConfirmation.confirmUnsavedNavigation())) return;
+          if (formDirty && !(await AppConfirmation.confirmUnsavedNavigation())) return;
           window.location.href = "perfil-capturista.html";
         });
 
@@ -2663,6 +2677,7 @@
             if (data.estudio_id) localStorage.setItem("estudio_id", data.estudio_id);
             if (data.solicitud_id) localStorage.setItem("solicitud_id", data.solicitud_id);
             if (data.beneficiario_id) localStorage.setItem("beneficiario_id", data.beneficiario_id);
+            formDirty = false; // draft persisted — no longer dirty
             showSuccessToast("El borrador ha sido guardado con éxito.", null);
           } else {
             const errData = await res.json().catch(() => ({}));
