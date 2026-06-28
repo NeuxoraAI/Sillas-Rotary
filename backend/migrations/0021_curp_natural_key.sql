@@ -1,4 +1,4 @@
--- 0020: CURP como llave natural del beneficiario (Issue #32).
+-- 0021: CURP como llave natural del beneficiario (Issue #32).
 --
 -- La columna beneficiarios.curp_benef ya existe (text, nullable). Esta migración:
 --   1. Añade un CHECK de formato CURP (18 caracteres, estructura oficial).
