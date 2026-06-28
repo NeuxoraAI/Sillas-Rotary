@@ -232,10 +232,13 @@
             <p id="error-region"   class="hidden text-red-600 text-sm bg-red-50 border border-red-200 rounded-lg px-4 py-2" role="alert"></p>
             <p id="success-region" class="hidden text-green-700 text-sm bg-green-50 border border-green-200 rounded-lg px-4 py-2" role="status"></p>
             <button type="submit" id="btn-region"
-              class="btn-primary w-full py-3 rounded-xl flex items-center justify-center gap-2 disabled:opacity-60 text-sm">
+              class="btn-primary w-full py-3 rounded-xl flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed text-sm">
               <span class="material-symbols-outlined text-lg">add</span>
               <span id="btn-region-text">Agregar Región</span>
             </button>
+            <p id="region-hint" class="hidden text-xs text-slate-400 text-center mt-2 flex items-center justify-center gap-1">
+              <span class="material-symbols-outlined text-sm">info</span>Selecciona un país primero
+            </p>
           </form>
         </div>
 
@@ -782,7 +785,13 @@
   (function () {
     const sel = document.getElementById('region-pais');
     const btn = document.getElementById('btn-region');
-    function updateBtn() { btn.disabled = !sel.value; }
+    const hint = document.getElementById('region-hint');
+    function updateBtn() {
+      const noPais = !sel.value;
+      btn.disabled = noPais;
+      btn.title = noPais ? 'Selecciona un país primero' : '';
+      if (hint) hint.classList.toggle('hidden', !noPais);
+    }
     sel.addEventListener('change', updateBtn);
     updateBtn();
   })();
