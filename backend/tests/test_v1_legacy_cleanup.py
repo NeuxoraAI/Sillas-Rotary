@@ -2,8 +2,8 @@
 
 Verifies that:
 - init_db.py no longer creates the legacy `capturistas` table
-- init_db.py DDL marks `capturista_id` columns as deprecated (commented)
-- init_db.py DDL marks legacy indexes as deprecated (commented)
+- init_db.py DDL no longer contains `capturista_id` columns
+- init_db.py DDL no longer contains legacy `capturista_id` indexes
 - README.md no longer references v1-only artifacts (/api/login, capturista_id in examples)
 - README.md documents the v2 architecture (JWT, usuarios, Supabase)
 - Routers use `usuario_id` consistently (no `capturista_id` in active code paths)
@@ -23,8 +23,6 @@ def test_init_db_no_capturistas_table() -> None:
     """init_db.py must NOT create the legacy `capturistas` table."""
     content = (ROOT / "init_db.py").read_text(encoding="utf-8")
     assert "CREATE TABLE" in content
-    # "capturistas" may appear in comments (DEPRECATED notes), but not in
-    # active CREATE TABLE statements.
     for line in content.splitlines():
         stripped = line.strip()
         if stripped.startswith("#"):
@@ -35,25 +33,22 @@ def test_init_db_no_capturistas_table() -> None:
             )
 
 
-def test_init_db_capturista_id_columns_deprecated() -> None:
-    """capturista_id columns in DDL must be commented out (deprecated, not deleted)."""
+def test_init_db_no_capturista_id_columns() -> None:
+    """init_db.py must not define legacy capturista_id columns."""
     content = (ROOT / "init_db.py").read_text(encoding="utf-8")
 
-    # Active (non-commented) capturista_id references must not exist.
-    # Comments can be Python (#) or SQL (--) style.
     for line in content.splitlines():
         stripped = line.strip()
         if stripped.startswith("#") or stripped.startswith("--"):
             continue
-        if "capturista_id" in stripped and "REFERENCES capturistas" in stripped:
+        if "capturista_id" in stripped:
             raise AssertionError(
-                "init_db.py still has active capturista_id FK to capturistas — "
-                "comment it out as deprecated"
+                "init_db.py still defines legacy capturista_id — use usuario_id only"
             )
 
 
-def test_init_db_legacy_indexes_deprecated() -> None:
-    """Legacy indexes on capturista_id must be commented out."""
+def test_init_db_no_legacy_capturista_indexes() -> None:
+    """init_db.py must not define legacy indexes on capturista_id."""
     content = (ROOT / "init_db.py").read_text(encoding="utf-8")
 
     for line in content.splitlines():
@@ -63,7 +58,7 @@ def test_init_db_legacy_indexes_deprecated() -> None:
         if "idx_estudios_capturista" in stripped or "idx_solicitudes_capturista" in stripped:
             raise AssertionError(
                 "init_db.py still creates legacy capturista indexes — "
-                "comment them out as deprecated"
+                "remove them from DDL"
             )
 
 

@@ -28,10 +28,8 @@ from supabase import create_client
 
 DDL = [
     # -----------------------------------------------------------------------
-    # LEGACY v1 — REMOVED: capturistas table replaced by `usuarios` (v2)
-    # The column `capturista_id` in estudios_socioeconomicos and
-    # solicitudes_tecnicas is retained in the live DB for backward
-    # compatibility but is no longer created by this script.
+    # LEGACY v1 — actor table replaced by `usuarios` (v2).
+    # New code stores the actor in usuario_id, derived from the JWT.
     # -----------------------------------------------------------------------
     """
     CREATE TABLE IF NOT EXISTS beneficiarios (
@@ -85,9 +83,6 @@ DDL = [
         id                      SERIAL PRIMARY KEY,
         beneficiario_id         INTEGER NOT NULL REFERENCES beneficiarios(id) ON DELETE RESTRICT,
         usuario_id              INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE RESTRICT,
-        -- DEPRECATED v1: capturista_id column retained in live DB for backward
-        -- compatibility.  New code uses usuario_id (managed by Supabase migrations).
-        -- capturista_id       INTEGER REFERENCES capturistas(id) ON DELETE RESTRICT,
         otras_fuentes_ingreso   TEXT,
         monto_otras_fuentes     REAL,
         tuvo_silla_previa       INTEGER CHECK(tuvo_silla_previa IN (0, 1)),
@@ -112,9 +107,6 @@ DDL = [
         id                          SERIAL PRIMARY KEY,
         beneficiario_id             INTEGER NOT NULL REFERENCES beneficiarios(id) ON DELETE RESTRICT,
         usuario_id                  INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE RESTRICT,
-        -- DEPRECATED v1: capturista_id column retained in live DB for backward
-        -- compatibility.  New code uses usuario_id (managed by Supabase migrations).
-        -- capturista_id           INTEGER REFERENCES capturistas(id) ON DELETE RESTRICT,
         entorno                     TEXT,
         control_tronco              TEXT,
         control_cabeza              TEXT,
@@ -170,8 +162,6 @@ DDL = [
     """,
     "CREATE INDEX IF NOT EXISTS idx_tutores_beneficiario ON tutores(beneficiario_id)",
     "CREATE INDEX IF NOT EXISTS idx_estudios_beneficiario ON estudios_socioeconomicos(beneficiario_id)",
-    # DEPRECATED v1: legacy index on capturista_id — retained in live DB, not created by init_db.py
-    # "CREATE INDEX IF NOT EXISTS idx_estudios_capturista ON estudios_socioeconomicos(capturista_id)",
     "CREATE INDEX IF NOT EXISTS idx_solicitudes_beneficiario ON solicitudes_tecnicas(beneficiario_id)",
     "CREATE INDEX IF NOT EXISTS idx_procesos_tecnicos_beneficiario ON procesos_tecnicos(beneficiario_id)",
     "CREATE INDEX IF NOT EXISTS idx_procesos_tecnicos_estado ON procesos_tecnicos(estado)",
@@ -180,8 +170,6 @@ DDL = [
     "CREATE INDEX IF NOT EXISTS idx_procesos_participantes_proceso ON procesos_tecnicos_participantes(proceso_tecnico_id)",
     "CREATE INDEX IF NOT EXISTS idx_procesos_participantes_usuario ON procesos_tecnicos_participantes(usuario_id)",
     "CREATE INDEX IF NOT EXISTS idx_procesos_participantes_created_at ON procesos_tecnicos_participantes(created_at)",
-    # DEPRECATED v1: legacy index on capturista_id — retained in live DB, not created by init_db.py
-    # "CREATE INDEX IF NOT EXISTS idx_solicitudes_capturista ON solicitudes_tecnicas(capturista_id)",
 
     # -----------------------------------------------------------------------
     # Perfiles / GitHub-style profiles (v2)

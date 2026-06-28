@@ -141,8 +141,8 @@ git push origin develop
 
 | # | Check | Comando | Resultado esperado | ☐ |
 |---|---|---|---|---|
-| 4.1 | Sin tabla `capturistas` en `init_db.py` | `grep -c "capturistas" backend/init_db.py` | 0 (solo en comentarios) | ☐ |
-| 4.2 | Sin `capturista_id` activo en routers | `grep "capturista_id" backend/routers/*.py` | Solo en comentarios `# DEPRECATED` | ☐ |
+| 4.1 | Sin tabla legacy de capturistas en `init_db.py` | `grep -n "CREATE TABLE.*capturistas" backend/init_db.py` | Sin resultados | ☐ |
+| 4.2 | Sin `capturista_id` activo en routers | `grep "capturista_id" backend/routers/*.py` | Sin resultados | ☐ |
 | 4.3 | Sin badge SQLite en README | `grep -i sqlite README.md` | 0 coincidencias | ☐ |
 | 4.4 | Sin endpoint `/api/login` en README | `grep "/api/login" README.md` | 0 coincidencias activas | ☐ |
 | 4.5 | Suite v2 endpoints pasa | `pytest backend/tests/test_v1_legacy_cleanup.py` | 13 passed | ☐ |

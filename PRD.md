@@ -172,5 +172,5 @@ Deuda notable confirmada durante la auditoría de código + base de datos:
 
 - **Fuente de verdad de liderazgo de organización en conflicto**: la columna `organizaciones.lider_usuario_id` y la tabla `organizaciones_lideres` pueden discrepar en datos en vivo. El bypass de `assert_resource_owner` lee la **tabla**; cualquier código que lea la columna queda obsoleto. — `backend/routers/auth.py:179-191`
 - **Brecha del bypass de líder en `tecnica.py`**: `tecnica.py` invoca `assert_resource_owner` sin `db`/`estudio_id` (líneas ~1484, 1518, 1675), por lo que los líderes de organización reciben 403 en solicitudes técnicas aun cuando pueden leer el estudio vinculado.
-- **Tabla muerta `historial_estados`**: 0 filas, nunca conectada al runtime.
+- **Schema legacy limpiado**: `historial_estados`, `capturistas` y `capturista_id` quedaron programados para eliminación mediante migración incremental.
 - **`init_db.py` legado**: incompleto frente al esquema en vivo de Supabase (ver la nota de autoridad del esquema en la sección 3).
