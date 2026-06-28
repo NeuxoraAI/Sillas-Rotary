@@ -245,6 +245,17 @@ input, select, textarea {
 .video-player video {
   display: block;
   border-radius: var(--radius-card);
+  /* Calm the footage slightly so it supports rather than competes with login */
+  filter: saturate(0.96) brightness(0.97);
+}
+/* Soft brand-tinted overlay: lets the video recede behind the access form */
+.video-player::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-card);
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(43, 6, 61, 0.10) 0%, rgba(43, 6, 61, 0.30) 100%);
 }
 
 /* ── Header spacing: reference has 35–45px top air ── */
@@ -254,28 +265,17 @@ input, select, textarea {
 }
 
 /* ── Logo sizes ── */
+/* Normalized to one optical height so no single logo dominates the row;
+   width is intrinsic so each keeps its aspect ratio, and the header centers
+   them vertically (optical-center alignment). */
 .logo-vida-ug,
 .logo-hope-haven,
 .logo-rotary {
   /* Blend white logo canvases into the warm background */
   mix-blend-mode: multiply;
-}
-.logo-vida-ug {
-  width: 132px;
-  height: auto;
-  max-height: 80px;
-  object-fit: contain;
-}
-.logo-hope-haven {
-  width: 360px;
-  height: auto;
-  max-height: 90px;
-  object-fit: contain;
-}
-.logo-rotary {
-  width: 150px;
-  height: auto;
-  max-height: 70px;
+  height: 58px;
+  width: auto;
+  max-width: 100%;
   object-fit: contain;
 }
 
