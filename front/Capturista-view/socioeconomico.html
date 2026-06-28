@@ -3080,7 +3080,7 @@
               </div>
               <div id="validation-modal-body" class="max-h-[60vh] overflow-y-auto p-5"></div>
               <div class="flex flex-col gap-3 border-t border-slate-100 bg-slate-50/60 p-5 sm:flex-row sm:justify-end">
-                <button id="validation-modal-close" type="button" class="rounded-xl bg-gradient-to-r from-[#FF4B0B] to-[#FF681F] px-6 py-3 text-sm font-bold uppercase tracking-wide text-white shadow-md shadow-orange-200/60 transition-all hover:opacity-95 active:scale-[0.98]">Entendido</button>
+                <button id="validation-modal-close" type="button" class="btn-primary rounded-xl px-6 py-3 text-sm font-bold uppercase tracking-wide">Entendido</button>
               </div>
             </div>`;
           document.body.appendChild(modal);
@@ -3108,7 +3108,7 @@
                 <h3 class="text-sm font-black uppercase tracking-wide" style="color: var(--c-title);">${escapeHtml(form)}</h3>
                 <span class="rounded-full border border-red-200 bg-red-100 px-2 py-0.5 text-[11px] font-bold text-red-700">${items.length} ${items.length === 1 ? "error" : "errores"}</span>
               </div>
-              ${items[0].url ? `<button type="button" data-url="${escapeHtml(items[0].url)}" class="validation-jump rounded-lg border-2 border-ug-orange-pure/70 px-3 py-1.5 text-xs font-bold uppercase text-ug-orange-pure transition-all hover:bg-orange-50">Ir al formulario</button>` : ""}
+              ${items[0].url ? `<button type="button" data-url="${escapeHtml(items[0].url)}" class="validation-jump btn-secondary rounded-lg px-3 py-1.5 text-xs font-bold uppercase">Ir al formulario</button>` : ""}
             </div>
             <ul class="space-y-2 text-sm">${items.map((item) => `
               <li class="flex items-start gap-2.5 rounded-r-lg border-l-4 border-red-500 bg-red-50/70 px-3 py-2.5">
