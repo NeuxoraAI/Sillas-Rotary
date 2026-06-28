@@ -629,33 +629,33 @@
               ${u.rol === 'organizacion' && u.activo
                 ? `<button onclick="gestionarOrganizacion(${u.usuario_id})"
                   class="btn-icon hover:bg-purple-50 hover:text-primary hover:border-primary/30"
-                  title="Gestionar organización">
-                  <span class="material-symbols-outlined">settings</span>
+                  title="Gestionar organización" aria-label="Gestionar organización">
+                  <span class="material-symbols-outlined" aria-hidden="true">settings</span>
                 </button>`
                 : ''
               }
               <button onclick="openEditUser(${u.usuario_id}, ${JSON.stringify(u.nombre)}, ${JSON.stringify(u.email)}, ${JSON.stringify(u.rol)})"
                 class="btn-icon hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200"
-                title="Editar usuario">
-                <span class="material-symbols-outlined">edit</span>
+                title="Editar usuario" aria-label="Editar usuario">
+                <span class="material-symbols-outlined" aria-hidden="true">edit</span>
               </button>
               ${
                 u.activo
                   ? `<button onclick="deactivateUsuario(${u.usuario_id})"
                 class="btn-icon hover:bg-amber-50 hover:text-amber-700 hover:border-amber-200"
-                title="Desactivar usuario">
-                <span class="material-symbols-outlined">person_off</span>
+                title="Desactivar usuario" aria-label="Desactivar usuario">
+                <span class="material-symbols-outlined" aria-hidden="true">person_off</span>
               </button>`
                   : `<button onclick="reactivateUsuario(${u.usuario_id})"
                 class="btn-icon hover:bg-green-50 hover:text-green-700 hover:border-green-200"
-                title="Reactivar usuario">
-                <span class="material-symbols-outlined">person_check</span>
+                title="Reactivar usuario" aria-label="Reactivar usuario">
+                <span class="material-symbols-outlined" aria-hidden="true">person_check</span>
               </button>`
               }
               <button onclick="hardDeleteUsuario(${u.usuario_id}, ${JSON.stringify(u.nombre)})"
                 class="btn-icon hover:bg-red-50 hover:text-red-600 hover:border-red-200"
-                title="Eliminar permanentemente">
-                <span class="material-symbols-outlined">delete_forever</span>
+                title="Eliminar permanentemente" aria-label="Eliminar usuario permanentemente">
+                <span class="material-symbols-outlined" aria-hidden="true">delete_forever</span>
               </button>
             </div>
           </td>

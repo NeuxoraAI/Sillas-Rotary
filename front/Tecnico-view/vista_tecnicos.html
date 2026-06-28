@@ -1314,12 +1314,13 @@
           { id: "obs",   label: "Observaciones", icon: "notes", html: panelObs },
           { id: "files", label: "Archivos", icon: "attach_file", html: panelFiles },
         ];
-        const nav = '<div class="modal-tabs" role="tablist">' + tabs.map(function (t, i) {
-          return '<button class="modal-tab' + (i === 0 ? " active" : "") + '" data-tab="' + t.id + '" role="tab">' +
-            '<span class="material-symbols-outlined">' + t.icon + '</span><span>' + t.label + '</span></button>';
+        const nav = '<div class="modal-tabs" role="tablist" aria-label="Secciones del beneficiario">' + tabs.map(function (t, i) {
+          return '<button class="modal-tab' + (i === 0 ? " active" : "") + '" data-tab="' + t.id + '" id="tab-' + t.id + '" role="tab"' +
+            ' aria-selected="' + (i === 0 ? "true" : "false") + '" aria-controls="panel-' + t.id + '">' +
+            '<span class="material-symbols-outlined" aria-hidden="true">' + t.icon + '</span><span>' + t.label + '</span></button>';
         }).join("") + "</div>";
         const panels = tabs.map(function (t, i) {
-          return '<div class="modal-panel' + (i === 0 ? "" : " hidden") + '" data-panel="' + t.id + '">' + (t.badge ? '<div class="mb-3">' + t.badge + '</div>' : "") + t.html + '</div>';
+          return '<div class="modal-panel' + (i === 0 ? "" : " hidden") + '" data-panel="' + t.id + '" id="panel-' + t.id + '" role="tabpanel" aria-labelledby="tab-' + t.id + '"' + (i === 0 ? "" : " hidden") + '>' + (t.badge ? '<div class="mb-3">' + t.badge + '</div>' : "") + t.html + '</div>';
         }).join("");
 
         modalContent.innerHTML = nav + '<div class="mt-4">' + panels + "</div>";
@@ -1328,8 +1329,16 @@
         modalContent.querySelectorAll(".modal-tab").forEach(function (btn) {
           btn.addEventListener("click", function () {
             const id = btn.dataset.tab;
-            modalContent.querySelectorAll(".modal-tab").forEach(function (b) { b.classList.toggle("active", b === btn); });
-            modalContent.querySelectorAll(".modal-panel").forEach(function (p) { p.classList.toggle("hidden", p.dataset.panel !== id); });
+            modalContent.querySelectorAll(".modal-tab").forEach(function (b) {
+              const on = b === btn;
+              b.classList.toggle("active", on);
+              b.setAttribute("aria-selected", on ? "true" : "false");
+            });
+            modalContent.querySelectorAll(".modal-panel").forEach(function (p) {
+              const show = p.dataset.panel === id;
+              p.classList.toggle("hidden", !show);
+              if (show) { p.removeAttribute("hidden"); } else { p.setAttribute("hidden", ""); }
+            });
             const body = document.getElementById("modal-body");
             if (body) body.scrollTop = 0;
             _updateModalScrollHint();

@@ -158,9 +158,10 @@
               <input id="input-search" type="search" autocomplete="off" placeholder="Buscar por nombre, CURP, ciudad, región, país…"
                 class="w-full pl-10 pr-4 py-2.5 text-sm"/>
             </div>
-            <button id="btn-toggle-filters" title="Filtros"
+            <button id="btn-toggle-filters" title="Filtros" aria-label="Mostrar u ocultar filtros"
+              aria-expanded="false" aria-controls="filter-panel"
               class="btn-icon relative shrink-0" style="width: 44px; height: 44px;">
-              <span class="material-symbols-outlined">tune</span>
+              <span class="material-symbols-outlined" aria-hidden="true">tune</span>
               <span id="filter-dot" class="hidden absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-ug-orange-pure border-2 border-white"></span>
             </button>
           </div>
@@ -604,8 +605,9 @@
       // FILTER PANEL
       // ═══════════════════════════════════════════════════════════════════════════
       $("btn-toggle-filters").addEventListener("click", function () {
-        filterPanel.classList.toggle("open");
+        const open = filterPanel.classList.toggle("open");
         this.classList.toggle("border-primary"); this.classList.toggle("text-primary");
+        this.setAttribute("aria-expanded", open ? "true" : "false");
       });
 
       filterPais.addEventListener("change", async function () {
