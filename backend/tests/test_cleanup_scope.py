@@ -27,9 +27,9 @@ from conftest import (
 class TestTablesOrder:
     """Verify _TABLES_ORDER is in correct dependency order (children first)."""
 
-    def test_historial_estados_is_first(self) -> None:
-        """historial_estados should be first — child of estudios/solicitudes."""
-        assert _TABLES_ORDER[0] == "historial_estados"
+    def test_organizaciones_lideres_is_first(self) -> None:
+        """organizaciones_lideres should be first — child of organizaciones/usuarios."""
+        assert _TABLES_ORDER[0] == "organizaciones_lideres"
 
     def test_beneficiarios_before_paises(self) -> None:
         """beneficiarios must be deleted before paises (FK via regiones)."""
@@ -126,5 +126,5 @@ class TestSchemaQualification:
         monkeypatch.setenv("TEST_DB_SCHEMA", "test_suite")
         qualified = _qualified_table_names()
 
-        assert qualified[0] == "test_suite.historial_estados"
+        assert qualified[0] == "test_suite.organizaciones_lideres"
         assert qualified[-1] == "test_suite.usuarios"

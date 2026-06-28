@@ -357,12 +357,6 @@ solicitudes_tecnicas  ──→  beneficiarios + usuarios
     foto_url  ·  foto_path  ·  prioridad (Alta | Media)  ·  status
 ```
 
-> **Nota:** Los campos `capturista_id` en `estudios_socioeconomicos` y `solicitudes_tecnicas`
-> permanecen en la base de datos real por compatibilidad temporal, pero el código v2 usa
-> exclusivamente `usuario_id`. Serán eliminados en una migración futura.
-
----
-
 ## Seguridad
 
 | Aspecto | Implementación |
@@ -474,7 +468,7 @@ git push origin develop
 - [x] RBAC server-side (`require_roles`) en todos los endpoints
 - [x] Security headers y cache policy en producción
 - [x] Bucket privado con signed URLs para fotos técnicas
-- [ ] Eliminar columnas `capturista_id` legacy de la base de datos
+- [x] Crear migración para eliminar columnas `capturista_id` legacy de la base de datos
 - [ ] Verificar Python 3.12 en el entorno de despliegue
 
 ---
