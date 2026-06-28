@@ -6,6 +6,7 @@ Provides:
   GET  /api/borrador/{estudio_id} — retrieve a complete draft for resumption
 """
 
+import logging
 from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -60,6 +61,8 @@ from validators import (
 )
 
 router = APIRouter()
+
+logger = logging.getLogger(__name__)
 
 
 # ──────────────────────────────────────────────────────────────────────────
@@ -686,6 +689,7 @@ def _create_borrador(
     except HTTPException:
         raise
     except Exception as exc:
+        logger.exception("guardar-borrador CREATE failed: %s", exc)
         raise HTTPException(status_code=500, detail="Error interno al guardar el borrador") from exc
 
     return GuardarBorradorResponse(
@@ -766,6 +770,7 @@ def _update_borrador(
     except HTTPException:
         raise
     except Exception as exc:
+        logger.exception("guardar-borrador UPDATE failed: %s", exc)
         raise HTTPException(status_code=500, detail="Error interno al actualizar el borrador") from exc
 
     # Fetch current folio
