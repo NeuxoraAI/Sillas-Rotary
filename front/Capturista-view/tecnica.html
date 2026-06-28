@@ -1056,6 +1056,9 @@
         });
       })();
 
+      // Real-time validation: inline error below required text fields on blur.
+      SR_Validations.setupLiveRequired(document.querySelector("form"));
+
       // Volver al perfil sin cerrar sesión (logout lives in the profile)
       document.getElementById("btn-volver-perfil")?.addEventListener("click", async function () {
         if (formDirty && !(await AppConfirmation.confirmUnsavedNavigation())) return;

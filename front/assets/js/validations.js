@@ -581,6 +581,30 @@
     }
   }
 
+  // Real-time required validation: text-like fields show an inline error below
+  // the field on blur when required+empty, and clear it as the user types.
+  // Checks `.required` at blur time so dynamically-required fields are covered.
+  function setupLiveRequired(formEl) {
+    if (!formEl) return;
+    const fields = formEl.querySelectorAll(
+      'input:not([type="radio"]):not([type="checkbox"]):not([type="hidden"]):not([type="file"]), textarea'
+    );
+    fields.forEach((field) => {
+      const name = field.getAttribute("name");
+      if (!name) return;
+      field.addEventListener("blur", () => {
+        if (field.required && !(field.value || "").trim()) {
+          showFieldError(name, "Este campo es obligatorio");
+        } else {
+          clearFieldError(name);
+        }
+      });
+      field.addEventListener("input", () => {
+        if ((field.value || "").trim()) clearFieldError(name);
+      });
+    });
+  }
+
   function clearAllFieldErrors(formEl) {
     formEl.querySelectorAll(".field-error").forEach((el) => {
       el.classList.add("hidden");
@@ -780,6 +804,7 @@
     validateHTML5Constraints,
     showFieldError,
     clearFieldError,
+    setupLiveRequired,
     clearAllFieldErrors,
     formatBackendError,
     sanitizeMoneyInput,
