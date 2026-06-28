@@ -2395,6 +2395,32 @@
         });
       })();
 
+      // Real-time validation: required text fields show an error below the field
+      // on blur if left empty, and clear it as soon as the user types. Errors
+      // appear inline (no browser pop-ups). Radios/searchable selects keep their
+      // own UX and are validated on submit.
+      (function () {
+        const formEl = document.querySelector("form");
+        if (!formEl) return;
+        const fields = formEl.querySelectorAll(
+          'input[required]:not([type="radio"]):not([type="checkbox"]), textarea[required]'
+        );
+        fields.forEach(function (field) {
+          const name = field.getAttribute("name");
+          if (!name) return;
+          field.addEventListener("blur", function () {
+            if (!(field.value || "").trim()) {
+              SR_Validations.showFieldError(name, "Este campo es obligatorio");
+            } else {
+              SR_Validations.clearFieldError(name);
+            }
+          });
+          field.addEventListener("input", function () {
+            if ((field.value || "").trim()) SR_Validations.clearFieldError(name);
+          });
+        });
+      })();
+
       // Volver al perfil sin cerrar sesión (logout lives in the profile)
       document
         .getElementById("btn-volver-perfil")
