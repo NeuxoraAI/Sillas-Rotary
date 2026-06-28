@@ -154,6 +154,32 @@ input[type="radio"]:checked {
   border-color: var(--c-orange) !important;
 }
 
+/* ── Touch-friendly radios/checkboxes inside capture forms ──
+   Scoped to <form> so admin table/list checkboxes keep their compact size.
+   22px control + a 40px-tall label so the whole label is an easy tap target. */
+form input[type="checkbox"],
+form input[type="radio"] {
+  width: 22px !important;
+  height: 22px !important;
+  min-width: 22px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+form input[type="radio"] { border-radius: 50%; }
+form label:has(> input[type="checkbox"]),
+form label:has(> input[type="radio"]) {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  cursor: pointer;
+}
+form label:has(> input[type="checkbox"]) > span,
+form label:has(> input[type="radio"]) > span {
+  font-size: var(--text-body);
+  color: var(--c-label);
+}
+
 /* ── File inputs: preserve orange file:// button, don't let height rules break them ── */
 input[type="file"] {
   background-color: transparent !important;
