@@ -1100,6 +1100,22 @@ html.dark .badge-finalizado  { background: rgba(34, 197, 94, 0.20); color: #86EF
 .modal-tab:hover { color: var(--c-title); }
 .modal-tab.active { color: var(--c-orange-hover); border-bottom-color: var(--c-orange); }
 
+/* Detail modal (técnico): 4 tabs must fit the narrow modal without horizontal
+   scroll — equal-width, icon-over-label, compact. Scoped so page tabs (org)
+   keep their horizontal icon+label layout. */
+#modal-content .modal-tabs { gap: 0; overflow-x: visible; }
+#modal-content .modal-tab {
+  flex: 1 1 0;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 4px;
+  font-size: 11px;
+  line-height: 1.15;
+  text-align: center;
+  white-space: normal;
+}
+
 /* ── Scroll-more indicator (bottom fade + bouncing chevron) ── */
 .modal-scroll-hint {
   position: absolute;
@@ -1246,6 +1262,30 @@ html.dark .sr-collapse__head:hover { background: rgba(255, 90, 31, 0.12); }
   .sr-collapse__body { transition: none; }
   .sr-collapse__chevron { transition: none; }
 }
+
+/* ── Responsive captures table: stack rows as cards below md (no horizontal
+   scroll), keeping the status visible. Columns: 1 Beneficiario · 2 CURP ·
+   3 Fecha · 4 Capturista · 5 Estatus · 6 Acciones. ── */
+@media (max-width: 767px) {
+  .bene-table { min-width: 0 !important; }
+  .bene-table thead { display: none; }
+  .bene-table tbody tr {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 12px;
+    padding: 14px 16px;
+    border-bottom: 1px solid #eef0f3;
+  }
+  .bene-table tbody td { padding: 0 !important; white-space: normal !important; }
+  .bene-table tbody td:nth-child(1) { flex: 1 1 100%; }      /* beneficiario */
+  .bene-table tbody td:nth-child(2),                          /* curp */
+  .bene-table tbody td:nth-child(3) { flex: 0 0 auto; font-size: 12px; }  /* fecha */
+  .bene-table tbody td:nth-child(4) { display: none; }        /* capturista (own list) */
+  .bene-table tbody td:nth-child(5) { flex: 0 0 auto; }       /* estatus */
+  .bene-table tbody td:nth-child(6) { flex: 1 1 auto; text-align: right; }  /* acciones */
+}
+html.dark .bene-table tbody tr { border-bottom-color: rgba(255,255,255,0.07); }
 
 /* ── Dark-mode treatment for Fase 0 components ── */
 html.dark {

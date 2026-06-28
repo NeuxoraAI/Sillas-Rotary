@@ -316,11 +316,11 @@
             <span class="stat-card__label">En esta página</span>
           </div>
         </div>
-        <div class="stat-card stat-card--warning">
-          <div class="stat-card__icon"><span class="material-symbols-outlined">edit_note</span></div>
+        <div class="stat-card stat-card--success">
+          <div class="stat-card__icon"><span class="material-symbols-outlined">file_download</span></div>
           <div class="stat-card__body">
-            <span class="stat-card__value" id="summary-borradores">0</span>
-            <span class="stat-card__label">En proceso (página)</span>
+            <span class="stat-card__value" id="summary-exportados">0</span>
+            <span class="stat-card__label">Exportados</span>
           </div>
         </div>
       </div>
@@ -1019,8 +1019,8 @@
         const byId = function (id) { return document.getElementById(id); };
         byId("summary-asignados").textContent = state.total;
         byId("summary-shown").textContent = state.items.length;
-        byId("summary-borradores").textContent =
-          state.items.filter(function (i) { return i.solicitud_status === "borrador"; }).length;
+        byId("summary-exportados").textContent =
+          state.items.filter(function (i) { return state.exportedIds.has(i.beneficiario_id); }).length;
       }
 
       // ═══════════════════════════════════════════════════════════════════════════
