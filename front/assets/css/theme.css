@@ -1199,6 +1199,47 @@ html.dark .sr-select__pop { background: #1B1529; border-color: var(--c-input-bor
 html.dark .sr-select__opt { color: #C9C2D6; }
 @media (prefers-reduced-motion: reduce) { .sr-select__pop { animation: none; } }
 
+/* ── Collapsible section (optional form content) — see assets/js/sr-collapse.js ── */
+.sr-collapse {
+  border: 1px solid var(--c-separator);
+  border-radius: var(--radius-input);
+  overflow: hidden;
+}
+.sr-collapse__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 14px;
+  background: var(--bg-soft-gray);
+  border: none;
+  cursor: pointer;
+  font-size: var(--text-body);
+  font-weight: 600;
+  color: var(--c-label);
+  transition: background-color 0.15s;
+}
+.sr-collapse__head:hover { background: var(--c-orange-light); }
+.sr-collapse__chevron { color: var(--c-gray); transition: transform 0.25s ease; flex-shrink: 0; }
+.sr-collapse.open .sr-collapse__chevron { transform: rotate(180deg); }
+.sr-collapse__body {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.25s ease;
+}
+.sr-collapse.open .sr-collapse__body { grid-template-rows: 1fr; }
+.sr-collapse__inner { overflow: hidden; }
+.sr-collapse__inner > * { padding: 14px; }
+
+html.dark .sr-collapse { border-color: rgba(255, 255, 255, 0.10); }
+html.dark .sr-collapse__head { background: rgba(255, 255, 255, 0.04); }
+html.dark .sr-collapse__head:hover { background: rgba(255, 90, 31, 0.12); }
+@media (prefers-reduced-motion: reduce) {
+  .sr-collapse__body { transition: none; }
+  .sr-collapse__chevron { transition: none; }
+}
+
 /* ── Dark-mode treatment for Fase 0 components ── */
 html.dark {
   --c-success-bg: rgba(34, 197, 94, 0.18);  --c-success: #86EFAC;

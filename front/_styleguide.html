@@ -127,6 +127,31 @@
         </div>
       </section>
 
+      <!-- Collapsible -->
+      <section class="card panel">
+        <h2 class="t-section-title" style="margin-bottom: 1rem;">Sección colapsable</h2>
+        <div style="display:flex; flex-direction:column; gap:0.75rem; max-width:420px;">
+          <div class="sr-collapse open">
+            <button type="button" class="sr-collapse__head" data-collapse-toggle aria-expanded="true">
+              <span>Justificación (abierta)</span>
+              <span class="material-symbols-outlined sr-collapse__chevron" aria-hidden="true">expand_more</span>
+            </button>
+            <div class="sr-collapse__body"><div class="sr-collapse__inner">
+              <p class="t-body" style="margin:0;">Contenido opcional visible. Se anima al colapsar/expandir.</p>
+            </div></div>
+          </div>
+          <div class="sr-collapse">
+            <button type="button" class="sr-collapse__head" data-collapse-toggle aria-expanded="false">
+              <span>Medidas técnicas (cerrada)</span>
+              <span class="material-symbols-outlined sr-collapse__chevron" aria-hidden="true">expand_more</span>
+            </button>
+            <div class="sr-collapse__body"><div class="sr-collapse__inner">
+              <p class="t-body" style="margin:0;">Oculto hasta que se necesita.</p>
+            </div></div>
+          </div>
+        </div>
+      </section>
+
       <!-- Skeleton + check -->
       <section class="card panel">
         <h2 class="t-section-title" style="margin-bottom: 1rem;">Microinteracciones</h2>
@@ -142,5 +167,6 @@
       </section>
     </div>
     <script src="assets/js/sr-select.js"></script>
+    <script src="assets/js/sr-collapse.js"></script>
   </body>
 </html>
