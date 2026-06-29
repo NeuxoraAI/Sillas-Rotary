@@ -213,14 +213,8 @@ def finalizar_registro(
         raise HTTPException(status_code=404, detail="Solicitud no encontrada")
 
     # 2. Ownership check
-    assert_resource_owner(
-        estudio_row["usuario_id"], usuario,
-        db=db, estudio_id=body.estudio_id,
-    )
-    assert_resource_owner(
-        solicitud_row["usuario_id"], usuario,
-        db=db, estudio_id=body.estudio_id,
-    )
+    assert_resource_owner(estudio_row["usuario_id"], usuario, db=db)
+    assert_resource_owner(solicitud_row["usuario_id"], usuario, db=db)
 
     # 3. Idempotency: if both already completo, return early
     if estudio_row["status"] == "completo" and solicitud_row["status"] == "completo":
