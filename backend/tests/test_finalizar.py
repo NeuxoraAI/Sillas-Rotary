@@ -157,6 +157,32 @@ class TestValidateAllComplete:
         peso_fields = [m for m in missing if m["field"] == "peso_kg"]
         assert len(peso_fields) == 1, f"Expected peso_kg in missing, got: {missing}"
         assert peso_fields[0]["form"] == "solicitud"
+        # Issue #122: each missing field carries a user-facing label,
+        # never the raw column name.
+        assert peso_fields[0]["label"] == "Peso"
+
+    def test_missing_fields_carry_friendly_labels(self):
+        """Issue #122: every missing item exposes a label, never a raw column."""
+        from routers.finalizar import _validate_all_complete
+        from validators import FIELD_LABELS
+
+        # Empty rows → maximal set of missing fields across all forms.
+        missing = _validate_all_complete({}, {}, {}, [])
+
+        assert missing, "Expected missing fields for empty rows"
+        for item in missing:
+            assert "label" in item, f"Missing label on {item}"
+            assert item["label"], f"Empty label on {item}"
+            # Label must differ from the raw column for catalogued fields.
+            if item["field"] in FIELD_LABELS:
+                assert item["label"] == FIELD_LABELS[item["field"]]
+
+        # Spot-check the examples named in the issue.
+        labels_by_field = {m["field"]: m["label"] for m in missing}
+        assert labels_by_field.get("curp_benef") == "CURP"
+        assert labels_by_field.get("estado_codigo") == "Estado"
+        assert labels_by_field.get("telefonos") == "Teléfono"
+        assert labels_by_field.get("fecha_nacimiento") == "Fecha de nacimiento"
 
     def test_returns_missing_when_beneficiario_lacks_nombres(self):
         """TRIANGULATE: beneficiario missing nombres is detected."""
