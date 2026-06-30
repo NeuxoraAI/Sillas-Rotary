@@ -28,6 +28,7 @@
 </script>
 <link href="assets/css/theme.css" rel="stylesheet"/>
 <script src="assets/js/session-guard.js"></script>
+<script src="assets/js/apiClient.js"></script>
 <script src="assets/js/confirmation-modal.js"></script>
 <script src="assets/js/theme-toggle.js"></script>
 <script src="assets/js/delight.js"></script>
@@ -387,9 +388,7 @@
     try {
       // If no org_id in URL, resolve from user's profile (for organizacion users)
       if (!orgIdFromUrl) {
-        const perfilRes = await fetch('/api/me/perfil', {
-          headers: { 'Authorization': 'Bearer ' + session.token }
-        });
+        const perfilRes = await ApiClient.fetch('/me/perfil');
         if (perfilRes.status === 401) { _clearAllStorage(); window.location.href = 'login.html'; return; }
         if (!perfilRes.ok) throw new Error('HTTP ' + perfilRes.status);
         const perfil = await perfilRes.json();
@@ -403,9 +402,7 @@
       }
 
       // Load organization detail
-      const orgRes = await fetch(`/api/organizaciones/${orgIdFromUrl}`, {
-        headers: { 'Authorization': 'Bearer ' + session.token }
-      });
+      const orgRes = await ApiClient.fetch(`/organizaciones/${orgIdFromUrl}`);
       if (orgRes.status === 401) { _clearAllStorage(); window.location.href = 'login.html'; return; }
       if (orgRes.status === 404) { _showError('Organización no encontrada.'); return; }
       if (!orgRes.ok) throw new Error('HTTP ' + orgRes.status);
@@ -468,9 +465,7 @@
 
   async function loadOrgDetail(orgId) {
     try {
-      const res = await fetch(`/api/organizaciones/${orgId}`, {
-        headers: { 'Authorization': 'Bearer ' + session.token }
-      });
+      const res = await ApiClient.fetch(`/organizaciones/${orgId}`);
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const org = await res.json();
 
@@ -521,9 +516,7 @@
     const loading   = document.getElementById('heatmap-loading');
     if (!orgId) return;
     try {
-      const res = await fetch(`/api/organizaciones/${orgId}/heatmap`, {
-        headers: { 'Authorization': 'Bearer ' + session.token }
-      });
+      const res = await ApiClient.fetch(`/organizaciones/${orgId}/heatmap`);
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const data = await res.json();
       loading.classList.add('hidden');
@@ -584,9 +577,7 @@
     const empty   = document.getElementById('empty-state');
     if (!orgId) return;
     try {
-      const res = await fetch(`/api/organizaciones/${orgId}/beneficiarios`, {
-        headers: { 'Authorization': 'Bearer ' + session.token }
-      });
+      const res = await ApiClient.fetch(`/organizaciones/${orgId}/beneficiarios`);
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const capturas = await res.json();
       loading.classList.add('hidden');
@@ -633,9 +624,7 @@
     const body = document.getElementById('voluntarios-body');
     if (!orgId) return;
     try {
-      const res = await fetch(`/api/organizaciones/${orgId}/voluntarios`, {
-        headers: { 'Authorization': 'Bearer ' + session.token }
-      });
+      const res = await ApiClient.fetch(`/organizaciones/${orgId}/voluntarios`);
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const voluntarios = await res.json();
       document.getElementById('vol-loading').classList.add('hidden');
