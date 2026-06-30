@@ -37,6 +37,7 @@
     <script src="../assets/js/theme-toggle.js"></script>
     <script src="../assets/js/delight.js"></script>
     <script src="../assets/js/session-guard.js"></script>
+    <script src="../assets/js/apiClient.js"></script>
     <script src="../assets/js/confirmation-modal.js"></script>
     <link href="../assets/css/admin-usuarios.css" rel="stylesheet" />
     <style>
@@ -549,8 +550,10 @@
       document.getElementById("sidebar-nombre").textContent =
         SessionGuard.getSession().nombre || "—";
 
-      function _authFetch(url, opts) {
-        return SessionGuard.authFetch(url, opts);
+      // Delegates to ApiClient: paths omit "/api" (added centrally), and the
+      // base URL + Bearer auth live in assets/js/apiClient.js.
+      function _authFetch(path, opts) {
+        return ApiClient.fetch(path, opts);
       }
 
       async function _logout() {
@@ -586,7 +589,7 @@
         countEl.classList.add("hidden");
 
         try {
-          const res = await _authFetch("/api/usuarios");
+          const res = await _authFetch("/usuarios");
           if (!res.ok) throw new Error("HTTP " + res.status);
           const usuarios = await res.json();
 
@@ -681,7 +684,7 @@
         if (!confirm("¿Desactivar este usuario? Perderá acceso al sistema."))
           return;
         try {
-          const res = await _authFetch(`/api/usuarios/${id}`, {
+          const res = await _authFetch(`/usuarios/${id}`, {
             method: "DELETE",
           });
           if (!res.ok) throw new Error("HTTP " + res.status);
@@ -695,7 +698,7 @@
       async function reactivateUsuario(id) {
         if (!confirm("¿Reactivar este usuario? Recuperará acceso al sistema.")) return;
         try {
-          const res = await _authFetch(`/api/usuarios/${id}`, {
+          const res = await _authFetch(`/usuarios/${id}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ activo: true }),
@@ -720,7 +723,7 @@
         );
         if (!confirmed) return;
         try {
-          const res = await _authFetch(`/api/usuarios/${id}?permanent=true`, { method: "DELETE" });
+          const res = await _authFetch(`/usuarios/${id}?permanent=true`, { method: "DELETE" });
           if (!res.ok) {
             const data = await res.json().catch(() => ({}));
             alert(data.detail || "No se pudo eliminar el usuario permanentemente.");
@@ -774,7 +777,7 @@
         if (password) payload.password = password;
 
         try {
-          const res = await _authFetch(`/api/usuarios/${_editUserId}`, {
+          const res = await _authFetch(`/usuarios/${_editUserId}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
@@ -806,7 +809,7 @@
         _hideEl("manage-org-error");
 
         try {
-          const userRes = await _authFetch("/api/usuarios");
+          const userRes = await _authFetch("/usuarios");
           const users = await userRes.json();
           const user = users.find(u => parseInt(u.usuario_id, 10) === usuarioId);
           if (!user) {
@@ -818,7 +821,7 @@
           document.getElementById("manage-org-email").value = user.email;
 
           // Get org data
-          const orgRes = await _authFetch(`/api/organizaciones?usuario_id=${usuarioId}`);
+          const orgRes = await _authFetch(`/organizaciones?usuario_id=${usuarioId}`);
           let org = null;
           if (orgRes.ok) {
             const orgs = await orgRes.json();
@@ -878,7 +881,7 @@
 
       async function refreshOrgPeople(orgId) {
         try {
-          const res = await _authFetch(`/api/organizaciones/${orgId}`);
+          const res = await _authFetch(`/organizaciones/${orgId}`);
           if (!res.ok) throw new Error("HTTP " + res.status);
           const org = await res.json();
 
@@ -935,7 +938,7 @@
       window.removeOrgLider = async function (orgId, usuarioId) {
         if (!confirm("¿Quitar este líder de la organización?")) return;
         try {
-          const res = await _authFetch(`/api/organizaciones/${orgId}/lider/${usuarioId}`, {
+          const res = await _authFetch(`/organizaciones/${orgId}/lider/${usuarioId}`, {
             method: "DELETE",
           });
           if (!res.ok) throw new Error("HTTP " + res.status);
@@ -949,7 +952,7 @@
       window.removeOrgMember = async function (orgId, usuarioId) {
         if (!confirm("¿Quitar este miembro de la organización?")) return;
         try {
-          const res = await _authFetch(`/api/organizaciones/${orgId}/miembros/${usuarioId}`, {
+          const res = await _authFetch(`/organizaciones/${orgId}/miembros/${usuarioId}`, {
             method: "DELETE",
           });
           if (!res.ok) throw new Error("HTTP " + res.status);
@@ -982,7 +985,7 @@
         }
         _hideEl("manage-org-error");
         try {
-          const res = await _authFetch(`/api/organizaciones/${_manageOrgId}/lider`, {
+          const res = await _authFetch(`/organizaciones/${_manageOrgId}/lider`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ lider_usuario_id: usuarioId }),
@@ -1014,7 +1017,7 @@
         }
         _hideEl("manage-org-error");
         try {
-          const res = await _authFetch(`/api/organizaciones/${_manageOrgId}/miembros`, {
+          const res = await _authFetch(`/organizaciones/${_manageOrgId}/miembros`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ lider_usuario_id: usuarioId }),
@@ -1049,7 +1052,7 @@
 
           // If org doesn't exist yet, create it first
           if (!orgId) {
-            const createRes = await _authFetch("/api/organizaciones", {
+            const createRes = await _authFetch("/organizaciones", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
@@ -1068,7 +1071,7 @@
           }
 
           // Update org details
-          const res = await _authFetch(`/api/organizaciones/${orgId}`, {
+          const res = await _authFetch(`/organizaciones/${orgId}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ descripcion, direccion, telefono }),
@@ -1123,7 +1126,7 @@
           btnText.textContent = "Creando…";
 
           try {
-            const res = await _authFetch("/api/usuarios", {
+            const res = await _authFetch("/usuarios", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ nombre, email, password, rol }),

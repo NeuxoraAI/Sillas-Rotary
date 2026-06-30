@@ -31,6 +31,7 @@
 <script src="../assets/js/theme-toggle.js"></script>
 <script src="../assets/js/delight.js"></script>
 <script src="../assets/js/session-guard.js"></script>
+<script src="../assets/js/apiClient.js"></script>
 <script src="../assets/js/confirmation-modal.js"></script>
 <link href="../assets/css/admin-regiones.css" rel="stylesheet"/>
   <style>
@@ -344,8 +345,10 @@
 
   document.getElementById('sidebar-nombre').textContent = SessionGuard.getSession().nombre || '—';
 
-  function _authFetch(url, opts) {
-    return SessionGuard.authFetch(url, opts);
+  // Delegates to ApiClient: paths omit "/api" (added centrally), and the
+  // base URL + Bearer auth live in assets/js/apiClient.js.
+  function _authFetch(path, opts) {
+    return ApiClient.fetch(path, opts);
   }
 
   async function _logout() {
@@ -378,7 +381,7 @@
 
     try {
       // Admin view always fetches all countries (active + inactive)
-      const res = await _authFetch('/api/paises?include_inactive=true');
+      const res = await _authFetch('/paises?include_inactive=true');
       if (!res.ok) throw new Error();
       _paisesCache = await res.json();
       renderPaises();
@@ -471,7 +474,7 @@
 
     try {
       // Admin view fetches all regions (active + inactive)
-      const res = await _authFetch('/api/regiones?include_inactive=true');
+      const res = await _authFetch('/regiones?include_inactive=true');
       if (!res.ok) throw new Error();
       _regionesCache = await res.json();
 
@@ -559,7 +562,7 @@
     const accion = activar ? 'activar' : 'desactivar';
     if (!confirm(`¿${accion.charAt(0).toUpperCase() + accion.slice(1)} este país?`)) return;
     try {
-      const res = await _authFetch(`/api/paises/${id}`, {
+      const res = await _authFetch(`/paises/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ activo: activar }),
@@ -581,7 +584,7 @@
     const accion = activar ? 'activar' : 'desactivar';
     if (!confirm(`¿${accion.charAt(0).toUpperCase() + accion.slice(1)} esta región?`)) return;
     try {
-      const res = await _authFetch(`/api/regiones/${id}`, {
+      const res = await _authFetch(`/regiones/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ activo: activar }),
@@ -628,7 +631,7 @@
     if (codigo.length < 2)  { _show(errorEl, 'El código debe tener al menos 2 caracteres.'); return; }
 
     try {
-      const res = await _authFetch(`/api/paises/${_editPaisId}`, {
+      const res = await _authFetch(`/paises/${_editPaisId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nombre, codigo }),
@@ -674,7 +677,7 @@
     if (codigo.length < 2 || codigo.length > 5) { _show(errorEl, 'El código debe tener entre 2 y 5 caracteres.'); return; }
 
     try {
-      const res = await _authFetch(`/api/regiones/${_editRegionId}`, {
+      const res = await _authFetch(`/regiones/${_editRegionId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nombre, codigo }),
@@ -710,7 +713,7 @@
     btn.disabled = true; btnText.textContent = 'Guardando…';
 
     try {
-      const res = await _authFetch('/api/paises', {
+      const res = await _authFetch('/paises', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ nombre, codigo }),
@@ -750,7 +753,7 @@
     btn.disabled = true; btnText.textContent = 'Guardando…';
 
     try {
-      const res = await _authFetch('/api/regiones', {
+      const res = await _authFetch('/regiones', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ pais_id, nombre, codigo }),
