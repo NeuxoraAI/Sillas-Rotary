@@ -1959,7 +1959,7 @@
                 const errData = await res.json().catch(() => ({}));
                 var errMsg = errData.detail;
                 if (Array.isArray(errMsg)) {
-                  errMsg = errMsg.map(function (d) { return (d.loc ? d.loc.join(".") : "") + ": " + (d.msg || ""); }).join(" | ");
+                  errMsg = errMsg.map(function (d) { return SR_Validations.getBackendPathLabel(d.loc ? d.loc.join(".") : "") + ": " + (d.msg || ""); }).join(" | ");
                 }
                 errors.push("Tutores/Documentos: " + (errMsg || res.status));
               }
