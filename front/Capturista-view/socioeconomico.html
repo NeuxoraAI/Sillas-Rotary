@@ -35,6 +35,7 @@
     <link href="../assets/css/theme.css" rel="stylesheet"/>
     <script src="../assets/js/theme-toggle.js"></script>
     <script src="../assets/js/session-guard.js"></script>
+    <script src="../assets/js/apiClient.js"></script>
     <script src="../assets/js/confirmation-modal.js"></script>
     <link href="../assets/css/socioeconomico.css" rel="stylesheet" />
   </head>
@@ -1240,7 +1241,7 @@
           objectUrl: null,
           type,
           name: extractStoredFilename(path),
-          sourceUrl: path ? `/api/documentos?path=${encodeURIComponent(path)}` : null,
+          sourceUrl: path ? ApiClient.documentUrl(`/documentos?path=${encodeURIComponent(path)}`) : null,
         };
       }
 
@@ -1287,7 +1288,7 @@
         // endpoint, which an <img> cannot reach (no Authorization header → 401).
         // Fetch it with the session token, then render it as a blob object URL.
         // Local (just-picked) previews use an objectUrl and render directly.
-        if (!state.objectUrl && previewUrl.startsWith("/api/")) {
+        if (!state.objectUrl && state.sourceUrl) {
           media.innerHTML = `<div class="flex h-full w-full items-center justify-center text-slate-400"><span class="material-symbols-outlined animate-pulse">image</span></div>`;
           SessionGuard.authFetch(previewUrl)
             .then((r) => (r.ok ? r.blob() : null))
@@ -1583,11 +1584,8 @@
           formData.append("tipo", config.tipo);
           formData.append("archivo", file);
 
-          const response = await fetch("/api/upload-documento", {
+          const response = await ApiClient.fetch("/upload-documento", {
             method: "POST",
-            headers: {
-              Authorization: "Bearer " + token,
-            },
             body: formData,
           });
 
@@ -1701,25 +1699,17 @@
             tutores: payload.tutores,
           };
 
-          const response = await fetch(`/api/estudios/${estudioId}`, {
+          const response = await ApiClient.fetch(`/estudios/${estudioId}`, {
             method: "PATCH",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: "Bearer " + sessionToken,
-            },
-            body: JSON.stringify(patchPayload),
+            json: patchPayload,
           });
 
           return { response, mode: "patch" };
         }
 
-        const response = await fetch("/api/estudios", {
+        const response = await ApiClient.fetch("/estudios", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: "Bearer " + sessionToken,
-          },
-          body: JSON.stringify(payload),
+          json: payload,
         });
 
         return { response, mode: "post" };
@@ -2161,11 +2151,8 @@
         const estudioId = localStorage.getItem("estudio_id");
         if (estudioId) {
           try {
-            const res = await fetch(`/api/estudios/${estudioId}`, {
-              headers: {
-                Accept: "application/json",
-                Authorization: "Bearer " + session.token,
-              },
+            const res = await ApiClient.fetch(`/estudios/${estudioId}`, {
+              headers: { Accept: "application/json" },
             });
 
             if (res.ok) {
@@ -2662,13 +2649,9 @@
           };
 
           // 4. Llamar al endpoint
-          const res = await fetch("/api/guardar-borrador", {
+          const res = await ApiClient.fetch("/guardar-borrador", {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: "Bearer " + session.token,
-            },
-            body: JSON.stringify(payload),
+            json: payload,
           });
 
           if (res.ok) {
@@ -3528,13 +3511,9 @@
               tutores: payload.tutores,
             };
 
-            res = await fetch(`/api/estudios/${estudioId}`, {
+            res = await ApiClient.fetch(`/estudios/${estudioId}`, {
               method: "PATCH",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: "Bearer " + session.token,
-              },
-              body: JSON.stringify(patchPayload),
+              json: patchPayload,
             });
 
             if (!res.ok) {
@@ -3559,16 +3538,12 @@
               try {
                 const nextRefs = await uploadSupportingDocuments(session.token);
                 const attachmentPayload = getFormData(status, nextRefs);
-                const attachmentResponse = await fetch(`/api/estudios/${estudioId}`, {
+                const attachmentResponse = await ApiClient.fetch(`/estudios/${estudioId}`, {
                   method: "PATCH",
-                  headers: {
-                    "Content-Type": "application/json",
-                    Authorization: "Bearer " + session.token,
-                  },
-                  body: JSON.stringify({
+                  json: {
                     ...attachmentPayload.estudio,
                     tutores: attachmentPayload.tutores,
-                  }),
+                  },
                 });
                 if (!attachmentResponse.ok) {
                   errorEl.textContent =
@@ -3597,13 +3572,9 @@
             const payload = getFormData(status, documentRefs);
             console.log('[DEBUG] Payload being sent:', JSON.stringify(payload, null, 2));
 
-            res = await fetch("/api/estudios", {
+            res = await ApiClient.fetch("/estudios", {
               method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: "Bearer " + session.token,
-              },
-              body: JSON.stringify(payload),
+              json: payload,
             });
 
             if (!res.ok) {
@@ -3637,16 +3608,12 @@
               try {
                 const nextRefs = await uploadSupportingDocuments(session.token);
                 const attachmentPayload = getFormData(status, nextRefs);
-                const attachmentResponse = await fetch(`/api/estudios/${data.estudio_id}`, {
+                const attachmentResponse = await ApiClient.fetch(`/estudios/${data.estudio_id}`, {
                   method: "PATCH",
-                  headers: {
-                    "Content-Type": "application/json",
-                    Authorization: "Bearer " + session.token,
-                  },
-                  body: JSON.stringify({
+                  json: {
                     ...attachmentPayload.estudio,
                     tutores: attachmentPayload.tutores,
-                  }),
+                  },
                 });
                 if (!attachmentResponse.ok) {
                   errorEl.textContent =
@@ -3959,9 +3926,7 @@
         }
 
         try {
-          const res = await fetch(`/api/borrador/${id}`, {
-            headers: { Authorization: "Bearer " + sessionData.token },
-          });
+          const res = await ApiClient.fetch(`/borrador/${id}`);
           if (!res.ok) {
             const errorText = await res.text();
             console.error(`Error response: ${errorText}`);
@@ -4027,13 +3992,9 @@
         if (tels) body.beneficiario.telefonos = tels;
 
         try {
-          const res = await fetch(`/api/estudios/${id}`, {
+          const res = await ApiClient.fetch(`/estudios/${id}`, {
             method: "PATCH",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: "Bearer " + session.token,
-            },
-            body: JSON.stringify(body),
+            json: body,
           });
           if (!res.ok) {
             const data = await res.json().catch(() => ({}));

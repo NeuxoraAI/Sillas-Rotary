@@ -34,6 +34,7 @@
     <!-- END: Tailwind CSS & Plugins -->
     <link href="../assets/css/theme.css" rel="stylesheet"/>
     <script src="../assets/js/session-guard.js"></script>
+    <script src="../assets/js/apiClient.js"></script>
     <script src="../assets/js/theme-toggle.js"></script>
     <script src="../assets/js/confirmation-modal.js"></script>
     <script src="../assets/js/mascot.js"></script>
@@ -582,13 +583,9 @@
           // 3. Armar payload maestro para el backend
           const payload = buildGuardarBorradorPayload(draftSocio, draftTecnica, gestionData, "borrador");
 
-          const res = await fetch("/api/guardar-borrador", {
+          const res = await ApiClient.fetch("/guardar-borrador", {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: "Bearer " + session.token,
-            },
-            body: JSON.stringify(payload),
+            json: payload,
           });
 
           if (res.ok) {
@@ -919,21 +916,13 @@
 
         try {
           const [estudioRes, solicitudRes] = await Promise.all([
-            fetch(`/api/estudios/${estudioId}`, {
+            ApiClient.fetch(`/estudios/${estudioId}`, {
               method: "PATCH",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: "Bearer " + session.token,
-              },
-              body: JSON.stringify(estudioPayload),
+              json: estudioPayload,
             }),
-            fetch(`/api/solicitudes/${solicitudId}`, {
+            ApiClient.fetch(`/solicitudes/${solicitudId}`, {
               method: "PATCH",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: "Bearer " + session.token,
-              },
-              body: JSON.stringify(solicitudPayload),
+              json: solicitudPayload,
             }),
           ]);
 
@@ -1048,13 +1037,9 @@
           // Evitamos PATCH /api/estudios/{id}: ese endpoint tiene semántica de completar
           // y puede devolver 422 si aún faltan campos antes de consolidar técnica/gestión.
           const payload = buildGuardarBorradorPayload(draftSocio, draftTecnica, gestionData, "borrador");
-          const guardarRes = await fetch("/api/guardar-borrador", {
+          const guardarRes = await ApiClient.fetch("/guardar-borrador", {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: "Bearer " + session.token,
-            },
-            body: JSON.stringify(payload),
+            json: payload,
           });
 
           if (!guardarRes.ok) {
@@ -1080,16 +1065,12 @@
           if (guardarData.beneficiario_id) localStorage.setItem("beneficiario_id", guardarData.beneficiario_id);
 
           // 5. Finalizar registro
-          const finalizarRes = await fetch("/api/finalizar-registro", {
+          const finalizarRes = await ApiClient.fetch("/finalizar-registro", {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: "Bearer " + session.token,
-            },
-            body: JSON.stringify({
+            json: {
               estudio_id: parseInt(finalEstudioId, 10),
               solicitud_id: parseInt(finalSolicitudId, 10),
-            }),
+            },
           });
 
           if (finalizarRes.ok) {
@@ -1199,11 +1180,8 @@
         const estudioId = localStorage.getItem("estudio_id");
         if (estudioId) {
           try {
-            const res = await fetch(`/api/estudios/${estudioId}`, {
-              headers: {
-                Accept: "application/json",
-                Authorization: "Bearer " + session.token,
-              },
+            const res = await ApiClient.fetch(`/estudios/${estudioId}`, {
+              headers: { Accept: "application/json" },
             });
 
             if (res.ok) {
@@ -1228,11 +1206,8 @@
         const solicitudId = localStorage.getItem("solicitud_id");
         if (solicitudId) {
           try {
-            const res = await fetch(`/api/solicitudes/${solicitudId}`, {
-              headers: {
-                Accept: "application/json",
-                Authorization: "Bearer " + session.token,
-              },
+            const res = await ApiClient.fetch(`/solicitudes/${solicitudId}`, {
+              headers: { Accept: "application/json" },
             });
 
             if (res.ok) {
