@@ -607,14 +607,13 @@
 
       svg += '</svg>';
 
+      // Legend swatches mirror _heatColor so the ramp stays consistent with the
+      // cells in both light and dark mode.
+      const _legendRamp = [0, 1, 3, 6, 12].map(_heatColor);
       const legendHtml = `
         <div class="flex items-center gap-2 mt-4 text-xs text-slate-400 justify-end">
           <span>Menos</span>
-          <span class="heatmap-cell inline-block bg-[#F0E7E2]"></span>
-          <span class="heatmap-cell inline-block bg-[#FFD3BE]"></span>
-          <span class="heatmap-cell inline-block bg-[#FF9E70]"></span>
-          <span class="heatmap-cell inline-block bg-[#FF6A2C]"></span>
-          <span class="heatmap-cell inline-block bg-[#E8410A]"></span>
+          ${_legendRamp.map((c) => `<span class="heatmap-cell inline-block" style="background:${c}"></span>`).join('')}
           <span>Más</span>
         </div>
       `;
