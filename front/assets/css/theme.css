@@ -154,6 +154,32 @@ input[type="radio"]:checked {
   border-color: var(--c-orange) !important;
 }
 
+/* ── Touch-friendly radios/checkboxes inside capture forms ──
+   Scoped to <form> so admin table/list checkboxes keep their compact size.
+   22px control + a 40px-tall label so the whole label is an easy tap target. */
+form input[type="checkbox"],
+form input[type="radio"] {
+  width: 22px !important;
+  height: 22px !important;
+  min-width: 22px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+form input[type="radio"] { border-radius: 50%; }
+form label:has(> input[type="checkbox"]),
+form label:has(> input[type="radio"]) {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  cursor: pointer;
+}
+form label:has(> input[type="checkbox"]) > span,
+form label:has(> input[type="radio"]) > span {
+  font-size: var(--text-body);
+  color: var(--c-label);
+}
+
 /* ── File inputs: preserve orange file:// button, don't let height rules break them ── */
 input[type="file"] {
   background-color: transparent !important;
@@ -1074,6 +1100,22 @@ html.dark .badge-finalizado  { background: rgba(34, 197, 94, 0.20); color: #86EF
 .modal-tab:hover { color: var(--c-title); }
 .modal-tab.active { color: var(--c-orange-hover); border-bottom-color: var(--c-orange); }
 
+/* Detail modal (técnico): 4 tabs must fit the narrow modal without horizontal
+   scroll — equal-width, icon-over-label, compact. Scoped so page tabs (org)
+   keep their horizontal icon+label layout. */
+#modal-content .modal-tabs { gap: 0; overflow-x: visible; }
+#modal-content .modal-tab {
+  flex: 1 1 0;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 4px;
+  font-size: 11px;
+  line-height: 1.15;
+  text-align: center;
+  white-space: normal;
+}
+
 /* ── Scroll-more indicator (bottom fade + bouncing chevron) ── */
 .modal-scroll-hint {
   position: absolute;
@@ -1103,6 +1145,147 @@ html.dark .modal-tab.active { color: #FFB088; }
 html.dark .modal-scroll-hint { background: linear-gradient(to top, rgba(27, 21, 41, 0.96) 15%, rgba(27, 21, 41, 0)); }
 
 @media (prefers-reduced-motion: reduce) { .modal-scroll-hint::after { animation: none; } }
+
+/* ── Searchable select (combobox) — see assets/js/sr-select.js ── */
+.sr-select { position: relative; }
+.sr-select__native {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  min-height: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none;
+}
+.sr-select__trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  text-align: left;
+  background: var(--c-input-bg);
+  border: 1px solid var(--c-input-border);
+  border-radius: var(--radius-input);
+  color: #0f172a;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.sr-select__trigger:hover { border-color: var(--c-orange); }
+.sr-select__trigger--disabled,
+.sr-select__trigger:disabled {
+  background: #f1f5f9;
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+.sr-select__trigger--disabled:hover { border-color: var(--c-input-border); }
+.sr-select__trigger[aria-expanded="true"] {
+  border-color: var(--c-orange);
+  box-shadow: 0 0 0 3px rgba(241, 90, 36, 0.18);
+}
+.sr-select__label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--text-body); }
+.sr-select__placeholder { color: var(--c-placeholder); }
+.sr-select__caret { font-size: 20px; color: var(--c-gray); flex-shrink: 0; }
+.sr-select__pop {
+  position: absolute;
+  z-index: 40;
+  left: 0;
+  right: 0;
+  top: calc(100% + 4px);
+  background: #fff;
+  border: 1px solid var(--c-input-border);
+  border-radius: var(--radius-input);
+  box-shadow: var(--shadow-card);
+  padding: 6px;
+  max-height: 280px;
+  display: flex;
+  flex-direction: column;
+  animation: fade-in 0.12s ease-out;
+}
+.sr-select__search { width: 100%; margin-bottom: 6px; }
+.sr-select__list { overflow-y: auto; }
+.sr-select__opt {
+  padding: 9px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: var(--text-body);
+  color: var(--c-label);
+}
+.sr-select__opt:hover,
+.sr-select__opt.active { background: var(--c-orange-light); color: var(--c-orange-hover); }
+.sr-select__opt[aria-selected="true"] { font-weight: 700; color: var(--c-orange-hover); }
+.sr-select__empty { padding: 12px; text-align: center; color: var(--c-gray); font-size: var(--text-sm); }
+
+html.dark .sr-select__trigger { background: var(--c-input-bg); color: #E8DFEE; }
+html.dark .sr-select__pop { background: #1B1529; border-color: var(--c-input-border); }
+html.dark .sr-select__opt { color: #C9C2D6; }
+@media (prefers-reduced-motion: reduce) { .sr-select__pop { animation: none; } }
+
+/* ── Collapsible section (optional form content) — see assets/js/sr-collapse.js ── */
+.sr-collapse {
+  border: 1px solid var(--c-separator);
+  border-radius: var(--radius-input);
+  overflow: hidden;
+}
+.sr-collapse__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 14px;
+  background: var(--bg-soft-gray);
+  border: none;
+  cursor: pointer;
+  font-size: var(--text-body);
+  font-weight: 600;
+  color: var(--c-label);
+  transition: background-color 0.15s;
+}
+.sr-collapse__head:hover { background: var(--c-orange-light); }
+.sr-collapse__chevron { color: var(--c-gray); transition: transform 0.25s ease; flex-shrink: 0; }
+.sr-collapse.open .sr-collapse__chevron { transform: rotate(180deg); }
+.sr-collapse__body {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.25s ease;
+}
+.sr-collapse.open .sr-collapse__body { grid-template-rows: 1fr; }
+.sr-collapse__inner { overflow: hidden; }
+.sr-collapse__inner > * { padding: 14px; }
+
+html.dark .sr-collapse { border-color: rgba(255, 255, 255, 0.10); }
+html.dark .sr-collapse__head { background: rgba(255, 255, 255, 0.04); }
+html.dark .sr-collapse__head:hover { background: rgba(255, 90, 31, 0.12); }
+@media (prefers-reduced-motion: reduce) {
+  .sr-collapse__body { transition: none; }
+  .sr-collapse__chevron { transition: none; }
+}
+
+/* ── Responsive captures table: stack rows as cards below md (no horizontal
+   scroll), keeping the status visible. Columns: 1 Beneficiario · 2 CURP ·
+   3 Fecha · 4 Capturista · 5 Estatus · 6 Acciones. ── */
+@media (max-width: 767px) {
+  .bene-table { min-width: 0 !important; }
+  .bene-table thead { display: none; }
+  .bene-table tbody tr {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 12px;
+    padding: 14px 16px;
+    border-bottom: 1px solid #eef0f3;
+  }
+  .bene-table tbody td { padding: 0 !important; white-space: normal !important; }
+  .bene-table tbody td:nth-child(1) { flex: 1 1 100%; }      /* beneficiario */
+  .bene-table tbody td:nth-child(2),                          /* curp */
+  .bene-table tbody td:nth-child(3) { flex: 0 0 auto; font-size: 12px; }  /* fecha */
+  .bene-table tbody td:nth-child(4) { display: none; }        /* capturista (own list) */
+  .bene-table tbody td:nth-child(5) { flex: 0 0 auto; }       /* estatus */
+  .bene-table tbody td:nth-child(6) { flex: 1 1 auto; text-align: right; }  /* acciones */
+}
+html.dark .bene-table tbody tr { border-bottom-color: rgba(255,255,255,0.07); }
 
 /* ── Dark-mode treatment for Fase 0 components ── */
 html.dark {

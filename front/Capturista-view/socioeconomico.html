@@ -35,7 +35,7 @@
     <link href="../assets/css/theme.css" rel="stylesheet"/>
     <script src="../assets/js/theme-toggle.js"></script>
     <script src="../assets/js/session-guard.js"></script>
-    <script src="../assets/js/confirmation-modal.js"></script>
+    <script src="../assets/js/confirmation-modal.js?v=2"></script>
     <link href="../assets/css/socioeconomico.css" rel="stylesheet" />
   </head>
   <body class="page-bg min-h-screen flex flex-col font-display" style="background: #FBF7F5;">
@@ -227,7 +227,7 @@
             </div>
             <div class="space-y-2">
               <label class="block text-sm font-semibold text-slate-700">Estado</label>
-              <select class="w-full" name="estado_codigo" id="estado_codigo" required aria-describedby="estado_codigo-error"></select>
+              <select class="w-full" name="estado_codigo" id="estado_codigo" required data-searchable aria-describedby="estado_codigo-error"></select>
               <p class="field-error hidden text-red-600 text-xs mt-1" id="estado_codigo-error" data-error-for="estado_codigo" role="alert"></p>
             </div>
             <div class="space-y-2">
@@ -238,6 +238,7 @@
                 id="ciudad"
                 required
                 disabled
+                data-searchable
                 aria-describedby="ciudad-error"
               >
                 <option value="">Selecciona un estado primero</option>
@@ -984,6 +985,7 @@
       </div>
     </div>
     <script src="../assets/js/validations.js"></script>
+    <script src="../assets/js/sr-select.js"></script>
     <script data-purpose="form-logic">
       const NIVEL_ESTUDIOS_CATALOG = [
         "NINGUNO", "PRIMARIA", "SECUNDARIA", "BACHILLERATO",
@@ -2223,6 +2225,9 @@
                   await loadMunicipiosCatalog();
                   renderMunicipiosSelect(b.estado_codigo, b.ciudad || "");
                 }
+                // Resync searchable-select triggers (setVal does not fire change)
+                document.getElementById("estado_codigo")?.dispatchEvent(new Event("sr:refresh"));
+                document.getElementById("ciudad")?.dispatchEvent(new Event("sr:refresh"));
                 setVal("telefonos", b.telefonos);
                 setVal("email", b.email);
                 const sexoEl = document.querySelector(`[name="sexo"][value="${b.sexo}"]`);
@@ -2389,6 +2394,10 @@
           });
         });
       })();
+
+      // Real-time validation: inline error below required text fields on blur,
+      // cleared as the user types (no browser pop-ups).
+      SR_Validations.setupLiveRequired(document.querySelector("form"));
 
       // Volver al perfil sin cerrar sesión (logout lives in the profile)
       document

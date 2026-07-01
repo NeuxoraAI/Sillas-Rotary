@@ -140,6 +140,16 @@
       cancelText: "Cancelar",
       icon: "logout",
       tone: "orange",
+    }).then(function (ok) {
+      if (!ok) return false;
+      // Sparky waves goodbye, then the caller proceeds with the redirect.
+      return new Promise(function (resolve) {
+        if (window.SR_Mascot && SR_Mascot.showSuccess) {
+          SR_Mascot.showSuccess("¡Adiós! Te esperamos pronto", function () { resolve(true); });
+        } else {
+          resolve(true);
+        }
+      });
     });
   }
 

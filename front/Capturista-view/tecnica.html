@@ -35,7 +35,7 @@
     <link href="../assets/css/theme.css" rel="stylesheet"/>
     <script src="../assets/js/theme-toggle.js"></script>
     <script src="../assets/js/session-guard.js"></script>
-    <script src="../assets/js/confirmation-modal.js"></script>
+    <script src="../assets/js/confirmation-modal.js?v=2"></script>
     <link href="../assets/css/tecnica.css" rel="stylesheet" />
   </head>
   <body class="page-bg min-h-screen flex flex-col font-display" style="background: #FBF7F5;">
@@ -72,12 +72,12 @@
     <!-- Step indicator -->
     <div class="w-full mt-4 step-bar">
       <div class="max-w-4xl mx-auto px-4 py-2.5 flex items-center gap-2">
-        <a href="socioeconomico.html" class="step-pill">
-          <div class="step-pill-num">1</div>
+        <a href="socioeconomico.html" class="step-pill done" title="Volver al estudio">
+          <div class="step-pill-num"><span class="material-symbols-outlined" style="font-size:14px" aria-hidden="true">check</span></div>
           <span>Estudio</span>
         </a>
         <div class="flex-1 h-0.5 bg-orange-200 rounded"></div>
-        <div class="step-pill active">
+        <div class="step-pill active" aria-current="step">
           <div class="step-pill-num">2</div>
           <span>Técnica</span>
         </div>
@@ -1056,10 +1056,24 @@
         });
       })();
 
+      // Real-time validation: inline error below required text fields on blur.
+      SR_Validations.setupLiveRequired(document.querySelector("form"));
+
       // Volver al perfil sin cerrar sesión (logout lives in the profile)
       document.getElementById("btn-volver-perfil")?.addEventListener("click", async function () {
         if (formDirty && !(await AppConfirmation.confirmUnsavedNavigation())) return;
         window.location.href = "perfil-capturista.html";
+      });
+
+      // Step-bar back links: warn before leaving with unsaved changes (no data loss)
+      document.querySelectorAll(".step-bar a.step-pill").forEach(function (a) {
+        a.addEventListener("click", async function (e) {
+          if (!formDirty) return;
+          e.preventDefault();
+          if (await AppConfirmation.confirmUnsavedNavigation()) {
+            window.location.href = a.getAttribute("href");
+          }
+        });
       });
 
       // -- Setup padecimientos selection sync ------------------------------------

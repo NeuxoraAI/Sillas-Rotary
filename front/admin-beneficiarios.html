@@ -30,9 +30,11 @@
     </script>
     <link href="assets/css/theme.css" rel="stylesheet"/>
     <script src="assets/js/session-guard.js"></script>
-    <script src="assets/js/confirmation-modal.js"></script>
+    <script src="assets/js/confirmation-modal.js?v=2"></script>
+    <script src="assets/js/mascot.js?v=2"></script>
     <script src="assets/js/theme-toggle.js"></script>
 <script src="assets/js/delight.js"></script>
+    <script src="assets/js/sr-select.js"></script>
     <style>
       /* Filter panel */
       .filter-panel { transition: max-height 0.3s ease, opacity 0.2s ease; max-height: 0; opacity: 0; overflow: hidden; }
@@ -1228,6 +1230,7 @@
           _setupSillaPreviaConditionalField();
           _setupEstudioValidations();
           _setupMunicipiosCatalog();
+          if (window.SRSelect) SRSelect.enhanceAll(editContent);
           const delTutor2Btn = document.getElementById("btn-delete-tutor2");
           if (delTutor2Btn) {
             delTutor2Btn.addEventListener("click", function () {
@@ -1469,8 +1472,8 @@
           _field("num_ext", "Núm. Ext.", "text", { maxlength: 10 }) +
           _field("num_int", "Núm. Int.", "text", { maxlength: 10 }) +
           _field("colonia", "Colonia", "text", { maxlength: 120 }) +
-          '<div class="space-y-1"><label class="text-xs font-semibold text-slate-500">Estado</label><select id="field-estado_codigo" name="estado_codigo" class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 py-2 px-3">' + estOpts + '</select></div>' +
-          '<div class="space-y-1"><label class="text-xs font-semibold text-slate-500">Ciudad / Municipio</label><select id="field-ciudad" name="ciudad" class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 py-2 px-3" disabled><option value="">Selecciona un estado primero</option></select></div>' +
+          '<div class="space-y-1"><label class="text-xs font-semibold text-slate-500">Estado</label><select id="field-estado_codigo" name="estado_codigo" data-searchable class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 py-2 px-3">' + estOpts + '</select></div>' +
+          '<div class="space-y-1"><label class="text-xs font-semibold text-slate-500">Ciudad / Municipio</label><select id="field-ciudad" name="ciudad" data-searchable class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 py-2 px-3" disabled><option value="">Selecciona un estado primero</option></select></div>' +
           _field("telefonos", "Teléfono (10 dígitos)", "tel", { maxlength: 10 }) +
           '' +
           '</div>' +
