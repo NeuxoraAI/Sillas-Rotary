@@ -300,6 +300,31 @@
 
     <!-- ── Main Content ────────────────────────────────────────────────────── -->
     <main class="flex-1 max-w-7xl mx-auto w-full px-4 py-6">
+      <!-- Summary -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5 rise">
+        <div class="stat-card">
+          <div class="stat-card__icon"><span class="material-symbols-outlined">assignment_ind</span></div>
+          <div class="stat-card__body">
+            <span class="stat-card__value" id="summary-asignados">0</span>
+            <span class="stat-card__label">Asignados</span>
+          </div>
+        </div>
+        <div class="stat-card stat-card--info">
+          <div class="stat-card__icon"><span class="material-symbols-outlined">visibility</span></div>
+          <div class="stat-card__body">
+            <span class="stat-card__value" id="summary-shown">0</span>
+            <span class="stat-card__label">En esta página</span>
+          </div>
+        </div>
+        <div class="stat-card stat-card--warning">
+          <div class="stat-card__icon"><span class="material-symbols-outlined">edit_note</span></div>
+          <div class="stat-card__body">
+            <span class="stat-card__value" id="summary-borradores">0</span>
+            <span class="stat-card__label">En proceso (página)</span>
+          </div>
+        </div>
+      </div>
+
       <!-- Loading state -->
       <div
         id="state-loading"
@@ -426,7 +451,7 @@
     >
       <div
         id="modal-container"
-        class="animate-fade-in bg-white w-full sm:max-w-lg sm:rounded-2xl sm:max-h-[90vh] flex flex-col shadow-2xl sm:mx-auto max-h-[92vh] rounded-t-2xl"
+        class="animate-fade-in bg-white w-full sm:max-w-lg sm:rounded-2xl sm:max-h-[90vh] flex flex-col shadow-2xl sm:mx-auto max-h-[92vh] rounded-t-2xl relative"
       >
         <!-- Modal header -->
         <div
@@ -465,6 +490,8 @@
           <!-- Content rendered by JS -->
           <div id="modal-content" class="hidden space-y-6"></div>
         </div>
+        <!-- Scroll-more indicator (shown when the body has more content below) -->
+        <div id="modal-scroll-hint" class="modal-scroll-hint hidden"></div>
         <!-- Modal footer (action buttons) -->
         <div
           id="modal-footer"
@@ -971,6 +998,7 @@
           state.items = data.items || [];
           state.total = data.total || 0;
           state.page = data.page || 1;
+          updateSummary();
 
           if (state.items.length === 0) {
             showEmpty();
@@ -984,6 +1012,15 @@
         } finally {
           state.loading = false;
         }
+      }
+
+      // Top summary: assigned total, shown on this page, drafts on this page.
+      function updateSummary() {
+        const byId = function (id) { return document.getElementById(id); };
+        byId("summary-asignados").textContent = state.total;
+        byId("summary-shown").textContent = state.items.length;
+        byId("summary-borradores").textContent =
+          state.items.filter(function (i) { return i.solicitud_status === "borrador"; }).length;
       }
 
       // ═══════════════════════════════════════════════════════════════════════════
@@ -1162,158 +1199,152 @@
         modalTitle.textContent = ben.nombre || "—";
         modalFolio.textContent = "CURP: " + (ben.curp_benef || ben.folio || "—");
 
-        let html = "";
-
-        // ── Identificación ──
-        html += `
-      <section>
-        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-          <span class="material-symbols-outlined text-sm">badge</span> Identificación
-        </h4>
-        <div class="bg-slate-50 rounded-xl p-4 space-y-2 text-sm">
-          <div class="grid grid-cols-2 gap-2">
-            <div><span class="text-slate-400">Nombre:</span><br/><span class="font-medium">${_escapeHtml(ben.nombre || "—")}</span></div>
-            <div><span class="text-slate-400">CURP:</span><br/><span class="font-medium">${_escapeHtml(ben.curp_benef || ben.folio || "—")}</span></div>
-            <div><span class="text-slate-400">País:</span><br/><span class="font-medium">${_escapeHtml(ben.pais_nombre || "—")}</span></div>
-            <div><span class="text-slate-400">Región:</span><br/><span class="font-medium">${_escapeHtml(ben.region_nombre || "—")}</span></div>
-            <div><span class="text-slate-400">Ciudad:</span><br/><span class="font-medium">${_escapeHtml(ben.ciudad || "—")}</span></div>
-            <div><span class="text-slate-400">Sede:</span><br/><span class="font-medium">${_escapeHtml((data.estudio && data.estudio.sede) || ben.sede || "—")}</span></div>
-          </div>
-          <div><span class="text-slate-400">Diagnóstico:</span><br/><span class="font-medium">${_valOrNaHtml(ben.diagnostico)}</span></div>
-        </div>
-      </section>
-    `;
-
-        // ── Datos Clínicos ──
         const solicitudStatusBadge = solicitud.status === "borrador"
-          ? '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-300 ml-2">Borrador técnico</span>'
+          ? '<span class="badge badge--warning ml-2">Borrador técnico</span>'
           : (solicitud.status === "completo"
-              ? '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-300 ml-2">Completo</span>'
+              ? '<span class="badge badge--success ml-2">Completo</span>'
               : "");
-        html += `
-      <section>
-        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-          <span class="material-symbols-outlined text-sm">stethoscope</span> Datos Clínicos
-          ${solicitudStatusBadge}
-        </h4>
-        <div class="bg-slate-50 rounded-xl p-4 space-y-2 text-sm">
-          <div class="grid grid-cols-2 gap-2">
-            ${(() => {
-              // Borradores store values verbatim in capture unit; finalized records are canonical in/lb.
-              const isBorrador = solicitud.status === "borrador";
-              const measureUnit = isBorrador ? (solicitud.unidad_captura || "in") : "in";
-              const weightUnit  = isBorrador ? (solicitud.unidad_peso_captura || "lb") : "lb";
-              return `
-            <div><span class="text-slate-400">Peso:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.peso_kg != null ? solicitud.peso_kg + " " + weightUnit : null)}</span></div>
-            <div><span class="text-slate-400">Altura total:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.altura_total_in != null ? solicitud.altura_total_in + " " + measureUnit : null)}</span></div>
-            <div><span class="text-slate-400">Cabeza-asiento:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.medida_cabeza_asiento != null ? solicitud.medida_cabeza_asiento + " " + measureUnit : null)}</span></div>
-            <div><span class="text-slate-400">Hombro-asiento:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.medida_hombro_asiento != null ? solicitud.medida_hombro_asiento + " " + measureUnit : null)}</span></div>
-            <div><span class="text-slate-400">Prof. asiento:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.medida_prof_asiento != null ? solicitud.medida_prof_asiento + " " + measureUnit : null)}</span></div>
-            <div><span class="text-slate-400">Rodilla-talón:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.medida_rodilla_talon != null ? solicitud.medida_rodilla_talon + " " + measureUnit : null)}</span></div>
-            <div><span class="text-slate-400">Ancho cadera:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.medida_ancho_cadera != null ? solicitud.medida_ancho_cadera + " " + measureUnit : null)}</span></div>
-              `;
-            })()}
-          </div>
-          <div class="mt-2 pt-2 border-t border-slate-200">
-            <div><span class="text-slate-400">Control tronco:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.control_tronco)}</span></div>
-            <div><span class="text-slate-400">Control cabeza:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.control_cabeza)}</span></div>
-            <div><span class="text-slate-400">Observaciones:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.padecimiento)}</span></div>
-          </div>
-        </div>
-      </section>
-    `;
 
-        // ── Fotografía ──
-        html += `
-      <section>
-        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-          <span class="material-symbols-outlined text-sm">photo_camera</span> Fotografía
-        </h4>
-        <div class="bg-slate-50 rounded-xl p-4 flex items-center justify-center min-h-[120px]">
+        // ── Panel: Identificación (datos + contacto/tutores) ──
+        const panelIdent = `
+      <div class="bg-slate-50 rounded-xl p-4 space-y-2 text-sm">
+        <div class="grid grid-cols-2 gap-2">
+          <div><span class="text-slate-400">Nombre:</span><br/><span class="font-medium">${_escapeHtml(ben.nombre || "—")}</span></div>
+          <div><span class="text-slate-400">CURP:</span><br/><span class="font-medium">${_escapeHtml(ben.curp_benef || ben.folio || "—")}</span></div>
+          <div><span class="text-slate-400">País:</span><br/><span class="font-medium">${_escapeHtml(ben.pais_nombre || "—")}</span></div>
+          <div><span class="text-slate-400">Región:</span><br/><span class="font-medium">${_escapeHtml(ben.region_nombre || "—")}</span></div>
+          <div><span class="text-slate-400">Ciudad:</span><br/><span class="font-medium">${_escapeHtml(ben.ciudad || "—")}</span></div>
+          <div><span class="text-slate-400">Sede:</span><br/><span class="font-medium">${_escapeHtml((data.estudio && data.estudio.sede) || ben.sede || "—")}</span></div>
+        </div>
+        <div><span class="text-slate-400">Diagnóstico:</span><br/><span class="font-medium">${_valOrNaHtml(ben.diagnostico)}</span></div>
+      </div>
+      <p class="t-caption mt-4 mb-2">Contacto</p>
+      <div class="bg-slate-50 rounded-xl p-4 space-y-2 text-sm">
+        <div><span class="text-slate-400">Teléfonos:</span><br/><span class="font-medium">${_valOrNaHtml(ben.telefonos)}</span></div>
+        <div class="mt-2 pt-2 border-t border-slate-200">
+          <span class="text-slate-400 text-xs font-semibold">Tutores / Referencias</span>
           ${
-            solicitud.foto_url_resolved
-              ? '<img src="' +
-                _escapeHtml(solicitud.foto_url_resolved) +
-                '" alt="Foto del paciente" class="max-h-64 w-auto max-w-full rounded-lg object-contain shadow-sm" onerror="this.onerror=null;this.parentElement.innerHTML=\'<span class=\\\'text-slate-400 text-sm\\\'>Imagen no disponible</span>\'" />'
-              : '<div class="text-center"><span class="material-symbols-outlined text-slate-300 text-4xl block mb-2">image</span><span class="text-slate-400 text-sm">Sin foto</span></div>'
+            tutores.length === 0
+              ? '<p class="text-slate-300 italic text-sm mt-1">Sin tutores registrados</p>'
+              : tutores
+                  .map(function (t) {
+                    return (
+                      '<div class="mt-2 text-sm"><span class="font-medium">Tutor ' +
+                      t.numero_tutor +
+                      ":</span> " +
+                      _escapeHtml(t.nombre || "—") +
+                      (t.edad ? " (" + t.edad + " años)" : "") +
+                      (t.telefono ? " · " + _escapeHtml(t.telefono) : "") +
+                      "</div>"
+                    );
+                  })
+                  .join("")
           }
         </div>
-      </section>
+      </div>
     `;
 
-        // ── Documentos (credencial + comprobante) ──
-        const hasCredencial = estudio && estudio.credencial_url_resolved;
-        const hasComprobante =
-          estudio && estudio.comprobante_domicilio_url_resolved;
-        if (hasCredencial || hasComprobante) {
-          html += `
-        <section>
-          <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-            <span class="material-symbols-outlined text-sm">description</span> Documentos
-          </h4>
-          <div class="bg-slate-50 rounded-xl p-4 space-y-3 text-sm">
-            ${
-              hasCredencial
-                ? `
-              <div>
-                <span class="text-slate-400 text-xs font-semibold block mb-1">Credencial</span>
-                <a href="${_escapeHtml(estudio.credencial_url_resolved)}" target="_blank" rel="noopener" class="inline-flex items-center gap-2 text-primary hover:underline">
-                  <span class="material-symbols-outlined text-sm">open_in_new</span> Ver credencial
-                </a>
-              </div>
-            `
-                : ""
-            }
-            ${
-              hasComprobante
-                ? `
-              <div>
-                <span class="text-slate-400 text-xs font-semibold block mb-1">Comprobante de domicilio</span>
-                <a href="${_escapeHtml(estudio.comprobante_domicilio_url_resolved)}" target="_blank" rel="noopener" class="inline-flex items-center gap-2 text-primary hover:underline">
-                  <span class="material-symbols-outlined text-sm">open_in_new</span> Ver comprobante
-                </a>
-              </div>
-            `
-                : ""
-            }
-          </div>
-        </section>
-      `;
-        }
-
-        // ── Contacto / Tutores ──
-        html += `
-      <section>
-        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-          <span class="material-symbols-outlined text-sm">contacts</span> Contacto
-        </h4>
-        <div class="bg-slate-50 rounded-xl p-4 space-y-2 text-sm">
-          <div><span class="text-slate-400">Teléfonos:</span><br/><span class="font-medium">${_valOrNaHtml(ben.telefonos)}</span></div>
-          <div class="mt-2 pt-2 border-t border-slate-200">
-            <span class="text-slate-400 text-xs font-semibold">Tutores / Referencias</span>
-            ${
-              tutores.length === 0
-                ? '<p class="text-slate-300 italic text-sm mt-1">Sin tutores registrados</p>'
-                : tutores
-                    .map(function (t) {
-                      return (
-                        '<div class="mt-2 text-sm"><span class="font-medium">Tutor ' +
-                        t.numero_tutor +
-                        ":</span> " +
-                        _escapeHtml(t.nombre || "—") +
-                        (t.edad ? " (" + t.edad + " años)" : "") +
-                        (t.telefono ? " · " + _escapeHtml(t.telefono) : "") +
-                        "</div>"
-                      );
-                    })
-                    .join("")
-            }
-          </div>
+        // ── Panel: Datos clínicos (medidas) ──
+        const panelClin = `
+      <div class="bg-slate-50 rounded-xl p-4 space-y-2 text-sm">
+        <div class="grid grid-cols-2 gap-2">
+          ${(() => {
+            // Borradores store values verbatim in capture unit; finalized records are canonical in/lb.
+            const isBorrador = solicitud.status === "borrador";
+            const measureUnit = isBorrador ? (solicitud.unidad_captura || "in") : "in";
+            const weightUnit  = isBorrador ? (solicitud.unidad_peso_captura || "lb") : "lb";
+            return `
+          <div><span class="text-slate-400">Peso:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.peso_kg != null ? solicitud.peso_kg + " " + weightUnit : null)}</span></div>
+          <div><span class="text-slate-400">Altura total:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.altura_total_in != null ? solicitud.altura_total_in + " " + measureUnit : null)}</span></div>
+          <div><span class="text-slate-400">Cabeza-asiento:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.medida_cabeza_asiento != null ? solicitud.medida_cabeza_asiento + " " + measureUnit : null)}</span></div>
+          <div><span class="text-slate-400">Hombro-asiento:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.medida_hombro_asiento != null ? solicitud.medida_hombro_asiento + " " + measureUnit : null)}</span></div>
+          <div><span class="text-slate-400">Prof. asiento:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.medida_prof_asiento != null ? solicitud.medida_prof_asiento + " " + measureUnit : null)}</span></div>
+          <div><span class="text-slate-400">Rodilla-talón:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.medida_rodilla_talon != null ? solicitud.medida_rodilla_talon + " " + measureUnit : null)}</span></div>
+          <div><span class="text-slate-400">Ancho cadera:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.medida_ancho_cadera != null ? solicitud.medida_ancho_cadera + " " + measureUnit : null)}</span></div>
+            `;
+          })()}
         </div>
-      </section>
+      </div>
     `;
 
-        modalContent.innerHTML = html;
+        // ── Panel: Observaciones (control postural + notas) ──
+        const panelObs = `
+      <div class="bg-slate-50 rounded-xl p-4 space-y-2 text-sm">
+        <div><span class="text-slate-400">Control tronco:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.control_tronco)}</span></div>
+        <div><span class="text-slate-400">Control cabeza:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.control_cabeza)}</span></div>
+        <div class="mt-2 pt-2 border-t border-slate-200"><span class="text-slate-400">Observaciones:</span><br/><span class="font-medium">${_valOrNaHtml(solicitud.padecimiento)}</span></div>
+      </div>
+    `;
+
+        // ── Panel: Archivos (foto + documentos) ──
+        const hasCredencial = estudio && estudio.credencial_url_resolved;
+        const hasComprobante = estudio && estudio.comprobante_domicilio_url_resolved;
+        const fotoHtml = solicitud.foto_url_resolved
+          ? '<img src="' + _escapeHtml(solicitud.foto_url_resolved) + '" alt="Foto del paciente" class="max-h-64 w-auto max-w-full rounded-lg object-contain shadow-sm" onerror="this.onerror=null;this.parentElement.innerHTML=\'<span class=\\\'text-slate-400 text-sm\\\'>Imagen no disponible</span>\'" />'
+          : '<div class="text-center"><span class="material-symbols-outlined text-slate-300 text-4xl block mb-2">image</span><span class="text-slate-400 text-sm">Sin foto</span></div>';
+        const docsHtml = (hasCredencial || hasComprobante)
+          ? `
+        <p class="t-caption mt-4 mb-2">Documentos</p>
+        <div class="bg-slate-50 rounded-xl p-4 space-y-3 text-sm">
+          ${hasCredencial ? `
+          <div>
+            <span class="text-slate-400 text-xs font-semibold block mb-1">Credencial</span>
+            <a href="${_escapeHtml(estudio.credencial_url_resolved)}" target="_blank" rel="noopener" class="inline-flex items-center gap-2 text-primary hover:underline">
+              <span class="material-symbols-outlined text-sm">open_in_new</span> Ver credencial
+            </a>
+          </div>` : ""}
+          ${hasComprobante ? `
+          <div>
+            <span class="text-slate-400 text-xs font-semibold block mb-1">Comprobante de domicilio</span>
+            <a href="${_escapeHtml(estudio.comprobante_domicilio_url_resolved)}" target="_blank" rel="noopener" class="inline-flex items-center gap-2 text-primary hover:underline">
+              <span class="material-symbols-outlined text-sm">open_in_new</span> Ver comprobante
+            </a>
+          </div>` : ""}
+        </div>` : "";
+        const panelFiles = `
+      <p class="t-caption mb-2">Fotografía</p>
+      <div class="bg-slate-50 rounded-xl p-4 flex items-center justify-center min-h-[120px]">${fotoHtml}</div>
+      ${docsHtml}
+    `;
+
+        // ── Assemble tabs ──
+        const tabs = [
+          { id: "ident", label: "Identificación", icon: "badge", html: panelIdent },
+          { id: "clin",  label: "Datos clínicos", icon: "stethoscope", html: panelClin, badge: solicitudStatusBadge },
+          { id: "obs",   label: "Observaciones", icon: "notes", html: panelObs },
+          { id: "files", label: "Archivos", icon: "attach_file", html: panelFiles },
+        ];
+        const nav = '<div class="modal-tabs" role="tablist" aria-label="Secciones del beneficiario">' + tabs.map(function (t, i) {
+          return '<button class="modal-tab' + (i === 0 ? " active" : "") + '" data-tab="' + t.id + '" id="tab-' + t.id + '" role="tab"' +
+            ' aria-selected="' + (i === 0 ? "true" : "false") + '" aria-controls="panel-' + t.id + '">' +
+            '<span class="material-symbols-outlined" aria-hidden="true">' + t.icon + '</span><span>' + t.label + '</span></button>';
+        }).join("") + "</div>";
+        const panels = tabs.map(function (t, i) {
+          return '<div class="modal-panel' + (i === 0 ? "" : " hidden") + '" data-panel="' + t.id + '" id="panel-' + t.id + '" role="tabpanel" aria-labelledby="tab-' + t.id + '"' + (i === 0 ? "" : " hidden") + '>' + (t.badge ? '<div class="mb-3">' + t.badge + '</div>' : "") + t.html + '</div>';
+        }).join("");
+
+        modalContent.innerHTML = nav + '<div class="mt-4">' + panels + "</div>";
+
+        // Tab switching
+        modalContent.querySelectorAll(".modal-tab").forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            const id = btn.dataset.tab;
+            modalContent.querySelectorAll(".modal-tab").forEach(function (b) {
+              const on = b === btn;
+              b.classList.toggle("active", on);
+              b.setAttribute("aria-selected", on ? "true" : "false");
+            });
+            modalContent.querySelectorAll(".modal-panel").forEach(function (p) {
+              const show = p.dataset.panel === id;
+              p.classList.toggle("hidden", !show);
+              if (show) { p.removeAttribute("hidden"); } else { p.setAttribute("hidden", ""); }
+            });
+            const body = document.getElementById("modal-body");
+            if (body) body.scrollTop = 0;
+            _updateModalScrollHint();
+          });
+        });
+        _updateModalScrollHint();
         // Vista de solo lectura: el técnico ya no opera el proceso de manufactura.
         modalFooter.classList.add("hidden");
         modalFooter.innerHTML = "";
@@ -1410,6 +1441,17 @@
         document.body.classList.remove("overflow-hidden");
         currentDetail = null;
       }
+
+      // Scroll-more indicator: show a bottom fade + chevron while the modal body
+      // has content below the fold; hide it once scrolled to the end.
+      function _updateModalScrollHint() {
+        const body = document.getElementById("modal-body");
+        const hint = document.getElementById("modal-scroll-hint");
+        if (!body || !hint) return;
+        const moreBelow = body.scrollHeight - body.scrollTop - body.clientHeight > 8;
+        hint.classList.toggle("hidden", !moreBelow);
+      }
+      $("modal-body").addEventListener("scroll", _updateModalScrollHint);
 
       btnCloseModal.addEventListener("click", closeModal);
       modalOverlay.addEventListener("click", function (e) {

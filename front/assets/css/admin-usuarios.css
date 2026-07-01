@@ -4,3 +4,22 @@
 input, select, textarea {
   caret-color: var(--c-orange);
 }
+
+/* ── Responsive users table: stack rows as cards below md (no horizontal scroll) ──
+   Columns: 1 Usuario · 2 Correo (hidden <md) · 3 Rol · 4 Estado · 5 Acción */
+@media (max-width: 767px) {
+  .users-table thead { display: none; }
+  .users-table tbody tr {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+  }
+  .users-table tbody td { padding: 0 !important; }
+  .users-table tbody td:nth-child(1) { flex: 1 1 100%; }   /* user (avatar + name + email) */
+  .users-table tbody td:nth-child(3),                       /* rol badge */
+  .users-table tbody td:nth-child(4) { flex: 0 0 auto; }    /* estado badge */
+  .users-table tbody td:nth-child(5) { flex: 1 1 auto; }    /* actions */
+  .users-table tbody td:nth-child(5) > div { justify-content: flex-end; }
+}
