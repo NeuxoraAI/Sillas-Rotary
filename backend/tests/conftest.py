@@ -546,7 +546,7 @@ def org_with_leader(admin_headers, _test_db_conn, request, capturista_user) -> d
         assert res.status_code == 201
         org = res.json()
         # Assign leader
-        res = c.patch(
+        res = c.post(
             f"/api/organizaciones/{org['id']}/lider",
             json={"lider_usuario_id": capturista_user["id"]},
             headers=admin_headers,
