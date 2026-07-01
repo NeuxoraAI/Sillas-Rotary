@@ -245,6 +245,17 @@ input, select, textarea {
 .video-player video {
   display: block;
   border-radius: var(--radius-card);
+  /* Calm the footage slightly so it supports rather than competes with login */
+  filter: saturate(0.96) brightness(0.97);
+}
+/* Soft brand-tinted overlay: lets the video recede behind the access form */
+.video-player::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-card);
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(43, 6, 61, 0.10) 0%, rgba(43, 6, 61, 0.30) 100%);
 }
 
 /* ── Header spacing: reference has 35–45px top air ── */
@@ -254,28 +265,17 @@ input, select, textarea {
 }
 
 /* ── Logo sizes ── */
+/* Normalized to one optical height so no single logo dominates the row;
+   width is intrinsic so each keeps its aspect ratio, and the header centers
+   them vertically (optical-center alignment). */
 .logo-vida-ug,
 .logo-hope-haven,
 .logo-rotary {
   /* Blend white logo canvases into the warm background */
   mix-blend-mode: multiply;
-}
-.logo-vida-ug {
-  width: 132px;
-  height: auto;
-  max-height: 80px;
-  object-fit: contain;
-}
-.logo-hope-haven {
-  width: 360px;
-  height: auto;
-  max-height: 90px;
-  object-fit: contain;
-}
-.logo-rotary {
-  width: 150px;
-  height: auto;
-  max-height: 70px;
+  height: 58px;
+  width: auto;
+  max-width: 100%;
   object-fit: contain;
 }
 
@@ -568,4 +568,30 @@ footer a:hover {
   .login-icon-wrap .login-center-img {
     animation: none;
   }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Dark mode — the warm-cream decorative layers (white/orange glows, header arcs,
+   waves) look muddy on a dark background. Kill the white glow and soften the rest
+   so the dark login reads clean instead of "asqueroso".
+   ═══════════════════════════════════════════════════════════════════════════ */
+html.dark .bg-glow-topleft { display: none; }            /* white glow — wrong on dark */
+html.dark .bg-glow-topright {
+  background: radial-gradient(ellipse at 70% 30%, rgba(255, 138, 77, 0.10) 0%, transparent 70%);
+}
+html.dark .bg-arc-topright { opacity: 0.30; }
+html.dark .brand-header::before { opacity: 0; }          /* faint left arc — drop it */
+html.dark .brand-header::after {
+  border-top-color: rgba(255, 138, 77, 0.22);
+  border-right-color: rgba(255, 138, 77, 0.10);
+}
+html.dark .wave-band,
+html.dark .wave-orange,
+html.dark .wave-purple { opacity: 0.40; }
+/* Logo chips: a softer, less stark surface than the bright off-white */
+html.dark .logo-vida-ug,
+html.dark .logo-hope-haven,
+html.dark .logo-rotary {
+  background: #ECE7F2;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.30);
 }

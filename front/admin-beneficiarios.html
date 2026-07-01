@@ -31,9 +31,11 @@
     <link href="assets/css/theme.css" rel="stylesheet"/>
     <script src="assets/js/session-guard.js"></script>
     <script src="assets/js/apiClient.js"></script>
-    <script src="assets/js/confirmation-modal.js"></script>
+    <script src="assets/js/confirmation-modal.js?v=2"></script>
+    <script src="assets/js/mascot.js?v=2"></script>
     <script src="assets/js/theme-toggle.js"></script>
 <script src="assets/js/delight.js"></script>
+    <script src="assets/js/sr-select.js"></script>
     <style>
       /* Filter panel */
       .filter-panel { transition: max-height 0.3s ease, opacity 0.2s ease; max-height: 0; opacity: 0; overflow: hidden; }
@@ -159,9 +161,11 @@
               <input id="input-search" type="search" autocomplete="off" placeholder="Buscar por nombre, CURP, ciudad, región, país…"
                 class="w-full pl-10 pr-4 py-2.5 text-sm"/>
             </div>
-            <button id="btn-toggle-filters" title="Filtros"
-              class="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 border-2 border-slate-200 flex items-center justify-center text-slate-500 hover:text-primary transition-all shrink-0">
-              <span class="material-symbols-outlined text-xl">tune</span>
+            <button id="btn-toggle-filters" title="Filtros" aria-label="Mostrar u ocultar filtros"
+              aria-expanded="false" aria-controls="filter-panel"
+              class="btn-icon relative shrink-0" style="width: 44px; height: 44px;">
+              <span class="material-symbols-outlined" aria-hidden="true">tune</span>
+              <span id="filter-dot" class="hidden absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-ug-orange-pure border-2 border-white"></span>
             </button>
           </div>
 
@@ -231,6 +235,31 @@
       </div>
 
       <main class="flex-1 max-w-7xl mx-auto w-full px-4 py-6">
+        <!-- Summary -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5 rise">
+          <div class="stat-card">
+            <div class="stat-card__icon"><span class="material-symbols-outlined">groups</span></div>
+            <div class="stat-card__body">
+              <span class="stat-card__value" id="summary-total">0</span>
+              <span class="stat-card__label">Total de beneficiarios</span>
+            </div>
+          </div>
+          <div class="stat-card stat-card--info">
+            <div class="stat-card__icon"><span class="material-symbols-outlined">visibility</span></div>
+            <div class="stat-card__body">
+              <span class="stat-card__value" id="summary-shown">0</span>
+              <span class="stat-card__label">En esta página</span>
+            </div>
+          </div>
+          <div class="stat-card stat-card--warning">
+            <div class="stat-card__icon"><span class="material-symbols-outlined">filter_alt</span></div>
+            <div class="stat-card__body">
+              <span class="stat-card__value" id="summary-filters">0</span>
+              <span class="stat-card__label">Filtros activos</span>
+            </div>
+          </div>
+        </div>
+
         <!-- Loading -->
         <div id="state-loading" class="hidden py-20" data-thinking="Acomodando expedientes"></div>
 
@@ -575,8 +604,9 @@
       // FILTER PANEL
       // ═══════════════════════════════════════════════════════════════════════════
       $("btn-toggle-filters").addEventListener("click", function () {
-        filterPanel.classList.toggle("open");
+        const open = filterPanel.classList.toggle("open");
         this.classList.toggle("border-primary"); this.classList.toggle("text-primary");
+        this.setAttribute("aria-expanded", open ? "true" : "false");
       });
 
       filterPais.addEventListener("change", async function () {
@@ -633,7 +663,7 @@
       $("btn-apply-filters").addEventListener("click", function () { state.page = 1; loadBeneficiarios(); });
       $("btn-clear-selection").addEventListener("click", function () { state.selectedIds.clear(); renderList(); _updateSelectionUI(); });
 
-      function updateFilterCount() {
+      function _activeFilterCount() {
         let count = 0;
         if (inputSearch.value.trim()) count++;
         if (filterPais.value) count++;
@@ -643,7 +673,21 @@
         if (filterPesoMin.value || filterPesoMax.value) count++;
         if (filterAlturaMin.value || filterAlturaMax.value) count++;
         if (filterFoto.value) count++;
+        return count;
+      }
+
+      function updateFilterCount() {
+        const count = _activeFilterCount();
         filterCount.textContent = count > 0 ? count + " filtro(s) activo(s)" : "";
+        const dot = document.getElementById("filter-dot");
+        if (dot) dot.classList.toggle("hidden", count === 0);
+      }
+
+      // Top summary: total matching, shown on this page, active filters.
+      function updateSummary() {
+        $("summary-total").textContent = state.total;
+        $("summary-shown").textContent = state.items.length;
+        $("summary-filters").textContent = _activeFilterCount();
       }
 
       function readFilters() {
@@ -680,6 +724,7 @@
           if (!res.ok) throw new Error("HTTP " + res.status);
           const data = await res.json();
           state.items = data.items || []; state.total = data.total || 0;
+          updateSummary();
           if (state.items.length === 0) { _showState("empty"); }
           else { _showState("content"); renderList(); }
           _updatePagination();
@@ -1182,6 +1227,7 @@
           _setupSillaPreviaConditionalField();
           _setupEstudioValidations();
           _setupMunicipiosCatalog();
+          if (window.SRSelect) SRSelect.enhanceAll(editContent);
           const delTutor2Btn = document.getElementById("btn-delete-tutor2");
           if (delTutor2Btn) {
             delTutor2Btn.addEventListener("click", function () {
@@ -1423,8 +1469,8 @@
           _field("num_ext", "Núm. Ext.", "text", { maxlength: 10 }) +
           _field("num_int", "Núm. Int.", "text", { maxlength: 10 }) +
           _field("colonia", "Colonia", "text", { maxlength: 120 }) +
-          '<div class="space-y-1"><label class="text-xs font-semibold text-slate-500">Estado</label><select id="field-estado_codigo" name="estado_codigo" class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 py-2 px-3">' + estOpts + '</select></div>' +
-          '<div class="space-y-1"><label class="text-xs font-semibold text-slate-500">Ciudad / Municipio</label><select id="field-ciudad" name="ciudad" class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 py-2 px-3" disabled><option value="">Selecciona un estado primero</option></select></div>' +
+          '<div class="space-y-1"><label class="text-xs font-semibold text-slate-500">Estado</label><select id="field-estado_codigo" name="estado_codigo" data-searchable class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 py-2 px-3">' + estOpts + '</select></div>' +
+          '<div class="space-y-1"><label class="text-xs font-semibold text-slate-500">Ciudad / Municipio</label><select id="field-ciudad" name="ciudad" data-searchable class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 py-2 px-3" disabled><option value="">Selecciona un estado primero</option></select></div>' +
           _field("telefonos", "Teléfono (10 dígitos)", "tel", { maxlength: 10 }) +
           '' +
           '</div>' +
@@ -1956,7 +2002,7 @@
                 const errData = await res.json().catch(() => ({}));
                 var errMsg = errData.detail;
                 if (Array.isArray(errMsg)) {
-                  errMsg = errMsg.map(function (d) { return (d.loc ? d.loc.join(".") : "") + ": " + (d.msg || ""); }).join(" | ");
+                  errMsg = errMsg.map(function (d) { return SR_Validations.getBackendPathLabel(d.loc ? d.loc.join(".") : "") + ": " + (d.msg || ""); }).join(" | ");
                 }
                 errors.push("Tutores/Documentos: " + (errMsg || res.status));
               }

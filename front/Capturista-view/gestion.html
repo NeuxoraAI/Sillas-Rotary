@@ -36,8 +36,8 @@
     <script src="../assets/js/session-guard.js"></script>
     <script src="../assets/js/apiClient.js"></script>
     <script src="../assets/js/theme-toggle.js"></script>
-    <script src="../assets/js/confirmation-modal.js"></script>
-    <script src="../assets/js/mascot.js"></script>
+    <script src="../assets/js/confirmation-modal.js?v=2"></script>
+    <script src="../assets/js/mascot.js?v=2"></script>
     <link href="../assets/css/gestion.css" rel="stylesheet" />
   </head>
   <body class="page-bg min-h-screen flex flex-col font-display" style="background: #FBF7F5;">
@@ -74,17 +74,17 @@
     <!-- Step indicator -->
     <div class="w-full mt-4 step-bar">
       <div class="max-w-5xl mx-auto px-4 py-2.5 flex items-center gap-2">
-        <a href="socioeconomico.html" class="step-pill">
-          <div class="step-pill-num">1</div>
+        <a href="socioeconomico.html" class="step-pill done" title="Volver al estudio">
+          <div class="step-pill-num"><span class="material-symbols-outlined" style="font-size:14px" aria-hidden="true">check</span></div>
           <span>Estudio</span>
         </a>
         <div class="flex-1 h-0.5 bg-orange-200 rounded"></div>
-        <a href="tecnica.html" class="step-pill">
-          <div class="step-pill-num">2</div>
+        <a href="tecnica.html" class="step-pill done" title="Volver a la técnica">
+          <div class="step-pill-num"><span class="material-symbols-outlined" style="font-size:14px" aria-hidden="true">check</span></div>
           <span>Técnica</span>
         </a>
         <div class="flex-1 h-0.5 bg-orange-200 rounded"></div>
-        <div class="step-pill active">
+        <div class="step-pill active" aria-current="step">
           <div class="step-pill-num">3</div>
           <span>Gestión</span>
         </div>
@@ -330,10 +330,24 @@
         });
       })();
 
+      // Real-time validation: inline error below required text fields on blur.
+      SR_Validations.setupLiveRequired(document.querySelector("form"));
+
       // Volver al perfil sin cerrar sesión (logout lives in the profile)
       document.getElementById("btn-volver-perfil")?.addEventListener("click", async function () {
         if (formDirty && !(await AppConfirmation.confirmUnsavedNavigation())) return;
         window.location.href = "perfil-capturista.html";
+      });
+
+      // Step-bar back links: warn before leaving with unsaved changes (no data loss)
+      document.querySelectorAll(".step-bar a.step-pill").forEach(function (a) {
+        a.addEventListener("click", async function (e) {
+          if (!formDirty) return;
+          e.preventDefault();
+          if (await AppConfirmation.confirmUnsavedNavigation()) {
+            window.location.href = a.getAttribute("href");
+          }
+        });
       });
 
       // Role-gating: hide "Finalizar Registro" for non-capturista roles
@@ -738,7 +752,7 @@
               </div>
               <div id="validation-modal-body" class="max-h-[60vh] overflow-y-auto p-5"></div>
               <div class="flex flex-col gap-3 border-t border-slate-100 bg-slate-50/60 p-5 sm:flex-row sm:justify-end">
-                <button id="validation-modal-close" type="button" class="rounded-xl bg-gradient-to-r from-[#FF4B0B] to-[#FF681F] px-6 py-3 text-sm font-bold uppercase tracking-wide text-white shadow-md shadow-orange-200/60 transition-all hover:opacity-95 active:scale-[0.98]">Entendido</button>
+                <button id="validation-modal-close" type="button" class="btn-primary rounded-xl px-6 py-3 text-sm font-bold uppercase tracking-wide">Entendido</button>
               </div>
             </div>`;
           document.body.appendChild(modal);
@@ -1131,7 +1145,7 @@
               };
               showValidationModal(detail.missing.map((m) => ({
                 form: resolveMissingLabel(m),
-                label: m.label || m.field || "Campo requerido",
+                label: m.label || (m.field ? SR_Validations.getFieldLabel(m.field) : "Campo requerido"),
                 message: "Este campo es obligatorio para finalizar",
                 url: resolveMissingUrl(m),
               })), {

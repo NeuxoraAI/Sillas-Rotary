@@ -133,6 +133,77 @@ ANTIGUEDAD_MESES_MAX = 11
 
 
 # ──────────────────────────────────────────────────────────────────────────
+# Field labels — single source of truth for column → user-facing label.
+# Maps internal DB column / form field names to the visible label the
+# capturista sees in the form. Used to avoid leaking technical column names
+# (curp_benef, estado_codigo, …) into messages, validations and modals
+# (Issue #122). Mirrored by FIELD_LABELS in front/assets/js/validations.js.
+# ──────────────────────────────────────────────────────────────────────────
+
+FIELD_LABELS: dict[str, str] = {
+    # Beneficiario
+    "nombres": "Nombre(s)",
+    "apellido_paterno": "Apellido paterno",
+    "apellido_materno": "Apellido materno",
+    "curp_benef": "CURP",
+    "fecha_nacimiento": "Fecha de nacimiento",
+    "diagnostico": "Diagnóstico",
+    "calle": "Calle",
+    "colonia": "Colonia",
+    "ciudad": "Ciudad",
+    "estado_codigo": "Estado",
+    "sexo": "Sexo",
+    "telefonos": "Teléfono",
+    # Estudio socioeconómico
+    "fecha_estudio": "Fecha del estudio",
+    "tuvo_silla_previa": "¿Tuvo silla previa?",
+    "como_obtuvo_silla": "¿Cómo obtuvo la silla?",
+    "elaboro_estudio": "Elaboró el estudio",
+    "sede": "Sede",
+    "ciudad_registro": "Ciudad de registro",
+    # Gestión
+    "entidad_solicitante": "Entidad solicitante",
+    "prioridad": "Prioridad",
+    # Solicitud técnica
+    "altura_total_in": "Altura total",
+    "peso_kg": "Peso",
+    "medida_cabeza_asiento": "Medida cabeza a asiento",
+    "medida_hombro_asiento": "Medida hombro a asiento",
+    "medida_prof_asiento": "Profundidad de asiento",
+    "medida_rodilla_talon": "Medida rodilla a talón",
+    "medida_ancho_cadera": "Ancho de cadera",
+    "entorno": "Entorno",
+    "control_tronco": "Control de tronco",
+    "control_cabeza": "Control de cabeza",
+    "control_de_piernas": "Control de piernas",
+    # Tutor
+    "numero_tutor": "Tutor",
+    "edad": "Edad",
+    "nivel_estudios": "Nivel de estudios",
+    "estado_civil": "Estado civil",
+    "vivienda": "Vivienda",
+    "imss_estatus": "IMSS",
+    "infonavit_estatus": "Infonavit",
+    "fuente_empleo": "Fuente de empleo",
+    "ingreso_mensual": "Ingreso mensual",
+    "antiguedad_anios": "Antigüedad (años)",
+    "otras_fuentes_ingreso": "Otras fuentes de ingreso",
+    "monto_otras_fuentes": "Monto de otras fuentes",
+}
+
+
+def field_label(field: str) -> str:
+    """Resolve a column/field name to its user-facing label.
+
+    Falls back to a humanized version of the field name when the field is
+    not in the catalog, so a message is never left showing a raw column.
+    """
+    if field in FIELD_LABELS:
+        return FIELD_LABELS[field]
+    return field.replace("_", " ").strip().capitalize()
+
+
+# ──────────────────────────────────────────────────────────────────────────
 # Name validators
 # ──────────────────────────────────────────────────────────────────────────
 

@@ -160,35 +160,100 @@ def require_roles(*roles: str):
     return _require_roles
 
 
+# ---------------------------------------------------------------------------
+# Organization access matrix (single source of truth — Issue #80)
+#
+# Two scopes drive every org-aware authorization decision:
+#   * leadership scope  = the org account owner + registered leaders
+#                         (organizaciones_lideres). Plain members are NOT
+#                         leaders; they only see org identity/stats.
+#   * capture scope      = the org account owner + leaders + members. Any of
+#                         these can be the ``usuario_id`` that captured a row.
+#
+# A user passes the org-leader bypass for a resource iff they are in the
+# *leadership* scope of some org whose *capture* scope includes the resource's
+# capturer. ``user_leads_org`` and ``user_leads_capturer_org`` are the only
+# functions that encode these rules; ``assert_resource_owner`` (here) and
+# ``_assert_org_access`` (perfiles.py) both delegate to them.
+#
+# Leadership source of truth is the ``organizaciones_lideres`` table, never the
+# legacy ``organizaciones.lider_usuario_id`` column (see Issue #53).
+# ---------------------------------------------------------------------------
+
+def user_leads_org(db: _DBAdapter, user_id: int, org_id: int) -> bool:
+    """True if ``user_id`` is the org account owner or a registered leader of
+    ``org_id``. Members are intentionally excluded."""
+    row = db.execute(
+        """
+        SELECT 1 FROM organizaciones o
+        WHERE o.id = %s
+          AND (
+                o.usuario_id = %s
+                OR EXISTS (
+                    SELECT 1 FROM organizaciones_lideres ol
+                    WHERE ol.organizacion_id = o.id AND ol.usuario_id = %s
+                )
+              )
+        """,
+        (org_id, user_id, user_id),
+    ).fetchone()
+    return row is not None
+
+
+def user_leads_capturer_org(db: _DBAdapter, user_id: int, capturer_user_id: int) -> bool:
+    """True if ``user_id`` leads (account or leader) an organization whose
+    capture scope — account + leaders + members — includes ``capturer_user_id``.
+
+    This is the single rule behind the org-leader bypass shared across modules.
+    """
+    row = db.execute(
+        """
+        SELECT 1 FROM organizaciones o
+        WHERE (
+                o.usuario_id = %s
+                OR EXISTS (
+                    SELECT 1 FROM organizaciones_lideres ol
+                    WHERE ol.organizacion_id = o.id AND ol.usuario_id = %s
+                )
+              )
+          AND (
+                o.usuario_id = %s
+                OR EXISTS (
+                    SELECT 1 FROM organizaciones_lideres ol2
+                    WHERE ol2.organizacion_id = o.id AND ol2.usuario_id = %s
+                )
+                OR EXISTS (
+                    SELECT 1 FROM organizaciones_miembros om
+                    WHERE om.organizacion_id = o.id AND om.usuario_id = %s
+                )
+              )
+        LIMIT 1
+        """,
+        (user_id, user_id, capturer_user_id, capturer_user_id, capturer_user_id),
+    ).fetchone()
+    return row is not None
+
+
 def assert_resource_owner(
     row_user_id: int,
     user: CurrentUser,
     db: _DBAdapter | None = None,
-    estudio_id: int | None = None,
 ) -> None:
     """Allow admin access, enforce ownership by usuario_id, or bypass for org leader.
 
-    When ``db`` and ``estudio_id`` are provided, checks if the current user
-    is the leader of the organization that owns the estudio's region.
+    When ``db`` is provided, the org-leader bypass applies: a user who leads the
+    organization whose capture scope includes ``row_user_id`` is granted access.
+    The org is derived from the capturer (``row_user_id``), so no estudio id is
+    needed.
     """
     if user.rol == "admin":
         return
     if row_user_id == user.usuario_id:
         return
 
-    # Leader bypass: check if user is leader of org that owns this study
-    if db is not None and estudio_id is not None:
-        leader_check = db.execute(
-            """
-            SELECT 1 FROM organizaciones o
-            JOIN organizaciones_lideres ol ON ol.organizacion_id = o.id
-            WHERE o.usuario_id = %s
-              AND ol.usuario_id = %s
-            """,
-            (row_user_id, user.usuario_id),
-        ).fetchone()
-        if leader_check:
-            return
+    # Leader bypass: the user leads an org whose capture scope owns this row.
+    if db is not None and user_leads_capturer_org(db, user.usuario_id, row_user_id):
+        return
 
     raise HTTPException(
         status_code=status.HTTP_403_FORBIDDEN,

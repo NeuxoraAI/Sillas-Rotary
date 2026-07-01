@@ -35,6 +35,10 @@ ese entorno.
 | `0016` | `add_unidad_peso_captura` |
 | `0017` | `add_finalizado_at` |
 | `0018` | `add_soporte_oxigeno_to_solicitudes_tecnicas` |
+| `0019` | `fix_advisor_indexes` |
+| `0020` | `drop_dead_schema_objects` |
+| `0021` | `curp_natural_key` |
+| `0022` | `unify_org_leadership_source` |
 
 ## Deprecación de legado
 

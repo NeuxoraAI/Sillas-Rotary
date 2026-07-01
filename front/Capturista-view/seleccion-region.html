@@ -43,7 +43,7 @@
       </div>
       <div>
         <p class="text-[15px] font-bold" style="color: var(--c-title);">Selección de Región</p>
-        <p class="text-xs text-slate-500">Ecosistema VIDA UG</p>
+        <p class="text-xs text-slate-500">Configuración · Paso 1 de 2</p>
       </div>
     </div>
     <div class="flex items-center gap-3">
@@ -146,7 +146,7 @@
         <!-- Submit -->
         <button
           id="btn-continuar" type="button"
-          class="btn-primary w-full py-4 text-sm rounded-xl group disabled:opacity-60 disabled:cursor-not-allowed"
+          class="btn-primary w-full py-3.5 text-sm rounded-xl group disabled:opacity-60 disabled:cursor-not-allowed"
         >
           <span id="btn-text">CONTINUAR</span>
           <span class="material-symbols-outlined text-xl group-hover:translate-x-1 transition-transform">arrow_forward</span>
@@ -181,7 +181,8 @@
   </div>
 </footer>
 
-<script src="../assets/js/confirmation-modal.js"></script>
+<script src="../assets/js/confirmation-modal.js?v=2"></script>
+<script src="../assets/js/mascot.js?v=2"></script>
 <script>
   // ── Auth guard (capturista and tecnico) ──────────────────────────────────────
   SessionGuard.requireRole(['capturista', 'tecnico', 'organizacion'], '../login.html');

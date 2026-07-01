@@ -36,7 +36,7 @@
     <script src="../assets/js/theme-toggle.js"></script>
     <script src="../assets/js/session-guard.js"></script>
     <script src="../assets/js/apiClient.js"></script>
-    <script src="../assets/js/confirmation-modal.js"></script>
+    <script src="../assets/js/confirmation-modal.js?v=2"></script>
     <link href="../assets/css/socioeconomico.css" rel="stylesheet" />
   </head>
   <body class="page-bg min-h-screen flex flex-col font-display" style="background: #FBF7F5;">
@@ -228,7 +228,7 @@
             </div>
             <div class="space-y-2">
               <label class="block text-sm font-semibold text-slate-700">Estado</label>
-              <select class="w-full" name="estado_codigo" id="estado_codigo" required aria-describedby="estado_codigo-error"></select>
+              <select class="w-full" name="estado_codigo" id="estado_codigo" required data-searchable aria-describedby="estado_codigo-error"></select>
               <p class="field-error hidden text-red-600 text-xs mt-1" id="estado_codigo-error" data-error-for="estado_codigo" role="alert"></p>
             </div>
             <div class="space-y-2">
@@ -239,6 +239,7 @@
                 id="ciudad"
                 required
                 disabled
+                data-searchable
                 aria-describedby="ciudad-error"
               >
                 <option value="">Selecciona un estado primero</option>
@@ -985,6 +986,7 @@
       </div>
     </div>
     <script src="../assets/js/validations.js"></script>
+    <script src="../assets/js/sr-select.js"></script>
     <script data-purpose="form-logic">
       const NIVEL_ESTUDIOS_CATALOG = [
         "NINGUNO", "PRIMARIA", "SECUNDARIA", "BACHILLERATO",
@@ -1678,9 +1680,10 @@
 
           const readableMessages = details
             .map((d) => {
-              const path = Array.isArray(d?.loc) ? d.loc.slice(1).join(".") : "campo";
+              const path = Array.isArray(d?.loc) ? d.loc.slice(1).join(".") : null;
+              const label = path ? SR_Validations.getBackendPathLabel(path) : "Campo";
               const msg = d?.msg || "valor inválido";
-              return `${path}: ${msg}`;
+              return `${label}: ${msg}`;
             })
             .filter(Boolean);
 
@@ -2210,6 +2213,9 @@
                   await loadMunicipiosCatalog();
                   renderMunicipiosSelect(b.estado_codigo, b.ciudad || "");
                 }
+                // Resync searchable-select triggers (setVal does not fire change)
+                document.getElementById("estado_codigo")?.dispatchEvent(new Event("sr:refresh"));
+                document.getElementById("ciudad")?.dispatchEvent(new Event("sr:refresh"));
                 setVal("telefonos", b.telefonos);
                 setVal("email", b.email);
                 const sexoEl = document.querySelector(`[name="sexo"][value="${b.sexo}"]`);
@@ -2376,6 +2382,10 @@
           });
         });
       })();
+
+      // Real-time validation: inline error below required text fields on blur,
+      // cleared as the user types (no browser pop-ups).
+      SR_Validations.setupLiveRequired(document.querySelector("form"));
 
       // Volver al perfil sin cerrar sesión (logout lives in the profile)
       document
@@ -3063,7 +3073,7 @@
               </div>
               <div id="validation-modal-body" class="max-h-[60vh] overflow-y-auto p-5"></div>
               <div class="flex flex-col gap-3 border-t border-slate-100 bg-slate-50/60 p-5 sm:flex-row sm:justify-end">
-                <button id="validation-modal-close" type="button" class="rounded-xl bg-gradient-to-r from-[#FF4B0B] to-[#FF681F] px-6 py-3 text-sm font-bold uppercase tracking-wide text-white shadow-md shadow-orange-200/60 transition-all hover:opacity-95 active:scale-[0.98]">Entendido</button>
+                <button id="validation-modal-close" type="button" class="btn-primary rounded-xl px-6 py-3 text-sm font-bold uppercase tracking-wide">Entendido</button>
               </div>
             </div>`;
           document.body.appendChild(modal);
@@ -3091,7 +3101,7 @@
                 <h3 class="text-sm font-black uppercase tracking-wide" style="color: var(--c-title);">${escapeHtml(form)}</h3>
                 <span class="rounded-full border border-red-200 bg-red-100 px-2 py-0.5 text-[11px] font-bold text-red-700">${items.length} ${items.length === 1 ? "error" : "errores"}</span>
               </div>
-              ${items[0].url ? `<button type="button" data-url="${escapeHtml(items[0].url)}" class="validation-jump rounded-lg border-2 border-ug-orange-pure/70 px-3 py-1.5 text-xs font-bold uppercase text-ug-orange-pure transition-all hover:bg-orange-50">Ir al formulario</button>` : ""}
+              ${items[0].url ? `<button type="button" data-url="${escapeHtml(items[0].url)}" class="validation-jump btn-secondary rounded-lg px-3 py-1.5 text-xs font-bold uppercase">Ir al formulario</button>` : ""}
             </div>
             <ul class="space-y-2 text-sm">${items.map((item) => `
               <li class="flex items-start gap-2.5 rounded-r-lg border-l-4 border-red-500 bg-red-50/70 px-3 py-2.5">
