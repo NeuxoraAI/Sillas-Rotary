@@ -16,6 +16,7 @@ from pydantic import BaseModel, field_validator
 
 from database import get_db, _DBAdapter
 from routers.auth import CurrentUser, assert_resource_owner, require_roles
+from validators import field_label
 
 router = APIRouter()
 
@@ -65,8 +66,9 @@ def _validate_all_complete(
 ) -> list[dict]:
     """
     Validate that all required fields are present for all three forms
-    per VALIDATION_RULES.md. Returns a list of {form, field} dicts
-    identifying each missing required field.
+    per VALIDATION_RULES.md. Returns a list of {form, field, label} dicts
+    identifying each missing required field. ``label`` is the user-facing
+    field name (Issue #122) so the frontend never shows a raw column name.
 
     Forms:
       'beneficiario' — nombre, apellido, fecha, direccion, etc.
@@ -174,6 +176,11 @@ def _validate_all_complete(
                 missing.append({"form": "tutor1", "field": "otras_fuentes_ingreso"})
             if tutor1.get("monto_otras_fuentes") is None:
                 missing.append({"form": "tutor1", "field": "monto_otras_fuentes"})
+
+    # Attach a user-facing label to every missing field so the frontend
+    # renders the form term the capturista recognizes, never the raw column.
+    for item in missing:
+        item["label"] = field_label(item["field"])
 
     return missing
 

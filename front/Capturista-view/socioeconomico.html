@@ -1682,9 +1682,10 @@
 
           const readableMessages = details
             .map((d) => {
-              const path = Array.isArray(d?.loc) ? d.loc.slice(1).join(".") : "campo";
+              const path = Array.isArray(d?.loc) ? d.loc.slice(1).join(".") : null;
+              const label = path ? SR_Validations.getBackendPathLabel(path) : "Campo";
               const msg = d?.msg || "valor inválido";
-              return `${path}: ${msg}`;
+              return `${label}: ${msg}`;
             })
             .filter(Boolean);
 

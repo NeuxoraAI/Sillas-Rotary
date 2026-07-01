@@ -88,6 +88,99 @@
   const STATUS_OPTIONS = ["borrador", "completo"];
 
   // ─────────────────────────────────────────────────────────────────
+  // Etiquetas de campos — única fuente de verdad columna → etiqueta
+  // visible. Espejo de FIELD_LABELS en backend/validators.py (Issue #122).
+  // Evita exponer nombres técnicos de columnas (curp_benef, estado_codigo…)
+  // en mensajes, validaciones y modales cuando el backend solo envía el
+  // nombre del campo (p. ej. rutas `loc` de errores Pydantic 422).
+  // ─────────────────────────────────────────────────────────────────
+
+  const FIELD_LABELS = {
+    // Beneficiario
+    nombres: "Nombre(s)",
+    apellido_paterno: "Apellido paterno",
+    apellido_materno: "Apellido materno",
+    curp_benef: "CURP",
+    fecha_nacimiento: "Fecha de nacimiento",
+    diagnostico: "Diagnóstico",
+    calle: "Calle",
+    colonia: "Colonia",
+    ciudad: "Ciudad",
+    estado_codigo: "Estado",
+    sexo: "Sexo",
+    telefonos: "Teléfono",
+    // Estudio socioeconómico
+    fecha_estudio: "Fecha del estudio",
+    tuvo_silla_previa: "¿Tuvo silla previa?",
+    como_obtuvo_silla: "¿Cómo obtuvo la silla?",
+    elaboro_estudio: "Elaboró el estudio",
+    sede: "Sede",
+    ciudad_registro: "Ciudad de registro",
+    // Gestión
+    entidad_solicitante: "Entidad solicitante",
+    prioridad: "Prioridad",
+    // Solicitud técnica
+    altura_total_in: "Altura total",
+    peso_kg: "Peso",
+    medida_cabeza_asiento: "Medida cabeza a asiento",
+    medida_hombro_asiento: "Medida hombro a asiento",
+    medida_prof_asiento: "Profundidad de asiento",
+    medida_rodilla_talon: "Medida rodilla a talón",
+    medida_ancho_cadera: "Ancho de cadera",
+    entorno: "Entorno",
+    control_tronco: "Control de tronco",
+    control_cabeza: "Control de cabeza",
+    control_de_piernas: "Control de piernas",
+    // Tutor
+    numero_tutor: "Tutor",
+    edad: "Edad",
+    nivel_estudios: "Nivel de estudios",
+    estado_civil: "Estado civil",
+    vivienda: "Vivienda",
+    imss_estatus: "IMSS",
+    infonavit_estatus: "Infonavit",
+    fuente_empleo: "Fuente de empleo",
+    ingreso_mensual: "Ingreso mensual",
+    antiguedad_anios: "Antigüedad (años)",
+    otras_fuentes_ingreso: "Otras fuentes de ingreso",
+    monto_otras_fuentes: "Monto de otras fuentes",
+  };
+
+  // Prefijos de formulario presentes en rutas `loc` de errores Pydantic.
+  const _FIELD_LABEL_PREFIXES = new Set([
+    "beneficiario",
+    "estudio",
+    "solicitud",
+    "tutor",
+    "tutor1",
+    "tutor2",
+    "body",
+  ]);
+
+  // Resuelve un nombre de campo/columna a su etiqueta visible. Si el campo
+  // no está en el catálogo, lo humaniza para no mostrar jamás el nombre crudo.
+  function getFieldLabel(field) {
+    if (field == null) return "Campo";
+    const key = String(field).trim();
+    if (FIELD_LABELS[key]) return FIELD_LABELS[key];
+    return key
+      .replace(/_/g, " ")
+      .replace(/^\s*./, (c) => c.toUpperCase())
+      .trim() || "Campo";
+  }
+
+  // Traduce una ruta `loc` de Pydantic (p. ej. "beneficiario.curp_benef")
+  // a etiqueta visible, descartando prefijos de formulario.
+  function getBackendPathLabel(path) {
+    if (!path) return "Campo";
+    const segments = String(path).split(".").filter(Boolean);
+    const field = [...segments]
+      .reverse()
+      .find((seg) => !_FIELD_LABEL_PREFIXES.has(seg) && !/^\d+$/.test(seg));
+    return getFieldLabel(field || segments[segments.length - 1]);
+  }
+
+  // ─────────────────────────────────────────────────────────────────
   // Utilidades de filtrado
   // ─────────────────────────────────────────────────────────────────
 
@@ -631,9 +724,10 @@
     if (Array.isArray(errData.detail) && errData.detail.length > 0) {
       const msgs = errData.detail
         .map((d) => {
-          const path = Array.isArray(d?.loc) ? d.loc.slice(1).join(".") : "campo";
+          const path = Array.isArray(d?.loc) ? d.loc.slice(1).join(".") : null;
+          const label = path ? getBackendPathLabel(path) : "Campo";
           const msg = d?.msg || "valor inválido";
-          return `${path}: ${msg}`;
+          return `${label}: ${msg}`;
         })
         .filter(Boolean);
       if (msgs.length > 0) return msgs.join(" | ");
@@ -807,6 +901,9 @@
     setupLiveRequired,
     clearAllFieldErrors,
     formatBackendError,
+    FIELD_LABELS,
+    getFieldLabel,
+    getBackendPathLabel,
     sanitizeMoneyInput,
     formatMoneyDisplay,
     toMoneyNumberOrNull,

@@ -225,6 +225,47 @@ amigable (`mostrarModalCurpDuplicada`).
 
 ---
 
+## Etiquetas visibles de campos — Issue #122
+
+Ningún mensaje, validación, advertencia, modal o error mostrado al usuario debe
+exponer **nombres técnicos de columnas** (`curp_benef`, `estado_codigo`,
+`telefonos`). Siempre se muestra la **etiqueta visible del formulario** (`CURP`,
+`Estado`, `Teléfono`).
+
+**Catálogo centralizado columna → etiqueta** (mismo orden que regex/límites:
+backend primero, frontend espejo):
+
+| Backend | Frontend |
+|---|---|
+| `backend/validators.py::FIELD_LABELS` (+ `field_label()`) | `front/assets/js/validations.js::FIELD_LABELS` (+ `getFieldLabel()`) |
+
+**Contrato:**
+
+- El **backend es la fuente de verdad.** Cuando una respuesta describe campos del
+  sistema, debe incluir el `label` ya resuelto. En particular,
+  `finalizar.py::_validate_all_complete` agrega `label` a cada item de
+  `detail.missing[]` (`{form, field, label}`).
+- El **frontend usa el `label` recibido**; el `FIELD_LABELS` de JS es solo
+  **respaldo** para respuestas que únicamente traen el nombre técnico (p. ej. la
+  ruta `loc` de los errores Pydantic 422).
+- Helpers JS expuestos en `SR_Validations`:
+  - `getFieldLabel(field)` — columna → etiqueta (fallback humanizado, nunca deja
+    la columna cruda).
+  - `getBackendPathLabel(path)` — traduce una ruta `loc`
+    (`beneficiario.curp_benef`, `tutores.0.edad`) a etiqueta, descartando
+    prefijos de formulario e índices.
+- `formatBackendError` (validations.js), `formatBackendErrorMessage`
+  (socioeconomico.html) y el armado de `errMsg` (admin-beneficiarios.html) usan
+  `getBackendPathLabel` en vez de imprimir la ruta cruda.
+
+> **Importante:** `FIELD_LABELS` está **duplicado** en Python y JS (límite entre
+> lenguajes). Al agregar/renombrar un campo hay que actualizar **ambos**.
+
+Ejemplos: `curp_benef → CURP`, `estado_codigo → Estado`, `telefonos → Teléfono`,
+`fecha_nacimiento → Fecha de nacimiento`.
+
+---
+
 ## Bugs corregidos
 
 | # | Bug | Corrección |
@@ -236,6 +277,7 @@ amigable (`mostrarModalCurpDuplicada`).
 | 5 | `entorno`, `control_tronco`, `control_cabeza` sin catálogo backend | Agregados catálogos `frozenset` en `validators.py` |
 | 6 | `fecha_nacimiento` sin validación backend | Agregado `validate_fecha_nacimiento()` en `validators.py` |
 | 7 | `LoginRequest.email` sin validación de formato | Agregado `validate_email_format()` en `validators.py` |
+| 8 | Mensajes/validaciones/modales exponían nombres de columnas (`curp_benef`…) — Issue #122 | Catálogo central `FIELD_LABELS` (`validators.py` + `validations.js`); `_validate_all_complete` envía `label`; front usa `getFieldLabel`/`getBackendPathLabel` |
 
 ---
 
@@ -243,8 +285,10 @@ amigable (`mostrarModalCurpDuplicada`).
 
 1. **Backend:** Agregar regex/validador a `backend/validators.py`
 2. **Backend:** Usar el validador en el Pydantic model del router correspondiente
-3. **Frontend:** Agregar regex/límite a `front/assets/js/validations.js`
-4. **Frontend:** Agregar `setup*` function a `validations.js` si es un patrón nuevo
-5. **Frontend:** Usar `SR_Validations.setupXxx()` en el HTML del formulario
-6. **Documento:** Actualizar esta tabla
-7. **Tests:** Agregar tests unitarios en `backend/tests/test_validators.py`
+3. **Backend:** Agregar la etiqueta visible a `FIELD_LABELS` en `validators.py` (Issue #122)
+4. **Frontend:** Agregar regex/límite a `front/assets/js/validations.js`
+5. **Frontend:** Agregar la etiqueta visible a `FIELD_LABELS` en `validations.js` (espejo del backend)
+6. **Frontend:** Agregar `setup*` function a `validations.js` si es un patrón nuevo
+7. **Frontend:** Usar `SR_Validations.setupXxx()` en el HTML del formulario
+8. **Documento:** Actualizar esta tabla
+9. **Tests:** Agregar tests unitarios en `backend/tests/test_validators.py`

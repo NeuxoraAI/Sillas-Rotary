@@ -1164,7 +1164,7 @@
               };
               showValidationModal(detail.missing.map((m) => ({
                 form: resolveMissingLabel(m),
-                label: m.label || m.field || "Campo requerido",
+                label: m.label || (m.field ? SR_Validations.getFieldLabel(m.field) : "Campo requerido"),
                 message: "Este campo es obligatorio para finalizar",
                 url: resolveMissingUrl(m),
               })), {
