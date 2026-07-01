@@ -1185,7 +1185,7 @@ def obtener_solicitud(
     if row is None:
         raise HTTPException(status_code=404, detail="Solicitud no encontrada")
 
-    assert_resource_owner(row["usuario_id"], usuario, db=db, estudio_id=id)
+    assert_resource_owner(row["usuario_id"], usuario, db=db)
 
     out = dict(row)
     beneficiario = db.execute(
@@ -1219,7 +1219,7 @@ def actualizar_solicitud(
     if existing is None:
         raise HTTPException(status_code=404, detail="Solicitud no encontrada")
 
-    assert_resource_owner(existing["usuario_id"], usuario, db=db, estudio_id=id)
+    assert_resource_owner(existing["usuario_id"], usuario, db=db)
 
     fields = body.model_dump(exclude_none=True)
     # Diagnostico lives on beneficiarios, not solicitudes_tecnicas
@@ -1376,7 +1376,7 @@ def obtener_foto_solicitud(
     if row is None:
         raise HTTPException(status_code=404, detail="Solicitud no encontrada")
 
-    assert_resource_owner(row["usuario_id"], usuario, db=db, estudio_id=id)
+    assert_resource_owner(row["usuario_id"], usuario, db=db)
 
     foto_path = extract_foto_path(row.get("foto_path")) or extract_foto_path(row.get("foto_url"))
     if foto_path is None:

@@ -862,7 +862,7 @@ def obtener_estudio(
     if estudio_row is None:
         raise HTTPException(status_code=404, detail="Estudio no encontrado")
 
-    assert_resource_owner(estudio_row["usuario_id"], usuario, db=db, estudio_id=id)
+    assert_resource_owner(estudio_row["usuario_id"], usuario, db=db)
 
     beneficiario_row = db.execute(
         "SELECT * FROM beneficiarios WHERE id = %s",
@@ -936,7 +936,7 @@ def actualizar_estudio(
     if existing is None:
         raise HTTPException(status_code=404, detail="Estudio no encontrado")
 
-    assert_resource_owner(existing["usuario_id"], usuario, db=db, estudio_id=id)
+    assert_resource_owner(existing["usuario_id"], usuario, db=db)
 
     # Update beneficiario if provided (partial update of mutable fields only)
     if body.beneficiario is not None:
