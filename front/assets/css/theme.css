@@ -1132,7 +1132,7 @@ html.dark .badge-finalizado  { background: rgba(34, 197, 94, 0.20); color: #86EF
   padding-bottom: 5px;
 }
 .modal-scroll-hint::after {
-  content: 'expand_more';
+  content: '\e5cf'; /* expand_more codepoint — robust vs. CSS-content ligatures */
   font-family: 'Material Symbols Outlined';
   font-size: 20px;
   color: var(--c-gray);

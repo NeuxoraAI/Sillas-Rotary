@@ -77,13 +77,18 @@
       triggerLabel.classList.toggle("sr-select__placeholder", !hasValue);
     }
 
+    // Fold case + strip diacritics so "queretaro" matches "Querétaro".
+    function _norm(s) {
+      return (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    }
+
     function buildList(filter) {
       list.innerHTML = "";
       items = [];
-      var f = (filter || "").trim().toLowerCase();
+      var f = _norm((filter || "").trim());
       Array.prototype.forEach.call(select.options, function (opt) {
         var label = opt.textContent.trim();
-        if (f && label.toLowerCase().indexOf(f) === -1) return;
+        if (f && _norm(label).indexOf(f) === -1) return;
         var el = document.createElement("div");
         el.className = "sr-select__opt";
         el.setAttribute("role", "option");
