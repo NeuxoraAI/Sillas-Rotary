@@ -36,6 +36,7 @@
     <script src="../assets/js/theme-toggle.js"></script>
 <script src="../assets/js/delight.js"></script>
     <script src="../assets/js/session-guard.js"></script>
+    <script src="../assets/js/apiClient.js"></script>
     <script src="../assets/js/confirmation-modal.js?v=2"></script>
     <script src="../assets/js/mascot.js?v=2"></script>
     <link href="../assets/css/vista-tecnicos.css" rel="stylesheet" />
@@ -522,8 +523,10 @@
         }
       }
 
-      function _authFetch(url, opts) {
-        return SessionGuard.authFetch(url, opts);
+      // Delegates to ApiClient: paths omit "/api" (added centrally), and the
+      // base URL + Bearer auth live in assets/js/apiClient.js.
+      function _authFetch(path, opts) {
+        return ApiClient.fetch(path, opts);
       }
 
       function _formatRol(rol) {
@@ -730,7 +733,7 @@
 
       async function loadPaisesDropdown() {
         try {
-          const res = await _authFetch("/api/paises");
+          const res = await _authFetch("/paises");
           if (!res.ok) throw new Error("HTTP " + res.status);
           const paises = await res.json();
           state.paisesCache = paises;
@@ -752,7 +755,7 @@
             populateRegionDropdown(state.regionesCache[paisId]);
             return;
           }
-          const res = await _authFetch("/api/regiones?pais_id=" + paisId);
+          const res = await _authFetch("/regiones?pais_id=" + paisId);
           if (!res.ok) throw new Error("HTTP " + res.status);
           const regiones = await res.json();
           state.regionesCache[paisId] = regiones;
@@ -826,7 +829,7 @@
           btnEl.innerHTML = '<span class="material-symbols-outlined text-sm animate-spin">progress_activity</span> Exportando...';
 
           const res = await _authFetch(
-            "/api/tecnica/beneficiarios/export?" + params.toString(),
+            "/tecnica/beneficiarios/export?" + params.toString(),
           );
 
           if (!res.ok) {
@@ -984,7 +987,7 @@
 
         try {
           const res = await _authFetch(
-            "/api/tecnica/beneficiarios?" + params.toString(),
+            "/tecnica/beneficiarios?" + params.toString(),
           );
           if (!res.ok) {
             const errData = await res.json().catch(() => ({}));
@@ -1167,7 +1170,7 @@
 
         try {
           const res = await _authFetch(
-            "/api/tecnica/beneficiarios/" + beneficiarioId,
+            "/tecnica/beneficiarios/" + beneficiarioId,
           );
           if (!res.ok) throw new Error("Error al cargar detalle");
           const data = await res.json();

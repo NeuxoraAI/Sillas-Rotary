@@ -35,6 +35,7 @@
     <link href="../assets/css/theme.css" rel="stylesheet"/>
     <script src="../assets/js/theme-toggle.js"></script>
     <script src="../assets/js/session-guard.js"></script>
+    <script src="../assets/js/apiClient.js"></script>
     <script src="../assets/js/confirmation-modal.js?v=2"></script>
     <link href="../assets/css/tecnica.css" rel="stylesheet" />
   </head>
@@ -882,11 +883,8 @@
         // Check if we have a draft to resume
         if (solicitudId && session?.token) {
           try {
-            const res = await fetch(`/api/solicitudes/${solicitudId}`, {
-              headers: {
-                Accept: "application/json",
-                Authorization: "Bearer " + session.token,
-              },
+            const res = await ApiClient.fetch(`/solicitudes/${solicitudId}`, {
+              headers: { Accept: "application/json" },
             });
 
             if (res.ok) {
@@ -1711,9 +1709,8 @@
         if (!session?.token) throw new Error("Sesión no válida.");
         const formData = new FormData();
         formData.append("foto", file);
-        const res = await fetch("/api/upload-foto", {
+        const res = await ApiClient.fetch("/upload-foto", {
           method: "POST",
-          headers: { Authorization: "Bearer " + session.token },
           body: formData,
         });
         if (!res.ok) throw new Error("Error al subir la foto.");
@@ -2184,13 +2181,9 @@
             ...mapTutor("tutor2", tutor2),
           };
 
-          const res = await fetch("/api/guardar-borrador", {
+          const res = await ApiClient.fetch("/guardar-borrador", {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: "Bearer " + session.token,
-            },
-            body: JSON.stringify(payload),
+            json: payload,
           });
 
           if (res.ok) {
@@ -2348,13 +2341,9 @@
 
           if (solicitudId) {
             // PATCH existing draft
-            res = await fetch(`/api/solicitudes/${solicitudId}`, {
+            res = await ApiClient.fetch(`/solicitudes/${solicitudId}`, {
               method: "PATCH",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: "Bearer " + session.token,
-              },
-              body: JSON.stringify(payload),
+              json: payload,
             });
 
             if (!res.ok) {
@@ -2378,13 +2367,9 @@
             }
           } else {
             // POST new solicitud
-            res = await fetch("/api/solicitudes", {
+            res = await ApiClient.fetch("/solicitudes", {
               method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: "Bearer " + session.token,
-              },
-              body: JSON.stringify(payload),
+              json: payload,
             });
 
             if (!res.ok) {

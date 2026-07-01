@@ -29,6 +29,7 @@
 <link href="../assets/css/theme.css" rel="stylesheet"/>
 <script src="../assets/js/theme-toggle.js"></script>
 <script src="../assets/js/session-guard.js"></script>
+<script src="../assets/js/apiClient.js"></script>
 <link href="../assets/css/seleccion-region.css" rel="stylesheet"/>
 </head>
 <body class="page-bg font-display min-h-screen flex flex-col" style="background: #FBF7F5;">
@@ -213,7 +214,7 @@
 
   async function loadPaises() {
     try {
-      const res = await _authFetch('/api/paises');
+      const res = await _authFetch('/paises');
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const paises = await res.json();
 
@@ -247,7 +248,7 @@
 
   async function loadRegiones(paisId) {
     try {
-      const res = await _authFetch('/api/regiones?pais_id=' + paisId);
+      const res = await _authFetch('/regiones?pais_id=' + paisId);
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const regiones = await res.json();
 
@@ -328,8 +329,8 @@
     catch (_) { return null; }
   }
 
-  function _authFetch(url, opts) {
-    return SessionGuard.authFetch(url, opts);
+  function _authFetch(path, opts) {
+    return ApiClient.fetch(path, opts);
   }
 
   function _formatRol(rol) {
