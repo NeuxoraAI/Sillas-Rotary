@@ -130,6 +130,9 @@ class GuardarBorradorRequest(BaseModel):
     medida_ancho_cadera: Optional[str] = None
     foto_path: Optional[str] = None
     foto_url: Optional[str] = None
+    equipo_solicitado: Optional[str] = None
+    estudio_clinico_path: Optional[str] = None
+    estudio_clinico_url: Optional[str] = None
     entidad_solicitante: Optional[str] = None
     prioridad: Optional[str] = None
     justificacion: Optional[str] = None
@@ -662,9 +665,11 @@ def _create_borrador(
                  altura_total_in, peso_kg,
                  medida_cabeza_asiento, medida_hombro_asiento, medida_prof_asiento,
                  medida_rodilla_talon, medida_ancho_cadera, unidad_captura,
-                 unidad_peso_captura, foto_url, entidad_solicitante, prioridad,
+                 unidad_peso_captura, foto_url, equipo_solicitado,
+                 estudio_clinico_path, estudio_clinico_url,
+                 entidad_solicitante, prioridad,
                  justificacion, status)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
             """,
             (
@@ -686,6 +691,9 @@ def _create_borrador(
                 body.unidad_medida,
                 body.unidad_peso_captura,
                 body.foto_url,
+                body.equipo_solicitado,
+                body.estudio_clinico_path,
+                body.estudio_clinico_url,
                 body.entidad_solicitante,
                 body.prioridad,
                 body.justificacion,
@@ -901,6 +909,9 @@ def _patch_solicitud(db: _DBAdapter, body: GuardarBorradorRequest, solicitud_id:
         ("control_de_piernas", body.control_de_piernas),
         ("padecimiento", body.padecimiento),
         ("soporte_oxigeno", body.soporte_oxigeno),
+        ("equipo_solicitado", body.equipo_solicitado),
+        ("estudio_clinico_path", body.estudio_clinico_path),
+        ("estudio_clinico_url", body.estudio_clinico_url),
         ("entidad_solicitante", body.entidad_solicitante),
         ("prioridad", body.prioridad),
         ("justificacion", body.justificacion),
