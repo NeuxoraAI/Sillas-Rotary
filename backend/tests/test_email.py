@@ -34,7 +34,7 @@ def _ok_response() -> MagicMock:
 class TestSendInvite:
     def test_posts_to_resend_with_auth_and_body(self):
         with patch.object(email_mod.httpx, "post", return_value=_ok_response()) as mock_post:
-            send_invite("user@example.com", "raw-token-abc")
+            send_invite("user@example.com", "raw-token-abc", "Ana Pérez")
 
         mock_post.assert_called_once()
         args, kwargs = mock_post.call_args
@@ -48,11 +48,13 @@ class TestSendInvite:
         # Activation link points at set-password.html with the raw token.
         assert "https://app.example.com/set-password.html?token=raw-token-abc" in body["html"]
         assert "72 horas" in body["html"]
+        # Personalized greeting with the user's name (spec requirement).
+        assert "Ana Pérez" in body["html"]
 
     def test_relative_link_when_base_url_unset(self, monkeypatch):
         monkeypatch.delenv("APP_BASE_URL", raising=False)
         with patch.object(email_mod.httpx, "post", return_value=_ok_response()) as mock_post:
-            send_invite("user@example.com", "tok")
+            send_invite("user@example.com", "tok", "Ana")
         body = mock_post.call_args.kwargs["json"]
         assert body["html"].count("/set-password.html?token=tok") == 1
 
@@ -72,7 +74,7 @@ class TestFailureModes:
     def test_timeout_raises_email_delivery_error(self):
         with patch.object(email_mod.httpx, "post", side_effect=httpx.TimeoutException("boom")):
             with pytest.raises(EmailDeliveryError):
-                send_invite("user@example.com", "tok")
+                send_invite("user@example.com", "tok", "Ana")
 
     def test_http_error_raises_email_delivery_error(self):
         resp = MagicMock()
@@ -85,4 +87,4 @@ class TestFailureModes:
     def test_transport_error_raises_email_delivery_error(self):
         with patch.object(email_mod.httpx, "post", side_effect=httpx.ConnectError("no route")):
             with pytest.raises(EmailDeliveryError):
-                send_invite("user@example.com", "tok")
+                send_invite("user@example.com", "tok", "Ana")

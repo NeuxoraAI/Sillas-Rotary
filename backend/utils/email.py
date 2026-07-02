@@ -65,10 +65,11 @@ def _base_url() -> str:
     return os.environ.get("APP_BASE_URL", "").rstrip("/")
 
 
-def send_invite(to_email: str, raw_token: str) -> None:
+def send_invite(to_email: str, raw_token: str, nombre: str) -> None:
     """Send the account-activation (invite) email. Valid for 72 hours."""
     link = f"{_base_url()}/set-password.html?token={raw_token}"
     html = f"""
+    <p>Hola {nombre}:</p>
     <p>Tu cuenta en <strong>Ecosistema VIDA UG</strong> ha sido creada.</p>
     <p>Hacé clic en el siguiente enlace para establecer tu contraseña y activar
     tu cuenta (este enlace expira en 72 horas):</p>

@@ -186,7 +186,7 @@ def create_usuario(
             (row["id"], hash_token(raw_token)),
         )
         try:
-            send_invite(row["email"], raw_token)
+            send_invite(row["email"], raw_token, row["nombre"])
         except EmailDeliveryError:
             logger.warning(
                 "Invite email delivery failed for usuario_id=%s; user remains "

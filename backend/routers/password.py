@@ -110,14 +110,16 @@ def _issue_token(db: _DBAdapter, usuario_id: int, tipo: str, ttl_sql: str) -> st
 
 
 def _redeem_token(db: _DBAdapter, token: str, tipo: str) -> dict:
-    """Look up a valid, unused, non-expired token of the given tipo. Returns the
-    token row (with usuario_id). Raises 400 when invalid/expired/used/wrong-tipo."""
+    """Atomically consume a valid, unused, non-expired token of the given tipo
+    (single UPDATE avoids a select-then-update race on concurrent redemption).
+    Returns the token row (with usuario_id). Raises 400 when
+    invalid/expired/used/wrong-tipo."""
     row = db.execute(
         """
-        SELECT id, usuario_id
-        FROM password_tokens
+        UPDATE password_tokens SET used_at = NOW()
         WHERE token_hash = %s AND tipo = %s
           AND used_at IS NULL AND expires_at > NOW()
+        RETURNING id, usuario_id
         """,
         (hash_token(token), tipo),
     ).fetchone()
@@ -152,7 +154,7 @@ def reenviar_invitacion(
     """Resend an invite for a Pendiente user (activo=FALSE, password_hash NULL).
     Admin only. Fail-open on email delivery."""
     user = db.execute(
-        "SELECT id, email, activo, password_hash FROM usuarios WHERE id = %s",
+        "SELECT id, nombre, email, activo, password_hash FROM usuarios WHERE id = %s",
         (usuario_id,),
     ).fetchone()
     if user is None:
@@ -166,7 +168,7 @@ def reenviar_invitacion(
 
     raw_token = _issue_token(db, usuario_id, "invite", INVITE_TTL_SQL)
     try:
-        send_invite(user["email"], raw_token)
+        send_invite(user["email"], raw_token, user["nombre"])
     except EmailDeliveryError:
         logger.warning(
             "Invite resend email delivery failed for usuario_id=%s; user remains "
@@ -226,10 +228,6 @@ def set_password(
         "UPDATE usuarios SET password_hash = %s, activo = TRUE WHERE id = %s",
         (_hash_password(body.password), token_row["usuario_id"]),
     )
-    db.execute(
-        "UPDATE password_tokens SET used_at = NOW() WHERE id = %s",
-        (token_row["id"],),
-    )
     return MessageResponse(message="Contraseña establecida. Ya podés iniciar sesión.")
 
 
@@ -245,10 +243,6 @@ def reset_password(
     db.execute(
         "UPDATE usuarios SET password_hash = %s WHERE id = %s",
         (_hash_password(body.password), token_row["usuario_id"]),
-    )
-    db.execute(
-        "UPDATE password_tokens SET used_at = NOW() WHERE id = %s",
-        (token_row["id"],),
     )
     return MessageResponse(message="Contraseña actualizada. Ya podés iniciar sesión.")
 
