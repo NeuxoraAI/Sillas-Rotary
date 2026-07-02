@@ -3121,6 +3121,12 @@
 
       // -- Handler: CONTINUAR (nuevo flujo offline-first) --
       async function continuarEstudioSocioeconomico() {
+        // Guard against repeated clicks: while the (awaited) upload is in
+        // flight the button used to stay enabled, so each extra click launched
+        // another concurrent upload of the same files — slowing everything
+        // down and making navigation feel unresponsive.
+        if (estudioSubmitInProgress) return;
+
         const formatErrors = collectDraftFormatErrors("Socioeconómico", "socioeconomico.html");
         if (formatErrors.length > 0) {
           showValidationModal(formatErrors, {
@@ -3133,6 +3139,8 @@
         // Upload any pending documents (credencial / comprobante) so they
         // aren't lost when navigating away, then carry their references in
         // the saved draft.
+        const btn = document.getElementById("btn-continuar-estudio");
+        const originalText = btn?.textContent || "CONTINUAR";
         let documentRefs = {
           credencial: { ...uploadedDocumentRefs.credencial },
           comprobante_domicilio: { ...uploadedDocumentRefs.comprobante_domicilio },
@@ -3140,10 +3148,24 @@
         try {
           const session = SessionGuard.getSession();
           if (session?.token && hasPendingSupportingDocuments()) {
+            estudioSubmitInProgress = true;
+            if (btn) { btn.disabled = true; btn.textContent = "Subiendo archivos…"; }
             documentRefs = await uploadSupportingDocuments(session.token);
           }
         } catch (err) {
+          // Surface the failure and let the user retry instead of navigating
+          // away (which would drop the still-unuploaded file from memory).
           console.warn("No se pudieron subir los documentos antes de continuar:", err);
+          const errorEl = document.getElementById("error-msg");
+          if (errorEl) {
+            errorEl.textContent = err instanceof Error
+              ? err.message
+              : "No se pudieron subir los archivos. Revisá tu conexión e intentá de nuevo.";
+            errorEl.classList.remove("hidden");
+          }
+          estudioSubmitInProgress = false;
+          if (btn) { btn.disabled = false; btn.textContent = originalText; }
+          return;
         }
 
         // Collect form data with the resolved document references
@@ -3152,7 +3174,7 @@
         // Save to localStorage
         localStorage.setItem("draft_socioeconomico", JSON.stringify(formData));
 
-        // Redirect to tecnica.html
+        // Redirect to tecnica.html (page unload clears the in-progress flag).
         window.location.href = "tecnica.html";
       }
 
