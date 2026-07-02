@@ -513,6 +513,8 @@
           credencial_url: draftSocio.estudio?.credencial_url || null,
           comprobante_domicilio_path: draftSocio.estudio?.comprobante_domicilio_path || null,
           comprobante_domicilio_url: draftSocio.estudio?.comprobante_domicilio_url || null,
+          estudio_clinico_path: draftTecnica.estudio_clinico_path || draftSocio.estudio?.estudio_clinico_path || null,
+          estudio_clinico_url: draftTecnica.estudio_clinico_url || draftSocio.estudio?.estudio_clinico_url || null,
           status,
 
           entorno: draftTecnica.entorno || null,

@@ -68,6 +68,23 @@ def test_upload_documento_estudio_accepts_pdf(monkeypatch) -> None:
     assert storage.uploads[0][2]["content-type"] == "application/pdf"
 
 
+def test_upload_documento_estudio_accepts_estudio_clinico(monkeypatch) -> None:
+    storage = _FakeStorage()
+    monkeypatch.setattr(socioeconomico, "_storage", lambda: storage)
+
+    response = asyncio.run(
+        socioeconomico.upload_documento_estudio(
+            tipo="estudio_clinico",
+            archivo=_upload_file("estudio.jpg", "image/jpeg", b"jpg-bytes"),
+            _usuario=_user(),
+        )
+    )
+
+    assert response["tipo"] == "estudio_clinico"
+    assert response["documento_path"].startswith("estudio_clinico/")
+    assert response["documento_url"].startswith("storage://documentos-estudio/estudio_clinico/")
+
+
 def test_upload_documento_estudio_rejects_invalid_tipo() -> None:
     with pytest.raises(HTTPException) as exc:
         asyncio.run(

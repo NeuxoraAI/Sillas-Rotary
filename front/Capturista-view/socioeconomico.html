@@ -2632,6 +2632,8 @@
             credencial_url: socioData.estudio?.credencial_url || null,
             comprobante_domicilio_path: socioData.estudio?.comprobante_domicilio_path || null,
             comprobante_domicilio_url: socioData.estudio?.comprobante_domicilio_url || null,
+            estudio_clinico_path: draftTecnica.estudio_clinico_path || socioData.estudio?.estudio_clinico_path || null,
+            estudio_clinico_url: draftTecnica.estudio_clinico_url || socioData.estudio?.estudio_clinico_url || null,
             status: "borrador",
             // Solicitud (técnica)
             entorno: draftTecnica.entorno || null,
@@ -2655,8 +2657,6 @@
             foto_path: draftTecnica.foto_path || null,
             foto_url: draftTecnica.foto_url || null,
             equipo_solicitado: draftTecnica.equipo_solicitado || null,
-            estudio_clinico_path: draftTecnica.estudio_clinico_path || null,
-            estudio_clinico_url: draftTecnica.estudio_clinico_url || null,
             // Gestion
             entidad_solicitante: draftGestion.entidad_solicitante || null,
             prioridad: draftGestion.prioridad || null,
@@ -3922,6 +3922,9 @@
             credencial_url: data.credencial_url || null,
             comprobante_domicilio_path: data.comprobante_domicilio_path || null,
             comprobante_domicilio_url: data.comprobante_domicilio_url || null,
+            estudio_clinico_path: data.estudio_clinico_path || null,
+            estudio_clinico_url: data.estudio_clinico_url || null,
+            estudio_clinico_url_resolved: data.estudio_clinico_url_resolved || null,
             status: data.status || "borrador",
           },
         }));
@@ -3948,8 +3951,9 @@
                 ? solicitud.soporte_oxigeno
                 : null,
             equipo_solicitado: solicitud.equipo_solicitado || null,
-            estudio_clinico_path: solicitud.estudio_clinico_path || null,
-            estudio_clinico_url: solicitud.estudio_clinico_url || null,
+            estudio_clinico_path: solicitud.estudio_clinico_path || data.estudio_clinico_path || null,
+            estudio_clinico_url: solicitud.estudio_clinico_url || data.estudio_clinico_url || null,
+            estudio_clinico_url_resolved: solicitud.estudio_clinico_url_resolved || data.estudio_clinico_url_resolved || null,
           }));
 
         }

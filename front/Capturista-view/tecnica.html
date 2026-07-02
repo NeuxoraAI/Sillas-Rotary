@@ -976,14 +976,17 @@
                 renderPhotoPreviewCard();
               }
 
-              if (data.estudio_clinico_url) {
-                uploadedEstudioPath = data.estudio_clinico_path || null;
-                uploadedEstudioUrl = data.estudio_clinico_url;
-                uploadedEstudioPreviewUrl = data.estudio_clinico_url_resolved || null;
-                const guessedType = (data.estudio_clinico_path || "").toLowerCase().endsWith(".pdf")
+              const estudioClinicoPath = data.estudio_clinico_path || data.estudio?.estudio_clinico_path || null;
+              const estudioClinicoUrl = data.estudio_clinico_url || data.estudio?.estudio_clinico_url || null;
+              const estudioClinicoPreviewUrl = data.estudio_clinico_url_resolved || data.estudio?.estudio_clinico_url_resolved || null;
+              if (estudioClinicoUrl) {
+                uploadedEstudioPath = estudioClinicoPath;
+                uploadedEstudioUrl = estudioClinicoUrl;
+                uploadedEstudioPreviewUrl = estudioClinicoPreviewUrl;
+                const guessedType = (estudioClinicoPath || "").toLowerCase().endsWith(".pdf")
                   ? "application/pdf"
                   : "image/jpeg";
-                setEstudioPreviewFromStoredUrl(uploadedEstudioPreviewUrl || data.estudio_clinico_url, guessedType);
+                setEstudioPreviewFromStoredUrl(uploadedEstudioPreviewUrl || estudioClinicoUrl, guessedType);
                 renderEstudioStatus();
                 renderEstudioPreviewCard();
               }
@@ -1401,8 +1404,13 @@
           return;
         }
 
-        statusEl.textContent = capturedEstudioFile
-          ? `Estudio capturado: ${capturedEstudioFile.name}`
+        if (capturedEstudioFile) {
+          statusEl.textContent = `Estudio capturado: ${capturedEstudioFile.name}`;
+          return;
+        }
+
+        statusEl.textContent = uploadedEstudioUrl
+          ? `Estudio cargado: ${extractStoredFilename(uploadedEstudioPath || uploadedEstudioUrl)}`
           : "";
       }
 
@@ -1765,24 +1773,24 @@
         const session = SessionGuard.getSession();
         if (!session?.token) throw new Error("Sesión no válida.");
         const formData = new FormData();
+        formData.append("tipo", "estudio_clinico");
         formData.append("archivo", file);
-        const res = await fetch("/api/upload-estudio-clinico", {
+        const res = await ApiClient.fetch("/upload-documento", {
           method: "POST",
-          headers: { Authorization: "Bearer " + session.token },
           body: formData,
         });
         if (!res.ok) throw new Error("Error al subir el estudio clínico.");
         const data = await res.json();
-        uploadedEstudioPath = data.estudio_clinico_path || null;
-        uploadedEstudioUrl = data.estudio_clinico_url || null;
-        uploadedEstudioPreviewUrl = data.estudio_clinico_url_resolved || data.estudio_clinico_url || null;
+        uploadedEstudioPath = data.documento_path || null;
+        uploadedEstudioUrl = data.documento_url || null;
+        uploadedEstudioPreviewUrl = data.documento_url_resolved || null;
         capturedEstudioFile = null;
         if (fileInput) fileInput.value = "";
         if (uploadedEstudioUrl) {
           const guessedType = (file.name || "").toLowerCase().endsWith(".pdf")
             ? "application/pdf"
             : "image/jpeg";
-          setEstudioPreviewFromStoredUrl(uploadedEstudioPreviewUrl, guessedType);
+          setEstudioPreviewFromStoredUrl(uploadedEstudioPreviewUrl || estudioPreviewState.objectUrl, guessedType);
           renderEstudioStatus();
           renderEstudioPreviewCard();
         }
@@ -2254,6 +2262,8 @@
             credencial_url: draftSocio.estudio?.credencial_url || null,
             comprobante_domicilio_path: draftSocio.estudio?.comprobante_domicilio_path || null,
             comprobante_domicilio_url: draftSocio.estudio?.comprobante_domicilio_url || null,
+            estudio_clinico_path: tecnicaData.estudio_clinico_path || draftSocio.estudio?.estudio_clinico_path || null,
+            estudio_clinico_url: tecnicaData.estudio_clinico_url || draftSocio.estudio?.estudio_clinico_url || null,
             status: "borrador",
             // Solicitud (técnica - actual)
             entorno: tecnicaData.entorno || null,
@@ -2277,8 +2287,6 @@
             unidad_peso_captura: tecnicaData.unidad_peso_captura || null,
             foto_url: tecnicaData.foto_url || null,
             equipo_solicitado: tecnicaData.equipo_solicitado || null,
-            estudio_clinico_path: tecnicaData.estudio_clinico_path || null,
-            estudio_clinico_url: tecnicaData.estudio_clinico_url || null,
             // Gestion (desde gestion)
             entidad_solicitante: draftGestion.entidad_solicitante || null,
             prioridad: draftGestion.prioridad || null,
