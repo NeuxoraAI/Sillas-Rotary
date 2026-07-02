@@ -1101,6 +1101,41 @@
           .toLocaleUpperCase("es-MX");
       }
 
+      function normalizeUpperText(value) {
+        return String(value || "")
+          .replace(/\s+/g, " ")
+          .trim()
+          .toLocaleUpperCase("es-MX");
+      }
+
+      const SOCIO_UPPERCASE_FIELD_NAMES = new Set([
+        "nombres", "apellido_paterno", "apellido_materno",
+        "calle", "num_ext", "num_int", "colonia", "ciudad",
+        "tutor1_nombres", "tutor1_apellido_paterno", "tutor1_apellido_materno",
+        "tutor1_fuente_empleo", "tutor1_otras_fuentes_ingreso",
+        "tutor2_nombres", "tutor2_apellido_paterno", "tutor2_apellido_materno",
+        "tutor2_fuente_empleo", "tutor2_otras_fuentes_ingreso",
+      ]);
+
+      function shouldUppercaseSocioField(name) {
+        return SOCIO_UPPERCASE_FIELD_NAMES.has(name);
+      }
+
+      function normalizeSocioFieldValue(name, value) {
+        return shouldUppercaseSocioField(name) ? normalizeUpperText(value) : value;
+      }
+
+      function setupUppercaseSocioFields() {
+        document.querySelectorAll("input, select, textarea").forEach((field) => {
+          if (!field.name || !shouldUppercaseSocioField(field.name)) return;
+          const apply = () => {
+            field.value = normalizeUpperText(field.value);
+          };
+          field.addEventListener("input", apply);
+          field.addEventListener("change", apply);
+        });
+      }
+
       async function loadMunicipiosCatalog() {
         if (municipiosPorEstado) return municipiosPorEstado;
         const response = await fetch("/assets/municipios_por_estado.json", {
@@ -1760,8 +1795,8 @@
             return;
           }
 
-          values[field.name] = field.name === "ciudad"
-            ? normalizeMunicipioForPersistence(field.value)
+          values[field.name] = shouldUppercaseSocioField(field.name)
+            ? normalizeUpperText(field.value)
             : field.value;
         });
 
@@ -1794,7 +1829,9 @@
             return;
           }
 
-          first.value = value ?? "";
+          first.value = shouldUppercaseSocioField(name)
+            ? normalizeUpperText(value)
+            : (value ?? "");
         });
 
         const ciudadEl = document.getElementById("ciudad");
@@ -2166,7 +2203,7 @@
                 const b = data.beneficiario;
                 const setVal = (name, val) => {
                   const el = document.querySelector(`[name="${name}"]`);
-                  if (el && val != null) el.value = val;
+                  if (el && val != null) el.value = normalizeSocioFieldValue(name, val);
                 };
                 // Structured name: direct populate or legacy fallback
                 if (b.nombres != null && b.nombres !== "") {
@@ -2235,7 +2272,7 @@
                   const num = t.numero_tutor;
                   const setVal = (name, val) => {
                     const el = document.querySelector(`[name="${name}"]`);
-                    if (el && val != null) el.value = val;
+                    if (el && val != null) el.value = normalizeSocioFieldValue(name, val);
                   };
                   const setChecked = (name, val) => {
                     const el = document.querySelector(`[name="${name}"]`);
@@ -2412,6 +2449,7 @@
         const f = document.querySelector("form");
         const fd = new FormData(f);
         const get = (name) => fd.get(name) || "";
+        const getUpper = (name) => normalizeUpperText(get(name));
 
         const toIntOrNull = (v) => {
           const n = parseInt(v, 10);
@@ -2427,22 +2465,22 @@
         const tutor1SinEmpleo = f.querySelector('[name="tutor1_sin_empleo"]').checked;
         tutores.push({
           numero_tutor: 1,
-          nombres: get("tutor1_nombres"),
-          apellido_paterno: get("tutor1_apellido_paterno"),
-          apellido_materno: get("tutor1_apellido_materno"),
+          nombres: getUpper("tutor1_nombres"),
+          apellido_paterno: getUpper("tutor1_apellido_paterno"),
+          apellido_materno: getUpper("tutor1_apellido_materno"),
           edad: toIntOrNull(get("tutor1_edad")),
           nivel_estudios: get("tutor1_nivel_estudios"),
           estado_civil: get("tutor1_estado_civil"),
           num_hijos: toIntOrNull(get("tutor1_num_hijos")) || 0,
           vivienda: get("tutor1_vivienda"),
-          fuente_empleo: get("tutor1_fuente_empleo"),
+          fuente_empleo: getUpper("tutor1_fuente_empleo"),
           antiguedad_anios: tutor1SinEmpleo ? null : (toIntOrNull(get("tutor1_antiguedad_anios")) || 0),
           antiguedad_meses_extra: tutor1SinEmpleo ? null : (toIntOrNull(get("tutor1_antiguedad_meses_extra")) || 0),
           antiguedad_aplica: tutor1SinEmpleo ? false : !f.querySelector('[name="tutor1_antiguedad_no_aplica"]').checked,
           ingreso_mensual: SR_Validations.toIntegerOrNull(get("tutor1_ingreso_mensual")),
           sin_empleo: tutor1SinEmpleo,
           otras_fuentes_aplica: f.querySelector('[name="tutor1_otras_fuentes_aplica"]').checked,
-          otras_fuentes_ingreso: get("tutor1_otras_fuentes_ingreso"),
+          otras_fuentes_ingreso: getUpper("tutor1_otras_fuentes_ingreso"),
           monto_otras_fuentes: SR_Validations.toIntegerOrNull(get("tutor1_monto_otras_fuentes")),
           imss_estatus: getRadio("tutor1_imss"),
           infonavit_estatus: getRadio("tutor1_infonavit"),
@@ -2453,22 +2491,22 @@
           const tutor2SinEmpleo = f.querySelector('[name="tutor2_sin_empleo"]').checked;
           tutores.push({
             numero_tutor: 2,
-            nombres: get("tutor2_nombres"),
-            apellido_paterno: get("tutor2_apellido_paterno"),
-            apellido_materno: get("tutor2_apellido_materno"),
+            nombres: getUpper("tutor2_nombres"),
+            apellido_paterno: getUpper("tutor2_apellido_paterno"),
+            apellido_materno: getUpper("tutor2_apellido_materno"),
             edad: toIntOrNull(get("tutor2_edad")),
             nivel_estudios: get("tutor2_nivel_estudios"),
             estado_civil: get("tutor2_estado_civil"),
             num_hijos: toIntOrNull(get("tutor2_num_hijos")) || 0,
             vivienda: get("tutor2_vivienda"),
-            fuente_empleo: get("tutor2_fuente_empleo"),
+            fuente_empleo: getUpper("tutor2_fuente_empleo"),
             antiguedad_anios: tutor2SinEmpleo ? null : (toIntOrNull(get("tutor2_antiguedad_anios")) || 0),
             antiguedad_meses_extra: tutor2SinEmpleo ? null : (toIntOrNull(get("tutor2_antiguedad_meses_extra")) || 0),
             antiguedad_aplica: tutor2SinEmpleo ? false : !f.querySelector('[name="tutor2_antiguedad_no_aplica"]').checked,
             ingreso_mensual: SR_Validations.toIntegerOrNull(get("tutor2_ingreso_mensual")),
             sin_empleo: tutor2SinEmpleo,
             otras_fuentes_aplica: f.querySelector('[name="tutor2_otras_fuentes_aplica"]').checked,
-            otras_fuentes_ingreso: get("tutor2_otras_fuentes_ingreso"),
+            otras_fuentes_ingreso: getUpper("tutor2_otras_fuentes_ingreso"),
             monto_otras_fuentes: SR_Validations.toIntegerOrNull(get("tutor2_monto_otras_fuentes")),
             imss_estatus: getRadio("tutor2_imss"),
             infonavit_estatus: getRadio("tutor2_infonavit"),
@@ -2481,15 +2519,15 @@
           sede: regionCtx.sede,
           ciudad_registro: regionCtx.region_nombre,
           beneficiario: {
-            nombres: get("nombres"),
-            apellido_paterno: get("apellido_paterno"),
-            apellido_materno: get("apellido_materno"),
+            nombres: getUpper("nombres"),
+            apellido_paterno: getUpper("apellido_paterno"),
+            apellido_materno: getUpper("apellido_materno"),
             curp: (get("curp") || "").toUpperCase() || null,
             fecha_nacimiento: get("fecha_nacimiento"),
-            calle: get("calle"),
-            num_ext: get("num_ext"),
-            num_int: document.querySelector('[name="tiene_num_interior"]')?.checked ? (get("num_int") || null) : null,
-            colonia: get("colonia"),
+            calle: getUpper("calle"),
+            num_ext: getUpper("num_ext"),
+            num_int: document.querySelector('[name="tiene_num_interior"]')?.checked ? (getUpper("num_int") || null) : null,
+            colonia: getUpper("colonia"),
             ciudad: normalizeMunicipioForPersistence(get("ciudad")),
             estado_codigo: get("estado_codigo"),
             estado_nombre: ESTADOS_INEGI.find((x) => x[0] === get("estado_codigo"))?.[1] || null,
@@ -2501,7 +2539,7 @@
           estudio: {
             tuvo_silla_previa: false,
             como_obtuvo_silla: null,
-            elaboro_estudio: (session?.rol === 'organizacion' && guestCtx?.nombre) ? guestCtx.nombre : null,
+            elaboro_estudio: (session?.rol === 'organizacion' && guestCtx?.nombre) ? normalizeUpperText(guestCtx.nombre) : null,
             voluntario_contacto: (session?.rol === 'organizacion' && guestCtx?.contacto) ? guestCtx.contacto : null,
             fecha_estudio: new Date().toISOString().split("T")[0],
             // DEBUG: Log what we're setting for elaboro_estudio
@@ -3688,6 +3726,7 @@
       setupMonetaryFieldFormatting();
       setupTelefonoPrefix();
       setupTelefonoSanitization();
+      setupUppercaseSocioFields();
       setupNumInteriorConditional();
       setupEmailToggle(1);
       setupEmailToggle(2);
@@ -3780,7 +3819,7 @@
         // Pre-populate BENEFICIARIO fields
         const _setVal = (name, val) => {
           const el = document.querySelector(`[name="${name}"]`);
-          if (el && val != null) el.value = val;
+          if (el && val != null) el.value = normalizeSocioFieldValue(name, val);
         };
         _setVal("nombres", b.nombres || b.nombre || "");
         _setVal("apellido_paterno", b.apellido_paterno || "");
@@ -3992,7 +4031,7 @@
 
       function _setVal(name, value) {
         const el = document.querySelector(`[name="${name}"]`);
-        if (el) el.value = value;
+        if (el) el.value = normalizeSocioFieldValue(name, value);
       }
 
       // ── Override submitEstudio for edit mode ──
@@ -4067,7 +4106,7 @@
             const b = data.beneficiario;
             const _setVal = (name, val) => {
               const el = document.querySelector(`[name="${name}"]`);
-              if (el && val != null) el.value = val;
+              if (el && val != null) el.value = normalizeSocioFieldValue(name, val);
             };
             _setVal("nombres", b.nombres || "");
             _setVal("apellido_paterno", b.apellido_paterno || "");
@@ -4102,7 +4141,7 @@
               const num = t.numero_tutor;
               const _setVal = (name, val) => {
                 const el = document.querySelector(`[name="${name}"]`);
-                if (el && val != null) el.value = val;
+                if (el && val != null) el.value = normalizeSocioFieldValue(name, val);
               };
               _setVal(`tutor${num}_nombres`, t.nombres || t.nombre || "");
               _setVal(`tutor${num}_apellido_paterno`, t.apellido_paterno || "");
