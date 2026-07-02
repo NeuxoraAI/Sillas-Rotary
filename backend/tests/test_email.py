@@ -44,7 +44,7 @@ class TestSendInvite:
         body = kwargs["json"]
         assert body["from"] == "onboarding@resend.dev"
         assert body["to"] == ["user@example.com"]
-        assert body["subject"] == "Bienvenido/a — Activá tu cuenta"
+        assert body["subject"] == "Bienvenido/a — Activa tu cuenta"
         # Activation link points at set-password.html with the raw token.
         assert "https://app.example.com/set-password.html?token=raw-token-abc" in body["html"]
         assert "72 horas" in body["html"]

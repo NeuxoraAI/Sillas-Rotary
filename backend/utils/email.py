@@ -53,16 +53,20 @@ def _resend_post(to: str, subject: str, html: str) -> None:
     except httpx.TimeoutException as exc:
         raise EmailDeliveryError("Resend request timed out") from exc
     except httpx.HTTPStatusError as exc:
-        raise EmailDeliveryError(
-            f"Resend returned {exc.response.status_code}"
-        ) from exc
+        raise EmailDeliveryError(f"Resend returned {exc.response.status_code}") from exc
     except httpx.HTTPError as exc:  # transport/connection errors
         raise EmailDeliveryError(f"Resend request failed: {exc}") from exc
 
 
 def _base_url() -> str:
-    """Return APP_BASE_URL without a trailing slash (empty when unset)."""
-    return os.environ.get("APP_BASE_URL", "").rstrip("/")
+    """Return APP_BASE_URL without a trailing slash. Falls back to the
+    Vercel-injected deployment URL so preview deployments build working
+    email links without per-branch configuration."""
+    explicit = os.environ.get("APP_BASE_URL", "").rstrip("/")
+    if explicit:
+        return explicit
+    vercel_url = os.environ.get("VERCEL_URL", "")
+    return f"https://{vercel_url}" if vercel_url else ""
 
 
 def send_invite(to_email: str, raw_token: str, nombre: str) -> None:
@@ -70,13 +74,13 @@ def send_invite(to_email: str, raw_token: str, nombre: str) -> None:
     link = f"{_base_url()}/set-password.html?token={raw_token}"
     html = f"""
     <p>Hola {nombre}:</p>
-    <p>Tu cuenta en <strong>Ecosistema VIDA UG</strong> ha sido creada.</p>
-    <p>Hacé clic en el siguiente enlace para establecer tu contraseña y activar
+    <p>Tu cuenta en <strong>200 SILLAS 200 CAMPEONES</strong> ha sido creada.</p>
+    <p>Haz clic en el siguiente enlace para establecer tu contraseña y activar
     tu cuenta (este enlace expira en 72 horas):</p>
     <p><a href="{link}">Activar mi cuenta</a></p>
-    <p>Si no esperabas este mensaje, podés ignorarlo.</p>
+    <p>Si no esperabas este mensaje, puedes ignorarlo.</p>
     """
-    _resend_post(to_email, "Bienvenido/a — Activá tu cuenta", html)
+    _resend_post(to_email, "Bienvenido/a — Activa tu cuenta", html)
 
 
 def send_reset(to_email: str, raw_token: str) -> None:
@@ -84,10 +88,10 @@ def send_reset(to_email: str, raw_token: str) -> None:
     link = f"{_base_url()}/reset-password.html?token={raw_token}"
     html = f"""
     <p>Recibimos una solicitud para restablecer la contraseña de tu cuenta en
-    <strong>Ecosistema VIDA UG</strong>.</p>
-    <p>Hacé clic en el siguiente enlace para crear una nueva contraseña
+    <strong>200 SILLAS 200 CAMPEONES</strong>.</p>
+    <p>Haz clic en el siguiente enlace para crear una nueva contraseña
     (este enlace expira en 1 hora):</p>
     <p><a href="{link}">Restablecer mi contraseña</a></p>
-    <p>Si no solicitaste este cambio, podés ignorarlo.</p>
+    <p>Si no solicitaste este cambio, puedes ignorarlo.</p>
     """
     _resend_post(to_email, "Recuperación de contraseña", html)
