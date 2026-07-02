@@ -713,6 +713,328 @@
   }
 
   // ─────────────────────────────────────────────────────────────────
+  // Resaltado de campos al redirigir entre formularios (Issue #123)
+  //
+  // El backend/validaciones locales producen errores identificados por
+  // {form, field}. Al pulsar "Ir al formulario" el usuario navega a otra
+  // página, por lo que los errores se persisten en sessionStorage y se
+  // reaplican al cargar el destino. El mapa traduce (form, field) →
+  // {page, name, kind} porque los nombres del backend NO coinciden con los
+  // `name` de los inputs del frontend (p.ej. curp_benef → curp).
+  // ─────────────────────────────────────────────────────────────────
+
+  const FIELD_ERROR_STASH_KEY = "sr_pending_field_errors";
+
+  const _KNOWN_PAGES = new Set(["socioeconomico", "tecnica", "gestion"]);
+
+  /**
+   * Deriva la clave de página ("socioeconomico"|"tecnica"|"gestion") desde una
+   * URL de destino como "socioeconomico.html" o "../x/tecnica.html".
+   */
+  function pageFromUrl(url) {
+    if (!url) return null;
+    const file = String(url).split(/[?#]/)[0].split("/").pop() || "";
+    const base = file.replace(/\.html$/i, "");
+    return _KNOWN_PAGES.has(base) ? base : null;
+  }
+
+  // Evidencias (archivos): no tienen [data-error-for]; se resaltan por
+  // contenedor + leyenda con selectores explícitos.
+  // `legend` apunta a un <p> DEDICADO al error (no al `*-status`, que lo maneja la
+  // maquinaria de subida de documentos y lo sobrescribiría). Así el mensaje persiste
+  // sin depender del orden de inicialización.
+  const EVIDENCE_TARGETS = {
+    credencial_url: {
+      page: "socioeconomico",
+      container: "#credencial-file",
+      legend: "#credencial-error",
+    },
+    comprobante_domicilio_url: {
+      page: "socioeconomico",
+      container: "#comprobante-domicilio-file",
+      legend: "#comprobante-domicilio-error",
+    },
+    foto_url: {
+      page: "tecnica",
+      container: "[data-purpose='patient-photo-upload']",
+      legend: "#photo-error",
+    },
+  };
+
+  // Campos del formulario "estudio" que en realidad se capturan en gestion.html.
+  const _ESTUDIO_GESTION_FIELDS = new Set([
+    "fecha_estudio",
+    "tuvo_silla_previa",
+    "como_obtuvo_silla",
+  ]);
+
+  // form → página destino por defecto.
+  const _FORM_PAGE = {
+    beneficiario: "socioeconomico",
+    estudio: "socioeconomico",
+    socioeconomico: "socioeconomico",
+    tutor1: "socioeconomico",
+    tutor2: "socioeconomico",
+    solicitud: "tecnica",
+    tecnica: "tecnica",
+    gestion: "gestion",
+  };
+
+  // Traducciones puntuales de nombre backend → name del input frontend.
+  const _FIELD_NAME_OVERRIDES = {
+    curp_benef: "curp",
+    imss_estatus: "imss",
+    infonavit_estatus: "infonavit",
+    tuvo_silla_previa: "silla_previa",
+  };
+
+  // Campos cuyo formulario backend no coincide con la página donde vive el input.
+  // `diagnostico` viaja en el formulario "beneficiario" pero se captura en la
+  // vista Técnica, no en Socioeconómico.
+  const _FIELD_PAGE_OVERRIDES = {
+    diagnostico: "tecnica",
+  };
+
+  /**
+   * Resuelve un error {form, field} al objetivo de resaltado en el frontend.
+   * Devuelve {page, kind, name?, container?, legend?, field, form} o null.
+   */
+  function resolveFieldTarget(form, field) {
+    if (!field) return null;
+
+    // Evidencias (archivos)
+    const evidence = EVIDENCE_TARGETS[field];
+    if (evidence) {
+      return {
+        page: evidence.page,
+        kind: "evidencia",
+        container: evidence.container,
+        legend: evidence.legend,
+        field,
+        form,
+      };
+    }
+
+    // Página destino
+    let page = _FORM_PAGE[form] || "socioeconomico";
+    if (form === "estudio" && _ESTUDIO_GESTION_FIELDS.has(field)) {
+      page = "gestion";
+    }
+    if (_FIELD_PAGE_OVERRIDES[field]) {
+      page = _FIELD_PAGE_OVERRIDES[field];
+    }
+
+    // name del input: overrides puntuales + prefijo de tutor
+    let name = _FIELD_NAME_OVERRIDES[field] || field;
+    if (form === "tutor1") name = `tutor1_${name}`;
+    else if (form === "tutor2") name = `tutor2_${name}`;
+
+    return { page, kind: "text", name, field, form };
+  }
+
+  /**
+   * Persiste entradas de error YA resueltas en sessionStorage, agrupadas por
+   * `page`. Cada entrada: {page, kind:'text'|'evidencia', message,
+   * name? (text) | container?/legend? (evidencia)}. Se invoca justo antes de
+   * redirigir con "Ir al formulario".
+   */
+  function persistStashEntries(entries) {
+    if (!Array.isArray(entries) || entries.length === 0) return;
+    let stash = {};
+    try {
+      stash = JSON.parse(sessionStorage.getItem(FIELD_ERROR_STASH_KEY) || "{}");
+      if (!stash || typeof stash !== "object") stash = {};
+    } catch (_e) {
+      stash = {};
+    }
+
+    for (const entry of entries) {
+      if (!entry || !entry.page) continue;
+      const dupKey = entry.name || entry.container;
+      if (!dupKey) continue;
+      const stored =
+        entry.kind === "evidencia"
+          ? { kind: "evidencia", container: entry.container, legend: entry.legend, message: entry.message }
+          : { kind: "text", name: entry.name, message: entry.message };
+      stash[entry.page] = stash[entry.page] || [];
+      if (!stash[entry.page].some((e) => (e.name || e.container) === dupKey)) {
+        stash[entry.page].push(stored);
+      }
+    }
+
+    try {
+      sessionStorage.setItem(FIELD_ERROR_STASH_KEY, JSON.stringify(stash));
+    } catch (_e) {
+      /* sessionStorage no disponible: se degrada silenciosamente */
+    }
+  }
+
+  /**
+   * Persiste errores en forma backend {form, field, message}, traduciéndolos
+   * a objetivos del frontend vía resolveFieldTarget.
+   */
+  function stashFieldErrors(items) {
+    if (!Array.isArray(items) || items.length === 0) return;
+    const entries = [];
+    for (const item of items) {
+      const target = resolveFieldTarget(item.form, item.field);
+      if (!target) continue;
+      const message =
+        item.message || `${getFieldLabel(item.field)} es obligatorio`;
+      entries.push({ ...target, message });
+    }
+    persistStashEntries(entries);
+  }
+
+  /**
+   * Resalta una zona de subida de evidencia (archivo) reutilizando el estilo
+   * visual de showFieldError y escribiendo la leyenda en el <p> asociado.
+   */
+  function showEvidenceError(containerSelector, legendSelector, message) {
+    const container = containerSelector
+      ? document.querySelector(containerSelector)
+      : null;
+    const legend = legendSelector
+      ? document.querySelector(legendSelector)
+      : null;
+    if (container) {
+      container.classList.add("ring-1", "ring-red-400", "rounded-lg");
+      container.setAttribute("aria-invalid", "true");
+    }
+    if (legend) {
+      legend.textContent = message;
+      legend.classList.remove("hidden");
+      legend.classList.add("text-red-600");
+    }
+  }
+
+  function clearEvidenceError(containerSelector, legendSelector) {
+    const container = containerSelector
+      ? document.querySelector(containerSelector)
+      : null;
+    const legend = legendSelector
+      ? document.querySelector(legendSelector)
+      : null;
+    if (container) {
+      container.classList.remove("ring-1", "ring-red-400");
+      container.removeAttribute("aria-invalid");
+    }
+    if (legend) {
+      legend.textContent = "";
+      legend.classList.add("hidden");
+      legend.classList.remove("text-red-600");
+    }
+  }
+
+  // ───── DIAGNÓSTICO TEMPORAL #123 (quitar luego) ─────
+  // Muestra un banner visible arriba de la página con lo que applyStashed encontró,
+  // para depurar sin consola en el navegador real del usuario.
+  function _debugBanner123(pageName, raw) {
+    var count = 0;
+    try {
+      var obj = raw ? JSON.parse(raw) : null;
+      var arr = obj && obj[pageName];
+      count = Array.isArray(arr) ? arr.length : 0;
+    } catch (e) {}
+    var el = document.getElementById("__sr123_debug");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "__sr123_debug";
+      el.style.cssText =
+        "position:fixed;top:0;left:0;right:0;z-index:99999;background:#111;color:#0f0;" +
+        "font:12px/1.4 monospace;padding:8px 12px;white-space:pre-wrap;word-break:break-all;" +
+        "border-bottom:2px solid #0f0;max-height:40vh;overflow:auto;";
+      el.addEventListener("click", function () { el.remove(); });
+      (document.body || document.documentElement).appendChild(el);
+    }
+    el.textContent =
+      "[SR#123 DEBUG · click para cerrar]\n" +
+      "página destino esperada: " + pageName + "\n" +
+      "entradas para esta página: " + count + "\n" +
+      "sessionStorage['" + FIELD_ERROR_STASH_KEY + "'] = " + (raw == null ? "(null / vacío)" : raw);
+  }
+  // ─────────────────────────────────────────────────────
+
+  /**
+   * Consume (una sola vez) los errores persistidos para `pageName`, los aplica
+   * con showFieldError / showEvidenceError, y hace scroll + focus al primero.
+   * Debe llamarse tras el prefill/resume de la página destino.
+   */
+  function applyStashedFieldErrors(pageName) {
+    // ───── DIAGNÓSTICO TEMPORAL #123 (quitar luego) ─────
+    var _raw123 = null;
+    try { _raw123 = sessionStorage.getItem(FIELD_ERROR_STASH_KEY); } catch (e) { _raw123 = "ERR:" + e; }
+    try { _debugBanner123(pageName, _raw123); } catch (e) {}
+    // ─────────────────────────────────────────────────────
+
+    let stash = {};
+    try {
+      stash = JSON.parse(sessionStorage.getItem(FIELD_ERROR_STASH_KEY) || "{}");
+    } catch (_e) {
+      stash = {};
+    }
+    const entries = stash && stash[pageName];
+
+    // Consumo único: eliminar el estado del destino antes de aplicar.
+    if (stash && Object.prototype.hasOwnProperty.call(stash, pageName)) {
+      delete stash[pageName];
+      try {
+        if (Object.keys(stash).length === 0) {
+          sessionStorage.removeItem(FIELD_ERROR_STASH_KEY);
+        } else {
+          sessionStorage.setItem(FIELD_ERROR_STASH_KEY, JSON.stringify(stash));
+        }
+      } catch (_e) {
+        /* noop */
+      }
+    }
+
+    if (!Array.isArray(entries) || entries.length === 0) return;
+
+    let firstEl = null;
+    for (const entry of entries) {
+      if (entry.kind === "evidencia") {
+        showEvidenceError(entry.container, entry.legend, entry.message);
+        if (!firstEl && entry.container) {
+          firstEl = document.querySelector(entry.container);
+        }
+      } else if (entry.name) {
+        showFieldError(entry.name, entry.message);
+        if (!firstEl) {
+          firstEl = document.querySelector(`[name="${entry.name}"]`);
+        }
+      }
+    }
+
+    if (firstEl) {
+      if (typeof firstEl.scrollIntoView === "function") {
+        try {
+          firstEl.scrollIntoView({ behavior: "smooth", block: "center" });
+        } catch (_e) {
+          try { firstEl.scrollIntoView(); } catch (_e2) { /* noop */ }
+        }
+      }
+      // focus tras el scroll; los inputs de archivo/contenedores pueden no
+      // ser enfocables, se ignora el error.
+      setTimeout(() => {
+        try {
+          firstEl.focus({ preventScroll: true });
+        } catch (_e) {
+          /* no enfocable */
+        }
+      }, 300);
+    }
+  }
+
+  function clearStashedFieldErrors() {
+    try {
+      sessionStorage.removeItem(FIELD_ERROR_STASH_KEY);
+    } catch (_e) {
+      /* noop */
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────────
   // Formateo de errores backend
   // ─────────────────────────────────────────────────────────────────
 
@@ -903,6 +1225,14 @@
     clearFieldError,
     setupLiveRequired,
     clearAllFieldErrors,
+    pageFromUrl,
+    resolveFieldTarget,
+    persistStashEntries,
+    stashFieldErrors,
+    applyStashedFieldErrors,
+    clearStashedFieldErrors,
+    showEvidenceError,
+    clearEvidenceError,
     formatBackendError,
     FIELD_LABELS,
     getFieldLabel,
