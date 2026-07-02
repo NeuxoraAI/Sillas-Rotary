@@ -442,7 +442,6 @@ def listar_beneficiarios_admin(
             b.id AS beneficiario_id,
             b.nombre,
             b.curp_benef,
-            b.folio,
             b.telefonos,
             b.ciudad,
             COALESCE(p.nombre, '') AS pais_nombre,
@@ -511,7 +510,6 @@ def exportar_beneficiarios_admin(
         SELECT
             b.id AS beneficiario_id,
             b.curp_benef,
-            b.folio,
             b.nombre,
             b.email,
             b.calle,
@@ -588,7 +586,7 @@ def exportar_beneficiarios_admin(
         edad = _calcular_edad(row.get("fecha_nacimiento"))
 
         ws.append([
-            row.get("curp_benef") or row.get("folio") or row.get("beneficiario_id"),
+            row.get("curp_benef") or row.get("beneficiario_id"),
             row.get("nombre") or "",
             row.get("email") or "Sin correo",
             direccion,

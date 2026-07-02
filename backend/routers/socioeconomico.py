@@ -5,8 +5,7 @@ Changes from v1:
 - Uses Depends(get_db) instead of context manager
 - Uses require_auth (JWT) — identity via usuario.usuario_id (v2)
 - region_id + sede at top level of EstudioCreateRequest (moved from EstudioIn)
-- Calls generate_folio() to assign structured folio to each beneficiario
-- Returns folio in EstudioCreateResponse
+- CURP (curp_benef) is the natural beneficiary identifier (folio column dropped, Issue #32)
 """
 
 import os
@@ -541,9 +540,8 @@ class EstudioCreateRequest(BaseModel):
 class EstudioCreateResponse(BaseModel):
     estudio_id: int
     beneficiario_id: int
-    # CURP is the natural identifier shown to users (replaces folio).
+    # CURP is the natural identifier shown to users (Issue #32: folio column dropped).
     curp: Optional[str] = None
-    folio: Optional[str] = None
     status: str
 
 
@@ -767,7 +765,6 @@ def crear_estudio(
         estudio_id=estudio_id,
         beneficiario_id=beneficiario_id,
         curp=b.curp,
-        folio=None,
         status=estudio.status,
     )
 
@@ -775,7 +772,7 @@ def crear_estudio(
 def _curp_duplicada_error(db: _DBAdapter, curp: str) -> HTTPException:
     """Build a structured 409 describing the beneficiario that already owns CURP."""
     existente = db.execute(
-        "SELECT id, nombre, folio FROM beneficiarios WHERE curp_benef = %s",
+        "SELECT id, nombre FROM beneficiarios WHERE curp_benef = %s",
         (curp,),
     ).fetchone()
     detalle = {
@@ -787,7 +784,6 @@ def _curp_duplicada_error(db: _DBAdapter, curp: str) -> HTTPException:
         detalle["beneficiario_existente"] = {
             "id": existente["id"],
             "nombre": existente.get("nombre"),
-            "folio": existente.get("folio"),
         }
     return HTTPException(status_code=409, detail=detalle)
 
@@ -907,7 +903,6 @@ def mis_capturas(
             b.id         AS beneficiario_id,
             b.nombre     AS beneficiario_nombre,
             b.curp_benef,
-            b.folio,
             b.ciudad     AS beneficiario_ciudad,
             b.telefonos  AS beneficiario_telefonos
         FROM estudios_socioeconomicos e

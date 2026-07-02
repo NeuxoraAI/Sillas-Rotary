@@ -40,7 +40,6 @@ def _create_beneficiario(
     _test_db_conn,
     *,
     nombre: str,
-    folio: str,
     region_id: int | None = None,
     ciudad: str | None = None,
     diagnostico: str | None = None,
@@ -49,10 +48,10 @@ def _create_beneficiario(
     with _test_db_conn.cursor() as cur:
         cur.execute(
             """
-            INSERT INTO beneficiarios (nombre, folio, region_id, ciudad, diagnostico, telefonos)
-            VALUES (%s, %s, %s, %s, %s, %s) RETURNING *
+            INSERT INTO beneficiarios (nombre, region_id, ciudad, diagnostico, telefonos)
+            VALUES (%s, %s, %s, %s, %s) RETURNING *
             """,
-            (nombre, folio, region_id, ciudad, diagnostico, telefonos),
+            (nombre, region_id, ciudad, diagnostico, telefonos),
         )
         row = dict(cur.fetchone())
     _test_db_conn.commit()
@@ -125,10 +124,10 @@ def test_listar_beneficiarios_with_pais_and_region_filters(
     region_b = _create_region(_test_db_conn, pais["id"], "Irapuato", "IRA")
 
     # Ben in region_a
-    b1 = _create_beneficiario(_test_db_conn, nombre="Ana López", folio="MX-LON-001",
+    b1 = _create_beneficiario(_test_db_conn, nombre="Ana López",
                                region_id=region_a["id"], ciudad="León")
     # Ben in region_b
-    b2 = _create_beneficiario(_test_db_conn, nombre="Luis Pérez", folio="MX-IRA-001",
+    b2 = _create_beneficiario(_test_db_conn, nombre="Luis Pérez",
                                region_id=region_b["id"], ciudad="Irapuato")
 
     _create_estudio(_test_db_conn, b1["id"], tecnico_user["id"], "Sede León")
@@ -178,9 +177,9 @@ def test_peso_range_filter(client, _test_db_conn, tecnico_user, tecnico_headers)
     pais = _create_pais(_test_db_conn, "MX", "MX")
     region = _create_region(_test_db_conn, pais["id"], "Centro", "CEN")
 
-    b1 = _create_beneficiario(_test_db_conn, nombre="Peso60", folio="MX-001",
+    b1 = _create_beneficiario(_test_db_conn, nombre="Peso60",
                                region_id=region["id"])
-    b2 = _create_beneficiario(_test_db_conn, nombre="Peso80", folio="MX-002",
+    b2 = _create_beneficiario(_test_db_conn, nombre="Peso80",
                                region_id=region["id"])
 
     _create_estudio(_test_db_conn, b1["id"], tecnico_user["id"], "Sede A")
@@ -204,9 +203,9 @@ def test_tiene_foto_filter(client, _test_db_conn, tecnico_user, tecnico_headers)
     pais = _create_pais(_test_db_conn, "MX", "MX")
     region = _create_region(_test_db_conn, pais["id"], "Norte", "NTE")
 
-    b1 = _create_beneficiario(_test_db_conn, nombre="ConFoto", folio="MX-003",
+    b1 = _create_beneficiario(_test_db_conn, nombre="ConFoto",
                                region_id=region["id"])
-    b2 = _create_beneficiario(_test_db_conn, nombre="SinFoto", folio="MX-004",
+    b2 = _create_beneficiario(_test_db_conn, nombre="SinFoto",
                                region_id=region["id"])
 
     _create_estudio(_test_db_conn, b1["id"], tecnico_user["id"], "Sede X")

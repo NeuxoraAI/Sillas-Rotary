@@ -146,12 +146,12 @@ def _build_list_where_clause(
     if q and q.strip():
         term = f"%{q.strip()}%"
         clauses.append(
-            "(b.nombre ILIKE %s OR b.curp_benef ILIKE %s OR b.folio ILIKE %s OR "
+            "(b.nombre ILIKE %s OR b.curp_benef ILIKE %s OR "
             "b.ciudad ILIKE %s OR "
             "r.nombre ILIKE %s OR "
             "p.nombre ILIKE %s)"
         )
-        params.extend([term, term, term, term, term, term])
+        params.extend([term, term, term, term, term])
 
     # ── Sede ──────────────────────────────────────────────────────────────
     if sede and sede.strip():
@@ -794,7 +794,6 @@ def listar_beneficiarios_tecnica(
         SELECT
             b.id AS beneficiario_id,
             b.nombre,
-            b.folio,
             b.telefonos,
             b.ciudad,
             COALESCE(p.nombre, '') AS pais_nombre,
@@ -889,7 +888,7 @@ def exportar_beneficiarios_tecnica(
         f"""
         SELECT
             b.id AS beneficiario_id,
-            b.folio,
+            b.curp_benef,
             b.nombre,
             b.email,
             b.calle,
@@ -969,7 +968,7 @@ def exportar_beneficiarios_tecnica(
         edad = _calcular_edad(row.get("fecha_nacimiento"))
 
         ws.append([
-            row.get("folio") or row.get("beneficiario_id"),
+            row.get("curp_benef") or row.get("beneficiario_id"),
             row.get("nombre") or "",
             row.get("email") or "Sin correo",
             direccion,
