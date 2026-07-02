@@ -20,6 +20,9 @@ class TestValidateAllComplete:
             "sede": "León sede Forum",
             "ciudad_registro": "LEON, GTO",
             "elaboro_estudio": "Capturista Test",
+            # Evidencia documental obligatoria (Issue #121)
+            "credencial_url": "storage://documentos-estudio/1/credencial.jpg",
+            "comprobante_domicilio_url": "storage://documentos-estudio/1/comprobante.jpg",
             "status": "borrador",
         }
         solicitud_row = {
@@ -37,6 +40,8 @@ class TestValidateAllComplete:
             "control_de_piernas": "Parcial",
             "entidad_solicitante": "Rotary Club León",
             "prioridad": "Alta",
+            # Fotografía del paciente obligatoria (Issue #121)
+            "foto_url": "storage://fotos-tecnica/1/foto.jpg",
             "status": "borrador",
         }
         beneficiario_row = {
@@ -157,6 +162,32 @@ class TestValidateAllComplete:
         peso_fields = [m for m in missing if m["field"] == "peso_kg"]
         assert len(peso_fields) == 1, f"Expected peso_kg in missing, got: {missing}"
         assert peso_fields[0]["form"] == "solicitud"
+        # Issue #122: each missing field carries a user-facing label,
+        # never the raw column name.
+        assert peso_fields[0]["label"] == "Peso"
+
+    def test_missing_fields_carry_friendly_labels(self):
+        """Issue #122: every missing item exposes a label, never a raw column."""
+        from routers.finalizar import _validate_all_complete
+        from validators import FIELD_LABELS
+
+        # Empty rows → maximal set of missing fields across all forms.
+        missing = _validate_all_complete({}, {}, {}, [])
+
+        assert missing, "Expected missing fields for empty rows"
+        for item in missing:
+            assert "label" in item, f"Missing label on {item}"
+            assert item["label"], f"Empty label on {item}"
+            # Label must differ from the raw column for catalogued fields.
+            if item["field"] in FIELD_LABELS:
+                assert item["label"] == FIELD_LABELS[item["field"]]
+
+        # Spot-check the examples named in the issue.
+        labels_by_field = {m["field"]: m["label"] for m in missing}
+        assert labels_by_field.get("curp_benef") == "CURP"
+        assert labels_by_field.get("estado_codigo") == "Estado"
+        assert labels_by_field.get("telefonos") == "Teléfono"
+        assert labels_by_field.get("fecha_nacimiento") == "Fecha de nacimiento"
 
     def test_returns_missing_when_beneficiario_lacks_nombres(self):
         """TRIANGULATE: beneficiario missing nombres is detected."""
@@ -170,6 +201,9 @@ class TestValidateAllComplete:
             "sede": "León sede Forum",
             "ciudad_registro": "LEON, GTO",
             "elaboro_estudio": "Capturista Test",
+            # Evidencia documental obligatoria (Issue #121)
+            "credencial_url": "storage://documentos-estudio/1/credencial.jpg",
+            "comprobante_domicilio_url": "storage://documentos-estudio/1/comprobante.jpg",
             "status": "borrador",
         }
         solicitud_row = {
@@ -187,6 +221,8 @@ class TestValidateAllComplete:
             "control_de_piernas": "Parcial",
             "entidad_solicitante": "Rotary Club León",
             "prioridad": "Alta",
+            # Fotografía del paciente obligatoria (Issue #121)
+            "foto_url": "storage://fotos-tecnica/1/foto.jpg",
             "status": "borrador",
         }
         beneficiario_row = {
@@ -245,6 +281,9 @@ class TestValidateAllComplete:
             "sede": "León sede Forum",
             "ciudad_registro": "LEON, GTO",
             "elaboro_estudio": "Capturista Test",
+            # Evidencia documental obligatoria (Issue #121)
+            "credencial_url": "storage://documentos-estudio/1/credencial.jpg",
+            "comprobante_domicilio_url": "storage://documentos-estudio/1/comprobante.jpg",
             "status": "borrador",
         }
         solicitud_row = {
@@ -262,6 +301,8 @@ class TestValidateAllComplete:
             "control_de_piernas": "Parcial",
             "entidad_solicitante": "Rotary Club León",
             "prioridad": "Alta",
+            # Fotografía del paciente obligatoria (Issue #121)
+            "foto_url": "storage://fotos-tecnica/1/foto.jpg",
             "status": "borrador",
         }
         beneficiario_row = {
@@ -391,6 +432,133 @@ class TestValidateAllComplete:
         assert len(fecha_fields) == 1, f"Expected fecha_estudio in missing, got: {missing}"
         assert fecha_fields[0]["form"] == "estudio"
 
+    # ── Issue #121: evidencia fotográfica y documental obligatoria ──────────
+    @staticmethod
+    def _complete_rows():
+        """Return (estudio, solicitud, beneficiario, tutores) fully complete
+        per VALIDATION_RULES.md, including the Issue #121 evidence refs."""
+        estudio_row = {
+            "id": 1,
+            "fecha_estudio": "2026-06-01",
+            "tuvo_silla_previa": 0,
+            "como_obtuvo_silla": None,
+            "sede": "León sede Forum",
+            "ciudad_registro": "LEON, GTO",
+            "elaboro_estudio": "Capturista Test",
+            "credencial_url": "storage://documentos-estudio/1/credencial.jpg",
+            "comprobante_domicilio_url": "storage://documentos-estudio/1/comprobante.jpg",
+            "status": "borrador",
+        }
+        solicitud_row = {
+            "id": 1,
+            "altura_total_in": 72.0,
+            "peso_kg": 45.0,
+            "medida_cabeza_asiento": 10.0,
+            "medida_hombro_asiento": 12.0,
+            "medida_prof_asiento": 14.0,
+            "medida_rodilla_talon": 16.0,
+            "medida_ancho_cadera": 18.0,
+            "entorno": "Urbano / Interiores",
+            "control_tronco": "Completo",
+            "control_cabeza": "Independiente",
+            "control_de_piernas": "Parcial",
+            "entidad_solicitante": "Rotary Club León",
+            "prioridad": "Alta",
+            "foto_url": "storage://fotos-tecnica/1/foto.jpg",
+            "status": "borrador",
+        }
+        beneficiario_row = {
+            "id": 1,
+            "nombres": "BENEFICIARIO",
+            "apellido_paterno": "TEST",
+            "apellido_materno": "MUESTRA",
+            "curp_benef": "HEGG560427MVZRRL04",
+            "fecha_nacimiento": "2000-01-15",
+            "diagnostico": "Parálisis cerebral",
+            "calle": "Calle Test 123",
+            "colonia": "Centro",
+            "ciudad": "León",
+            "estado_codigo": "11",
+            "sexo": "M",
+            "telefonos": "4621234567",
+        }
+        tutores_rows = [
+            {
+                "id": 1,
+                "numero_tutor": 1,
+                "edad": 45,
+                "nivel_estudios": "LICENCIATURA",
+                "estado_civil": "CASADO",
+                "num_hijos": 2,
+                "vivienda": "PROPIA",
+                "tiene_imss": 1,
+                "tiene_infonavit": 0,
+                "sin_empleo": 0,
+                "fuente_empleo": "Empleado",
+                "ingreso_mensual": 12000,
+                "antiguedad_aplica": 1,
+                "antiguedad_meses": 120,
+                "otras_fuentes_aplica": 0,
+                "otras_fuentes_ingreso": None,
+                "monto_otras_fuentes": None,
+            }
+        ]
+        return estudio_row, solicitud_row, beneficiario_row, tutores_rows
+
+    def test_returns_missing_when_credencial_absent(self):
+        """Issue #121: missing credencial evidence blocks finalization."""
+        from routers.finalizar import _validate_all_complete
+
+        estudio, solicitud, ben, tutores = self._complete_rows()
+        estudio["credencial_url"] = None  # MISSING
+
+        missing = _validate_all_complete(estudio, solicitud, ben, tutores)
+
+        hits = [m for m in missing if m["field"] == "credencial_url"]
+        assert len(hits) == 1, f"Expected credencial_url in missing, got: {missing}"
+        assert hits[0]["form"] == "estudio"
+        assert hits[0]["label"] == "Credencial"
+
+    def test_returns_missing_when_comprobante_domicilio_absent(self):
+        """Issue #121: missing comprobante de domicilio blocks finalization."""
+        from routers.finalizar import _validate_all_complete
+
+        estudio, solicitud, ben, tutores = self._complete_rows()
+        estudio["comprobante_domicilio_url"] = None  # MISSING
+
+        missing = _validate_all_complete(estudio, solicitud, ben, tutores)
+
+        hits = [m for m in missing if m["field"] == "comprobante_domicilio_url"]
+        assert len(hits) == 1, f"Expected comprobante_domicilio_url, got: {missing}"
+        assert hits[0]["form"] == "estudio"
+        assert hits[0]["label"] == "Comprobante de domicilio"
+
+    def test_returns_missing_when_foto_url_absent(self):
+        """Issue #121: missing patient photo blocks finalization."""
+        from routers.finalizar import _validate_all_complete
+
+        estudio, solicitud, ben, tutores = self._complete_rows()
+        solicitud["foto_url"] = None  # MISSING
+
+        missing = _validate_all_complete(estudio, solicitud, ben, tutores)
+
+        hits = [m for m in missing if m["field"] == "foto_url"]
+        assert len(hits) == 1, f"Expected foto_url in missing, got: {missing}"
+        assert hits[0]["form"] == "solicitud"
+        assert hits[0]["label"] == "Fotografía del paciente"
+
+    def test_estudio_clinico_is_not_required(self):
+        """Issue #121: Estudio Clínico stays optional — never blocks finalize."""
+        from routers.finalizar import _validate_all_complete
+
+        # Fully complete rows WITHOUT any estudio_clinico reference.
+        estudio, solicitud, ben, tutores = self._complete_rows()
+
+        missing = _validate_all_complete(estudio, solicitud, ben, tutores)
+
+        assert missing == [], f"Expected no missing fields, got: {missing}"
+        assert not any("clinico" in m["field"] for m in missing)
+
 
 # ---------------------------------------------------------------------------
 # Integration tests for POST /api/finalizar-registro
@@ -452,14 +620,18 @@ class TestFinalizarRegistroEndpoint:
                 INSERT INTO estudios_socioeconomicos
                     (beneficiario_id, usuario_id, tuvo_silla_previa,
                      como_obtuvo_silla, elaboro_estudio, fecha_estudio,
-                     sede, ciudad_registro, status)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                     sede, ciudad_registro, credencial_url,
+                     comprobante_domicilio_url, status)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 RETURNING id
                 """,
                 (
                     ben_id, capturista_user["id"],
                     0, None, "Capturista Test", "2026-06-01",
-                    "León sede Forum", "LEON, GTO", "borrador",
+                    "León sede Forum", "LEON, GTO",
+                    "storage://documentos-estudio/1/credencial.jpg",
+                    "storage://documentos-estudio/1/comprobante.jpg",
+                    "borrador",
                 ),
             )
             estudio_id = cur.fetchone()["id"]
@@ -472,15 +644,17 @@ class TestFinalizarRegistroEndpoint:
                      control_cabeza, control_de_piernas, altura_total_in,
                      peso_kg, medida_cabeza_asiento, medida_hombro_asiento,
                      medida_prof_asiento, medida_rodilla_talon,
-                     medida_ancho_cadera, entidad_solicitante, prioridad, status)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                     medida_ancho_cadera, entidad_solicitante, prioridad,
+                     foto_url, status)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 RETURNING id
                 """,
                 (
                     ben_id, capturista_user["id"],
                     "Urbano / Interiores", "Completo", "Independiente", "Parcial",
                     72.0, 45.0, 10.0, 12.0, 14.0, 16.0, 18.0,
-                    "Rotary Club León", "Alta", "borrador",
+                    "Rotary Club León", "Alta",
+                    "storage://fotos-tecnica/1/foto.jpg", "borrador",
                 ),
             )
             solicitud_id = cur.fetchone()["id"]

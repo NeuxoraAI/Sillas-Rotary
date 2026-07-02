@@ -28,6 +28,7 @@
 </script>
 <link href="../assets/css/theme.css" rel="stylesheet"/>
 <script src="../assets/js/session-guard.js"></script>
+<script src="../assets/js/apiClient.js"></script>
 <script src="../assets/js/confirmation-modal.js?v=2"></script>
 <script src="../assets/js/mascot.js?v=2"></script>
 <script src="../assets/js/theme-toggle.js"></script>
@@ -367,8 +368,8 @@
   async function loadProfile() {
     try {
       const [perfilRes, beneRes] = await Promise.all([
-        fetch('/api/me/perfil', { headers: { 'Authorization': 'Bearer ' + session.token } }),
-        fetch('/api/me/beneficiarios', { headers: { 'Authorization': 'Bearer ' + session.token } }),
+        ApiClient.fetch('/me/perfil'),
+        ApiClient.fetch('/me/beneficiarios'),
       ]);
       if (perfilRes.status === 401) { _clearAllStorage(); window.location.href = '../login.html'; return; }
       if (!perfilRes.ok) throw new Error('HTTP ' + perfilRes.status);
@@ -540,9 +541,7 @@
     const container = document.getElementById('heatmap-container');
     const loading   = document.getElementById('heatmap-loading');
     try {
-      const res = await fetch('/api/me/heatmap?year=' + year, {
-        headers: { 'Authorization': 'Bearer ' + session.token }
-      });
+      const res = await ApiClient.fetch('/me/heatmap?year=' + year);
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const data = await res.json(); // [{date, count}, ...]
 
@@ -709,10 +708,9 @@
     if (telefono) body.telefono = telefono;
 
     try {
-      const res = await fetch('/api/me/perfil', {
+      const res = await ApiClient.fetch('/me/perfil', {
         method: 'PATCH',
-        headers: { 'Authorization': 'Bearer ' + session.token, 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+        json: body,
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {

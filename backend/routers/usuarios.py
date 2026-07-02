@@ -178,9 +178,12 @@ def list_usuarios(
     rows = db.execute(
         """
         SELECT u.id, u.nombre, u.email, u.rol, u.activo,
-               o.id AS organizacion_id
+               (
+                   SELECT MIN(ol.organizacion_id)
+                   FROM organizaciones_lideres ol
+                   WHERE ol.usuario_id = u.id
+               ) AS organizacion_id
         FROM usuarios u
-        LEFT JOIN organizaciones o ON o.lider_usuario_id = u.id
         ORDER BY u.id
         """,
     ).fetchall()
@@ -272,7 +275,7 @@ def update_usuario(
     if not fields:
         # Nothing to update — return current state
         org = db.execute(
-            "SELECT id FROM organizaciones WHERE lider_usuario_id = %s",
+            "SELECT MIN(organizacion_id) AS id FROM organizaciones_lideres WHERE usuario_id = %s",
             (usuario_id,),
         ).fetchone()
         return UsuarioResponse(
@@ -294,7 +297,7 @@ def update_usuario(
         raise HTTPException(status_code=500, detail="Error al actualizar el usuario")
 
     org = db.execute(
-        "SELECT id FROM organizaciones WHERE lider_usuario_id = %s",
+        "SELECT MIN(organizacion_id) AS id FROM organizaciones_lideres WHERE usuario_id = %s",
         (usuario_id,),
     ).fetchone()
 

@@ -136,7 +136,7 @@ Tracked debt and audit findings live as GitHub issues in the repository. Base UR
 
 Notable known debt confirmed during the code + DB audit:
 
-- **Conflicting org-leadership source of truth** (#50–#61 range): `organizaciones.lider_usuario_id` (column) and the `organizaciones_lideres` (table) can disagree in live data. The `assert_resource_owner` bypass reads the **table**; any code reading the column is stale.
-- **Tecnica leader bypass gap**: `tecnica.py` calls `assert_resource_owner` without `db`/`estudio_id` (lines ~1484, 1518, 1675), so org leaders are 403'd on `solicitudes técnicas` even when they can read the linked estudio.
+- **Org-leadership source of truth** (#53, resolved via #80): the backend now reads leadership exclusively from the `organizaciones_lideres` **table** (`usuarios.py` no longer reads the legacy `organizaciones.lider_usuario_id` column). Migration `0022_unify_org_leadership_source.sql` backfills the column into the table; the column itself is **deprecated**, with its `DROP` deferred to a later migration (documented in `0022`).
+- **Unified permission matrix** (#80, resolved): `assert_resource_owner` (`backend/routers/auth.py`) and `_assert_org_access` (`backend/routers/perfiles.py`) both delegate to the single helpers `user_leads_org` / `user_leads_capturer_org`. The org-leader bypass now applies uniformly across estudios, solicitudes técnicas, and the org listing endpoints (`/organizaciones/{id}/beneficiarios` y `/voluntarios`): a **leader** sees the full scope of their org (account + leaders + members), while plain **members** see only identity/stats. The old `estudio_id` parameter of `assert_resource_owner` was dead and has been removed.
 - **Dead table `historial_estados`**: 0 rows, never wired into runtime.
 - **Legacy `init_db.py`**: incomplete vs. the live Supabase schema (see Schema authority note above).

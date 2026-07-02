@@ -25,7 +25,14 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, EmailStr
 
 from database import get_db, _DBAdapter
-from routers.auth import CurrentUser, require_auth, require_admin, require_roles, _hash_password
+from routers.auth import (
+    CurrentUser,
+    require_auth,
+    require_admin,
+    require_roles,
+    user_leads_org,
+    _hash_password,
+)
 
 router = APIRouter()
 
@@ -109,20 +116,18 @@ def _get_org_user_ids(db: _DBAdapter, org_id: int) -> list[int]:
 
 
 def _assert_org_access(db: _DBAdapter, org_id: int, user: CurrentUser) -> None:
-    """Capture-level data (beneficiarios, voluntarios) is visible only to
-    admins and the organization's own account. Visitors — including leaders
-    and members browsing the org page — see identity and stats only."""
+    """Capture-level data (beneficiarios, voluntarios) is visible to admins,
+    the organization's own account, and its registered leaders (Issue #80:
+    a leader sees the full list of their org, consistent with the per-resource
+    leader bypass in ``assert_resource_owner``). Plain members and other
+    visitors browsing the org page see identity and stats only."""
     if user.rol == "admin":
         return
-    org = db.execute(
-        "SELECT usuario_id FROM organizaciones WHERE id = %s",
-        (org_id,),
-    ).fetchone()
-    if org is not None and org["usuario_id"] == user.usuario_id:
+    if user_leads_org(db, user.usuario_id, org_id):
         return
     raise HTTPException(
         status_code=403,
-        detail="Solo la organización puede ver el detalle de sus capturas",
+        detail="Solo la organización y sus líderes pueden ver el detalle de sus capturas",
     )
 
 

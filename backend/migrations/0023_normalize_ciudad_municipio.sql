@@ -1,5 +1,5 @@
 -- ============================================================================
--- Migration: 0015_normalize_ciudad_municipio.sql
+-- Migration: 0023_normalize_ciudad_municipio.sql
 -- Purpose:  Issue #67 — backfill beneficiarios.ciudad to the canonical form
 --           introduced in the frontend normalization PR (#91, issue #67).
 --

@@ -69,8 +69,8 @@ Este documento define TODAS las reglas de validación del sistema. Cualquier cam
 | `entidad_solicitante` | 0 | 64 | longitud |
 | `fuente_empleo` | 0 | 80 | longitud |
 | `otras_fuentes_ingreso` | 0 | 100 | longitud |
-| `ingreso_mensual` | 0 | 9,999,999 | entero |
-| `monto_otras_fuentes` | 0 | 999,999 | decimal |
+| `ingreso_mensual` | 0 | 999,999,999 | entero |
+| `monto_otras_fuentes` | 0 | 999,999,999 | decimal |
 | `num_hijos` | 0 | 30 | entero |
 | `edad` | 0 | 99 | entero |
 | `antiguedad_anios` | 0 | 50 | entero |
@@ -112,6 +112,8 @@ Este documento define TODAS las reglas de validación del sistema. Cualquier cam
 | `estado_codigo` | Sí | Sí |
 | `sexo` | Sí | Sí |
 | `telefonos` | Sí | **Sí** (corregido) |
+| `credencial` (`credencial_url`) | Sí (al finalizar) — Issue #121 | No · se valida la **referencia persistida** `storage://…`, no el `<input type=file>` |
+| `comprobante_domicilio` (`comprobante_domicilio_url`) | Sí (al finalizar) — Issue #121 | No · se valida la **referencia persistida** `storage://…` |
 | `tutor1_nombres` | Sí | Sí |
 | `tutor1_apellido_paterno` | Sí | Sí |
 | `tutor1_apellido_materno` | Sí | Sí |
@@ -154,6 +156,8 @@ Este documento define TODAS las reglas de validación del sistema. Cualquier cam
 | `entorno` | Sí | `required` en select |
 | `control_tronco` | Sí | `required` en select |
 | `control_cabeza` | Sí | `required` en select |
+| `foto_url` (Fotografía del paciente) | Sí (al finalizar) — Issue #121 | Ref `storage://…`; validada en `finalizar`, no en la navegación |
+| `estudio_clinico` | **No (opcional)** — Issue #121 | Excepción explícita: no bloquea la finalización y **no se persiste** en DB |
 | `observaciones_posturales` | No | Checkbox toggle "Agregar observaciones posturales" |
 
 ### gestion.html (status=completo)
@@ -225,17 +229,101 @@ amigable (`mostrarModalCurpDuplicada`).
 
 ---
 
+## Evidencia fotográfica y documental — Issue #121
+
+Toda la evidencia visual que respalda un registro es **obligatoria para finalizar**,
+con **una única excepción: el Estudio Clínico**, que permanece opcional.
+
+**Campos y columnas persistidas (se valida el `_url`, ref `storage://…`):**
+
+| Evidencia | Formulario de captura | Tabla / columna | Obligatoria al finalizar |
+|---|---|---|---|
+| Credencial | `socioeconomico.html` | `estudios_socioeconomicos.credencial_url` | Sí |
+| Comprobante de domicilio | `socioeconomico.html` | `estudios_socioeconomicos.comprobante_domicilio_url` | Sí |
+| Fotografía del paciente | `tecnica.html` | `solicitudes_tecnicas.foto_url` | Sí |
+| **Estudio Clínico** | `tecnica.html` (`estudio_clinico_file`) | — (no se persiste) | **No — opcional** |
+
+**Contrato de validación:**
+
+- Como la carga de archivos es **asíncrona**, no basta con comprobar el control
+  `<input type="file">`: se valida la existencia de la **referencia persistida**
+  (`credencial_url`, `comprobante_domicilio_url`, `foto_url`), del tipo
+  `storage://<bucket>/<path>`. El `_url` y el `_path` se derivan juntos, así que
+  comprobar el `_url` es suficiente.
+- **Backend (fuente de verdad):** `finalizar.py::_validate_all_complete` agrega a
+  `detail.missing[]` cada evidencia ausente — `credencial_url` /
+  `comprobante_domicilio_url` con `form = "estudio"` y `foto_url` con
+  `form = "solicitud"` — cada una con su `label` (Issue #122).
+- **Frontend (refuerzo):** `gestion.html::collectGestionFinalErrors()` lee las
+  referencias de los borradores (`draft_socioeconomico.estudio.*`,
+  `draft_tecnica.foto_url`) y bloquea la finalización con el mismo modal que el
+  resto de los campos obligatorios. La respuesta 422 del backend también se
+  renderiza enrutando cada evidencia al formulario correcto.
+- **Navegación entre pasos:** se mantiene **laxa** (los borradores incompletos
+  siguen permitidos). El enforcement de evidencia ocurre **solo en la finalización**.
+
+**Etiquetas visibles** (Issue #122): `credencial_url → Credencial`,
+`comprobante_domicilio_url → Comprobante de domicilio`,
+`foto_url → Fotografía del paciente`.
+
+---
+
+## Etiquetas visibles de campos — Issue #122
+
+Ningún mensaje, validación, advertencia, modal o error mostrado al usuario debe
+exponer **nombres técnicos de columnas** (`curp_benef`, `estado_codigo`,
+`telefonos`). Siempre se muestra la **etiqueta visible del formulario** (`CURP`,
+`Estado`, `Teléfono`).
+
+**Catálogo centralizado columna → etiqueta** (mismo orden que regex/límites:
+backend primero, frontend espejo):
+
+| Backend | Frontend |
+|---|---|
+| `backend/validators.py::FIELD_LABELS` (+ `field_label()`) | `front/assets/js/validations.js::FIELD_LABELS` (+ `getFieldLabel()`) |
+
+**Contrato:**
+
+- El **backend es la fuente de verdad.** Cuando una respuesta describe campos del
+  sistema, debe incluir el `label` ya resuelto. En particular,
+  `finalizar.py::_validate_all_complete` agrega `label` a cada item de
+  `detail.missing[]` (`{form, field, label}`).
+- El **frontend usa el `label` recibido**; el `FIELD_LABELS` de JS es solo
+  **respaldo** para respuestas que únicamente traen el nombre técnico (p. ej. la
+  ruta `loc` de los errores Pydantic 422).
+- Helpers JS expuestos en `SR_Validations`:
+  - `getFieldLabel(field)` — columna → etiqueta (fallback humanizado, nunca deja
+    la columna cruda).
+  - `getBackendPathLabel(path)` — traduce una ruta `loc`
+    (`beneficiario.curp_benef`, `tutores.0.edad`) a etiqueta, descartando
+    prefijos de formulario e índices.
+- `formatBackendError` (validations.js), `formatBackendErrorMessage`
+  (socioeconomico.html) y el armado de `errMsg` (admin-beneficiarios.html) usan
+  `getBackendPathLabel` en vez de imprimir la ruta cruda.
+
+> **Importante:** `FIELD_LABELS` está **duplicado** en Python y JS (límite entre
+> lenguajes). Al agregar/renombrar un campo hay que actualizar **ambos**.
+
+Ejemplos: `curp_benef → CURP`, `estado_codigo → Estado`, `telefonos → Teléfono`,
+`fecha_nacimiento → Fecha de nacimiento`, `credencial_url → Credencial`,
+`comprobante_domicilio_url → Comprobante de domicilio`,
+`foto_url → Fotografía del paciente` (estas tres, Issue #121).
+
+---
+
 ## Bugs corregidos
 
 | # | Bug | Corrección |
 |---|---|---|
 | 1 | `telefonos` sin `required` en frontend | Agregado `required` + validación JS |
-| 2 | Límites monetarios desalineados (frontend 12 dígitos vs backend 7/6) | Sincronizados a `INGRESO_MENSUAL_MAX=9,999,999` y `MONTO_OTRAS_FUENTES_MAX=999,999` |
+| 2 | Límites monetarios desalineados (frontend 12 dígitos vs backend 7/6) | Sincronizados en ambos lados; posteriormente **unificados a `INGRESO_MENSUAL_MAX = MONTO_OTRAS_FUENTES_MAX = 999,999,999`** (backend `validators.py` + frontend `validations.js`). Tests y doc actualizados a ese valor. |
 | 3 | `num_hijos` max=20 frontend vs max=30 backend | Sincronizado a **30** en ambos lados |
 | 4 | `\s` en regex JS vs espacio literal en backend | Unificado a **espacio literal** en ambos lados |
 | 5 | `entorno`, `control_tronco`, `control_cabeza` sin catálogo backend | Agregados catálogos `frozenset` en `validators.py` |
 | 6 | `fecha_nacimiento` sin validación backend | Agregado `validate_fecha_nacimiento()` en `validators.py` |
 | 7 | `LoginRequest.email` sin validación de formato | Agregado `validate_email_format()` en `validators.py` |
+| 8 | Mensajes/validaciones/modales exponían nombres de columnas (`curp_benef`…) — Issue #122 | Catálogo central `FIELD_LABELS` (`validators.py` + `validations.js`); `_validate_all_complete` envía `label`; front usa `getFieldLabel`/`getBackendPathLabel` |
+| 9 | Evidencia (credencial, comprobante de domicilio, foto del paciente) no era obligatoria para finalizar — Issue #121 | `_validate_all_complete` valida `credencial_url`/`comprobante_domicilio_url`/`foto_url` (ref `storage://`); refuerzo en `gestion.html::collectGestionFinalErrors`; Estudio Clínico queda opcional |
 
 ---
 
@@ -243,8 +331,10 @@ amigable (`mostrarModalCurpDuplicada`).
 
 1. **Backend:** Agregar regex/validador a `backend/validators.py`
 2. **Backend:** Usar el validador en el Pydantic model del router correspondiente
-3. **Frontend:** Agregar regex/límite a `front/assets/js/validations.js`
-4. **Frontend:** Agregar `setup*` function a `validations.js` si es un patrón nuevo
-5. **Frontend:** Usar `SR_Validations.setupXxx()` en el HTML del formulario
-6. **Documento:** Actualizar esta tabla
-7. **Tests:** Agregar tests unitarios en `backend/tests/test_validators.py`
+3. **Backend:** Agregar la etiqueta visible a `FIELD_LABELS` en `validators.py` (Issue #122)
+4. **Frontend:** Agregar regex/límite a `front/assets/js/validations.js`
+5. **Frontend:** Agregar la etiqueta visible a `FIELD_LABELS` en `validations.js` (espejo del backend)
+6. **Frontend:** Agregar `setup*` function a `validations.js` si es un patrón nuevo
+7. **Frontend:** Usar `SR_Validations.setupXxx()` en el HTML del formulario
+8. **Documento:** Actualizar esta tabla
+9. **Tests:** Agregar tests unitarios en `backend/tests/test_validators.py`

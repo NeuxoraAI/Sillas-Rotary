@@ -824,6 +824,75 @@ class TestLeaderBypass:
         )
         assert res.status_code == 403
 
+    def _new_org(self, client, admin_headers, nombre):
+        import uuid
+        res = client.post(
+            "/api/organizaciones",
+            json={
+                "nombre": f"{nombre} {uuid.uuid4().hex[:6]}",
+                "email": f"org-{uuid.uuid4().hex[:10]}@test.com",
+                "password": "secret123!",
+            },
+            headers=admin_headers,
+        )
+        assert res.status_code == 201, res.text
+        return res.json()["id"]
+
+    def test_leader_sees_org_captures_listings(
+        self, client, admin_headers, capturista_user, capturista_headers
+    ):
+        """Issue #80: an org leader sees the full beneficiarios/voluntarios
+        lists of their org — the same access the per-resource leader bypass
+        already grants. Previously _assert_org_access 403'd leaders."""
+        org_id = self._new_org(client, admin_headers, "Leader List Org")
+
+        # capturista_user is a leader (distinct from the org account).
+        assign = client.post(
+            f"/api/organizaciones/{org_id}/lider",
+            json={"lider_usuario_id": capturista_user["id"]},
+            headers=admin_headers,
+        )
+        assert assign.status_code == 200, assign.text
+
+        res_b = client.get(
+            f"/api/organizaciones/{org_id}/beneficiarios", headers=capturista_headers
+        )
+        assert res_b.status_code == 200, res_b.text
+        res_v = client.get(
+            f"/api/organizaciones/{org_id}/voluntarios", headers=capturista_headers
+        )
+        assert res_v.status_code == 200, res_v.text
+
+    def test_leader_reads_member_captured_estudio(
+        self, client, admin_headers, capturista_user, capturista_headers,
+        organizacion_user, organizacion_headers, region_lon,
+    ):
+        """Issue #80: the leader bypass spans the org's full capture scope —
+        account + leaders + MEMBERS — not only the org account. A leader can
+        read an estudio captured by a member of their organization."""
+        org_id = self._new_org(client, admin_headers, "Member Scope Org")
+
+        assert client.post(
+            f"/api/organizaciones/{org_id}/lider",
+            json={"lider_usuario_id": capturista_user["id"]},
+            headers=admin_headers,
+        ).status_code == 200
+        assert client.post(
+            f"/api/organizaciones/{org_id}/miembros",
+            json={"lider_usuario_id": organizacion_user["id"]},
+            headers=admin_headers,
+        ).status_code == 200
+
+        # The member captures an estudio (estudio.usuario_id == member).
+        payload = _build_minimal_estudio(region_lon["id"], "Member Capture")
+        cap = client.post("/api/estudios", json=payload, headers=organizacion_headers)
+        assert cap.status_code == 201, cap.text
+        estudio_id = cap.json()["estudio_id"]
+
+        # The leader reads the member's estudio via the shared bypass → 200.
+        res = client.get(f"/api/estudios/{estudio_id}", headers=capturista_headers)
+        assert res.status_code == 200, res.text
+
 
 class TestOrgHeatmap:
     """Organization heatmap endpoints."""

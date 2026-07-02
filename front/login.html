@@ -27,6 +27,7 @@
   }
 </script>
 <link href="assets/css/theme.css" rel="stylesheet"/>
+<script src="assets/js/apiClient.js"></script>
 <script src="assets/js/theme-toggle.js"></script>
 <link href="assets/css/login.css" rel="stylesheet"/>
 </head>
@@ -272,10 +273,10 @@
     _setLoading(true);
 
     try {
-      const res = await fetch('/api/auth/login', {
+      const res = await ApiClient.fetch('/auth/login', {
         method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ email, password }),
+        auth:    false,
+        json:    { email, password },
       });
 
       const data = await res.json().catch(() => ({}));

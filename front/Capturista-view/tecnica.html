@@ -35,6 +35,7 @@
     <link href="../assets/css/theme.css" rel="stylesheet"/>
     <script src="../assets/js/theme-toggle.js"></script>
     <script src="../assets/js/session-guard.js"></script>
+    <script src="../assets/js/apiClient.js"></script>
     <script src="../assets/js/confirmation-modal.js?v=2"></script>
     <link href="../assets/css/tecnica.css" rel="stylesheet" />
   </head>
@@ -885,11 +886,8 @@
         // Check if we have a draft to resume
         if (solicitudId && session?.token) {
           try {
-            const res = await fetch(`/api/solicitudes/${solicitudId}`, {
-              headers: {
-                Accept: "application/json",
-                Authorization: "Bearer " + session.token,
-              },
+            const res = await ApiClient.fetch(`/solicitudes/${solicitudId}`, {
+              headers: { Accept: "application/json" },
             });
 
             if (res.ok) {
@@ -1743,9 +1741,8 @@
         if (!session?.token) throw new Error("Sesión no válida.");
         const formData = new FormData();
         formData.append("foto", file);
-        const res = await fetch("/api/upload-foto", {
+        const res = await ApiClient.fetch("/upload-foto", {
           method: "POST",
-          headers: { Authorization: "Bearer " + session.token },
           body: formData,
         });
         if (!res.ok) throw new Error("Error al subir la foto.");
@@ -2065,6 +2062,43 @@
       }
 
       // -- Handler: CONTINUAR (offline-first) --
+      // Sube la foto pendiente (si la hay) bloqueando clics repetidos y dando
+      // feedback en el botón que dispara la navegación. Devuelve true si es
+      // seguro navegar; false si la subida falló (el usuario debe reintentar).
+      async function uploadFotoAntesDeNavegar(btnId) {
+        const hasPendingPhoto = Boolean(capturedPhotoFile || document.getElementById("file-upload")?.files?.[0]);
+        const hasPendingEstudio = Boolean(capturedEstudioFile || document.getElementById("estudio-clinico-file")?.files?.[0]);
+        if (!hasPendingPhoto && !hasPendingEstudio) return true;
+        if (solicitudSubmitInProgress) return false;
+
+        const btn = document.getElementById(btnId);
+        const originalText = btn?.textContent || "";
+        solicitudSubmitInProgress = true;
+        if (btn) { btn.disabled = true; btn.textContent = "Subiendo archivos…"; }
+        try {
+          if (hasPendingPhoto) {
+            await uploadFoto(document.getElementById("file-upload"));
+          }
+          if (hasPendingEstudio) {
+            await uploadEstudioClinico(document.getElementById("estudio-clinico-file"));
+          }
+          return true;
+        } catch (err) {
+          console.warn("No se pudo subir el archivo antes de navegar:", err);
+          const errorEl = document.getElementById("error-msg");
+          if (errorEl) {
+            errorEl.textContent = err instanceof Error
+              ? err.message
+              : "No se pudo subir el archivo. Revisá tu conexión e intentá de nuevo.";
+            errorEl.classList.remove("hidden");
+          }
+          return false;
+        } finally {
+          solicitudSubmitInProgress = false;
+          if (btn) { btn.disabled = false; btn.textContent = originalText; }
+        }
+      }
+
       async function continuarSolicitudTecnica() {
         const formatErrors = collectDraftFormatErrors("Técnica", "tecnica.html");
         if (formatErrors.length > 0) {
@@ -2075,17 +2109,8 @@
           return;
         }
         // Upload any pending photo first so it isn't lost when navigating away.
-        try {
-          await uploadFoto(document.getElementById("file-upload"));
-        } catch (err) {
-          console.warn("No se pudo subir la foto antes de continuar:", err);
-        }
-        // Upload any pending estudio clínico so it isn't lost when navigating away.
-        try {
-          await uploadEstudioClinico(document.getElementById("estudio-clinico-file"));
-        } catch (err) {
-          console.warn("No se pudo subir el estudio clínico antes de continuar:", err);
-        }
+        // A failed upload keeps the user here to retry instead of navigating.
+        if (!(await uploadFotoAntesDeNavegar("btn-continuar-tecnica"))) return;
         const formData = getTecnicaFormData();
         localStorage.setItem("draft_tecnica", JSON.stringify(formData));
         window.location.href = "gestion.html";
@@ -2103,16 +2128,7 @@
         }
 
         // Upload any pending photo first so it survives the round-trip.
-        try {
-          await uploadFoto(document.getElementById("file-upload"));
-        } catch (err) {
-          console.warn("No se pudo subir la foto antes de regresar:", err);
-        }
-        try {
-          await uploadEstudioClinico(document.getElementById("estudio-clinico-file"));
-        } catch (err) {
-          console.warn("No se pudo subir el estudio clínico antes de regresar:", err);
-        }
+        if (!(await uploadFotoAntesDeNavegar("btn-regresar-tecnica"))) return;
         // Save current form data before leaving
         const formData = getTecnicaFormData();
         localStorage.setItem("draft_tecnica", JSON.stringify(formData));
@@ -2271,13 +2287,9 @@
             ...mapTutor("tutor2", tutor2),
           };
 
-          const res = await fetch("/api/guardar-borrador", {
+          const res = await ApiClient.fetch("/guardar-borrador", {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: "Bearer " + session.token,
-            },
-            body: JSON.stringify(payload),
+            json: payload,
           });
 
           if (res.ok) {
@@ -2450,13 +2462,9 @@
 
           if (solicitudId) {
             // PATCH existing draft
-            res = await fetch(`/api/solicitudes/${solicitudId}`, {
+            res = await ApiClient.fetch(`/solicitudes/${solicitudId}`, {
               method: "PATCH",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: "Bearer " + session.token,
-              },
-              body: JSON.stringify(payload),
+              json: payload,
             });
 
             if (!res.ok) {
@@ -2480,13 +2488,9 @@
             }
           } else {
             // POST new solicitud
-            res = await fetch("/api/solicitudes", {
+            res = await ApiClient.fetch("/solicitudes", {
               method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: "Bearer " + session.token,
-              },
-              body: JSON.stringify(payload),
+              json: payload,
             });
 
             if (!res.ok) {

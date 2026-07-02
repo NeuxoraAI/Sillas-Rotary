@@ -30,6 +30,7 @@
     </script>
     <link href="assets/css/theme.css" rel="stylesheet"/>
     <script src="assets/js/session-guard.js"></script>
+    <script src="assets/js/apiClient.js"></script>
     <script src="assets/js/confirmation-modal.js?v=2"></script>
     <script src="assets/js/mascot.js?v=2"></script>
     <script src="assets/js/theme-toggle.js"></script>
@@ -475,14 +476,10 @@
       function _getSession() {
         try { return JSON.parse(localStorage.getItem("session") || "null"); } catch (_) { return null; }
       }
-      function _authFetch(url, opts) {
-        opts = opts || {};
-        opts.headers = Object.assign({ Authorization: "Bearer " + _getSession().token }, opts.headers || {});
-        // Prevent browser caching for GET requests
-        if (!opts.method || opts.method === "GET") {
-          opts.cache = "no-store";
-        }
-        return fetch(url, opts);
+      // Thin wrapper over ApiClient: centralizes base URL + Bearer auth +
+      // no-store GET caching (see assets/js/apiClient.js). Paths omit "/api".
+      function _authFetch(path, opts) {
+        return ApiClient.fetch(path, opts);
       }
       function _escapeHtml(str) {
         if (str == null) return "";
@@ -619,7 +616,7 @@
         if (!paisId) return;
         if (state.regionesCache[paisId]) { populateRegionDropdown(state.regionesCache[paisId]); return; }
         try {
-          const res = await _authFetch("/api/regiones?pais_id=" + paisId);
+          const res = await _authFetch("/regiones?pais_id=" + paisId);
           if (!res.ok) throw new Error();
           const regiones = await res.json();
           state.regionesCache[paisId] = regiones;
@@ -629,7 +626,7 @@
 
       async function loadPaisesDropdown() {
         try {
-          const res = await _authFetch("/api/paises");
+          const res = await _authFetch("/paises");
           if (!res.ok) throw new Error();
           const paises = await res.json();
           state.paisesCache = paises;
@@ -723,7 +720,7 @@
           Object.entries(filters).forEach(function ([k, v]) {
             if (v !== undefined && v !== null && v !== "") params.set(k, String(v));
           });
-          const res = await _authFetch("/api/admin/beneficiarios?" + params.toString());
+          const res = await _authFetch("/admin/beneficiarios?" + params.toString());
           if (!res.ok) throw new Error("HTTP " + res.status);
           const data = await res.json();
           state.items = data.items || []; state.total = data.total || 0;
@@ -844,7 +841,7 @@
           });
           if (idsArray && idsArray.length > 0) params.set("ids", idsArray.join(","));
           btnEl.innerHTML = '<span class="material-symbols-outlined text-sm animate-spin">progress_activity</span> Exportando...';
-          const res = await _authFetch("/api/admin/beneficiarios/export?" + params.toString());
+          const res = await _authFetch("/admin/beneficiarios/export?" + params.toString());
           if (!res.ok) throw new Error("No se pudo exportar el Excel");
           const blob = await res.blob();
           const downloadUrl = URL.createObjectURL(blob);
@@ -884,7 +881,7 @@
         modalTitle.textContent = "—"; modalFolio.textContent = "—";
 
         try {
-          const res = await _authFetch("/api/admin/beneficiarios/" + beneficiarioId + "?_ts=" + Date.now());
+          const res = await _authFetch("/admin/beneficiarios/" + beneficiarioId + "?_ts=" + Date.now());
           if (!res.ok) throw new Error("HTTP " + res.status);
           const data = await res.json();
           state.currentDetail = data;
@@ -1976,7 +1973,7 @@
           // 1. Save beneficiario
           const benFields = _extractBeneficiarioPayload(state.editDraft.estudio, state.serverOriginal.estudio);
           if (Object.keys(benFields).length > 0) {
-            const res = await _authFetch("/api/admin/beneficiarios/" + benId, {
+            const res = await _authFetch("/admin/beneficiarios/" + benId, {
               method: "PATCH", headers: { "Content-Type": "application/json" },
               body: JSON.stringify(benFields),
             });
@@ -1986,7 +1983,7 @@
           // 2. Save estudio core fields (admin PATCH — no tutors/docs)
           const estFields = _extractEstudioPayload(state.editDraft.estudio, state.serverOriginal.estudio);
           if (Object.keys(estFields).length > 0) {
-            const res = await _authFetch("/api/admin/beneficiarios/" + benId + "/estudio", {
+            const res = await _authFetch("/admin/beneficiarios/" + benId + "/estudio", {
               method: "PATCH", headers: { "Content-Type": "application/json" },
               body: JSON.stringify(estFields),
             });
@@ -1997,7 +1994,7 @@
           if (estudioId && _hasTutorOrDocChanges()) {
             const fullPayload = _extractEstudioFullPayload(state.editDraft.estudio, state.serverOriginal.estudio);
             if (fullPayload) {
-              const res = await _authFetch("/api/estudios/" + estudioId, {
+              const res = await _authFetch("/estudios/" + estudioId, {
                 method: "PATCH", headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(fullPayload),
               });
@@ -2005,7 +2002,7 @@
                 const errData = await res.json().catch(() => ({}));
                 var errMsg = errData.detail;
                 if (Array.isArray(errMsg)) {
-                  errMsg = errMsg.map(function (d) { return (d.loc ? d.loc.join(".") : "") + ": " + (d.msg || ""); }).join(" | ");
+                  errMsg = errMsg.map(function (d) { return SR_Validations.getBackendPathLabel(d.loc ? d.loc.join(".") : "") + ": " + (d.msg || ""); }).join(" | ");
                 }
                 errors.push("Tutores/Documentos: " + (errMsg || res.status));
               }
@@ -2015,7 +2012,7 @@
           // 4. Save solicitud
           const solFields = _extractSolicitudPayload(state.editDraft.tecnica, state.serverOriginal.tecnica);
           if (Object.keys(solFields).length > 0) {
-            const res = await _authFetch("/api/admin/beneficiarios/" + benId + "/solicitud", {
+            const res = await _authFetch("/admin/beneficiarios/" + benId + "/solicitud", {
               method: "PATCH", headers: { "Content-Type": "application/json" },
               body: JSON.stringify(solFields),
             });
@@ -2025,7 +2022,7 @@
           // 5. Save gestion
           const gesFields = _extractGestionPayload(state.editDraft.gestion, state.serverOriginal.gestion);
           if (Object.keys(gesFields).length > 0) {
-            const res = await _authFetch("/api/admin/beneficiarios/" + benId + "/gestion", {
+            const res = await _authFetch("/admin/beneficiarios/" + benId + "/gestion", {
               method: "PATCH", headers: { "Content-Type": "application/json" },
               body: JSON.stringify(gesFields),
             });
@@ -2239,7 +2236,7 @@
         var formData = new FormData();
         formData.append("tipo", tipo);
         formData.append("archivo", file);
-        var res = await _authFetch("/api/upload-documento", { method: "POST", body: formData });
+        var res = await _authFetch("/upload-documento", { method: "POST", body: formData });
         if (!res.ok) {
           var errData = await res.json().catch(function () { return {}; });
           throw new Error(errData.detail || "Error al subir " + tipo);
@@ -2382,7 +2379,7 @@
         this.classList.add("btn-loading");
 
         try {
-          const res = await _authFetch("/api/admin/beneficiarios/" + benId, { method: "DELETE" });
+          const res = await _authFetch("/admin/beneficiarios/" + benId, { method: "DELETE" });
           if (!res.ok) throw new Error("HTTP " + res.status);
           const data = await res.json();
 
