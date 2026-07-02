@@ -118,13 +118,9 @@ class TestSetPassword:
         assert _token_used_at(_test_db_conn, raw) is not None
 
     def test_valid_token_then_login(self, client, admin_headers):
-        _create_pending_user(client, admin_headers, "setpwlogin@test.mx")
-        # Re-fetch the raw token from the create mock is not available here; issue
-        # a fresh invite via resend to capture the raw token cleanly.
-        # (create above already consumed the mock context.)
-        uid, raw = _create_pending_user(client, admin_headers, "setpwlogin2@test.mx")
+        uid, raw = _create_pending_user(client, admin_headers, "setpwlogin@test.mx")
         client.post("/api/auth/set-password", json={"token": raw, "password": "loginpass123"})
-        login = client.post("/api/auth/login", json={"email": "setpwlogin2@test.mx", "password": "loginpass123"})
+        login = client.post("/api/auth/login", json={"email": "setpwlogin@test.mx", "password": "loginpass123"})
         assert login.status_code == 200
         assert "access_token" in login.json()
 

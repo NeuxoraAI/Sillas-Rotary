@@ -29,6 +29,7 @@
 <link href="assets/css/theme.css" rel="stylesheet"/>
 <script src="assets/js/session-guard.js"></script>
 <script src="assets/js/apiClient.js"></script>
+<script src="assets/js/change-password.js"></script>
 <script src="assets/js/confirmation-modal.js?v=2"></script>
 <script src="assets/js/mascot.js?v=2"></script>
 <script src="assets/js/theme-toggle.js"></script>
@@ -279,6 +280,15 @@
         </div>
       </div>
     </div>
+
+    <!-- Change password (only shown to the organization user on their own profile) -->
+    <section id="change-password-card" class="hidden card overflow-hidden mt-6">
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center gap-2.5">
+        <span class="material-symbols-outlined text-xl" style="color: var(--c-orange);">lock_reset</span>
+        <h2 class="text-base font-semibold text-slate-800">Cambiar contraseña</h2>
+      </div>
+      <div id="change-password-section" class="px-6 py-5"></div>
+    </section>
   </div>
 </main>
 
@@ -303,6 +313,14 @@
   // Resolve org_id from URL or from user's profile
   const urlParams = new URLSearchParams(window.location.search);
   let orgIdFromUrl = urlParams.get('org_id') ? parseInt(urlParams.get('org_id'), 10) : null;
+
+  // Show the change-password form only when the organization user is viewing
+  // their own profile (not when another role is visiting via ?org_id=).
+  if (session?.rol === 'organizacion' && !orgIdFromUrl) {
+    const cpCard = document.getElementById('change-password-card');
+    if (cpCard) cpCard.classList.remove('hidden');
+    ChangePassword.init({ containerId: 'change-password-section', apiPath: '/me/password', authFetchFn: SessionGuard.authFetch });
+  }
 
   // Visitor mode: any non-organizacion user viewing an org sees only the org
   // identity, leaders/members, and stats — not its captures or volunteers.
