@@ -239,27 +239,6 @@
             <div class="space-y-2">
               <label
                 class="block text-xs font-semibold text-slate-600"
-                for="password"
-                >Contraseña</label
-              >
-              <div class="relative">
-                <span
-                  class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-lg pointer-events-none"
-                  >lock</span
-                >
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  placeholder="Mínimo 8 caracteres"
-                  class="w-full pl-11 pr-4 py-3 text-sm"
-                />
-              </div>
-            </div>
-
-            <div class="space-y-2">
-              <label
-                class="block text-xs font-semibold text-slate-600"
                 for="rol"
                 >Rol</label
               >
@@ -627,9 +606,17 @@
           </td>
           <td class="px-6 py-3.5 text-sm text-slate-500 hidden md:table-cell">${_esc(u.email)}</td>
           <td class="px-6 py-3.5">${_rolBadge(u.rol)}</td>
-          <td class="px-6 py-3.5">${_estadoBadge(u.activo)}</td>
+          <td class="px-6 py-3.5">${_estadoBadge(u.activo, u.pending)}</td>
           <td class="px-6 py-3.5 text-right">
             <div class="flex items-center justify-end gap-1">
+              ${u.pending
+                ? `<button onclick="reenviarInvitacion(${u.usuario_id})"
+                  class="btn-icon hover:bg-orange-50 hover:text-ug-orange-pure hover:border-orange-200"
+                  title="Reenviar invitación" aria-label="Reenviar invitación">
+                  <span class="material-symbols-outlined" aria-hidden="true">forward_to_inbox</span>
+                </button>`
+                : ''
+              }
               ${u.rol === 'organizacion' && u.activo
                 ? `<button onclick="gestionarOrganizacion(${u.usuario_id})"
                   class="btn-icon hover:bg-purple-50 hover:text-primary hover:border-primary/30"
@@ -694,6 +681,24 @@
           alert("No se pudo desactivar el usuario. Intente de nuevo.");
         }
       }
+
+      // ── Resend invitation (Pendiente users) ──────────────────────────────────────
+      window.reenviarInvitacion = async function (id) {
+        if (!confirm("¿Reenviar el email de invitación a este usuario?")) return;
+        try {
+          const res = await _authFetch(`/usuarios/${id}/reenviar-invitacion`, {
+            method: "POST",
+          });
+          if (!res.ok) {
+            const data = await res.json().catch(() => ({}));
+            alert(data.detail || "No se pudo reenviar la invitación.");
+            return;
+          }
+          await loadUsuarios();
+        } catch (_) {
+          alert("No se pudo conectar con el servidor.");
+        }
+      };
 
       // ── Reactivate user ─────────────────────────────────────────────────────────
       async function reactivateUsuario(id) {
@@ -1108,18 +1113,13 @@
 
           const nombre = document.getElementById("nombre").value.trim();
           const email = document.getElementById("email").value.trim();
-          const password = document.getElementById("password").value;
           const rol = document.getElementById("rol").value;
 
-          if (!nombre || !email || !password || !rol) {
+          if (!nombre || !email || !rol) {
             _show(
               errorEl,
               "Complete todos los campos antes de crear el usuario.",
             );
-            return;
-          }
-          if (password.length < 8) {
-            _show(errorEl, "La contraseña debe tener al menos 8 caracteres.");
             return;
           }
 
@@ -1130,7 +1130,7 @@
             const res = await _authFetch("/usuarios", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ nombre, email, password, rol }),
+              body: JSON.stringify({ nombre, email, rol }),
             });
             const data = await res.json().catch(() => ({}));
 
@@ -1141,7 +1141,7 @@
 
             _show(
               successEl,
-              `Usuario "${data.nombre}" creado correctamente con rol "${data.rol}".`,
+              `Usuario "${data.nombre}" creado. Se envió un email de invitación a ${email}.`,
             );
             e.target.reset();
             await loadUsuarios();
@@ -1176,7 +1176,10 @@
     </span>`;
       }
 
-      function _estadoBadge(activo) {
+      function _estadoBadge(activo, pending) {
+        if (pending) {
+          return '<span class="badge badge--warning"><span class="material-symbols-outlined">email</span>Pendiente</span>';
+        }
         return activo
           ? '<span class="badge badge--success"><span class="material-symbols-outlined">check_circle</span>Activo</span>'
           : '<span class="badge badge--neutral">Inactivo</span>';
