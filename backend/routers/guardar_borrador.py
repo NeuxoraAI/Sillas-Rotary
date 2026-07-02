@@ -130,6 +130,9 @@ class GuardarBorradorRequest(BaseModel):
     medida_ancho_cadera: Optional[str] = None
     foto_path: Optional[str] = None
     foto_url: Optional[str] = None
+    equipo_solicitado: Optional[str] = None
+    estudio_clinico_path: Optional[str] = None
+    estudio_clinico_url: Optional[str] = None
     entidad_solicitante: Optional[str] = None
     prioridad: Optional[str] = None
     justificacion: Optional[str] = None
@@ -425,7 +428,6 @@ class GuardarBorradorResponse(BaseModel):
     solicitud_id: int
     beneficiario_id: int
     curp: Optional[str] = None
-    folio: Optional[str] = None
     status: str
 
 
@@ -526,7 +528,7 @@ def guardar_borrador(
     Atomic draft save: create or update all 3 forms in one transaction.
 
     CREATE mode (no estudio_id):
-      - Generates folio, inserts beneficiario + estudio + solicitud atomically.
+      - Inserts beneficiario + estudio + solicitud atomically; CURP is the natural identifier.
 
     UPDATE mode (has estudio_id):
       - Updates existing beneficiario + estudio + solicitud atomically.
@@ -546,9 +548,6 @@ def _create_borrador(
     if body.region_id is None:
         raise HTTPException(status_code=422, detail="region_id es obligatorio para crear un borrador")
 
-    # Folio is no longer generated — CURP is the natural identifier (Issue #32).
-    folio = None
-
     nombre_composed = _compose_nombre(body) or None
 
     # Reject a draft whose CURP already belongs to another beneficiario.
@@ -556,15 +555,15 @@ def _create_borrador(
         _assert_curp_disponible(db, body.curp)
 
     try:
-        # 1. INSERT beneficiario (folio NULL — curp_benef is the identifier)
+        # 1. INSERT beneficiario (curp_benef is the natural identifier, Issue #32)
         beneficiario_id = db.execute(
             """
             INSERT INTO beneficiarios
                 (nombre, nombres, apellido_paterno, apellido_materno, curp_benef,
                  fecha_nacimiento, diagnostico, calle, num_ext, num_int, colonia, ciudad,
                  estado_codigo, estado_nombre, sexo, telefonos, email,
-                 folio, region_id, sede)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                 region_id, sede)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
             """,
             (
@@ -585,7 +584,6 @@ def _create_borrador(
                 body.sexo,
                 body.telefonos,
                 body.email,
-                folio,
                 body.region_id,
                 body.sede,
             ),
@@ -662,9 +660,11 @@ def _create_borrador(
                  altura_total_in, peso_kg,
                  medida_cabeza_asiento, medida_hombro_asiento, medida_prof_asiento,
                  medida_rodilla_talon, medida_ancho_cadera, unidad_captura,
-                 unidad_peso_captura, foto_url, entidad_solicitante, prioridad,
+                 unidad_peso_captura, foto_url, equipo_solicitado,
+                 estudio_clinico_path, estudio_clinico_url,
+                 entidad_solicitante, prioridad,
                  justificacion, status)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
             """,
             (
@@ -686,6 +686,9 @@ def _create_borrador(
                 body.unidad_medida,
                 body.unidad_peso_captura,
                 body.foto_url,
+                body.equipo_solicitado,
+                body.estudio_clinico_path,
+                body.estudio_clinico_url,
                 body.entidad_solicitante,
                 body.prioridad,
                 body.justificacion,
@@ -704,7 +707,6 @@ def _create_borrador(
         solicitud_id=solicitud_id,
         beneficiario_id=beneficiario_id,
         curp=body.curp,
-        folio=folio,
         status=body.status or "borrador",
     )
 
@@ -781,19 +783,17 @@ def _update_borrador(
         logger.exception("guardar-borrador UPDATE failed: %s", exc)
         raise HTTPException(status_code=500, detail="Error interno al actualizar el borrador") from exc
 
-    # Fetch current CURP / folio for the response
+    # Fetch current CURP for the response
     ben_row = db.execute(
-        "SELECT curp_benef, folio FROM beneficiarios WHERE id = %s", (beneficiario_id,)
+        "SELECT curp_benef FROM beneficiarios WHERE id = %s", (beneficiario_id,)
     ).fetchone()
     curp = ben_row["curp_benef"] if ben_row else None
-    folio = ben_row["folio"] if ben_row else None
 
     return GuardarBorradorResponse(
         estudio_id=body.estudio_id,
         solicitud_id=solicitud_id or 0,
         beneficiario_id=beneficiario_id,
         curp=curp,
-        folio=folio,
         status="borrador",
     )
 
@@ -901,6 +901,9 @@ def _patch_solicitud(db: _DBAdapter, body: GuardarBorradorRequest, solicitud_id:
         ("control_de_piernas", body.control_de_piernas),
         ("padecimiento", body.padecimiento),
         ("soporte_oxigeno", body.soporte_oxigeno),
+        ("equipo_solicitado", body.equipo_solicitado),
+        ("estudio_clinico_path", body.estudio_clinico_path),
+        ("estudio_clinico_url", body.estudio_clinico_url),
         ("entidad_solicitante", body.entidad_solicitante),
         ("prioridad", body.prioridad),
         ("justificacion", body.justificacion),

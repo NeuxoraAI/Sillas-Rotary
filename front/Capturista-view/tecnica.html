@@ -860,8 +860,11 @@
       // resume path (which runs synchronously when there is no solicitud_id)
       // reads these to restore a previously uploaded photo.
       let capturedPhotoFile = null;
-      let uploadedPhotoUrl = null;        // canonical storage:// reference (DB)
-      let uploadedPhotoPreviewUrl = null; // browser-renderable URL (preview only)
+      let uploadedPhotoUrl = null;          // canonical storage:// reference (DB)
+      let uploadedPhotoPreviewUrl = null;   // browser-renderable URL (preview only)
+      let uploadedEstudioPath = null;       // storage path for estudio clínico (DB)
+      let uploadedEstudioUrl = null;        // canonical storage:// reference (DB)
+      let uploadedEstudioPreviewUrl = null; // browser-renderable URL (preview only)
 
       // Auth guard + Draft Resume
       (async function () {
@@ -916,6 +919,7 @@
               setVal("control_tronco", data.control_tronco);
               setVal("control_cabeza", data.control_cabeza);
               setVal("control_de_piernas", data.control_de_piernas);
+              setVal("equipo_solicitado", data.equipo_solicitado);
 
               // Set hidden technical field and restore selected padecimientos
               setVal("padecimiento", data.padecimiento);
@@ -972,6 +976,18 @@
                 renderPhotoPreviewCard();
               }
 
+              if (data.estudio_clinico_url) {
+                uploadedEstudioPath = data.estudio_clinico_path || null;
+                uploadedEstudioUrl = data.estudio_clinico_url;
+                uploadedEstudioPreviewUrl = data.estudio_clinico_url_resolved || null;
+                const guessedType = (data.estudio_clinico_path || "").toLowerCase().endsWith(".pdf")
+                  ? "application/pdf"
+                  : "image/jpeg";
+                setEstudioPreviewFromStoredUrl(uploadedEstudioPreviewUrl || data.estudio_clinico_url, guessedType);
+                renderEstudioStatus();
+                renderEstudioPreviewCard();
+              }
+
               // We've restored the draft, continue with the form
               return;
             } else if (res.status === 404) {
@@ -999,6 +1015,7 @@
             setVal("control_tronco", data.control_tronco);
             setVal("control_cabeza", data.control_cabeza);
             setVal("control_de_piernas", data.control_de_piernas);
+            setVal("equipo_solicitado", data.equipo_solicitado);
             setVal("padecimiento", data.padecimiento);
             restorePadecimientosSelection(data.padecimiento);
             const oxiRadioB = document.querySelector(
@@ -1027,6 +1044,13 @@
             if (data.foto_url) {
               uploadedPhotoUrl = data.foto_url;
               uploadedPhotoPreviewUrl = data.foto_url_resolved || null;
+            }
+            // Similarly, restore estudio clínico state so the post-setup
+            // block can render the preview.
+            if (data.estudio_clinico_url) {
+              uploadedEstudioPath = data.estudio_clinico_path || null;
+              uploadedEstudioUrl = data.estudio_clinico_url;
+              uploadedEstudioPreviewUrl = data.estudio_clinico_url_resolved || null;
             }
           } catch (err) {
             console.error("Error loading localStorage draft:", err);
@@ -1308,6 +1332,14 @@
         estudioPreviewState.sourceUrl = null;
         estudioPreviewState.type = file.type || "image/jpeg";
         estudioPreviewState.name = file.name || "Estudio clínico";
+      }
+
+      function setEstudioPreviewFromStoredUrl(url, contentType) {
+        revokeEstudioPreviewUrl();
+        estudioPreviewState.objectUrl = null;
+        estudioPreviewState.sourceUrl = url || null;
+        estudioPreviewState.type = contentType || "image/jpeg";
+        estudioPreviewState.name = extractStoredFilename(url) || "Estudio clínico";
       }
 
       function renderEstudioPreviewCard() {
@@ -1727,6 +1759,36 @@
         return uploadedPhotoUrl;
       }
 
+      async function uploadEstudioClinico(fileInput) {
+        const file = capturedEstudioFile || fileInput?.files?.[0];
+        if (!file) return uploadedEstudioUrl || null;
+        const session = SessionGuard.getSession();
+        if (!session?.token) throw new Error("Sesión no válida.");
+        const formData = new FormData();
+        formData.append("archivo", file);
+        const res = await fetch("/api/upload-estudio-clinico", {
+          method: "POST",
+          headers: { Authorization: "Bearer " + session.token },
+          body: formData,
+        });
+        if (!res.ok) throw new Error("Error al subir el estudio clínico.");
+        const data = await res.json();
+        uploadedEstudioPath = data.estudio_clinico_path || null;
+        uploadedEstudioUrl = data.estudio_clinico_url || null;
+        uploadedEstudioPreviewUrl = data.estudio_clinico_url_resolved || data.estudio_clinico_url || null;
+        capturedEstudioFile = null;
+        if (fileInput) fileInput.value = "";
+        if (uploadedEstudioUrl) {
+          const guessedType = (file.name || "").toLowerCase().endsWith(".pdf")
+            ? "application/pdf"
+            : "image/jpeg";
+          setEstudioPreviewFromStoredUrl(uploadedEstudioPreviewUrl, guessedType);
+          renderEstudioStatus();
+          renderEstudioPreviewCard();
+        }
+        return uploadedEstudioUrl;
+      }
+
       function showSuccessModal({ title, description, onContinue }) {
         const modal = document.getElementById("success-modal");
         const titleEl = document.getElementById("success-modal-title");
@@ -1992,6 +2054,10 @@
           // foto_url_resolved is a browser-renderable URL kept only for preview.
           foto_url: uploadedPhotoUrl || null,
           foto_url_resolved: uploadedPhotoPreviewUrl || null,
+          equipo_solicitado: get("equipo_solicitado") || null,
+          estudio_clinico_path: uploadedEstudioPath || null,
+          estudio_clinico_url: uploadedEstudioUrl || null,
+          estudio_clinico_url_resolved: uploadedEstudioPreviewUrl || null,
         };
       }
 
@@ -2001,23 +2067,29 @@
       // seguro navegar; false si la subida falló (el usuario debe reintentar).
       async function uploadFotoAntesDeNavegar(btnId) {
         const hasPendingPhoto = Boolean(capturedPhotoFile || document.getElementById("file-upload")?.files?.[0]);
-        if (!hasPendingPhoto) return true;
+        const hasPendingEstudio = Boolean(capturedEstudioFile || document.getElementById("estudio-clinico-file")?.files?.[0]);
+        if (!hasPendingPhoto && !hasPendingEstudio) return true;
         if (solicitudSubmitInProgress) return false;
 
         const btn = document.getElementById(btnId);
         const originalText = btn?.textContent || "";
         solicitudSubmitInProgress = true;
-        if (btn) { btn.disabled = true; btn.textContent = "Subiendo foto…"; }
+        if (btn) { btn.disabled = true; btn.textContent = "Subiendo archivos…"; }
         try {
-          await uploadFoto(document.getElementById("file-upload"));
+          if (hasPendingPhoto) {
+            await uploadFoto(document.getElementById("file-upload"));
+          }
+          if (hasPendingEstudio) {
+            await uploadEstudioClinico(document.getElementById("estudio-clinico-file"));
+          }
           return true;
         } catch (err) {
-          console.warn("No se pudo subir la foto antes de navegar:", err);
+          console.warn("No se pudo subir el archivo antes de navegar:", err);
           const errorEl = document.getElementById("error-msg");
           if (errorEl) {
             errorEl.textContent = err instanceof Error
               ? err.message
-              : "No se pudo subir la foto. Revisá tu conexión e intentá de nuevo.";
+              : "No se pudo subir el archivo. Revisá tu conexión e intentá de nuevo.";
             errorEl.classList.remove("hidden");
           }
           return false;
@@ -2099,6 +2171,13 @@
           } catch (err) {
             // Photo is optional for a borrador — keep going with whatever we had.
             console.warn("No se pudo subir la foto del borrador:", err);
+          }
+
+          // 1b. Upload any pending estudio clínico for the same reason.
+          try {
+            await uploadEstudioClinico(document.getElementById("estudio-clinico-file"));
+          } catch (err) {
+            console.warn("No se pudo subir el estudio clínico del borrador:", err);
           }
 
           // 2. Recolectar datos del formulario técnico actual
@@ -2197,6 +2276,9 @@
             unidad_medida: tecnicaData.unidad_medida || null,
             unidad_peso_captura: tecnicaData.unidad_peso_captura || null,
             foto_url: tecnicaData.foto_url || null,
+            equipo_solicitado: tecnicaData.equipo_solicitado || null,
+            estudio_clinico_path: tecnicaData.estudio_clinico_path || null,
+            estudio_clinico_url: tecnicaData.estudio_clinico_url || null,
             // Gestion (desde gestion)
             entidad_solicitante: draftGestion.entidad_solicitante || null,
             prioridad: draftGestion.prioridad || null,
@@ -2336,6 +2418,18 @@
           }
         }
 
+        // Upload estudio clínico if a new file was selected (optional for borrador)
+        try {
+          await uploadEstudioClinico(document.getElementById("estudio-clinico-file"));
+        } catch (err) {
+          if (status === "completo") {
+            errorEl.textContent = err.message || "Error al subir el estudio clínico.";
+            errorEl.classList.remove("hidden");
+            return;
+          }
+          console.warn("No se pudo subir el estudio clínico:", err);
+        }
+
         const payload = {
           beneficiario_id: beneficiarioId,
           entorno: get("entorno"),
@@ -2357,6 +2451,9 @@
           unidad_medida: (get("unidad_medida") === "metric" ? "cm" : "in"),
           unidad_peso_captura: (get("unidad_medida") === "metric" ? "kg" : "lb"),
           foto_url,
+          equipo_solicitado: get("equipo_solicitado") || null,
+          estudio_clinico_path: uploadedEstudioPath || null,
+          estudio_clinico_url: uploadedEstudioUrl || null,
           status,
         };
 
@@ -2701,6 +2798,15 @@
         setPhotoPreviewFromStoredUrl(uploadedPhotoPreviewUrl || uploadedPhotoUrl);
         renderPhotoStatus();
         renderPhotoPreviewCard();
+      }
+      // Render a stored estudio clínico set during localStorage-draft restore.
+      if (uploadedEstudioUrl && !estudioPreviewState.sourceUrl && !estudioPreviewState.objectUrl) {
+        const guessedType = (uploadedEstudioPath || "").toLowerCase().endsWith(".pdf")
+          ? "application/pdf"
+          : "image/jpeg";
+        setEstudioPreviewFromStoredUrl(uploadedEstudioPreviewUrl || uploadedEstudioUrl, guessedType);
+        renderEstudioStatus();
+        renderEstudioPreviewCard();
       }
       setupUnidadMedidaLabels();
       setupImageZoom();

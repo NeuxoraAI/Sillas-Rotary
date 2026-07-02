@@ -332,7 +332,7 @@ def get_my_heatmap(
 
 @router.get("/me/beneficiarios")
 def get_my_beneficiarios(
-    q: Annotated[str | None, Query(description="Search beneficiary name or folio")] = None,
+    q: Annotated[str | None, Query(description="Search beneficiary name or CURP")] = None,
     status: Annotated[str | None, Query(description="Filter by status: borrador or completo")] = None,
     db: Annotated[_DBAdapter, Depends(get_db)] = None,
     user: Annotated[CurrentUser, Depends(require_roles("capturista", "organizacion", "admin"))] = None,
@@ -340,7 +340,7 @@ def get_my_beneficiarios(
     """Return beneficiary list with edit links for the current user.
 
     Args:
-        q: Optional search string to filter by beneficiary name or folio.
+        q: Optional search string to filter by beneficiary name or CURP.
         status: Optional status filter ('borrador' or 'completo').
     """
     conditions = ["e.usuario_id = %s"]
@@ -351,9 +351,9 @@ def get_my_beneficiarios(
         params.append(status)
 
     if q is not None:
-        conditions.append("(b.nombre ILIKE %s OR b.curp_benef ILIKE %s OR b.folio ILIKE %s)")
+        conditions.append("(b.nombre ILIKE %s OR b.curp_benef ILIKE %s)")
         search_pattern = f"%{q}%"
-        params.extend([search_pattern, search_pattern, search_pattern])
+        params.extend([search_pattern, search_pattern])
 
     where_clause = " AND ".join(conditions)
 
@@ -397,7 +397,6 @@ def get_my_beneficiarios(
             b.telefonos,
             b.email,
             b.curp_benef,
-            b.folio,
             b.region_id,
             b.created_at              AS beneficiario_created_at
         FROM estudios_socioeconomicos e
@@ -449,7 +448,6 @@ def get_my_beneficiarios(
             "email": r["email"],
             "sexo": r["sexo"],
             "curp_benef": r["curp_benef"],
-            "folio": r["folio"],
             "region_id": r["region_id"],
         }
         estudio["tutores"] = tutors_by_beneficiario.get(r["beneficiario_id"], [])
@@ -893,8 +891,7 @@ def get_org_beneficiarios(
             e.status,
             e.created_at,
             COALESCE(e.elaboro_estudio, u.nombre) AS elaboro_estudio,
-            b.nombre AS beneficiario_nombre,
-            b.folio
+            b.nombre AS beneficiario_nombre
         FROM estudios_socioeconomicos e
         JOIN beneficiarios b ON b.id = e.beneficiario_id
         LEFT JOIN usuarios u ON u.id = e.usuario_id
@@ -908,7 +905,6 @@ def get_org_beneficiarios(
         {
             "estudio_id": r["estudio_id"],
             "beneficiario_nombre": r["beneficiario_nombre"],
-            "folio": r["folio"],
             "status": r["status"],
             "elaboro_estudio": r["elaboro_estudio"],
             "fecha": r["created_at"].isoformat() if r["created_at"] else None,
