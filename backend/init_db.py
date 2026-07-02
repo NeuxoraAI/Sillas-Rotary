@@ -229,6 +229,27 @@ DDL = [
     "ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS avatar_url TEXT",
     "ALTER TABLE solicitudes_tecnicas ADD COLUMN IF NOT EXISTS soporte_oxigeno BOOLEAN NOT NULL DEFAULT FALSE",
     "ALTER TABLE solicitudes_tecnicas ADD COLUMN IF NOT EXISTS padecimiento TEXT",
+    # -----------------------------------------------------------------------
+    # Email onboarding / password self-service (migration 0024).
+    # Mirrored here (idempotently) so tests/conftest.py can build the test
+    # schema. The authoritative production DDL — including the app_runtime RLS
+    # policy that the test schema does not need — lives in
+    # backend/migrations/0024_password_tokens.sql.
+    # -----------------------------------------------------------------------
+    "ALTER TABLE usuarios ALTER COLUMN password_hash DROP NOT NULL",
+    """
+    CREATE TABLE IF NOT EXISTS password_tokens (
+        id           BIGSERIAL PRIMARY KEY,
+        usuario_id   INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+        token_hash   TEXT NOT NULL UNIQUE,
+        tipo         TEXT NOT NULL CHECK (tipo IN ('invite', 'reset')),
+        expires_at   TIMESTAMPTZ NOT NULL,
+        used_at      TIMESTAMPTZ,
+        created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+    """,
+    "CREATE INDEX IF NOT EXISTS idx_password_tokens_hash ON password_tokens(token_hash)",
+    "CREATE INDEX IF NOT EXISTS idx_password_tokens_user_tipo ON password_tokens(usuario_id, tipo)",
 ]
 
 
