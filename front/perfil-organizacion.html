@@ -27,6 +27,7 @@
   }
 </script>
 <link href="assets/css/theme.css" rel="stylesheet"/>
+<script src="assets/js/common.js"></script>
 <script src="assets/js/session-guard.js"></script>
 <script src="assets/js/apiClient.js"></script>
 <script src="assets/js/confirmation-modal.js?v=2"></script>
@@ -537,6 +538,7 @@
       loading.classList.add('hidden');
       container.classList.remove('hidden');
       container.innerHTML = _renderHeatmapSVG(data);
+      bindOrgHeatmapTooltips(container);
     } catch (_) {
       loading.textContent = 'No se pudo cargar la actividad.';
     }
@@ -571,8 +573,7 @@
       const count = days[i].count;
       const color = count === 0 ? heatColors[0] : count <= 2 ? heatColors[1] : count <= 5 ? heatColors[2] : count <= 9 ? heatColors[3] : heatColors[4];
       const tip = `${days[i].dateStr}: ${count} captura${count !== 1 ? 's' : ''}`;
-      svg += `<rect x="${x}" y="${y}" width="${cellSize}" height="${cellSize}" rx="2" fill="${color}"
-        onmouseenter="showTip(event,'${_esc(tip)}')" onmouseleave="hideTip()" style="cursor:pointer"/>`;
+      svg += `<rect class="heatmap-day" data-tooltip="${_esc(tip)}" x="${x}" y="${y}" width="${cellSize}" height="${cellSize}" rx="2" fill="${color}" style="cursor:pointer"/>`;
     }
     svg += '</svg>';
     const legend = '<div class="flex items-center gap-2 mt-4 text-xs text-slate-400 justify-end"><span>Menos</span>' +
@@ -586,6 +587,13 @@
     tip.textContent = text; tip.style.left = ev.pageX + 'px'; tip.style.top = ev.pageY + 'px'; tip.style.display = 'block';
   }
   function hideTip() { const tip = document.getElementById('htip'); if (tip) tip.style.display = 'none'; }
+
+  function bindOrgHeatmapTooltips(container) {
+    container.querySelectorAll('.heatmap-day').forEach((cell) => {
+      cell.addEventListener('mouseenter', (event) => showTip(event, cell.dataset.tooltip || ''));
+      cell.addEventListener('mouseleave', hideTip);
+    });
+  }
 
   // ── Beneficiarios de la organización ────────────────────────────────────────
   async function loadOrgBeneficiarios(orgId) {
@@ -672,15 +680,6 @@
 
   // ── Helpers ─────────────────────────────────────────────────────────────────
 
-  function _getSession() {
-    try { return JSON.parse(localStorage.getItem('session') || 'null'); }
-    catch (_) { return null; }
-  }
-
-  function _esc(str) {
-    return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  }
-
   function _initial(nombre) {
     const s = String(nombre || '').trim();
     if (!s) return '?';
@@ -707,23 +706,6 @@
     banner.classList.remove('hidden');
   }
 
-  // Clear in-progress draft state (the multi-step registration). Does NOT
-  // touch the session — used when starting a fresh guest capture.
-  function _clearDraftStorage() {
-    localStorage.removeItem('draft_socioeconomico');
-    localStorage.removeItem('draft_tecnica');
-    localStorage.removeItem('draft_gestion');
-    localStorage.removeItem('estudio_id');
-    localStorage.removeItem('beneficiario_id');
-    localStorage.removeItem('solicitud_id');
-  }
-
-  function _clearAllStorage() {
-    localStorage.removeItem('session');
-    localStorage.removeItem('region_ctx');
-    localStorage.removeItem('guest_ctx');
-    _clearDraftStorage();
-  }
 </script>
 </body>
 </html>
