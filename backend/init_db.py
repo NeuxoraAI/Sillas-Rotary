@@ -107,6 +107,7 @@ DDL = [
         id                          SERIAL PRIMARY KEY,
         beneficiario_id             INTEGER NOT NULL REFERENCES beneficiarios(id) ON DELETE RESTRICT,
         usuario_id                  INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE RESTRICT,
+        equipo_solicitado           TEXT,
         entorno                     TEXT,
         control_tronco              TEXT,
         control_cabeza              TEXT,
@@ -229,6 +230,7 @@ DDL = [
     "ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS avatar_url TEXT",
     "ALTER TABLE solicitudes_tecnicas ADD COLUMN IF NOT EXISTS soporte_oxigeno BOOLEAN NOT NULL DEFAULT FALSE",
     "ALTER TABLE solicitudes_tecnicas ADD COLUMN IF NOT EXISTS padecimiento TEXT",
+    "ALTER TABLE solicitudes_tecnicas ADD COLUMN IF NOT EXISTS equipo_solicitado TEXT",
 ]
 
 

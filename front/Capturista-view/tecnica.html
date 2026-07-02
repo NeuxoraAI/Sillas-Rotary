@@ -911,6 +911,7 @@
               const toDisplayKg = (dbVal) => toDisplay(dbVal);
 
               // Set select fields
+              setVal("equipo_solicitado", data.equipo_solicitado);
               setVal("entorno", data.entorno);
               setVal("diagnostico", data.diagnostico);
               setVal("control_tronco", data.control_tronco);
@@ -994,6 +995,7 @@
               const el = document.querySelector(`[name="${name}"]`);
               if (el && val != null) el.value = val;
             };
+            setVal("equipo_solicitado", data.equipo_solicitado);
             setVal("entorno", data.entorno);
             setVal("diagnostico", data.diagnostico);
             setVal("control_tronco", data.control_tronco);
@@ -1969,6 +1971,7 @@
         };
 
         return {
+          equipo_solicitado: get("equipo_solicitado"),
           entorno: get("entorno"),
           diagnostico: toStrOrNull(get("diagnostico")),
           control_tronco: get("control_tronco"),
@@ -2177,6 +2180,7 @@
             comprobante_domicilio_url: draftSocio.estudio?.comprobante_domicilio_url || null,
             status: "borrador",
             // Solicitud (técnica - actual)
+            equipo_solicitado: tecnicaData.equipo_solicitado || null,
             entorno: tecnicaData.entorno || null,
             control_tronco: tecnicaData.control_tronco || null,
             control_cabeza: tecnicaData.control_cabeza || null,
@@ -2338,6 +2342,7 @@
 
         const payload = {
           beneficiario_id: beneficiarioId,
+          equipo_solicitado: get("equipo_solicitado") || null,
           entorno: get("entorno"),
           diagnostico: (get("diagnostico") || "").trim() || null,
           control_tronco: get("control_tronco"),

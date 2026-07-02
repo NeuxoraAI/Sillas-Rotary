@@ -44,6 +44,16 @@ class TestTecnicaRbac:
         assert get_response.status_code == 200
         assert get_response.json()["soporte_oxigeno"] is True
 
+    def test_equipo_solicitado_persiste(self, client, tecnico_headers, sample_estudio):
+        payload = _solicitud_payload(sample_estudio["beneficiario_id"])
+        payload["equipo_solicitado"] = "Silla de ruedas neurológica PCI"
+        create_response = client.post("/api/solicitudes", headers=tecnico_headers, json=payload)
+        assert create_response.status_code == 201
+        solicitud_id = create_response.json()["solicitud_id"]
+        get_response = client.get(f"/api/solicitudes/{solicitud_id}", headers=tecnico_headers)
+        assert get_response.status_code == 200
+        assert get_response.json()["equipo_solicitado"] == "Silla de ruedas neurológica PCI"
+
     def test_unidad_cm_no_convierte_en_borrador(self, client, tecnico_headers, sample_estudio):
         """Borradores must store measurement values verbatim (no unit conversion).
         Conversion to canonical units (inches/lb) happens only at final submission."""

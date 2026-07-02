@@ -40,6 +40,7 @@ ese entorno.
 | `0021` | `curp_natural_key` |
 | `0022` | `unify_org_leadership_source` |
 | `0023` | `normalize_ciudad_municipio` |
+| `0024` | `add_equipo_solicitado_to_solicitudes_tecnicas` |
 
 ## Deprecación de legado
 

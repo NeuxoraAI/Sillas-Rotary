@@ -113,6 +113,7 @@ class GuardarBorradorRequest(BaseModel):
     status: Optional[str] = "borrador"
 
     # ── Solicitud (técnica) ──
+    equipo_solicitado: Optional[str] = None
     entorno: Optional[str] = None
     control_tronco: Optional[str] = None
     control_cabeza: Optional[str] = None
@@ -657,19 +658,20 @@ def _create_borrador(
         solicitud_id = db.execute(
             """
             INSERT INTO solicitudes_tecnicas
-                (beneficiario_id, usuario_id, entorno, control_tronco, control_cabeza,
+                (beneficiario_id, usuario_id, equipo_solicitado, entorno, control_tronco, control_cabeza,
                  control_de_piernas, padecimiento, soporte_oxigeno,
                  altura_total_in, peso_kg,
                  medida_cabeza_asiento, medida_hombro_asiento, medida_prof_asiento,
                  medida_rodilla_talon, medida_ancho_cadera, unidad_captura,
                  unidad_peso_captura, foto_url, entidad_solicitante, prioridad,
                  justificacion, status)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
             """,
             (
                 beneficiario_id,
                 usuario.usuario_id,
+                body.equipo_solicitado,
                 body.entorno,
                 body.control_tronco,
                 body.control_cabeza,
@@ -895,6 +897,7 @@ def _patch_solicitud(db: _DBAdapter, body: GuardarBorradorRequest, solicitud_id:
     """Build and execute a partial UPDATE for solicitud."""
     fields: dict[str, any] = {}
     sol_mappings = [
+        ("equipo_solicitado", body.equipo_solicitado),
         ("entorno", body.entorno),
         ("control_tronco", body.control_tronco),
         ("control_cabeza", body.control_cabeza),

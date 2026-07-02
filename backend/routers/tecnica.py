@@ -346,6 +346,7 @@ def _storage():
 
 class SolicitudCreateRequest(BaseModel):
     beneficiario_id: int
+    equipo_solicitado: Optional[str] = None
     entorno: str
     diagnostico: Optional[str] = None
     control_tronco: str
@@ -481,6 +482,7 @@ class SolicitudCreateResponse(BaseModel):
 
 
 class SolicitudUpdateRequest(BaseModel):
+    equipo_solicitado: Optional[str] = None
     entorno: Optional[str] = None
     diagnostico: Optional[str] = None
     control_tronco: Optional[str] = None
@@ -1115,18 +1117,19 @@ def crear_solicitud(
         solicitud_id = db.execute(
             """
             INSERT INTO solicitudes_tecnicas
-                (beneficiario_id, usuario_id, entorno, control_tronco, control_cabeza, control_de_piernas,
+                (beneficiario_id, usuario_id, equipo_solicitado, entorno, control_tronco, control_cabeza, control_de_piernas,
                  padecimiento,
                  soporte_oxigeno, altura_total_in, peso_kg,
                  medida_cabeza_asiento, medida_hombro_asiento, medida_prof_asiento,
                  medida_rodilla_talon, medida_ancho_cadera, unidad_captura, unidad_peso_captura, foto_url,
                  entidad_solicitante, prioridad, justificacion, status)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
             """,
             (
                 body.beneficiario_id,
                 usuario.usuario_id,
+                body.equipo_solicitado,
                 body.entorno,
                 body.control_tronco,
                 body.control_cabeza,
