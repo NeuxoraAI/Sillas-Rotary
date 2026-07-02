@@ -309,3 +309,106 @@ class TestHardDeleteUser:
         """Permanent delete on non-existent user returns 404."""
         res = client.delete("/api/usuarios/99999?permanent=true", headers=admin_headers)
         assert res.status_code == 404
+
+
+def _create_org_with_leader(client, admin_headers, leader_id, *, nombre, email):
+    """
+    Create an organization (with its own account user) and assign `leader_id`
+    as a leader via the canonical organizaciones_lideres table.
+
+    Kept local to this module so the regression does not depend on the shared
+    `org_with_leader` fixture, whose payload is stale against the current
+    POST /organizaciones schema (email + password required).
+    """
+    org = client.post("/api/organizaciones", json={
+        "nombre": nombre,
+        "email": email,
+        "password": "orgpass123",
+    }, headers=admin_headers)
+    assert org.status_code == 201, f"org create failed: {org.text}"
+    org_id = org.json()["id"]
+
+    assign = client.post(f"/api/organizaciones/{org_id}/lider",
+                         json={"lider_usuario_id": leader_id},
+                         headers=admin_headers)
+    assert assign.status_code == 200, f"leader assign failed: {assign.text}"
+    return org_id
+
+
+class TestUserOrganizacionId:
+    """
+    Regression for Issue #110: usuarios.py must resolve organizacion_id from the
+    canonical `organizaciones_lideres` table, NOT the deprecated
+    `organizaciones.lider_usuario_id` column.
+
+    The core fix landed via PR #136 (#80); these tests guard the router-level
+    behavior of GET/PATCH /usuarios, which `test_perfiles.py` does not cover.
+    """
+
+    def test_list_returns_organizacion_id_for_leader(self, client, admin_headers,
+                                                      capturista_user):
+        """GET /usuarios exposes organizacion_id resolved from organizaciones_lideres."""
+        org_id = _create_org_with_leader(
+            client, admin_headers, capturista_user["id"],
+            nombre="Rotary Uno Test", email="orguno@test.mx")
+
+        res = client.get("/api/usuarios", headers=admin_headers)
+        assert res.status_code == 200
+        users = res.json()
+        leader = next(u for u in users if u["usuario_id"] == capturista_user["id"])
+        assert leader["organizacion_id"] == org_id
+
+    def test_list_organizacion_id_none_without_org(self, client, admin_headers,
+                                                   capturista_user):
+        """A user that leads no organization reports organizacion_id = None."""
+        res = client.get("/api/usuarios", headers=admin_headers)
+        assert res.status_code == 200
+        users = res.json()
+        cap = next(u for u in users if u["usuario_id"] == capturista_user["id"])
+        assert cap["organizacion_id"] is None
+
+    def test_patch_with_changes_returns_organizacion_id(self, client, admin_headers,
+                                                        capturista_user):
+        """PATCH with a real field change still returns organizacion_id from the table."""
+        org_id = _create_org_with_leader(
+            client, admin_headers, capturista_user["id"],
+            nombre="Rotary Dos Test", email="orgdos@test.mx")
+
+        uid = capturista_user["id"]
+        res = client.patch(f"/api/usuarios/{uid}", json={"nombre": "Líder Renombrado"},
+                           headers=admin_headers)
+        assert res.status_code == 200
+        assert res.json()["organizacion_id"] == org_id
+
+    def test_patch_no_op_returns_organizacion_id(self, client, admin_headers,
+                                                 capturista_user):
+        """PATCH with an empty body (no-op branch) returns organizacion_id from the table."""
+        org_id = _create_org_with_leader(
+            client, admin_headers, capturista_user["id"],
+            nombre="Rotary Tres Test", email="orgtres@test.mx")
+
+        uid = capturista_user["id"]
+        res = client.patch(f"/api/usuarios/{uid}", json={}, headers=admin_headers)
+        assert res.status_code == 200
+        assert res.json()["organizacion_id"] == org_id
+
+    def test_leader_of_two_orgs_not_duplicated(self, client, admin_headers,
+                                               capturista_user):
+        """
+        A user leading >=2 organizations appears in exactly one row, and
+        organizacion_id is the deterministic MIN of the org ids.
+        """
+        org1_id = _create_org_with_leader(
+            client, admin_headers, capturista_user["id"],
+            nombre="Rotary A Test", email="orga@test.mx")
+        org2_id = _create_org_with_leader(
+            client, admin_headers, capturista_user["id"],
+            nombre="Rotary B Test", email="orgb@test.mx")
+
+        res = client.get("/api/usuarios", headers=admin_headers)
+        assert res.status_code == 200
+        users = res.json()
+        rows = [u for u in users if u["usuario_id"] == capturista_user["id"]]
+        # MIN(...) collapses the two memberships into a single, non-duplicated row.
+        assert len(rows) == 1
+        assert rows[0]["organizacion_id"] == min(org1_id, org2_id)
