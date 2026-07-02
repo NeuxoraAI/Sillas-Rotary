@@ -674,7 +674,7 @@
                 u.activo
                   ? `<button onclick="deactivateUsuario(${u.usuario_id})"
                 class="btn-icon hover:bg-amber-50 hover:text-amber-700 hover:border-amber-200"
-                title="Desactivar usuario" aria-label="Desactivar usuario">
+                title="Desactivar usuario y conservar sus registros" aria-label="Desactivar usuario y conservar sus registros">
                 <span class="material-symbols-outlined" aria-hidden="true">person_off</span>
               </button>`
                   : `<button onclick="reactivateUsuario(${u.usuario_id})"
@@ -683,11 +683,6 @@
                 <span class="material-symbols-outlined" aria-hidden="true">person_check</span>
               </button>`
               }
-              <button onclick="hardDeleteUsuario(${u.usuario_id}, ${JSON.stringify(u.nombre)})"
-                class="btn-icon hover:bg-red-50 hover:text-red-600 hover:border-red-200"
-                title="Eliminar permanentemente" aria-label="Eliminar usuario permanentemente">
-                <span class="material-symbols-outlined" aria-hidden="true">delete_forever</span>
-              </button>
             </div>
           </td>
         </tr>
@@ -709,7 +704,7 @@
 
       // ── Deactivate user ─────────────────────────────────────────────────────────
       async function deactivateUsuario(id) {
-        if (!confirm("¿Desactivar este usuario? Perderá acceso al sistema."))
+        if (!confirm("¿Desactivar este usuario? Perderá acceso al sistema, pero sus registros se conservarán."))
           return;
         try {
           const res = await _authFetch(`/usuarios/${id}`, {
@@ -752,27 +747,6 @@
           if (!res.ok) {
             const data = await res.json().catch(() => ({}));
             alert(data.detail || "No se pudo reactivar el usuario.");
-            return;
-          }
-          await loadUsuarios();
-        } catch (_) {
-          alert("No se pudo conectar con el servidor.");
-        }
-      }
-
-      // ── Hard delete user ─────────────────────────────────────────────────────────
-      async function hardDeleteUsuario(id, nombre) {
-        const confirmed = confirm(
-          `¿Eliminar permanentemente a "${nombre}"?\n\n` +
-          "Esta acción es IRREVERSIBLE. El usuario y su cuenta serán eliminados del sistema.\n\n" +
-          "Si tiene registros asociados, recibirá un mensaje de error y deberá desactivarlo en su lugar."
-        );
-        if (!confirmed) return;
-        try {
-          const res = await _authFetch(`/usuarios/${id}?permanent=true`, { method: "DELETE" });
-          if (!res.ok) {
-            const data = await res.json().catch(() => ({}));
-            alert(data.detail || "No se pudo eliminar el usuario permanentemente.");
             return;
           }
           await loadUsuarios();

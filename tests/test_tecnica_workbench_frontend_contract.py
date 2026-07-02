@@ -59,6 +59,16 @@ def test_admin_users_declares_pending_reviews_widget() -> None:
     assert "fetch('/api/admin/tecnica/revisiones-pendientes'" in html
 
 
+def test_admin_users_normal_flow_does_not_expose_permanent_delete() -> None:
+    html = _read(ADMIN_USERS_FILE)
+
+    assert "hardDeleteUsuario" not in html
+    assert "permanent=true" not in html
+    assert "delete_forever" not in html
+    assert "Eliminar permanentemente" not in html
+    assert "Desactivar usuario y conservar sus registros" in html
+
+
 def test_region_flow_routes_tecnico_to_workbench_without_beneficiario_dependency() -> None:
     html = _read(REGION_FILE)
 
