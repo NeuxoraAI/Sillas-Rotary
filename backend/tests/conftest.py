@@ -182,6 +182,9 @@ _TABLES_ORDER = [
     "regiones",
     "paises",
     "organizaciones",
+    # password_tokens has a FK to usuarios (ON DELETE CASCADE); it must be
+    # cleaned up BEFORE usuarios so the DELETE order respects the constraint.
+    "password_tokens",
     "usuarios",
 ]
 

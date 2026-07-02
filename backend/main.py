@@ -9,7 +9,7 @@ from env_bootstrap import load_root_env_if_needed
 
 load_root_env_if_needed(__file__)
 
-from routers import admin, auth, socioeconomico, tecnica, usuarios, regiones, perfiles, finalizar, guardar_borrador
+from routers import admin, auth, socioeconomico, tecnica, usuarios, regiones, perfiles, finalizar, guardar_borrador, password
 
 # Serve the frontend — path is resolved relative to this file so it works
 # both locally (uvicorn from backend/) and on Vercel (/var/task/backend/).
@@ -69,6 +69,7 @@ def create_app() -> FastAPI:
     app.include_router(perfiles.router, prefix="/api")
     app.include_router(finalizar.router, prefix="/api")
     app.include_router(guardar_borrador.router, prefix="/api")
+    app.include_router(password.router, prefix="/api")
 
     @app.get("/api/health")
     def health() -> JSONResponse:

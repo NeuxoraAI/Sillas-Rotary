@@ -9,7 +9,8 @@ Endpoints:
 - DELETE /api/usuarios/{id}?permanent=true  — Hard delete user; 409 if referenced (admin)
 """
 
-from typing import Annotated
+import logging
+from typing import Annotated, Optional
 
 import psycopg2  # noqa: F401  — used for FK violation detection
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -17,6 +18,10 @@ from pydantic import BaseModel, EmailStr, field_validator
 
 from database import get_db, _DBAdapter
 from routers.auth import CurrentUser, require_admin, _hash_password
+from utils.email import EmailDeliveryError, send_invite
+from utils.tokens import INVITE_TTL_SQL, generate_raw_token, hash_token
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -30,7 +35,11 @@ _VALID_ROLES = {"admin", "capturista", "tecnico", "organizacion"}
 class UsuarioCreateRequest(BaseModel):
     nombre: str
     email: EmailStr
-    password: str
+    # Optional: when omitted (the new default), the user is created passwordless
+    # (activo=FALSE, password_hash=NULL) and an invite email is sent so they set
+    # their own password. When provided (legacy path), the account is created
+    # active with that password — kept for backward compatibility.
+    password: Optional[str] = None
     rol: str
 
     @field_validator("nombre")
@@ -43,7 +52,9 @@ class UsuarioCreateRequest(BaseModel):
 
     @field_validator("password")
     @classmethod
-    def password_min_length(cls, v: str) -> str:
+    def password_min_length(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
         if len(v) < 8:
             raise ValueError("La contraseña debe tener al menos 8 caracteres")
         return v
@@ -63,6 +74,9 @@ class UsuarioResponse(BaseModel):
     rol: str
     activo: bool
     organizacion_id: int | None = None
+    # True when the account was created via invite and has not been activated
+    # yet (activo=FALSE AND password_hash IS NULL). Derived server-side.
+    pending: bool = False
 
 
 class UsuarioUpdateRequest(BaseModel):
@@ -129,19 +143,56 @@ def create_usuario(
             detail="El email ya está registrado",
         )
 
-    password_hash = _hash_password(body.password)
+    # Two creation paths:
+    #  - Legacy (password provided): hash it, account is active immediately.
+    #  - Invite (no password): password_hash=NULL, activo=FALSE, then email a
+    #    one-time invite link so the user sets their own password (proving email
+    #    ownership). The account stays Pendiente until activation.
+    invite_flow = body.password is None
 
-    row = db.execute(
-        """
-        INSERT INTO usuarios (nombre, email, password_hash, rol)
-        VALUES (%s, %s, %s, %s)
-        RETURNING id, nombre, email, rol, activo
-        """,
-        (body.nombre.strip(), body.email.lower(), password_hash, body.rol),
-    ).fetchone()
+    if invite_flow:
+        row = db.execute(
+            """
+            INSERT INTO usuarios (nombre, email, password_hash, rol, activo)
+            VALUES (%s, %s, NULL, %s, FALSE)
+            RETURNING id, nombre, email, rol, activo
+            """,
+            (body.nombre.strip(), body.email.lower(), body.rol),
+        ).fetchone()
+    else:
+        password_hash = _hash_password(body.password)
+        row = db.execute(
+            """
+            INSERT INTO usuarios (nombre, email, password_hash, rol)
+            VALUES (%s, %s, %s, %s)
+            RETURNING id, nombre, email, rol, activo
+            """,
+            (body.nombre.strip(), body.email.lower(), password_hash, body.rol),
+        ).fetchone()
 
     if row is None:
         raise HTTPException(status_code=500, detail="Error al crear el usuario")
+
+    # Invite path: issue a single-use invite token (72h) and email it.
+    # Fail-open — if delivery fails the user stays Pendiente and an admin can
+    # resend via POST /usuarios/{id}/reenviar-invitacion.
+    if invite_flow:
+        raw_token = generate_raw_token()
+        db.execute(
+            f"""
+            INSERT INTO password_tokens (usuario_id, token_hash, tipo, expires_at)
+            VALUES (%s, %s, 'invite', NOW() + INTERVAL '{INVITE_TTL_SQL}')
+            """,
+            (row["id"], hash_token(raw_token)),
+        )
+        try:
+            send_invite(row["email"], raw_token, row["nombre"])
+        except EmailDeliveryError:
+            logger.warning(
+                "Invite email delivery failed for usuario_id=%s; user remains "
+                "Pendiente until an admin resends the invitation.",
+                row["id"],
+            )
 
     # If creating an organization user, auto-create the organizaciones entry
     # and add the user as a leader so /api/me/perfil resolves correctly
@@ -166,6 +217,7 @@ def create_usuario(
         email=row["email"],
         rol=row["rol"],
         activo=row["activo"],
+        pending=invite_flow,
     )
 
 
@@ -178,6 +230,7 @@ def list_usuarios(
     rows = db.execute(
         """
         SELECT u.id, u.nombre, u.email, u.rol, u.activo,
+               (u.password_hash IS NULL AND NOT u.activo) AS pending,
                (
                    SELECT MIN(ol.organizacion_id)
                    FROM organizaciones_lideres ol
@@ -196,6 +249,7 @@ def list_usuarios(
             rol=row["rol"],
             activo=row["activo"],
             organizacion_id=row["organizacion_id"],
+            pending=row["pending"],
         )
         for row in rows
     ]
