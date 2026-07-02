@@ -116,6 +116,8 @@
     elaboro_estudio: "Elaboró el estudio",
     sede: "Sede",
     ciudad_registro: "Ciudad de registro",
+    credencial_url: "Credencial",
+    comprobante_domicilio_url: "Comprobante de domicilio",
     // Gestión
     entidad_solicitante: "Entidad solicitante",
     prioridad: "Prioridad",
@@ -131,6 +133,7 @@
     control_tronco: "Control de tronco",
     control_cabeza: "Control de cabeza",
     control_de_piernas: "Control de piernas",
+    foto_url: "Fotografía del paciente",
     // Tutor
     numero_tutor: "Tutor",
     edad: "Edad",

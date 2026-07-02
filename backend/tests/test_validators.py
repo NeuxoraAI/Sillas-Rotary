@@ -243,7 +243,7 @@ class TestValidateEntidadSolicitante:
         from validators import validate_entidad_solicitante
 
         with pytest.raises(ValueError, match="entidad_solicitante"):
-            validate_entidad_solicitante("Hospital Civil de León Gto. México - Sede Principal Norte")
+            validate_entidad_solicitante("Hospital Civil de León Guanajuato México - Sede Principal Norte Centro")
 
     def test_pasa_exactamente_64_chars(self):
         """Text of exactly 64 characters passes validation."""
@@ -486,8 +486,9 @@ class TestValidateNumericLimits:
 
     def test_ingreso_mensual_fuera_de_rango(self):
         from validators import validate_ingreso_mensual
+        # Límite unificado a 999,999,999 (commit dd341e5, back+front).
         with pytest.raises(ValueError, match="ingreso_mensual"):
-            validate_ingreso_mensual(10000000)
+            validate_ingreso_mensual(1_000_000_000)
 
     def test_num_hijos_en_rango(self):
         from validators import validate_num_hijos
@@ -521,8 +522,9 @@ class TestValidateNumericLimits:
 
     def test_monto_otras_fuentes_fuera_de_rango(self):
         from validators import validate_monto_otras_fuentes
+        # Límite unificado a 999,999,999 (commit dd341e5, back+front).
         with pytest.raises(ValueError, match="monto_otras_fuentes"):
-            validate_monto_otras_fuentes(1000000)
+            validate_monto_otras_fuentes(1_000_000_000)
 
 
 class TestValidateCurp:

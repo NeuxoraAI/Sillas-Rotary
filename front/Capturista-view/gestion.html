@@ -813,6 +813,26 @@
           errors.push({ form: "Gestión", label: "Justificación", message: "Este campo es obligatorio cuando se marca justificación", url: "gestion.html" });
         }
 
+        // Evidencia fotográfica y documental obligatoria para finalizar (Issue #121).
+        // Se comprueba la referencia persistida (storage://...) guardada en los
+        // borradores de los pasos anteriores, no el <input type="file">, porque la
+        // carga es asíncrona. El Estudio Clínico permanece opcional.
+        const parseDraft = (key) => {
+          try { return JSON.parse(localStorage.getItem(key) || "{}") || {}; }
+          catch { return {}; }
+        };
+        const draftSocio = parseDraft("draft_socioeconomico");
+        const draftTecnica = parseDraft("draft_tecnica");
+        if (!(draftSocio.estudio?.credencial_url || "").trim()) {
+          errors.push({ form: "Socioeconómico", label: "Credencial", message: "Adjunte la credencial para finalizar", url: "socioeconomico.html" });
+        }
+        if (!(draftSocio.estudio?.comprobante_domicilio_url || "").trim()) {
+          errors.push({ form: "Socioeconómico", label: "Comprobante de domicilio", message: "Adjunte el comprobante de domicilio para finalizar", url: "socioeconomico.html" });
+        }
+        if (!(draftTecnica.foto_url || "").trim()) {
+          errors.push({ form: "Técnica", label: "Fotografía del paciente", message: "Adjunte la fotografía del paciente para finalizar", url: "tecnica.html" });
+        }
+
         return errors.concat(collectDraftFormatErrors("Gestión", "gestion.html"));
       }
 
@@ -1009,7 +1029,15 @@
         }
 
         try {
-          // 1. Validate gestion form fields client-side
+          // 1. Persist gestion data FIRST, before any validation early-return.
+          // The completeness modal can send the user to socioeconomico.html /
+          // tecnica.html (e.g. a missing photo/credencial evidence — Issue #121);
+          // if we saved only after validation, that jump would lose whatever the
+          // capturista already typed here.
+          const gestionData = getGestionFormData();
+          localStorage.setItem("draft_gestion", JSON.stringify(gestionData));
+
+          // 2. Validate gestion form fields client-side
           const gestionErrors = collectGestionFinalErrors();
           if (gestionErrors.length > 0) {
             showValidationModal(gestionErrors, {
@@ -1019,10 +1047,6 @@
             if (btn) { btn.disabled = false; btn.textContent = "Finalizar Registro"; }
             return;
           }
-
-          // 2. Save current gestion data to localStorage
-          const gestionData = getGestionFormData();
-          localStorage.setItem("draft_gestion", JSON.stringify(gestionData));
 
           // 3. Get drafts from localStorage
           const draftSocioRaw = localStorage.getItem("draft_socioeconomico");

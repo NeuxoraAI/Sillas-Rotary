@@ -1996,6 +1996,37 @@
       }
 
       // -- Handler: CONTINUAR (offline-first) --
+      // Sube la foto pendiente (si la hay) bloqueando clics repetidos y dando
+      // feedback en el botón que dispara la navegación. Devuelve true si es
+      // seguro navegar; false si la subida falló (el usuario debe reintentar).
+      async function uploadFotoAntesDeNavegar(btnId) {
+        const hasPendingPhoto = Boolean(capturedPhotoFile || document.getElementById("file-upload")?.files?.[0]);
+        if (!hasPendingPhoto) return true;
+        if (solicitudSubmitInProgress) return false;
+
+        const btn = document.getElementById(btnId);
+        const originalText = btn?.textContent || "";
+        solicitudSubmitInProgress = true;
+        if (btn) { btn.disabled = true; btn.textContent = "Subiendo foto…"; }
+        try {
+          await uploadFoto(document.getElementById("file-upload"));
+          return true;
+        } catch (err) {
+          console.warn("No se pudo subir la foto antes de navegar:", err);
+          const errorEl = document.getElementById("error-msg");
+          if (errorEl) {
+            errorEl.textContent = err instanceof Error
+              ? err.message
+              : "No se pudo subir la foto. Revisá tu conexión e intentá de nuevo.";
+            errorEl.classList.remove("hidden");
+          }
+          return false;
+        } finally {
+          solicitudSubmitInProgress = false;
+          if (btn) { btn.disabled = false; btn.textContent = originalText; }
+        }
+      }
+
       async function continuarSolicitudTecnica() {
         const formatErrors = collectDraftFormatErrors("Técnica", "tecnica.html");
         if (formatErrors.length > 0) {
@@ -2006,11 +2037,8 @@
           return;
         }
         // Upload any pending photo first so it isn't lost when navigating away.
-        try {
-          await uploadFoto(document.getElementById("file-upload"));
-        } catch (err) {
-          console.warn("No se pudo subir la foto antes de continuar:", err);
-        }
+        // A failed upload keeps the user here to retry instead of navigating.
+        if (!(await uploadFotoAntesDeNavegar("btn-continuar-tecnica"))) return;
         const formData = getTecnicaFormData();
         localStorage.setItem("draft_tecnica", JSON.stringify(formData));
         window.location.href = "gestion.html";
@@ -2028,11 +2056,7 @@
         }
 
         // Upload any pending photo first so it survives the round-trip.
-        try {
-          await uploadFoto(document.getElementById("file-upload"));
-        } catch (err) {
-          console.warn("No se pudo subir la foto antes de regresar:", err);
-        }
+        if (!(await uploadFotoAntesDeNavegar("btn-regresar-tecnica"))) return;
         // Save current form data before leaving
         const formData = getTecnicaFormData();
         localStorage.setItem("draft_tecnica", JSON.stringify(formData));
