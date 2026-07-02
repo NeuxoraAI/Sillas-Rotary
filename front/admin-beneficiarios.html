@@ -1402,9 +1402,9 @@
             (hasTutor2Data ? '<button type="button" id="btn-delete-tutor2" class="text-xs font-bold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg">Eliminar Tutor 2</button>' : '') +
             '</div>' +
             '<div class="grid grid-cols-3 gap-3">' +
-            _field(p + "nombres", "Nombre(s)", "text", { maxlength: 60, required: true }) +
-            _field(p + "apellido_paterno", "Apellido Paterno", "text", { maxlength: 40, required: true }) +
-            _field(p + "apellido_materno", "Apellido Materno", "text", { maxlength: 40 }) +
+            _field(p + "nombres", "Nombre(s)", "text", { maxlength: 60, required: true, "data-uppercase": "true" }) +
+            _field(p + "apellido_paterno", "Apellido Paterno", "text", { maxlength: 40, required: true, "data-uppercase": "true" }) +
+            _field(p + "apellido_materno", "Apellido Materno", "text", { maxlength: 40, "data-uppercase": "true" }) +
             '</div>' +
             '<div class="grid grid-cols-2 gap-3">' +
             _field(p + "edad", "Edad", "number", { min: 0, max: 99, required: true }) +
@@ -1416,7 +1416,7 @@
             '</div>' +
             '<div class="space-y-1"><label class="text-xs font-semibold text-slate-500">Vivienda</label><select id="field-' + p + 'vivienda" name="' + p + 'vivienda" class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 py-2 px-3" required>' + vivOpts + '</select></div>' +
             '<div class="space-y-2">' +
-            _field(p + "fuente_empleo", "Fuente Empleo", "text", { maxlength: 80 }) +
+            _field(p + "fuente_empleo", "Fuente Empleo", "text", { maxlength: 80, "data-uppercase": "true" }) +
             '</div>' +
             '<div class="grid grid-cols-2 gap-3">' +
             _field(p + "antiguedad_anios", "Antigüedad (años)", "number", { min: 0, max: 50 }) +
@@ -1427,7 +1427,7 @@
             '<input id="field-' + p + 'ingreso_mensual" name="' + p + 'ingreso_mensual" type="text" class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 py-2 px-3" />' +
             '</div>' +
             '<div class="grid grid-cols-2 gap-3">' +
-            _field(p + "otras_fuentes_ingreso", "Otra fuente", "text", { maxlength: 100 }) +
+            _field(p + "otras_fuentes_ingreso", "Otra fuente", "text", { maxlength: 100, "data-uppercase": "true" }) +
             '<div class="space-y-1"><label class="text-xs font-semibold text-slate-500">Monto adicional ($)</label><input id="field-' + p + 'monto_otras_fuentes" name="' + p + 'monto_otras_fuentes" type="text" class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 py-2 px-3" /></div>' +
             '</div>' +
             '<fieldset class="mt-3"><legend class="text-xs font-bold text-slate-500 uppercase">IMSS</legend><div class="flex gap-4 mt-1">' +
@@ -1459,16 +1459,16 @@
         return '' +
           '<h3 class="text-sm font-bold text-slate-700 mb-3">Datos del Beneficiario</h3>' +
           '<div class="grid grid-cols-2 gap-3">' +
-          _field("nombres", "Nombres", "text", { maxlength: 60, required: true }) +
-          _field("apellido_paterno", "Apellido Paterno", "text", { maxlength: 40, required: true }) +
-          _field("apellido_materno", "Apellido Materno", "text", { maxlength: 40 }) +
+          _field("nombres", "Nombres", "text", { maxlength: 60, required: true, "data-uppercase": "true" }) +
+          _field("apellido_paterno", "Apellido Paterno", "text", { maxlength: 40, required: true, "data-uppercase": "true" }) +
+          _field("apellido_materno", "Apellido Materno", "text", { maxlength: 40, "data-uppercase": "true" }) +
           _field("fecha_nacimiento", "Fecha de Nacimiento", "date") +
           '<div class="space-y-1"><label class="text-xs font-semibold text-slate-500">Sexo</label><select id="field-sexo" name="sexo" class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 py-2 px-3"><option value="M" ' + (sexoChecked === "M" ? "selected" : "") + '>Masculino</option><option value="F" ' + (sexoChecked === "F" ? "selected" : "") + '>Femenino</option></select></div>' +
           _fieldArea("diagnostico", "Diagnóstico", { maxlength: 160 }) +
-          _field("calle", "Calle", "text", { maxlength: 120 }) +
-          _field("num_ext", "Núm. Ext.", "text", { maxlength: 10 }) +
-          _field("num_int", "Núm. Int.", "text", { maxlength: 10 }) +
-          _field("colonia", "Colonia", "text", { maxlength: 120 }) +
+          _field("calle", "Calle", "text", { maxlength: 120, "data-uppercase": "true" }) +
+          _field("num_ext", "Núm. Ext.", "text", { maxlength: 10, "data-uppercase": "true" }) +
+          _field("num_int", "Núm. Int.", "text", { maxlength: 10, "data-uppercase": "true" }) +
+          _field("colonia", "Colonia", "text", { maxlength: 120, "data-uppercase": "true" }) +
           '<div class="space-y-1"><label class="text-xs font-semibold text-slate-500">Estado</label><select id="field-estado_codigo" name="estado_codigo" data-searchable class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 py-2 px-3">' + estOpts + '</select></div>' +
           '<div class="space-y-1"><label class="text-xs font-semibold text-slate-500">Ciudad / Municipio</label><select id="field-ciudad" name="ciudad" data-searchable class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 py-2 px-3" disabled><option value="">Selecciona un estado primero</option></select></div>' +
           _field("telefonos", "Teléfono (10 dígitos)", "tel", { maxlength: 10 }) +
@@ -1484,9 +1484,9 @@
           '</div>' +
           '<h3 class="text-sm font-bold text-slate-700 mb-3 mt-4 pt-4 border-t border-slate-100">Datos del Estudio</h3>' +
           '<div class="grid grid-cols-2 gap-3">' +
-          _field("sede", "Sede", "text", { maxlength: 80, required: true }) +
+          _field("sede", "Sede", "text", { maxlength: 80, required: true, "data-uppercase": "true" }) +
           _field("fecha_estudio", "Fecha de Estudio", "date", { required: true }) +
-          _field("ciudad_registro", "Ciudad de Registro", "text", { maxlength: 80, required: true }) +
+          _field("ciudad_registro", "Ciudad de Registro", "text", { maxlength: 80, required: true, "data-uppercase": "true" }) +
           '<div class="space-y-1"><label class="text-xs font-semibold text-slate-500">¿Tuvo silla previa?</label><select id="field-tuvo_silla_previa" name="tuvo_silla_previa" class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 py-2 px-3"><option value="false" ' + (draft.tuvo_silla_previa === "false" ? "selected" : "") + '>No</option><option value="true" ' + (draft.tuvo_silla_previa === "true" ? "selected" : "") + '>Sí</option></select></div>' +
           '<div class="space-y-1"><label class="text-xs font-semibold text-slate-500">Cómo obtuvo silla</label><select id="field-como_obtuvo_silla" name="como_obtuvo_silla" class="w-full text-sm border-2 border-slate-200 rounded-xl bg-slate-50 py-2 px-3"><option value="">Selecciona una opción</option><option value="COMPRA">Compra</option><option value="DONACION">Donación</option></select></div>' +
           // Issue #106: status es solo lectura — el admin no puede revertir completo->borrador.
@@ -1531,7 +1531,7 @@
           </div>
           <h3 class="text-sm font-bold text-slate-700 mb-3">Gestión de Donación</h3>
           <div class="grid grid-cols-2 gap-3">
-            ${_field("entidad_solicitante", "Entidad Solicitante", "text", { maxlength: 64 })}
+            ${_field("entidad_solicitante", "Entidad Solicitante", "text", { maxlength: 64, "data-uppercase": "true" })}
             ${_select("prioridad", "Prioridad", prioridades)}
             ${_fieldArea("justificacion", "Justificación", { maxlength: 500 })}
           </div>`;
