@@ -109,6 +109,15 @@ def _validate_all_complete(
     if not estudio_row.get("ciudad_registro"):
         missing.append({"form": "estudio", "field": "ciudad_registro"})
 
+    # Evidencia documental obligatoria (Issue #121). Se valida la referencia
+    # persistida (`storage://...`), no el control <input type="file">, porque la
+    # carga es asíncrona. El Estudio Clínico queda deliberadamente opcional.
+    if not estudio_row.get("credencial_url"):
+        missing.append({"form": "estudio", "field": "credencial_url"})
+
+    if not estudio_row.get("comprobante_domicilio_url"):
+        missing.append({"form": "estudio", "field": "comprobante_domicilio_url"})
+
     # entidad_solicitante and prioridad are from gestion form,
     # stored in solicitud row
     if not solicitud_row.get("entidad_solicitante"):
@@ -132,6 +141,11 @@ def _validate_all_complete(
     for field in tecnica_catalog_fields:
         if not solicitud_row.get(field):
             missing.append({"form": "solicitud", "field": field})
+
+    # Fotografía del paciente obligatoria (Issue #121). Igual que la evidencia
+    # documental, se valida la referencia persistida (`storage://...`).
+    if not solicitud_row.get("foto_url"):
+        missing.append({"form": "solicitud", "field": "foto_url"})
 
     # ── Tutor 1 required fields ────────────────────────────────────────────
     tutor1 = next((t for t in tutores_rows if t.get("numero_tutor") == 1), None)
