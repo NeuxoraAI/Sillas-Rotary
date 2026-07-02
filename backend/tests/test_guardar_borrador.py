@@ -98,8 +98,7 @@ class TestCrearBorrador:
         assert data["estudio_id"] > 0
         assert data["solicitud_id"] > 0
         assert data["beneficiario_id"] > 0
-        # Issue #32: folio is no longer generated; CURP is the natural identifier.
-        assert data["folio"] is None
+        # Issue #32: folio column dropped; CURP is the natural identifier.
         assert "curp" in data
         assert data["status"] == "borrador"
 
@@ -124,8 +123,6 @@ class TestCrearBorrador:
         assert res.status_code == 201, f"Expected 201, got {res.status_code}: {res.text}"
         data = res.json()
         assert data["beneficiario_id"] > 0
-        # Issue #32: folio is no longer generated for new drafts.
-        assert data["folio"] is None
 
     def test_create_with_tutor1_data(self, client, capturista_headers, region_lon):
         """CREATE mode: include tutor 1 data → 201."""
@@ -265,8 +262,6 @@ class TestActualizarBorrador:
         assert res.status_code == 201, f"Expected 201, got {res.status_code}: {res.text}"
         data = res.json()
         assert data["estudio_id"] == ids["estudio_id"]
-        # Issue #32: legacy draft created in this test has no folio (not generated).
-        assert "folio" in data
 
     def test_update_adds_tutor(self, client, capturista_headers, region_lon):
         """UPDATE mode: add tutor data to existing borrador."""

@@ -23,7 +23,6 @@ class TestMisCapturas:
         assert len(data) >= 1
         for item in data:
             assert "estudio_id" in item
-            assert "folio" in item
             assert "beneficiario_nombre" in item
             assert "elaboro_estudio" in item
             assert "fecha_estudio" in item
@@ -307,7 +306,6 @@ class TestMeBeneficiarios:
         assert len(data) >= 1
         for item in data:
             assert "estudio_id" in item
-            assert "folio" in item
             assert "beneficiario_nombre" in item
             assert "status" in item
             assert "edit_url" in item
@@ -499,11 +497,11 @@ class TestBeneficiarioSearchFilter:
         assert res.status_code == 200
         data = res.json()
         assert len(data) >= 1
-        # All results should contain "mar" (case-insensitive) in beneficiario_nombre or folio
+        # All results should contain "mar" (case-insensitive) in beneficiario_nombre or curp_benef
         for item in data:
             name_match = "mar" in item["beneficiario_nombre"].lower()
-            folio_match = item["folio"] and "mar" in item["folio"].lower()
-            assert name_match or folio_match, f"No match in {item}"
+            curp_match = item.get("beneficiario", {}).get("curp_benef") and "mar" in item["beneficiario"]["curp_benef"].lower()
+            assert name_match or curp_match, f"No match in {item}"
 
     def test_beneficiarios_search_no_results(self, client, capturista_headers):
         """GET /api/me/beneficiarios?q=ZZZZNOTFOUND returns empty."""
@@ -724,7 +722,7 @@ class TestOrganizacionesCRUD:
         assert res.status_code == 200
         beneficiarios = res.json()
         assert len(beneficiarios) >= 1
-        assert any("folio" in b and "beneficiario_nombre" in b for b in beneficiarios)
+        assert any("beneficiario_nombre" in b for b in beneficiarios)
 
     def test_voluntario_registered_on_org_capture(
         self, client, admin_headers, region_lon

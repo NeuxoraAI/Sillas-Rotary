@@ -5,6 +5,8 @@ TDD: Tests written BEFORE the implementation.
 Spec reference: user-management specification (fase-1-fundacion).
 """
 
+from unittest.mock import patch
+
 import pytest
 
 
@@ -91,6 +93,109 @@ class TestCreateUser:
         }, headers=admin_headers)
 
         assert res.status_code == 422
+
+
+class TestInviteOnCreate:
+    """POST /api/usuarios without a password → passwordless (Pendiente) account."""
+
+    def test_create_user_without_password_creates_pending_201(self, client, admin_headers):
+        """No password → 201, activo=False, pending=True, invite email sent."""
+        with patch("routers.usuarios.send_invite") as mock_invite:
+            res = client.post("/api/usuarios", json={
+                "nombre": "Invitado Uno",
+                "email": "invite1@test.mx",
+                "rol": "capturista",
+            }, headers=admin_headers)
+
+        assert res.status_code == 201
+        data = res.json()
+        assert data["activo"] is False
+        assert data["pending"] is True
+        mock_invite.assert_called_once()
+        # send_invite(to_email, raw_token) — raw token must be a non-empty string.
+        args, _ = mock_invite.call_args
+        assert args[0] == "invite1@test.mx"
+        assert isinstance(args[1], str) and len(args[1]) > 0
+
+    def test_create_user_without_password_sets_hash_null(self, client, admin_headers, _test_db_conn):
+        """The passwordless account row has password_hash IS NULL in the DB."""
+        with patch("routers.usuarios.send_invite"):
+            res = client.post("/api/usuarios", json={
+                "nombre": "Invitado Dos",
+                "email": "invite2@test.mx",
+                "rol": "tecnico",
+            }, headers=admin_headers)
+        uid = res.json()["usuario_id"]
+
+        import psycopg2.extras
+        with _test_db_conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute("SELECT password_hash, activo FROM usuarios WHERE id = %s", (uid,))
+            row = cur.fetchone()
+        _test_db_conn.commit()
+        assert row["password_hash"] is None
+        assert row["activo"] is False
+
+    def test_create_user_without_password_issues_invite_token(self, client, admin_headers, _test_db_conn):
+        """A single invite token (tipo='invite', unused) is stored for the user."""
+        with patch("routers.usuarios.send_invite"):
+            res = client.post("/api/usuarios", json={
+                "nombre": "Invitado Tres",
+                "email": "invite3@test.mx",
+                "rol": "capturista",
+            }, headers=admin_headers)
+        uid = res.json()["usuario_id"]
+
+        import psycopg2.extras
+        with _test_db_conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                "SELECT tipo, used_at FROM password_tokens WHERE usuario_id = %s", (uid,)
+            )
+            tokens = cur.fetchall()
+        _test_db_conn.commit()
+        assert len(tokens) == 1
+        assert tokens[0]["tipo"] == "invite"
+        assert tokens[0]["used_at"] is None
+
+    def test_create_user_email_failure_still_201_pending(self, client, admin_headers):
+        """Fail-open: EmailDeliveryError does not roll back the user (still 201)."""
+        from utils.email import EmailDeliveryError
+        with patch("routers.usuarios.send_invite", side_effect=EmailDeliveryError("down")):
+            res = client.post("/api/usuarios", json={
+                "nombre": "Invitado Cuatro",
+                "email": "invite4@test.mx",
+                "rol": "tecnico",
+            }, headers=admin_headers)
+        assert res.status_code == 201
+        assert res.json()["pending"] is True
+
+    def test_create_user_with_password_not_pending(self, client, admin_headers):
+        """Legacy path (password provided) stays active and not pending."""
+        res = client.post("/api/usuarios", json={
+            "nombre": "Con Password",
+            "email": "withpass@test.mx",
+            "password": "password123",
+            "rol": "capturista",
+        }, headers=admin_headers)
+        assert res.status_code == 201
+        data = res.json()
+        assert data["activo"] is True
+        assert data["pending"] is False
+
+    def test_list_usuarios_includes_pending_badge(self, client, admin_headers):
+        """GET /usuarios exposes pending=True for a passwordless account."""
+        with patch("routers.usuarios.send_invite"):
+            client.post("/api/usuarios", json={
+                "nombre": "Invitado Lista",
+                "email": "invitelist@test.mx",
+                "rol": "capturista",
+            }, headers=admin_headers)
+
+        res = client.get("/api/usuarios", headers=admin_headers)
+        assert res.status_code == 200
+        users = res.json()
+        pend = next(u for u in users if u["email"] == "invitelist@test.mx")
+        assert pend["pending"] is True
+        assert pend["activo"] is False
 
 
 class TestListUsers:

@@ -2650,6 +2650,10 @@
             control_cabeza: draftTecnica.control_cabeza || null,
             control_de_piernas: draftTecnica.control_de_piernas || null,
             padecimiento: draftTecnica.padecimiento || null,
+            soporte_oxigeno:
+              typeof draftTecnica.soporte_oxigeno === "boolean"
+                ? draftTecnica.soporte_oxigeno
+                : null,
             altura_total_in: draftTecnica.altura_total_in || null,
             peso_kg: draftTecnica.peso_kg || null,
             medida_cabeza_asiento: draftTecnica.medida_cabeza_asiento || null,
@@ -2661,6 +2665,9 @@
             unidad_peso_captura: draftTecnica.unidad_peso_captura || null,
             foto_path: draftTecnica.foto_path || null,
             foto_url: draftTecnica.foto_url || null,
+            equipo_solicitado: draftTecnica.equipo_solicitado || null,
+            estudio_clinico_path: draftTecnica.estudio_clinico_path || null,
+            estudio_clinico_url: draftTecnica.estudio_clinico_url || null,
             // Gestion
             entidad_solicitante: draftGestion.entidad_solicitante || null,
             prioridad: draftGestion.prioridad || null,
@@ -3962,6 +3969,13 @@
             unidad_medida: solicitud.unidad_captura || solicitud.unidad_medida || null,
             foto_url: solicitud.foto_url || null,
             foto_path: solicitud.foto_path || null,
+            soporte_oxigeno:
+              typeof solicitud.soporte_oxigeno === "boolean"
+                ? solicitud.soporte_oxigeno
+                : null,
+            equipo_solicitado: solicitud.equipo_solicitado || null,
+            estudio_clinico_path: solicitud.estudio_clinico_path || null,
+            estudio_clinico_url: solicitud.estudio_clinico_url || null,
           }));
 
         }

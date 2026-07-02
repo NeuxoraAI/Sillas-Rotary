@@ -29,6 +29,7 @@
 <link href="../assets/css/theme.css" rel="stylesheet"/>
 <script src="../assets/js/session-guard.js"></script>
 <script src="../assets/js/apiClient.js"></script>
+<script src="../assets/js/change-password.js"></script>
 <script src="../assets/js/confirmation-modal.js?v=2"></script>
 <script src="../assets/js/mascot.js?v=2"></script>
 <script src="../assets/js/theme-toggle.js"></script>
@@ -254,6 +255,15 @@
         </div>
       </div>
     </section>
+
+    <!-- Change password -->
+    <section class="card rise rise-4 overflow-hidden">
+      <div class="px-6 py-4 sm:px-8 border-b border-slate-100 flex items-center gap-2.5">
+        <span class="material-symbols-outlined text-ug-orange-pure text-xl">lock_reset</span>
+        <h2 class="text-base font-bold" style="color: var(--c-title);">Cambiar contraseña</h2>
+      </div>
+      <div id="change-password-section" class="px-6 py-5 sm:px-8"></div>
+    </section>
   </div>
 </main>
 
@@ -318,6 +328,9 @@
 <script>
   // ── Auth guard ──────────────────────────────────────────────────────────────
   SessionGuard.requireRole(['capturista'], '../login.html');
+
+  // Shared change-password form.
+  ChangePassword.init({ containerId: 'change-password-section', apiPath: '/me/password', authFetchFn: SessionGuard.authFetch });
   const session = SessionGuard.getSession();
 
   // Populate user info

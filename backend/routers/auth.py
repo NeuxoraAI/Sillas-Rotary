@@ -83,7 +83,14 @@ def _create_jwt(usuario_id: int, rol: str) -> str:
     return jwt.encode(payload, _JWT_SECRET, algorithm=_JWT_ALGORITHM)
 
 
-def _verify_password(plain: str, hashed: str) -> bool:
+def _verify_password(plain: str, hashed: str | None) -> bool:
+    # A NULL/empty hash (a Pendiente account created via invite, not yet
+    # activated) must NEVER authenticate. Return False without invoking bcrypt.
+    # Defense-in-depth: the activo=FALSE gate already blocks these users, but
+    # this guard protects against a future gate bypass. See spec: NULL Hash
+    # Hardening.
+    if not hashed:
+        return False
     try:
         return _pwd_context.verify(plain, hashed)
     except UnknownHashError:
