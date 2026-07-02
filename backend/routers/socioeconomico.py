@@ -1209,11 +1209,11 @@ def _insertar_tutores(db: _DBAdapter, beneficiario_id: int, tutores: list[TutorI
             """
             INSERT INTO tutores
                 (beneficiario_id, numero_tutor, nombre, email, edad, nivel_estudios,
-                 estado_civil, num_hijos, vivienda, fuente_empleo, antiguedad,
+                 estado_civil, num_hijos, vivienda, fuente_empleo,
                  ingreso_mensual, tiene_imss, tiene_infonavit,
                   antiguedad_meses, antiguedad_aplica, sin_empleo,
                   otras_fuentes_aplica, otras_fuentes_ingreso, monto_otras_fuentes)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """,
             (
                 beneficiario_id,
@@ -1226,7 +1226,6 @@ def _insertar_tutores(db: _DBAdapter, beneficiario_id: int, tutores: list[TutorI
                 tutor.num_hijos if tutor.num_hijos is not None else 0,
                 tutor.vivienda or None,
                 None if tutor.sin_empleo else (tutor.fuente_empleo or None),
-                None,
                 0 if tutor.sin_empleo else tutor.ingreso_mensual,
                 _mapear_a_db(tutor.imss_estatus),
                 _mapear_a_db(tutor.infonavit_estatus),

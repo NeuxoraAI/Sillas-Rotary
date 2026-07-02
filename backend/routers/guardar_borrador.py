@@ -485,7 +485,6 @@ def _build_tutor_params(body: GuardarBorradorRequest, numero: int, beneficiario_
         g("num_hijos") if g("num_hijos") is not None else 0,
         g("vivienda"),
         None if g("sin_empleo") else (g("fuente_empleo")),
-        None,
         0 if g("sin_empleo") else (g("ingreso_mensual") or 0),
         1 if g("imss_estatus") == "SI" else 0 if g("imss_estatus") == "NO" else None,
         1 if g("infonavit_estatus") == "SI" else 0 if g("infonavit_estatus") == "NO" else None,
@@ -597,11 +596,11 @@ def _create_borrador(
                     """
                     INSERT INTO tutores
                         (beneficiario_id, numero_tutor, nombre, email, edad, nivel_estudios,
-                         estado_civil, num_hijos, vivienda, fuente_empleo, antiguedad,
+                         estado_civil, num_hijos, vivienda, fuente_empleo,
                          ingreso_mensual, tiene_imss, tiene_infonavit,
                          antiguedad_meses, antiguedad_aplica, sin_empleo,
                          otras_fuentes_aplica, otras_fuentes_ingreso, monto_otras_fuentes)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """,
                     params,
                 )
@@ -761,11 +760,11 @@ def _update_borrador(
                     """
                     INSERT INTO tutores
                         (beneficiario_id, numero_tutor, nombre, email, edad, nivel_estudios,
-                         estado_civil, num_hijos, vivienda, fuente_empleo, antiguedad,
+                         estado_civil, num_hijos, vivienda, fuente_empleo,
                          ingreso_mensual, tiene_imss, tiene_infonavit,
                          antiguedad_meses, antiguedad_aplica, sin_empleo,
                          otras_fuentes_aplica, otras_fuentes_ingreso, monto_otras_fuentes)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """,
                     params,
                 )

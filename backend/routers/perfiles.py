@@ -363,8 +363,6 @@ def get_my_beneficiarios(
             e.id                      AS estudio_id,
             e.beneficiario_id,
             e.usuario_id,
-            e.otras_fuentes_ingreso,
-            e.monto_otras_fuentes,
             e.tuvo_silla_previa,
             e.como_obtuvo_silla,
             e.elaboro_estudio,
