@@ -89,9 +89,9 @@ def seed():
         else:
             print(f"  ⚠️  Región {codigo} ya existe, skip.")
 
-    # 3. Admin user
-    admin_email = "admin@vidaug.mx"
-    admin_password = "changeme123"
+    # 3. Admin user (credentials from env, never hardcoded)
+    admin_email = os.environ["SEED_ADMIN_EMAIL"]
+    admin_password = os.environ["SEED_ADMIN_PASSWORD"]
     password_hash = _pwd_context.hash(admin_password)
 
     cur.execute(
