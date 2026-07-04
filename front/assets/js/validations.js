@@ -348,6 +348,14 @@
    */
   function setupNameField(inputEl) {
     if (!inputEl) return;
+    // Desactivar el autocompletado del navegador en los campos de nombre. Sin
+    // esto, Chrome reconoce "apellido_paterno" como el campo canónico
+    // `family-name` y SOBRESCRIBE con el autofill el valor que restauramos del
+    // borrador al volver al formulario — se veía como si "no se persistiera" el
+    // apellido paterno (los otros nombres no son campos de autofill estándar, por
+    // eso solo se perdía ese). Se fija antes del restore diferido.
+    inputEl.setAttribute("autocomplete", "off");
+    inputEl.setAttribute("autocorrect", "off");
     inputEl.addEventListener("input", () => {
       inputEl.value = inputEl.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ .]/g, "");
     });
@@ -743,21 +751,28 @@
   // `legend` apunta a un <p> DEDICADO al error (no al `*-status`, que lo maneja la
   // maquinaria de subida de documentos y lo sobrescribiría). Así el mensaje persiste
   // sin depender del orden de inicialización.
+  // `message` es el texto específico que se muestra en la leyenda roja cuando
+  // falta el archivo. Debe mantener el MISMO patrón ("Adjunte … para finalizar")
+  // en las tres evidencias para que credencial/comprobante coincidan con la foto
+  // del paciente (Issue: mensajes de evidencia consistentes, no genéricos).
   const EVIDENCE_TARGETS = {
     credencial_url: {
       page: "socioeconomico",
       container: "#credencial-file",
       legend: "#credencial-error",
+      message: "Adjunte la credencial (INE) para finalizar",
     },
     comprobante_domicilio_url: {
       page: "socioeconomico",
       container: "#comprobante-domicilio-file",
       legend: "#comprobante-domicilio-error",
+      message: "Adjunte el comprobante de domicilio para finalizar",
     },
     foto_url: {
       page: "tecnica",
       container: "[data-purpose='patient-photo-upload']",
       legend: "#photo-error",
+      message: "Adjunte la fotografía del paciente para finalizar",
     },
   };
 
@@ -810,6 +825,7 @@
         kind: "evidencia",
         container: evidence.container,
         legend: evidence.legend,
+        message: evidence.message,
         field,
         form,
       };
@@ -824,8 +840,14 @@
       page = _FIELD_PAGE_OVERRIDES[field];
     }
 
+    // `numero_tutor` es la señal que emite el backend cuando el tutor completo
+    // falta (no existe la fila): NO hay un input `tutorN_numero_tutor`, así que
+    // apuntamos al primer campo real del bloque (`tutorN_nombres`) para que el
+    // resaltado y el scroll lleven al usuario a completar ese tutor.
+    const baseField = field === "numero_tutor" ? "nombres" : field;
+
     // name del input: overrides puntuales + prefijo de tutor
-    let name = _FIELD_NAME_OVERRIDES[field] || field;
+    let name = _FIELD_NAME_OVERRIDES[baseField] || baseField;
     if (form === "tutor1") name = `tutor1_${name}`;
     else if (form === "tutor2") name = `tutor2_${name}`;
 
@@ -926,47 +948,12 @@
     }
   }
 
-  // ───── DIAGNÓSTICO TEMPORAL #123 (quitar luego) ─────
-  // Muestra un banner visible arriba de la página con lo que applyStashed encontró,
-  // para depurar sin consola en el navegador real del usuario.
-  function _debugBanner123(pageName, raw) {
-    var count = 0;
-    try {
-      var obj = raw ? JSON.parse(raw) : null;
-      var arr = obj && obj[pageName];
-      count = Array.isArray(arr) ? arr.length : 0;
-    } catch (e) {}
-    var el = document.getElementById("__sr123_debug");
-    if (!el) {
-      el = document.createElement("div");
-      el.id = "__sr123_debug";
-      el.style.cssText =
-        "position:fixed;top:0;left:0;right:0;z-index:99999;background:#111;color:#0f0;" +
-        "font:12px/1.4 monospace;padding:8px 12px;white-space:pre-wrap;word-break:break-all;" +
-        "border-bottom:2px solid #0f0;max-height:40vh;overflow:auto;";
-      el.addEventListener("click", function () { el.remove(); });
-      (document.body || document.documentElement).appendChild(el);
-    }
-    el.textContent =
-      "[SR#123 DEBUG · click para cerrar]\n" +
-      "página destino esperada: " + pageName + "\n" +
-      "entradas para esta página: " + count + "\n" +
-      "sessionStorage['" + FIELD_ERROR_STASH_KEY + "'] = " + (raw == null ? "(null / vacío)" : raw);
-  }
-  // ─────────────────────────────────────────────────────
-
   /**
    * Consume (una sola vez) los errores persistidos para `pageName`, los aplica
    * con showFieldError / showEvidenceError, y hace scroll + focus al primero.
    * Debe llamarse tras el prefill/resume de la página destino.
    */
   function applyStashedFieldErrors(pageName) {
-    // ───── DIAGNÓSTICO TEMPORAL #123 (quitar luego) ─────
-    var _raw123 = null;
-    try { _raw123 = sessionStorage.getItem(FIELD_ERROR_STASH_KEY); } catch (e) { _raw123 = "ERR:" + e; }
-    try { _debugBanner123(pageName, _raw123); } catch (e) {}
-    // ─────────────────────────────────────────────────────
-
     let stash = {};
     try {
       stash = JSON.parse(sessionStorage.getItem(FIELD_ERROR_STASH_KEY) || "{}");
