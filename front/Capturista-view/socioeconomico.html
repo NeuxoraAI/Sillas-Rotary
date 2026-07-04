@@ -113,6 +113,7 @@
               <input
                 class="w-full"
                 name="nombres"
+                autocomplete="off"
                 type="text"
                 minlength="2"
                 maxlength="60"
@@ -128,6 +129,7 @@
               <input
                 class="w-full"
                 name="apellido_paterno"
+                autocomplete="off"
                 type="text"
                 minlength="2"
                 maxlength="40"
@@ -143,6 +145,7 @@
               <input
                 class="w-full"
                 name="apellido_materno"
+                autocomplete="off"
                 type="text"
                 minlength="2"
                 maxlength="40"
@@ -808,6 +811,7 @@
               <button type="button" data-camera-target="credencial" class="btn-secondary px-4 py-2 text-sm rounded-lg"><span class="material-symbols-outlined text-base">photo_camera</span>Tomar foto</button>
               <p class="text-xs text-slate-500">Acepta JPG, PNG o PDF. Máximo 10MB.</p>
               <p id="credencial-status" class="text-xs text-slate-500"></p>
+              <p id="credencial-error" class="field-error hidden text-red-600 text-xs mt-1" role="alert"></p>
               <div class="relative">
                 <button type="button" id="credencial-preview-card" class="hidden mt-2 w-full overflow-hidden rounded-lg border border-slate-200 bg-white text-left hover:border-primary/40">
                   <div id="credencial-preview-media" class="flex h-36 items-center justify-center bg-slate-100"></div>
@@ -828,6 +832,7 @@
               <button type="button" data-camera-target="comprobante_domicilio" class="btn-secondary px-4 py-2 text-sm rounded-lg"><span class="material-symbols-outlined text-base">photo_camera</span>Tomar foto</button>
               <p class="text-xs text-slate-500">Acepta JPG, PNG o PDF. Máximo 10MB.</p>
               <p id="comprobante-domicilio-status" class="text-xs text-slate-500"></p>
+              <p id="comprobante-domicilio-error" class="field-error hidden text-red-600 text-xs mt-1" role="alert"></p>
               <div class="relative">
                 <button type="button" id="comprobante_domicilio-preview-card" class="hidden mt-2 w-full overflow-hidden rounded-lg border border-slate-200 bg-white text-left hover:border-primary/40">
                   <div id="comprobante_domicilio-preview-media" class="flex h-36 items-center justify-center bg-slate-100"></div>
@@ -985,7 +990,7 @@
         </div>
       </div>
     </div>
-    <script src="../assets/js/validations.js"></script>
+    <script src="../assets/js/validations.js?v=8"></script>
     <script src="../assets/js/sr-select.js"></script>
     <script data-purpose="form-logic">
       const NIVEL_ESTUDIOS_CATALOG = [
@@ -1635,12 +1640,14 @@
         const existente = d.beneficiario_existente || {};
         const quien = existente.nombre ? existente.nombre : "otro beneficiario";
         const ref = existente.folio ? ` (folio ${existente.folio})` : "";
+        const message = `La CURP ${d.curp || ""} ya está registrada a nombre de ${quien}${ref}. ` +
+                   `No es posible duplicar el registro de un mismo beneficiario.`;
         return {
           form: "Socioeconómico",
           label: "CURP duplicada",
-          message: `La CURP ${d.curp || ""} ya está registrada a nombre de ${quien}${ref}. ` +
-                   `No es posible duplicar el registro de un mismo beneficiario.`,
+          message,
           url: "socioeconomico.html",
+          stashEntry: { page: "socioeconomico", kind: "text", name: "curp", message },
         };
       }
 
@@ -2367,6 +2374,13 @@
           }
         }
 
+        // Issue #123: resaltar campos pendientes al llegar desde otro formulario.
+        SR_Validations.applyStashedFieldErrors("socioeconomico");
+        // Limpiar el resaltado de las evidencias en cuanto se adjunte un archivo.
+        document.getElementById("credencial-file")?.addEventListener("change", () =>
+          SR_Validations.clearEvidenceError("#credencial-file", "#credencial-error"));
+        document.getElementById("comprobante-domicilio-file")?.addEventListener("change", () =>
+          SR_Validations.clearEvidenceError("#comprobante-domicilio-file", "#comprobante-domicilio-error"));
       })();
 
       // Track unsaved user edits so we only warn on real changes. Programmatic
@@ -3002,15 +3016,19 @@
         SR_Validations.clearAllFieldErrors(form);
 
         const errorsByField = new Map();
+        const _stashPage = SR_Validations.pageFromUrl(url);
+        const _mkStash = (name, message) =>
+          _stashPage ? { page: _stashPage, kind: "text", name, message } : null;
         SR_Validations.validateHTML5Constraints(form).forEach(({ id, message }) => {
-          errorsByField.set(id, { form: formName, label: getFieldLabel(form.querySelector(`[name="${id}"]`) || { name: id }), message, url });
+          errorsByField.set(id, { form: formName, label: getFieldLabel(form.querySelector(`[name="${id}"]`) || { name: id }), message, url, stashEntry: _mkStash(id, message) });
         });
 
         form.querySelectorAll('input:not([type="radio"]):not([type="checkbox"]), select, textarea').forEach((input) => {
           const value = (input.value || "").trim();
           if (!input.name || input.disabled || input.readOnly || !value) return;
           if (input.validity && !input.validity.valid && !input.validity.valueMissing && !errorsByField.has(input.name)) {
-            errorsByField.set(input.name, { form: formName, label: getFieldLabel(input), message: getFieldFormatMessage(input), url });
+            const _msg = getFieldFormatMessage(input);
+            errorsByField.set(input.name, { form: formName, label: getFieldLabel(input), message: _msg, url, stashEntry: _mkStash(input.name, _msg) });
           }
         });
 
@@ -3026,7 +3044,8 @@
           if (!input || input.disabled || !raw) return;
           const num = SR_Validations.toIntegerOrNull(raw);
           if (num !== null && (num < 0 || num > SR_Validations.LIMITS.INGRESO_MENSUAL_MAX)) {
-            errorsByField.set(name, { form: formName, label, message: `${label} debe estar entre $0 y $999,999,999`, url });
+            const _msg = `${label} debe estar entre $0 y $999,999,999`;
+            errorsByField.set(name, { form: formName, label, message: _msg, url, stashEntry: _mkStash(name, _msg) });
           }
         });
 
@@ -3036,9 +3055,16 @@
           const val = (emailInput?.value || "").trim().toLowerCase();
           if (!tieneEmail || !val) return;
           if (!SR_Validations.EMAIL_RE.test(val) || val.length > SR_Validations.LIMITS.EMAIL_MAX) {
-            errorsByField.set(`tutor${num}_email`, { form: formName, label: `Correo electrónico del Tutor ${num}`, message: "El correo electrónico no es válido", url });
+            errorsByField.set(`tutor${num}_email`, { form: formName, label: `Correo electrónico del Tutor ${num}`, message: "El correo electrónico no es válido", url, stashEntry: _mkStash(`tutor${num}_email`, "El correo electrónico no es válido") });
           }
         });
+
+        // La CURP NO se verifica al guardar borrador ni al navegar entre
+        // formularios — solo al FINALIZAR el registro (regla del negocio: las
+        // verificaciones ocurren únicamente al finalizar). Su patrón/dígito
+        // verificador bloqueaba guardar borradores con una CURP parcial o de
+        // prueba. La validación real se hace en el backend al finalizar.
+        errorsByField.delete("curp");
 
         const errors = Array.from(errorsByField.values());
         errors.forEach(({ label, message }) => {
@@ -3108,7 +3134,7 @@
                 <h3 class="text-sm font-black uppercase tracking-wide" style="color: var(--c-title);">${escapeHtml(form)}</h3>
                 <span class="rounded-full border border-red-200 bg-red-100 px-2 py-0.5 text-[11px] font-bold text-red-700">${items.length} ${items.length === 1 ? "error" : "errores"}</span>
               </div>
-              ${items[0].url ? `<button type="button" data-url="${escapeHtml(items[0].url)}" class="validation-jump btn-secondary rounded-lg px-3 py-1.5 text-xs font-bold uppercase">Ir al formulario</button>` : ""}
+              ${items[0].url ? `<button type="button" data-url="${escapeHtml(items[0].url)}" data-stash="${escapeHtml(JSON.stringify(items.map((it) => it.stashEntry).filter(Boolean)))}" class="validation-jump btn-secondary rounded-lg px-3 py-1.5 text-xs font-bold uppercase">Ir al formulario</button>` : ""}
             </div>
             <ul class="space-y-2 text-sm">${items.map((item) => `
               <li class="flex items-start gap-2.5 rounded-r-lg border-l-4 border-red-500 bg-red-50/70 px-3 py-2.5">
@@ -3119,6 +3145,16 @@
         modal.querySelectorAll(".validation-jump").forEach((btn) => {
           btn.addEventListener("click", () => {
             const url = btn.getAttribute("data-url");
+            try {
+              const entries = JSON.parse(btn.getAttribute("data-stash") || "[]");
+              if (SR_Validations && typeof SR_Validations.persistStashEntries === "function") {
+                SR_Validations.persistStashEntries(entries);
+              } else {
+                console.warn("SR_Validations.persistStashEntries no disponible — ¿validations.js en caché? Forzá recarga.");
+              }
+            } catch (e) {
+              console.warn("No se pudieron transferir los errores de campo:", e);
+            }
             if (url) window.location.href = url;
           });
         });
