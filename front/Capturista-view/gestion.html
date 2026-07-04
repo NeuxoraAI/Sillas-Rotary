@@ -308,7 +308,7 @@
     </div><!-- /card -->
     </div><!-- /max-w-5xl -->
     </main>
-    <script src="../assets/js/validations.js?v=4"></script>
+    <script src="../assets/js/validations.js?v=8"></script>
     <script data-purpose="form-logic">
       const COMO_OBTUVO_SILLA_CATALOG = ["COMPRA", "DONACION"];
 
@@ -724,6 +724,28 @@
         };
       }
 
+      // Detecta un error de VALIDACIÓN de CURP (formato o dígito verificador) en el
+      // 422 de pydantic de /guardar-borrador. Sin esto, la CURP inválida caía en el
+      // caso genérico "Consolidación" con url gestion.html y no redirigía ni resaltaba
+      // el campo. Devuelve el ítem ya ruteado a socioeconómico con resaltado en `curp`.
+      function curpFormatError(errData) {
+        const detail = errData && errData.detail;
+        if (!Array.isArray(detail)) return null;
+        const curpErr = detail.find(
+          (d) => Array.isArray(d?.loc) &&
+                 d.loc.some((p) => String(p).toLowerCase().includes("curp")),
+        );
+        if (!curpErr) return null;
+        const message = "La CURP ingresada no es válida (revisá el formato y el dígito verificador). Corregila para poder finalizar.";
+        return {
+          form: "Socioeconómico",
+          label: "CURP",
+          message,
+          url: "socioeconomico.html",
+          stashEntry: { page: "socioeconomico", kind: "text", name: "curp", message },
+        };
+      }
+
       function showValidationModal(errors, options = {}) {
         if (!errors?.length) return;
         const title = options.title || "Revisá estos datos";
@@ -841,7 +863,7 @@
         const draftSocio = parseDraft("draft_socioeconomico");
         const draftTecnica = parseDraft("draft_tecnica");
         if (!(draftSocio.estudio?.credencial_url || "").trim()) {
-          errors.push({ form: "Socioeconómico", label: "Credencial", message: "Adjunte la credencial para finalizar", url: "socioeconomico.html", stashEntry: mkE("socioeconomico", "#credencial-file", "#credencial-error", "Adjunte la credencial para finalizar") });
+          errors.push({ form: "Socioeconómico", label: "Credencial", message: "Adjunte la credencial (INE) para finalizar", url: "socioeconomico.html", stashEntry: mkE("socioeconomico", "#credencial-file", "#credencial-error", "Adjunte la credencial (INE) para finalizar") });
         }
         if (!(draftSocio.estudio?.comprobante_domicilio_url || "").trim()) {
           errors.push({ form: "Socioeconómico", label: "Comprobante de domicilio", message: "Adjunte el comprobante de domicilio para finalizar", url: "socioeconomico.html", stashEntry: mkE("socioeconomico", "#comprobante-domicilio-file", "#comprobante-domicilio-error", "Adjunte el comprobante de domicilio para finalizar") });
@@ -1100,10 +1122,16 @@
           if (!guardarRes.ok) {
             const errData = await guardarRes.json().catch(() => ({}));
             console.error("POST guardar-borrador error:", guardarRes.status, errData);
+            const curpInvalida = curpFormatError(errData);
             if (esCurpDuplicada(guardarRes, errData)) {
               showValidationModal([curpDuplicadaError(errData)], {
                 title: "CURP ya registrada",
                 description: "No es posible duplicar el registro de un mismo beneficiario.",
+              });
+            } else if (curpInvalida) {
+              showValidationModal([curpInvalida], {
+                title: "CURP inválida",
+                description: "Andá al formulario Socioeconómico y corregí la CURP para poder finalizar.",
               });
             } else {
               showValidationModal([{ form: "Registro", label: "Consolidación", message: SR_Validations.formatBackendError(errData, `Error al consolidar el borrador (${guardarRes.status}).`), url: "gestion.html" }]);
@@ -1165,12 +1193,16 @@
               showValidationModal(detail.missing.map((m) => {
                 const target = SR_Validations.resolveFieldTarget(m.form, m.field);
                 const page = target?.page;
+                // Prioridad del mensaje: el que envía el servidor por campo
+                // (p.ej. "La CURP no es válida…") > el específico de evidencia
+                // ("Adjunte … para finalizar") > el genérico.
+                const msg = m.message || (target && target.message) || finalizarMsg;
                 return {
                   form: (page && PAGE_LABEL[page]) || m.form || "Registro",
                   label: m.label || (m.field ? SR_Validations.getFieldLabel(m.field) : "Campo requerido"),
-                  message: finalizarMsg,
+                  message: msg,
                   url: (page && PAGE_URL[page]) || "gestion.html",
-                  stashEntry: target ? { ...target, message: finalizarMsg } : null,
+                  stashEntry: target ? { ...target, message: msg } : null,
                 };
               }), {
                 title: "No se puede finalizar todavía",

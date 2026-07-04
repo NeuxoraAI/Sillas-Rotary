@@ -113,6 +113,7 @@
               <input
                 class="w-full"
                 name="nombres"
+                autocomplete="off"
                 type="text"
                 minlength="2"
                 maxlength="60"
@@ -128,6 +129,7 @@
               <input
                 class="w-full"
                 name="apellido_paterno"
+                autocomplete="off"
                 type="text"
                 minlength="2"
                 maxlength="40"
@@ -143,6 +145,7 @@
               <input
                 class="w-full"
                 name="apellido_materno"
+                autocomplete="off"
                 type="text"
                 minlength="2"
                 maxlength="40"
@@ -987,7 +990,7 @@
         </div>
       </div>
     </div>
-    <script src="../assets/js/validations.js?v=4"></script>
+    <script src="../assets/js/validations.js?v=8"></script>
     <script src="../assets/js/sr-select.js"></script>
     <script data-purpose="form-logic">
       const NIVEL_ESTUDIOS_CATALOG = [
@@ -3055,6 +3058,13 @@
             errorsByField.set(`tutor${num}_email`, { form: formName, label: `Correo electrónico del Tutor ${num}`, message: "El correo electrónico no es válido", url, stashEntry: _mkStash(`tutor${num}_email`, "El correo electrónico no es válido") });
           }
         });
+
+        // La CURP NO se verifica al guardar borrador ni al navegar entre
+        // formularios — solo al FINALIZAR el registro (regla del negocio: las
+        // verificaciones ocurren únicamente al finalizar). Su patrón/dígito
+        // verificador bloqueaba guardar borradores con una CURP parcial o de
+        // prueba. La validación real se hace en el backend al finalizar.
+        errorsByField.delete("curp");
 
         const errors = Array.from(errorsByField.values());
         errors.forEach(({ label, message }) => {

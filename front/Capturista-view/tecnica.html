@@ -855,7 +855,7 @@
       </div>
     </div>
     <!-- BEGIN: Script for Interactivity -->
-    <script src="../assets/js/validations.js?v=4"></script>
+    <script src="../assets/js/validations.js?v=8"></script>
     <script data-purpose="form-logic">
       // Photo state — declared before the auth-guard IIFE because the draft
       // resume path (which runs synchronously when there is no solicitud_id)
@@ -883,6 +883,20 @@
         const userRolEl = document.getElementById("user-rol");
         if (userNombreEl) userNombreEl.textContent = session?.nombre || "—";
         if (userRolEl) userRolEl.textContent = (session?.rol || "capturista").toUpperCase();
+
+        // Issue #123: resalta los campos pendientes que llegan de otro formulario
+        // ("Ir al formulario"). Debe invocarse en TODOS los caminos de carga —
+        // incluido el return temprano tras restaurar un borrador del backend—,
+        // porque de lo contrario la existencia de un borrador guardado hacía que
+        // la vista "solo redirigiera" sin resaltar nada.
+        const applyPendingHighlights = () => {
+          SR_Validations.applyStashedFieldErrors("tecnica");
+          // Limpiar el resaltado de la evidencia foto en cuanto se adjunte/capture.
+          const _clearFotoRing = () =>
+            SR_Validations.clearEvidenceError("[data-purpose='patient-photo-upload']", "#photo-error");
+          document.getElementById("file-upload")?.addEventListener("change", _clearFotoRing);
+          document.getElementById("photo-camera-trigger")?.addEventListener("click", _clearFotoRing);
+        };
 
         // Check if we have a draft to resume
         if (solicitudId && session?.token) {
@@ -966,30 +980,45 @@
                 localStorage.setItem("beneficiario_id", data.beneficiario_id);
               }
 
+              // Evidencia (foto + estudio clínico): el borrador local `draft_tecnica`
+              // captura la última intención del usuario —incluida una foto que
+              // ELIMINÓ después de que se guardó el borrador del backend—, así que
+              // toma precedencia sobre `data.foto_url`. Sin esto, al borrar la foto,
+              // navegar y ser redirigido de vuelta, la foto vieja "reaparecía".
+              // Solo se usa el backend cuando no existe borrador local.
+              let evidencia = data;
+              try {
+                const ld = JSON.parse(localStorage.getItem("draft_tecnica") || "null");
+                if (ld && typeof ld === "object") evidencia = ld;
+              } catch (_e) { /* usar backend */ }
+
               // Prefer the signed/resolved URL returned by the backend so the
               // browser can actually render the preview.  Fall back to the raw
               // storage:// reference for state-tracking (non-displayable) only.
-              if (data.foto_url) {
-                uploadedPhotoUrl = data.foto_url;
-                uploadedPhotoPreviewUrl = data.foto_url_resolved || null;
-                setPhotoPreviewFromStoredUrl(uploadedPhotoPreviewUrl || data.foto_url);
+              if (evidencia.foto_url) {
+                uploadedPhotoUrl = evidencia.foto_url;
+                uploadedPhotoPreviewUrl = evidencia.foto_url_resolved || null;
+                setPhotoPreviewFromStoredUrl(uploadedPhotoPreviewUrl || evidencia.foto_url);
                 renderPhotoStatus();
                 renderPhotoPreviewCard();
               }
 
-              if (data.estudio_clinico_url) {
-                uploadedEstudioPath = data.estudio_clinico_path || null;
-                uploadedEstudioUrl = data.estudio_clinico_url;
-                uploadedEstudioPreviewUrl = data.estudio_clinico_url_resolved || null;
-                const guessedType = (data.estudio_clinico_path || "").toLowerCase().endsWith(".pdf")
+              if (evidencia.estudio_clinico_url) {
+                uploadedEstudioPath = evidencia.estudio_clinico_path || null;
+                uploadedEstudioUrl = evidencia.estudio_clinico_url;
+                uploadedEstudioPreviewUrl = evidencia.estudio_clinico_url_resolved || null;
+                const guessedType = (evidencia.estudio_clinico_path || "").toLowerCase().endsWith(".pdf")
                   ? "application/pdf"
                   : "image/jpeg";
-                setEstudioPreviewFromStoredUrl(uploadedEstudioPreviewUrl || data.estudio_clinico_url, guessedType);
+                setEstudioPreviewFromStoredUrl(uploadedEstudioPreviewUrl || evidencia.estudio_clinico_url, guessedType);
                 renderEstudioStatus();
                 renderEstudioPreviewCard();
               }
 
-              // We've restored the draft, continue with the form
+              // We've restored the draft, continue with the form.
+              // Resaltar aquí también (Issue #123): el borrador restaurado no debe
+              // impedir que "Ir al formulario" marque los campos faltantes.
+              applyPendingHighlights();
               return;
             } else if (res.status === 404) {
               // Draft was deleted, clear the localStorage
@@ -1064,13 +1093,9 @@
           window.location.href = "../login.html";
         }
 
-        // Issue #123: resaltar campos pendientes al llegar desde otro formulario.
-        SR_Validations.applyStashedFieldErrors("tecnica");
-        // Limpiar el resaltado de la evidencia foto en cuanto se adjunte/capture.
-        const _clearFotoRing = () =>
-          SR_Validations.clearEvidenceError("[data-purpose='patient-photo-upload']", "#photo-error");
-        document.getElementById("file-upload")?.addEventListener("change", _clearFotoRing);
-        document.getElementById("photo-camera-trigger")?.addEventListener("click", _clearFotoRing);
+        // Issue #123: resaltar campos pendientes al llegar desde otro formulario
+        // (flujo de formulario nuevo, sin borrador de backend).
+        applyPendingHighlights();
       })();
 
       // Track unsaved user edits so we only warn on real changes. Programmatic
