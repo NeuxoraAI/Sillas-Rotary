@@ -7,6 +7,11 @@ ROOT = Path(__file__).resolve().parents[1]
 TECNICA_FILE = ROOT / "front" / "Tecnico-view" / "vista_tecnicos.html"
 ADMIN_USERS_FILE = ROOT / "front" / "Admin-view" / "admin-usuarios.html"
 REGION_FILE = ROOT / "front" / "Capturista-view" / "seleccion-region.html"
+VALIDATIONS_FILE = ROOT / "front" / "assets" / "js" / "validations.js"
+SOCIOECONOMICO_FILE = ROOT / "front" / "Capturista-view" / "socioeconomico.html"
+CAPTURISTA_TECNICA_FILE = ROOT / "front" / "Capturista-view" / "tecnica.html"
+GESTION_FILE = ROOT / "front" / "Capturista-view" / "gestion.html"
+ADMIN_BENEFICIARIOS_FILE = ROOT / "front" / "admin-beneficiarios.html"
 
 
 def _read(path: Path) -> str:
@@ -65,3 +70,26 @@ def test_region_flow_routes_tecnico_to_workbench_without_beneficiario_dependency
     assert "if (session.rol === 'tecnico')" in html
     assert "window.location.href = '../Tecnico-view/vista_tecnicos.html';" in html
     assert "localStorage.removeItem('beneficiario_id');" in html
+
+
+def test_frontend_uppercase_normalization_is_explicit_opt_in() -> None:
+    validations = _read(VALIDATIONS_FILE)
+    socio = _read(SOCIOECONOMICO_FILE)
+    tecnica = _read(CAPTURISTA_TECNICA_FILE)
+    gestion = _read(GESTION_FILE)
+    admin_beneficiarios = _read(ADMIN_BENEFICIARIOS_FILE)
+
+    assert 'data-uppercase="true"' in socio
+    assert 'dataset?.uppercase === "true"' in validations
+    assert "data-no-uppercase" not in validations
+    assert "UPPERCASE_EXCLUDED_NAME_RE" not in validations
+
+    assert 'name="curp"\n                type="text"\n                data-uppercase="true"' in socio
+    assert 'name="tutor1_nombres"\n                      type="text"\n                      data-uppercase="true"' in socio
+    assert 'name="tutor2_fuente_empleo"\n                    type="text"\n                    data-uppercase="true"' in socio
+    assert 'name="entidad_solicitante"\n                placeholder="Nombre de la institución o particular"\n                type="text"\n                data-uppercase="true"' in gestion
+    assert '_field("nombres", "Nombres", "text", { maxlength: 60, required: true, "data-uppercase": "true" })' in admin_beneficiarios
+
+    assert 'name="diagnostico"\n                type="text"\n                data-uppercase="true"' not in tecnica
+    assert 'id="padecimiento-otra-texto"\n                    data-uppercase="true"' not in tecnica
+    assert 'name="justificacion"\n                placeholder="Información adicional relevante sobre la necesidad de esta silla específica..."\n                rows="3"\n                data-uppercase="true"' not in gestion

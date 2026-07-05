@@ -201,31 +201,108 @@ Este documento define TODAS las reglas de validación del sistema. Cualquier cam
 ## CURP (beneficiario) — Issue #32
 
 La **CURP** (`beneficiarios.curp_benef`) es el **identificador natural** del beneficiario
-y **sustituye al folio**. Es obligatoria al finalizar el estudio (opcional en borrador) y
-**única** a nivel de base de datos (`UNIQUE (curp_benef)` + `CHECK` de formato, migración
-`0020_curp_natural_key.sql`).
+y **sustituye al folio**. Es **única** a nivel de base de datos (`UNIQUE (curp_benef)` +
+`CHECK` de formato, migración `0020_curp_natural_key.sql`).
 
-**Normalización:** se recortan espacios y se convierte a **mayúsculas** en frontend y backend.
-Solo se permiten `A-Z` y `0-9` (18 caracteres exactos).
+### Cuándo se valida (regla de negocio)
 
-**Regex (idéntica en `validators.py::_CURP_RE` y `validations.js::CURP_RE`):**
+El **formato y el dígito verificador se validan SÓLO al FINALIZAR** el registro — nunca al
+guardar borrador ni al navegar entre formularios. Un borrador puede quedar con una CURP
+parcial o incompleta; la verificación estricta ocurre en el botón maestro de finalización.
+
+| Acción | Qué pasa con la CURP |
+| --- | --- |
+| Guardar borrador / navegar | Sólo se **normaliza** (mayúsculas + `trim`). `guardar_borrador.py::_curp_valida` no verifica formato ni dígito; el frontend excluye `curp` de `collectDraftFormatErrors`. |
+| Finalizar registro | `finalizar.py::_validate_all_complete` llama a `validate_curp`. Si falta o es inválida, entra en `missing[]` y el modal de `gestion.html` rutea a **Socioeconómico** resaltando el campo `curp` con el mensaje del servidor. |
+| Editar como **admin** (`PATCH /admin/beneficiarios/{id}`) | `admin.py::_curp_valida` usa `validate_curp_formato` — valida **solo formato** (18 chars + estructura), **NO el dígito verificador**. Es el path para casos atípicos (ver "Limitación conocida"). |
+
+### Normalización
+
+Se recortan espacios y se convierte a **mayúsculas** en frontend y backend. El input de la
+UI (`setupCurpField`) además elimina en vivo todo lo que no sea `A-Z`/`0-9` y corta a 18.
+
+### Estructura (18 caracteres) — regex
+
+Regex **idéntica** en `validators.py::_CURP_RE` y `validations.js::CURP_RE` (paridad
+verificada por `tests/test_curp_regex_parity.py`):
 
 ```
 ^[A-Z][AEIOUX][A-Z]{2}\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])[HM](AS|BC|BS|CC|CL|CM|CS|CH|DF|DG|GT|GR|HG|JC|MC|MN|MS|NT|NL|OC|PL|QT|QR|SP|SL|SR|TC|TS|TL|VZ|YN|ZS|NE)[B-DF-HJ-NP-TV-Z]{3}[A-Z\d]\d$
 ```
 
-Estructura validada: 4 letras iniciales · 6 dígitos de fecha (mes 01–12, día 01–31) ·
-sexo `H`/`M` · código de entidad federativa (incluye `NE` = nacido en el extranjero) ·
-3 consonantes internas · homoclave · dígito verificador.
+| Posición | Contenido | Regla |
+| --- | --- | --- |
+| 1 | Inicial del 1er apellido | `[A-Z]` |
+| 2 | Primera vocal interna del 1er apellido | `[AEIOUX]` (`X` = sin vocal / palabra altisonante) |
+| 3–4 | Inicial 2º apellido + inicial nombre | `[A-Z]{2}` |
+| 5–10 | Fecha de nacimiento `AAMMDD` | `\d{2}` + mes `01–12` + día `01–31` |
+| 11 | Sexo | `[HM]` |
+| 12–13 | Entidad federativa | lista cerrada `AS…ZS`, **`NE` = nacido en el extranjero** |
+| 14–16 | 3 consonantes internas | `[B-DF-HJ-NP-TV-Z]{3}` |
+| 17 | Homoclave | `[A-Z\d]` |
+| 18 | **Dígito verificador** | `\d` (el regex NO lo verifica; ver abajo) |
 
-**Dígito verificador:** además del formato, se valida el **dígito verificador oficial**
-en ambos lados (`_curp_digito_verificador` / `curpDigitoVerificador`), usando el
-diccionario `0123456789ABCDEFGHIJKLMNÑOPQRSTUVWXYZ` y los factores `18 - i` sobre los
-primeros 17 caracteres.
+### Dígito verificador (checksum oficial)
 
-**Duplicados:** al crear/actualizar un beneficiario, una CURP ya registrada produce
-**HTTP 409** (`detail.type = "curp_duplicada"`), que el frontend presenta con un modal
-amigable (`mostrarModalCurpDuplicada`).
+Se calcula con `_curp_digito_verificador` (backend) / `curpDigitoVerificador` (frontend):
+
+1. **Diccionario de valores** (`_CURP_DICT` / `CURP_DICT`): `0123456789ABCDEFGHIJKLMNÑOPQRSTUVWXYZ`
+   → `0`→0 … `9`→9, `A`→10, `B`→11 … Incluye la **`Ñ`** (índice 24) para respetar los
+   índices oficiales, aunque el regex nunca la deje aparecer.
+2. Para los **primeros 17** caracteres: `suma += valor(char) × (18 - i)` (peso de 18 a 2).
+3. Dígito `= (10 - (suma mod 10)) mod 10`. El `mod 10` externo cubre el borde
+   `suma ≡ 0 (mod 10)` → el dígito es `0`, no `10`.
+4. Debe coincidir con el carácter 18.
+
+**Ejemplo:** `PEGJ850315HDFRRL0` (17 chars) → `suma = 2144` → `(10 - 4) mod 10 = 6` →
+CURP válida completa **`PEGJ850315HDFRRL06`**. Escribir `…L05` o `…L07` pasa el regex pero
+**falla el dígito verificador**.
+
+### Errores (orden; corta al primer fallo)
+
+`validate_curp` no emite *warnings* — todo es error duro que impide finalizar:
+
+| Paso | Condición | Mensaje |
+| --- | --- | --- |
+| — | valor `None` | `curp es obligatoria` |
+| 1 | ≠ 18 caracteres | `curp debe tener exactamente 18 caracteres` |
+| 2 | no matchea el regex | `curp tiene un formato inválido` |
+| 3 | dígito no coincide | `curp inválida: el dígito verificador no coincide` |
+
+La única capa "suave" (orientativa, no bloqueante) es el saneo en vivo de `setupCurpField`
+y el resaltado del `pattern` HTML5 en el `<input>`.
+
+### Dos capas de validación
+
+- **Frontend** (UX, no autoritativa): `setupCurpField`, `pattern` HTML5, `isValidCurp`.
+- **Backend** (autoridad): `validate_curp`; re-valida al finalizar aunque se salte el JS.
+
+### Limitación conocida (CURPs reales que podrían fallar)
+
+El dígito verificador estricto es correcto para la inmensa mayoría, pero **puede rechazar
+una minoría de CURPs realmente emitidas** (errores históricos de emisión de RENAPO o
+variantes del algoritmo a lo largo de los años). Es el compromiso clásico: el dígito
+estricto atrapa errores de tecleo, pero arriesga rechazar a una persona real con CURP no
+estándar.
+
+**Vía de resolución (implementada):** el capturista deja el registro en **borrador** (que
+no valida CURP) y un **admin** captura la CURP atípica vía `PATCH /admin/beneficiarios/{id}`,
+que valida **solo formato** (`validate_curp_formato`) y tolera el dígito verificador anómalo.
+Es una decisión deliberada: los casos atípicos son responsabilidad del admin. No se relaja
+el **formato** —una CURP realmente malformada sigue rechazándose, además de que coincide con
+el `CHECK` de la BD (`chk_beneficiarios_curp_formato`), evitando errores 500 por constraint.
+
+> Nota: si algún día aparece una CURP real que falla incluso el **formato** (regex), no
+> bastaría el path admin — habría que relajar también el `CHECK` de la migración. Es un
+> escenario mucho más raro y hoy fuera de alcance.
+
+### Duplicados
+
+Al crear/actualizar un beneficiario, una CURP ya registrada produce **HTTP 409**
+(`detail.type = "curp_duplicada"`). El frontend lo detecta con `esCurpDuplicada` y lo
+presenta con un modal amigable (`curpDuplicadaError` → `showValidationModal`). En
+`UPDATE` la comprobación excluye al propio beneficiario (`_assert_curp_disponible(...,
+exclude_id=...)`), por lo que re-guardar el mismo borrador no colisiona.
 
 ---
 

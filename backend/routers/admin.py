@@ -21,7 +21,7 @@ from routers.tecnica import (
 from routers.socioeconomico import _assert_curp_disponible, _resolve_como_obtuvo_silla
 from validators import (
     validate_nombre,
-    validate_curp,
+    validate_curp_formato,
     validate_apellido,
     validate_email_format,
     validate_diagnostico,
@@ -120,9 +120,14 @@ class AdminBeneficiarioUpdateRequest(BaseModel):
     @field_validator("curp")
     @classmethod
     def _curp_valida(cls, v: Optional[str]) -> Optional[str]:
+        # El admin valida la CURP por FORMATO únicamente (NO el dígito
+        # verificador): es quien registra casos atípicos —CURPs reales cuyo
+        # dígito no coincide con el algoritmo estándar por anomalías de emisión
+        # de RENAPO— que el capturista dejó en borrador. El formato sí se exige
+        # (coincide con el CHECK de la BD), así que no entra basura.
         if v is None or v == "":
             return v
-        return validate_curp(v)
+        return validate_curp_formato(v)
 
     @field_validator("fecha_nacimiento")
     @classmethod
@@ -442,7 +447,6 @@ def listar_beneficiarios_admin(
             b.id AS beneficiario_id,
             b.nombre,
             b.curp_benef,
-            b.folio,
             b.telefonos,
             b.ciudad,
             COALESCE(p.nombre, '') AS pais_nombre,
@@ -511,7 +515,6 @@ def exportar_beneficiarios_admin(
         SELECT
             b.id AS beneficiario_id,
             b.curp_benef,
-            b.folio,
             b.nombre,
             b.email,
             b.calle,
@@ -588,7 +591,7 @@ def exportar_beneficiarios_admin(
         edad = _calcular_edad(row.get("fecha_nacimiento"))
 
         ws.append([
-            row.get("curp_benef") or row.get("folio") or row.get("beneficiario_id"),
+            row.get("curp_benef") or row.get("beneficiario_id"),
             row.get("nombre") or "",
             row.get("email") or "Sin correo",
             direccion,

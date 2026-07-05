@@ -40,6 +40,10 @@ _BUCKET = "fotos-tecnica"
 _SIGNED_URL_TTL_SECONDS = 60
 _STORAGE_URL_PREFIX = f"storage://{_BUCKET}/"
 
+_DOCUMENT_BUCKET = "documentos-estudio"
+_DOCUMENT_ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png", "application/pdf"}
+_DOCUMENT_ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".pdf"}
+
 
 def _utc_now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
@@ -142,12 +146,12 @@ def _build_list_where_clause(
     if q and q.strip():
         term = f"%{q.strip()}%"
         clauses.append(
-            "(b.nombre ILIKE %s OR b.curp_benef ILIKE %s OR b.folio ILIKE %s OR "
+            "(b.nombre ILIKE %s OR b.curp_benef ILIKE %s OR "
             "b.ciudad ILIKE %s OR "
             "r.nombre ILIKE %s OR "
             "p.nombre ILIKE %s)"
         )
-        params.extend([term, term, term, term, term, term])
+        params.extend([term, term, term, term, term])
 
     # ── Sede ──────────────────────────────────────────────────────────────
     if sede and sede.strip():
@@ -332,12 +336,12 @@ def _classify_db_error(exc: Exception) -> HTTPException:
     )
 
 
-def _storage():
+def _storage(bucket: str = _BUCKET):
     from supabase import create_client
     return create_client(
         os.environ["SUPABASE_URL"],
         os.environ["SUPABASE_SERVICE_KEY"],
-    ).storage.from_(_BUCKET)
+    ).storage.from_(bucket)
 
 
 # ---------------------------------------------------------------------------
@@ -364,6 +368,9 @@ class SolicitudCreateRequest(BaseModel):
     medida_ancho_cadera: Optional[Decimal] = None
     foto_path: Optional[str] = None
     foto_url: Optional[str] = None
+    equipo_solicitado: Optional[str] = None
+    estudio_clinico_path: Optional[str] = None
+    estudio_clinico_url: Optional[str] = None
     entidad_solicitante: Optional[str] = None
     prioridad: Optional[str] = None
     justificacion: Optional[str] = None
@@ -499,6 +506,9 @@ class SolicitudUpdateRequest(BaseModel):
     medida_ancho_cadera: Optional[Decimal] = None
     foto_path: Optional[str] = None
     foto_url: Optional[str] = None
+    equipo_solicitado: Optional[str] = None
+    estudio_clinico_path: Optional[str] = None
+    estudio_clinico_url: Optional[str] = None
     entidad_solicitante: Optional[str] = None
     prioridad: Optional[str] = None
     justificacion: Optional[str] = None
@@ -784,7 +794,6 @@ def listar_beneficiarios_tecnica(
         SELECT
             b.id AS beneficiario_id,
             b.nombre,
-            b.folio,
             b.telefonos,
             b.ciudad,
             COALESCE(p.nombre, '') AS pais_nombre,
@@ -879,7 +888,7 @@ def exportar_beneficiarios_tecnica(
         f"""
         SELECT
             b.id AS beneficiario_id,
-            b.folio,
+            b.curp_benef,
             b.nombre,
             b.email,
             b.calle,
@@ -959,7 +968,7 @@ def exportar_beneficiarios_tecnica(
         edad = _calcular_edad(row.get("fecha_nacimiento"))
 
         ws.append([
-            row.get("folio") or row.get("beneficiario_id"),
+            row.get("curp_benef") or row.get("beneficiario_id"),
             row.get("nombre") or "",
             row.get("email") or "Sin correo",
             direccion,
@@ -1081,6 +1090,42 @@ async def upload_foto(
     }
 
 
+@router.post("/upload-estudio-clinico")
+async def upload_estudio_clinico(
+    archivo: UploadFile = File(...),
+    _usuario: Annotated[CurrentUser, Depends(require_roles("capturista", "tecnico", "admin", "organizacion"))] = None,
+) -> dict:
+    """Upload a clinical study document (JPG, PNG, or PDF) to documentos-estudio bucket."""
+    if archivo.content_type not in _DOCUMENT_ALLOWED_CONTENT_TYPES:
+        raise HTTPException(status_code=400, detail="Tipo de archivo no permitido")
+
+    _, ext = os.path.splitext(archivo.filename or "")
+    if ext.lower() not in _DOCUMENT_ALLOWED_EXTENSIONS:
+        raise HTTPException(status_code=400, detail="Tipo de archivo no permitido")
+
+    data = await archivo.read()
+    if len(data) > _MAX_SIZE_BYTES:
+        raise HTTPException(status_code=400, detail="El archivo excede 10MB")
+
+    filename = f"estudio_clinico/{uuid.uuid4()}{ext.lower()}"
+
+    try:
+        _storage(_DOCUMENT_BUCKET).upload(
+            path=filename,
+            file=data,
+            file_options={"content-type": archivo.content_type},
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail="Error al subir el estudio clínico") from exc
+
+    canonical_url = f"storage://{_DOCUMENT_BUCKET}/{filename}"
+    return {
+        "estudio_clinico_path": filename,
+        "estudio_clinico_url": canonical_url,
+        "estudio_clinico_url_resolved": _resolve_storage_url(canonical_url, _DOCUMENT_BUCKET),
+    }
+
+
 @router.post("/solicitudes", status_code=201, response_model=SolicitudCreateResponse)
 def crear_solicitud(
     body: SolicitudCreateRequest,
@@ -1120,8 +1165,9 @@ def crear_solicitud(
                  soporte_oxigeno, altura_total_in, peso_kg,
                  medida_cabeza_asiento, medida_hombro_asiento, medida_prof_asiento,
                  medida_rodilla_talon, medida_ancho_cadera, unidad_captura, unidad_peso_captura, foto_url,
+                 equipo_solicitado, estudio_clinico_path, estudio_clinico_url,
                  entidad_solicitante, prioridad, justificacion, status)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
             """,
             (
@@ -1143,6 +1189,9 @@ def crear_solicitud(
                 body.unidad_medida,
                 body.unidad_peso_captura,
                 resolved_foto_url,
+                body.equipo_solicitado,
+                body.estudio_clinico_path,
+                body.estudio_clinico_url,
                 body.entidad_solicitante,
                 body.prioridad,
                 body.justificacion,
@@ -1197,6 +1246,8 @@ def obtener_solicitud(
     # needing a separate fetch — raw storage:// URIs cannot be used as <img src>.
     if out.get("foto_url"):
         out["foto_url_resolved"] = _resolve_storage_url(out["foto_url"], _BUCKET)
+    if out.get("estudio_clinico_url"):
+        out["estudio_clinico_url_resolved"] = _resolve_storage_url(out["estudio_clinico_url"], _DOCUMENT_BUCKET)
     return out
 
 

@@ -117,6 +117,37 @@ El estudio se puede guardar como borrador (`POST /guardar-borrador`, router `gua
 
 El técnico levanta la solicitud técnica (`POST /solicitudes`), sube la foto (`POST /upload-foto`) y gestiona el proceso técnico (`/tecnica/procesos/{id}/...`). — `backend/routers/tecnica.py:1345, 1382, 1242`
 
+### 6.6 Resaltado de campos faltantes al redirigir entre formularios (Issue #123)
+
+Cuando una validación (local o del servidor en `POST /finalizar-registro`) detecta
+campos obligatorios/ inválidos, el modal de validación ofrece **"Ir al formulario"**.
+Al pulsarlo, los errores se transfieren entre páginas para resaltar los campos en
+el destino, reutilizando `SR_Validations.showFieldError`. — `front/assets/js/validations.js`.
+
+- **Fuente de verdad del mapeo**: `SR_Validations.resolveFieldTarget(form, field)` traduce
+  el par backend `{form, field}` (p. ej. `finalizar.py` emite `credencial_url`, `curp_benef`,
+  `imss_estatus`) al objetivo del frontend `{page, name | container/legend}`. Los nombres del
+  backend **no** coinciden con los `name` de los inputs (`curp_benef→curp`,
+  `tuvo_silla_previa→silla_previa`, `imss_estatus→tutor1_imss`); las evidencias `*_url`
+  (`credencial_url`, `comprobante_domicilio_url`, `foto_url`) se resaltan por zona de subida
+  + leyenda. El caso cross-form `beneficiario/diagnostico` se enruta a `tecnica.html` (donde
+  vive el input). El flujo de finalización (`gestion.html`) deriva **la URL del botón y el
+  resaltado** de esta misma función, evitando enrutar el stash a una página distinta de la
+  navegada.
+- **Persistencia**: `stashFieldErrors` / `persistStashEntries` guardan las entradas ya
+  resueltas en `sessionStorage['sr_pending_field_errors']`, agrupadas por página destino.
+- **Consumo**: al cargar el destino, `applyStashedFieldErrors(page)` lee **y borra** la clave
+  (consumo único), aplica el resaltado (`showFieldError` / `showEvidenceError`), y hace
+  `scrollIntoView` + `focus()` al primer campo pendiente. Los resaltados de texto se limpian al
+  escribir; los de evidencia, al adjuntar archivo. La clave se limpia también en logout /
+  nueva captura (`perfil-capturista.html` `_clearDraftStorage`).
+
+> **Nota operativa**: `validations.js` es un asset estático servido por FastAPI (`StaticFiles`,
+> sin `Cache-Control` de larga duración). Tras actualizarlo, forzar recarga (Ctrl/Cmd+Shift+R)
+> o purgar la caché del CDN si el comportamiento no aparece; los handlers registran un
+> `console.warn` cuando `SR_Validations.persistStashEntries` no está disponible (síntoma de un
+> `validations.js` cacheado).
+
 ---
 
 ## 7. Database Schema (Resumen del esquema)

@@ -448,10 +448,15 @@ def _curp_digito_verificador(curp: str) -> str:
     return str((10 - (suma % 10)) % 10)
 
 
-def validate_curp(value: str) -> str:
-    """Validate and normalize a Mexican CURP (format + check digit).
+def validate_curp_formato(value: str) -> str:
+    """Validate and normalize a CURP by FORMAT ONLY (length + structure).
 
-    Returns the uppercased, trimmed CURP. Raises ValueError on any failure.
+    Does NOT verify the check digit (dígito verificador). Use for the **admin**
+    path: an administrator may need to register a real CURP whose check digit
+    does not match the standard algorithm (documented RENAPO issuance anomalies).
+    Returns the uppercased, trimmed CURP. Raises ValueError on a format failure.
+    The DB CHECK constraint (`chk_beneficiarios_curp_formato`) enforces this same
+    regex, so anything that passes here also passes at the database layer.
     """
     if value is None:
         raise ValueError("curp es obligatoria")
@@ -460,6 +465,15 @@ def validate_curp(value: str) -> str:
         raise ValueError(f"curp debe tener exactamente {_CURP_LEN} caracteres")
     if not _CURP_RE.match(curp):
         raise ValueError("curp tiene un formato inválido")
+    return curp
+
+
+def validate_curp(value: str) -> str:
+    """Validate and normalize a Mexican CURP (format + check digit).
+
+    Returns the uppercased, trimmed CURP. Raises ValueError on any failure.
+    """
+    curp = validate_curp_formato(value)
     if _curp_digito_verificador(curp) != curp[17]:
         raise ValueError("curp inválida: el dígito verificador no coincide")
     return curp

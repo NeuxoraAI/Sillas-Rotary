@@ -51,6 +51,8 @@
     localStorage.removeItem("estudio_id");
     localStorage.removeItem("beneficiario_id");
     localStorage.removeItem("solicitud_id");
+    // Issue #123: validation highlights carried across forms.
+    sessionStorage.removeItem("sr_pending_field_errors");
   }
 
   function _clearAllStorage() {

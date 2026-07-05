@@ -9,7 +9,7 @@ from env_bootstrap import load_root_env_if_needed
 
 load_root_env_if_needed(__file__)
 
-from routers import admin, auth, socioeconomico, tecnica, usuarios, regiones, perfiles, finalizar, guardar_borrador
+from routers import admin, auth, socioeconomico, tecnica, usuarios, regiones, perfiles, finalizar, guardar_borrador, password
 
 # Serve the frontend — path is resolved relative to this file so it works
 # both locally (uvicorn from backend/) and on Vercel (/var/task/backend/).
@@ -20,9 +20,15 @@ _SECURITY_HEADERS = {
     "X-Frame-Options": "DENY",
     "Referrer-Policy": "strict-origin-when-cross-origin",
 }
-_STATIC_EXTENSIONS = (
+# Código de la app (HTML/CSS/JS): debe revalidarse SIEMPRE para que un despliegue
+# nuevo nunca quede servido desde caché vieja. `no-cache` permite cachear pero obliga
+# a revalidar contra el servidor (ETag/304), así que es fresco y eficiente a la vez.
+_CODE_EXTENSIONS = (
     ".css",
     ".js",
+)
+# Media inmutable-ish: puede cachearse por más tiempo sin riesgo funcional.
+_MEDIA_EXTENSIONS = (
     ".png",
     ".jpg",
     ".jpeg",
@@ -36,7 +42,10 @@ _STATIC_EXTENSIONS = (
 def _cache_control_for_path(path: str) -> str:
     if path.startswith("/api/"):
         return "no-store"
-    if path.endswith(_STATIC_EXTENSIONS):
+    if path.endswith(_CODE_EXTENSIONS):
+        # Revalida en cada carga; evita que JS/CSS viejos queden pegados en el navegador.
+        return "no-cache"
+    if path.endswith(_MEDIA_EXTENSIONS):
         return "public, max-age=3600"
     return "no-store"
 
@@ -69,6 +78,7 @@ def create_app() -> FastAPI:
     app.include_router(perfiles.router, prefix="/api")
     app.include_router(finalizar.router, prefix="/api")
     app.include_router(guardar_borrador.router, prefix="/api")
+    app.include_router(password.router, prefix="/api")
 
     @app.get("/api/health")
     def health() -> JSONResponse:

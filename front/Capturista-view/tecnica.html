@@ -526,6 +526,7 @@
               </button>
               <p class="text-xs text-slate-500">Acepta JPG o PNG. Máximo 10MB.</p>
               <p id="photo-status" class="text-xs text-slate-500"></p>
+              <p id="photo-error" class="field-error hidden text-red-600 text-xs mt-1" role="alert"></p>
               <div class="relative">
                 <button
                   type="button"
@@ -854,14 +855,17 @@
       </div>
     </div>
     <!-- BEGIN: Script for Interactivity -->
-    <script src="../assets/js/validations.js"></script>
+    <script src="../assets/js/validations.js?v=8"></script>
     <script data-purpose="form-logic">
       // Photo state — declared before the auth-guard IIFE because the draft
       // resume path (which runs synchronously when there is no solicitud_id)
       // reads these to restore a previously uploaded photo.
       let capturedPhotoFile = null;
-      let uploadedPhotoUrl = null;        // canonical storage:// reference (DB)
-      let uploadedPhotoPreviewUrl = null; // browser-renderable URL (preview only)
+      let uploadedPhotoUrl = null;          // canonical storage:// reference (DB)
+      let uploadedPhotoPreviewUrl = null;   // browser-renderable URL (preview only)
+      let uploadedEstudioPath = null;       // storage path for estudio clínico (DB)
+      let uploadedEstudioUrl = null;        // canonical storage:// reference (DB)
+      let uploadedEstudioPreviewUrl = null; // browser-renderable URL (preview only)
 
       // Auth guard + Draft Resume
       (async function () {
@@ -879,6 +883,20 @@
         const userRolEl = document.getElementById("user-rol");
         if (userNombreEl) userNombreEl.textContent = session?.nombre || "—";
         if (userRolEl) userRolEl.textContent = (session?.rol || "capturista").toUpperCase();
+
+        // Issue #123: resalta los campos pendientes que llegan de otro formulario
+        // ("Ir al formulario"). Debe invocarse en TODOS los caminos de carga —
+        // incluido el return temprano tras restaurar un borrador del backend—,
+        // porque de lo contrario la existencia de un borrador guardado hacía que
+        // la vista "solo redirigiera" sin resaltar nada.
+        const applyPendingHighlights = () => {
+          SR_Validations.applyStashedFieldErrors("tecnica");
+          // Limpiar el resaltado de la evidencia foto en cuanto se adjunte/capture.
+          const _clearFotoRing = () =>
+            SR_Validations.clearEvidenceError("[data-purpose='patient-photo-upload']", "#photo-error");
+          document.getElementById("file-upload")?.addEventListener("change", _clearFotoRing);
+          document.getElementById("photo-camera-trigger")?.addEventListener("click", _clearFotoRing);
+        };
 
         // Check if we have a draft to resume
         if (solicitudId && session?.token) {
@@ -916,6 +934,7 @@
               setVal("control_tronco", data.control_tronco);
               setVal("control_cabeza", data.control_cabeza);
               setVal("control_de_piernas", data.control_de_piernas);
+              setVal("equipo_solicitado", data.equipo_solicitado);
 
               // Set hidden technical field and restore selected padecimientos
               setVal("padecimiento", data.padecimiento);
@@ -961,18 +980,45 @@
                 localStorage.setItem("beneficiario_id", data.beneficiario_id);
               }
 
+              // Evidencia (foto + estudio clínico): el borrador local `draft_tecnica`
+              // captura la última intención del usuario —incluida una foto que
+              // ELIMINÓ después de que se guardó el borrador del backend—, así que
+              // toma precedencia sobre `data.foto_url`. Sin esto, al borrar la foto,
+              // navegar y ser redirigido de vuelta, la foto vieja "reaparecía".
+              // Solo se usa el backend cuando no existe borrador local.
+              let evidencia = data;
+              try {
+                const ld = JSON.parse(localStorage.getItem("draft_tecnica") || "null");
+                if (ld && typeof ld === "object") evidencia = ld;
+              } catch (_e) { /* usar backend */ }
+
               // Prefer the signed/resolved URL returned by the backend so the
               // browser can actually render the preview.  Fall back to the raw
               // storage:// reference for state-tracking (non-displayable) only.
-              if (data.foto_url) {
-                uploadedPhotoUrl = data.foto_url;
-                uploadedPhotoPreviewUrl = data.foto_url_resolved || null;
-                setPhotoPreviewFromStoredUrl(uploadedPhotoPreviewUrl || data.foto_url);
+              if (evidencia.foto_url) {
+                uploadedPhotoUrl = evidencia.foto_url;
+                uploadedPhotoPreviewUrl = evidencia.foto_url_resolved || null;
+                setPhotoPreviewFromStoredUrl(uploadedPhotoPreviewUrl || evidencia.foto_url);
                 renderPhotoStatus();
                 renderPhotoPreviewCard();
               }
 
-              // We've restored the draft, continue with the form
+              if (evidencia.estudio_clinico_url) {
+                uploadedEstudioPath = evidencia.estudio_clinico_path || null;
+                uploadedEstudioUrl = evidencia.estudio_clinico_url;
+                uploadedEstudioPreviewUrl = evidencia.estudio_clinico_url_resolved || null;
+                const guessedType = (evidencia.estudio_clinico_path || "").toLowerCase().endsWith(".pdf")
+                  ? "application/pdf"
+                  : "image/jpeg";
+                setEstudioPreviewFromStoredUrl(uploadedEstudioPreviewUrl || evidencia.estudio_clinico_url, guessedType);
+                renderEstudioStatus();
+                renderEstudioPreviewCard();
+              }
+
+              // We've restored the draft, continue with the form.
+              // Resaltar aquí también (Issue #123): el borrador restaurado no debe
+              // impedir que "Ir al formulario" marque los campos faltantes.
+              applyPendingHighlights();
               return;
             } else if (res.status === 404) {
               // Draft was deleted, clear the localStorage
@@ -999,6 +1045,7 @@
             setVal("control_tronco", data.control_tronco);
             setVal("control_cabeza", data.control_cabeza);
             setVal("control_de_piernas", data.control_de_piernas);
+            setVal("equipo_solicitado", data.equipo_solicitado);
             setVal("padecimiento", data.padecimiento);
             restorePadecimientosSelection(data.padecimiento);
             const oxiRadioB = document.querySelector(
@@ -1028,6 +1075,13 @@
               uploadedPhotoUrl = data.foto_url;
               uploadedPhotoPreviewUrl = data.foto_url_resolved || null;
             }
+            // Similarly, restore estudio clínico state so the post-setup
+            // block can render the preview.
+            if (data.estudio_clinico_url) {
+              uploadedEstudioPath = data.estudio_clinico_path || null;
+              uploadedEstudioUrl = data.estudio_clinico_url;
+              uploadedEstudioPreviewUrl = data.estudio_clinico_url_resolved || null;
+            }
           } catch (err) {
             console.error("Error loading localStorage draft:", err);
           }
@@ -1038,6 +1092,10 @@
         if (!session?.token || !regionCtx?.region_id) {
           window.location.href = "../login.html";
         }
+
+        // Issue #123: resaltar campos pendientes al llegar desde otro formulario
+        // (flujo de formulario nuevo, sin borrador de backend).
+        applyPendingHighlights();
       })();
 
       // Track unsaved user edits so we only warn on real changes. Programmatic
@@ -1308,6 +1366,14 @@
         estudioPreviewState.sourceUrl = null;
         estudioPreviewState.type = file.type || "image/jpeg";
         estudioPreviewState.name = file.name || "Estudio clínico";
+      }
+
+      function setEstudioPreviewFromStoredUrl(url, contentType) {
+        revokeEstudioPreviewUrl();
+        estudioPreviewState.objectUrl = null;
+        estudioPreviewState.sourceUrl = url || null;
+        estudioPreviewState.type = contentType || "image/jpeg";
+        estudioPreviewState.name = extractStoredFilename(url) || "Estudio clínico";
       }
 
       function renderEstudioPreviewCard() {
@@ -1727,6 +1793,36 @@
         return uploadedPhotoUrl;
       }
 
+      async function uploadEstudioClinico(fileInput) {
+        const file = capturedEstudioFile || fileInput?.files?.[0];
+        if (!file) return uploadedEstudioUrl || null;
+        const session = SessionGuard.getSession();
+        if (!session?.token) throw new Error("Sesión no válida.");
+        const formData = new FormData();
+        formData.append("archivo", file);
+        const res = await fetch("/api/upload-estudio-clinico", {
+          method: "POST",
+          headers: { Authorization: "Bearer " + session.token },
+          body: formData,
+        });
+        if (!res.ok) throw new Error("Error al subir el estudio clínico.");
+        const data = await res.json();
+        uploadedEstudioPath = data.estudio_clinico_path || null;
+        uploadedEstudioUrl = data.estudio_clinico_url || null;
+        uploadedEstudioPreviewUrl = data.estudio_clinico_url_resolved || data.estudio_clinico_url || null;
+        capturedEstudioFile = null;
+        if (fileInput) fileInput.value = "";
+        if (uploadedEstudioUrl) {
+          const guessedType = (file.name || "").toLowerCase().endsWith(".pdf")
+            ? "application/pdf"
+            : "image/jpeg";
+          setEstudioPreviewFromStoredUrl(uploadedEstudioPreviewUrl, guessedType);
+          renderEstudioStatus();
+          renderEstudioPreviewCard();
+        }
+        return uploadedEstudioUrl;
+      }
+
       function showSuccessModal({ title, description, onContinue }) {
         const modal = document.getElementById("success-modal");
         const titleEl = document.getElementById("success-modal-title");
@@ -1840,14 +1936,16 @@
         }
         SR_Validations.clearAllFieldErrors(form);
         const errorsByField = new Map();
+        const _stashPage = SR_Validations.pageFromUrl(url);
         SR_Validations.validateHTML5Constraints(form).forEach(({ id, message }) => {
-          errorsByField.set(id, { form: formName, label: getFieldLabel(form.querySelector(`[name="${id}"]`) || { name: id }), message, url });
+          errorsByField.set(id, { form: formName, label: getFieldLabel(form.querySelector(`[name="${id}"]`) || { name: id }), message, url, stashEntry: _stashPage ? { page: _stashPage, kind: "text", name: id, message } : null });
         });
         form.querySelectorAll('input:not([type="radio"]):not([type="checkbox"]), select, textarea').forEach((input) => {
           const value = (input.value || "").trim();
           if (!input.name || input.disabled || input.readOnly || !value) return;
           if (input.validity && !input.validity.valid && !input.validity.valueMissing && !errorsByField.has(input.name)) {
-            errorsByField.set(input.name, { form: formName, label: getFieldLabel(input), message: getFieldFormatMessage(input), url });
+            const _msg = getFieldFormatMessage(input);
+            errorsByField.set(input.name, { form: formName, label: getFieldLabel(input), message: _msg, url, stashEntry: _stashPage ? { page: _stashPage, kind: "text", name: input.name, message: _msg } : null });
           }
         });
         const errors = Array.from(errorsByField.entries());
@@ -1865,12 +1963,14 @@
         const existente = d.beneficiario_existente || {};
         const quien = existente.nombre ? existente.nombre : "otro beneficiario";
         const ref = existente.folio ? ` (folio ${existente.folio})` : "";
+        const message = `La CURP ${d.curp || ""} ya está registrada a nombre de ${quien}${ref}. ` +
+                   `No es posible duplicar el registro de un mismo beneficiario.`;
         return {
           form: "Socioeconómico",
           label: "CURP duplicada",
-          message: `La CURP ${d.curp || ""} ya está registrada a nombre de ${quien}${ref}. ` +
-                   `No es posible duplicar el registro de un mismo beneficiario.`,
+          message,
           url: "socioeconomico.html",
+          stashEntry: { page: "socioeconomico", kind: "text", name: "curp", message },
         };
       }
 
@@ -1934,7 +2034,7 @@
                 <h3 class="text-sm font-black uppercase tracking-wide" style="color: var(--c-title);">${escapeHtml(form)}</h3>
                 <span class="rounded-full border border-red-200 bg-red-100 px-2 py-0.5 text-[11px] font-bold text-red-700">${items.length} ${items.length === 1 ? "error" : "errores"}</span>
               </div>
-              ${items[0].url ? `<button type="button" data-url="${escapeHtml(items[0].url)}" class="validation-jump rounded-lg border-2 border-ug-orange-pure/70 px-3 py-1.5 text-xs font-bold uppercase text-ug-orange-pure transition-all hover:bg-orange-50">Ir al formulario</button>` : ""}
+              ${items[0].url ? `<button type="button" data-url="${escapeHtml(items[0].url)}" data-stash="${escapeHtml(JSON.stringify(items.map((it) => it.stashEntry).filter(Boolean)))}" class="validation-jump rounded-lg border-2 border-ug-orange-pure/70 px-3 py-1.5 text-xs font-bold uppercase text-ug-orange-pure transition-all hover:bg-orange-50">Ir al formulario</button>` : ""}
             </div>
             <ul class="space-y-2 text-sm">${items.map((item) => `
               <li class="flex items-start gap-2.5 rounded-r-lg border-l-4 border-red-500 bg-red-50/70 px-3 py-2.5">
@@ -1945,6 +2045,16 @@
         modal.querySelectorAll(".validation-jump").forEach((btn) => {
           btn.addEventListener("click", () => {
             const url = btn.getAttribute("data-url");
+            try {
+              const entries = JSON.parse(btn.getAttribute("data-stash") || "[]");
+              if (SR_Validations && typeof SR_Validations.persistStashEntries === "function") {
+                SR_Validations.persistStashEntries(entries);
+              } else {
+                console.warn("SR_Validations.persistStashEntries no disponible — ¿validations.js en caché? Forzá recarga.");
+              }
+            } catch (e) {
+              console.warn("No se pudieron transferir los errores de campo:", e);
+            }
             if (url) window.location.href = url;
           });
         });
@@ -1992,6 +2102,10 @@
           // foto_url_resolved is a browser-renderable URL kept only for preview.
           foto_url: uploadedPhotoUrl || null,
           foto_url_resolved: uploadedPhotoPreviewUrl || null,
+          equipo_solicitado: get("equipo_solicitado") || null,
+          estudio_clinico_path: uploadedEstudioPath || null,
+          estudio_clinico_url: uploadedEstudioUrl || null,
+          estudio_clinico_url_resolved: uploadedEstudioPreviewUrl || null,
         };
       }
 
@@ -2001,23 +2115,29 @@
       // seguro navegar; false si la subida falló (el usuario debe reintentar).
       async function uploadFotoAntesDeNavegar(btnId) {
         const hasPendingPhoto = Boolean(capturedPhotoFile || document.getElementById("file-upload")?.files?.[0]);
-        if (!hasPendingPhoto) return true;
+        const hasPendingEstudio = Boolean(capturedEstudioFile || document.getElementById("estudio-clinico-file")?.files?.[0]);
+        if (!hasPendingPhoto && !hasPendingEstudio) return true;
         if (solicitudSubmitInProgress) return false;
 
         const btn = document.getElementById(btnId);
         const originalText = btn?.textContent || "";
         solicitudSubmitInProgress = true;
-        if (btn) { btn.disabled = true; btn.textContent = "Subiendo foto…"; }
+        if (btn) { btn.disabled = true; btn.textContent = "Subiendo archivos…"; }
         try {
-          await uploadFoto(document.getElementById("file-upload"));
+          if (hasPendingPhoto) {
+            await uploadFoto(document.getElementById("file-upload"));
+          }
+          if (hasPendingEstudio) {
+            await uploadEstudioClinico(document.getElementById("estudio-clinico-file"));
+          }
           return true;
         } catch (err) {
-          console.warn("No se pudo subir la foto antes de navegar:", err);
+          console.warn("No se pudo subir el archivo antes de navegar:", err);
           const errorEl = document.getElementById("error-msg");
           if (errorEl) {
             errorEl.textContent = err instanceof Error
               ? err.message
-              : "No se pudo subir la foto. Revisá tu conexión e intentá de nuevo.";
+              : "No se pudo subir el archivo. Revisá tu conexión e intentá de nuevo.";
             errorEl.classList.remove("hidden");
           }
           return false;
@@ -2099,6 +2219,13 @@
           } catch (err) {
             // Photo is optional for a borrador — keep going with whatever we had.
             console.warn("No se pudo subir la foto del borrador:", err);
+          }
+
+          // 1b. Upload any pending estudio clínico for the same reason.
+          try {
+            await uploadEstudioClinico(document.getElementById("estudio-clinico-file"));
+          } catch (err) {
+            console.warn("No se pudo subir el estudio clínico del borrador:", err);
           }
 
           // 2. Recolectar datos del formulario técnico actual
@@ -2197,6 +2324,9 @@
             unidad_medida: tecnicaData.unidad_medida || null,
             unidad_peso_captura: tecnicaData.unidad_peso_captura || null,
             foto_url: tecnicaData.foto_url || null,
+            equipo_solicitado: tecnicaData.equipo_solicitado || null,
+            estudio_clinico_path: tecnicaData.estudio_clinico_path || null,
+            estudio_clinico_url: tecnicaData.estudio_clinico_url || null,
             // Gestion (desde gestion)
             entidad_solicitante: draftGestion.entidad_solicitante || null,
             prioridad: draftGestion.prioridad || null,
@@ -2336,6 +2466,18 @@
           }
         }
 
+        // Upload estudio clínico if a new file was selected (optional for borrador)
+        try {
+          await uploadEstudioClinico(document.getElementById("estudio-clinico-file"));
+        } catch (err) {
+          if (status === "completo") {
+            errorEl.textContent = err.message || "Error al subir el estudio clínico.";
+            errorEl.classList.remove("hidden");
+            return;
+          }
+          console.warn("No se pudo subir el estudio clínico:", err);
+        }
+
         const payload = {
           beneficiario_id: beneficiarioId,
           entorno: get("entorno"),
@@ -2357,6 +2499,9 @@
           unidad_medida: (get("unidad_medida") === "metric" ? "cm" : "in"),
           unidad_peso_captura: (get("unidad_medida") === "metric" ? "kg" : "lb"),
           foto_url,
+          equipo_solicitado: get("equipo_solicitado") || null,
+          estudio_clinico_path: uploadedEstudioPath || null,
+          estudio_clinico_url: uploadedEstudioUrl || null,
           status,
         };
 
@@ -2701,6 +2846,15 @@
         setPhotoPreviewFromStoredUrl(uploadedPhotoPreviewUrl || uploadedPhotoUrl);
         renderPhotoStatus();
         renderPhotoPreviewCard();
+      }
+      // Render a stored estudio clínico set during localStorage-draft restore.
+      if (uploadedEstudioUrl && !estudioPreviewState.sourceUrl && !estudioPreviewState.objectUrl) {
+        const guessedType = (uploadedEstudioPath || "").toLowerCase().endsWith(".pdf")
+          ? "application/pdf"
+          : "image/jpeg";
+        setEstudioPreviewFromStoredUrl(uploadedEstudioPreviewUrl || uploadedEstudioUrl, guessedType);
+        renderEstudioStatus();
+        renderEstudioPreviewCard();
       }
       setupUnidadMedidaLabels();
       setupImageZoom();
