@@ -6,12 +6,13 @@ import io
 from datetime import datetime
 from typing import Annotated, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, field_validator, ValidationInfo
 from decimal import Decimal
 
 from database import get_db, _DBAdapter
+from audit import registrar_evento
 from routers.auth import CurrentUser, require_roles
 from routers.tecnica import (
     _build_list_where_clause,
@@ -476,8 +477,9 @@ def listar_beneficiarios_admin(
 
 @router.get("/admin/beneficiarios/export")
 def exportar_beneficiarios_admin(
+    request: Request,
     db: Annotated[_DBAdapter, Depends(get_db)],
-    _usuario: Annotated[CurrentUser, Depends(require_roles("admin"))],
+    usuario: Annotated[CurrentUser, Depends(require_roles("admin"))],
     q: Optional[str] = None,
     sede: Optional[str] = None,
     pais_id: Optional[int] = None,
@@ -629,6 +631,16 @@ def exportar_beneficiarios_admin(
     wb.save(buffer)
     buffer.seek(0)
 
+    registrar_evento(
+        db,
+        actor=usuario,
+        accion="export.generate",
+        recurso_tipo="admin_beneficiarios",
+        recurso_id="bulk",
+        metadata={"row_count": len(rows), "ids_count": len(ids_list), "filters_applied": bool(params)},
+        request=request,
+    )
+
     filename = f"BASE_DE_DATOS_EXPORT_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
     return StreamingResponse(
         buffer,
@@ -640,8 +652,9 @@ def exportar_beneficiarios_admin(
 @router.get("/admin/beneficiarios/{beneficiario_id}")
 def obtener_detalle_admin(
     beneficiario_id: int,
+    request: Request,
     db: Annotated[_DBAdapter, Depends(get_db)],
-    _usuario: Annotated[CurrentUser, Depends(require_roles("admin"))],
+    usuario: Annotated[CurrentUser, Depends(require_roles("admin"))],
 ) -> dict:
     """Get full detail of a beneficiario. Admin only."""
     snapshot = _build_snapshot(db, beneficiario_id)
@@ -649,6 +662,15 @@ def obtener_detalle_admin(
         "can_edit": True,
         "can_delete": True,
     }
+    registrar_evento(
+        db,
+        actor=usuario,
+        accion="beneficiario.detail.view",
+        recurso_tipo="beneficiario",
+        recurso_id=beneficiario_id,
+        metadata={"surface": "admin"},
+        request=request,
+    )
     return snapshot
 
 
@@ -661,8 +683,9 @@ def _nullify_empty_strings(fields: dict) -> dict:
 def actualizar_beneficiario_admin(
     beneficiario_id: int,
     body: AdminBeneficiarioUpdateRequest,
+    request: Request,
     db: Annotated[_DBAdapter, Depends(get_db)],
-    _usuario: Annotated[CurrentUser, Depends(require_roles("admin"))],
+    usuario: Annotated[CurrentUser, Depends(require_roles("admin"))],
 ) -> dict:
     """Update beneficiario fields. Admin only — no owner check."""
     _ensure_beneficiario(db, beneficiario_id)
@@ -697,6 +720,16 @@ def actualizar_beneficiario_admin(
         values,
     )
 
+    registrar_evento(
+        db,
+        actor=usuario,
+        accion="admin.patch",
+        recurso_tipo="beneficiario",
+        recurso_id=beneficiario_id,
+        metadata={"fields": sorted(fields.keys())},
+        request=request,
+    )
+
     return {"beneficiario_id": beneficiario_id, "updated": True}
 
 
@@ -704,6 +737,7 @@ def actualizar_beneficiario_admin(
 def actualizar_estudio_admin(
     beneficiario_id: int,
     body: AdminEstudioUpdateRequest,
+    request: Request,
     db: Annotated[_DBAdapter, Depends(get_db)],
     usuario: Annotated[CurrentUser, Depends(require_roles("admin"))],
 ) -> dict:
@@ -731,6 +765,16 @@ def actualizar_estudio_admin(
         values,
     )
 
+    registrar_evento(
+        db,
+        actor=usuario,
+        accion="admin.patch",
+        recurso_tipo="estudio_socioeconomico",
+        recurso_id=estudio["id"],
+        metadata={"beneficiario_id": beneficiario_id, "fields": sorted(fields.keys())},
+        request=request,
+    )
+
     return {"estudio_id": estudio["id"], "updated": True}
 
 
@@ -738,8 +782,9 @@ def actualizar_estudio_admin(
 def actualizar_solicitud_admin(
     beneficiario_id: int,
     body: AdminSolicitudUpdateRequest,
+    request: Request,
     db: Annotated[_DBAdapter, Depends(get_db)],
-    _usuario: Annotated[CurrentUser, Depends(require_roles("admin"))],
+    usuario: Annotated[CurrentUser, Depends(require_roles("admin"))],
 ) -> dict:
     """Update solicitud. Admin only — no owner check."""
     solicitud = _ensure_solicitud(db, beneficiario_id)
@@ -763,6 +808,16 @@ def actualizar_solicitud_admin(
         values,
     )
 
+    registrar_evento(
+        db,
+        actor=usuario,
+        accion="admin.patch",
+        recurso_tipo="solicitud_tecnica",
+        recurso_id=solicitud["id"],
+        metadata={"beneficiario_id": beneficiario_id, "fields": sorted(fields.keys())},
+        request=request,
+    )
+
     return {"solicitud_id": solicitud["id"], "updated": True}
 
 
@@ -770,8 +825,9 @@ def actualizar_solicitud_admin(
 def actualizar_gestion_admin(
     beneficiario_id: int,
     body: AdminGestionUpdateRequest,
+    request: Request,
     db: Annotated[_DBAdapter, Depends(get_db)],
-    _usuario: Annotated[CurrentUser, Depends(require_roles("admin"))],
+    usuario: Annotated[CurrentUser, Depends(require_roles("admin"))],
 ) -> dict:
     """Atomic update of estudio + solicitud in one transaction. Admin only."""
     estudio = _ensure_estudio(db, beneficiario_id)
@@ -829,6 +885,22 @@ def actualizar_gestion_admin(
         )
         updated_solicitud = True
 
+    if updated_estudio or updated_solicitud:
+        registrar_evento(
+            db,
+            actor=usuario,
+            accion="admin.patch",
+            recurso_tipo="gestion",
+            recurso_id=beneficiario_id,
+            metadata={
+                "estudio_id": estudio["id"],
+                "solicitud_id": solicitud["id"],
+                "estudio_fields": sorted(estudio_fields.keys()),
+                "solicitud_fields": sorted(solicitud_fields.keys()),
+            },
+            request=request,
+        )
+
     return {
         "beneficiario_id": beneficiario_id,
         "estudio_id": estudio["id"],
@@ -841,8 +913,9 @@ def actualizar_gestion_admin(
 @router.delete("/admin/beneficiarios/{beneficiario_id}")
 def eliminar_beneficiario_admin(
     beneficiario_id: int,
+    request: Request,
     db: Annotated[_DBAdapter, Depends(get_db)],
-    _usuario: Annotated[CurrentUser, Depends(require_roles("admin"))],
+    usuario: Annotated[CurrentUser, Depends(require_roles("admin"))],
 ) -> dict:
     """Hard delete a beneficiario and all associated records (cascade). Admin only."""
     _ensure_beneficiario(db, beneficiario_id)
@@ -904,6 +977,16 @@ def eliminar_beneficiario_admin(
         (beneficiario_id,),
     )
     deleted["beneficiarios"] = result._cur.rowcount
+
+    registrar_evento(
+        db,
+        actor=usuario,
+        accion="admin.delete",
+        recurso_tipo="beneficiario",
+        recurso_id=beneficiario_id,
+        metadata={"deleted": deleted},
+        request=request,
+    )
 
     return {
         "beneficiario_id": beneficiario_id,

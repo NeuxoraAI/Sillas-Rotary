@@ -175,6 +175,24 @@ DDL = [
     "CREATE INDEX IF NOT EXISTS idx_procesos_participantes_proceso ON procesos_tecnicos_participantes(proceso_tecnico_id)",
     "CREATE INDEX IF NOT EXISTS idx_procesos_participantes_usuario ON procesos_tecnicos_participantes(usuario_id)",
     "CREATE INDEX IF NOT EXISTS idx_procesos_participantes_created_at ON procesos_tecnicos_participantes(created_at)",
+    """
+    CREATE TABLE IF NOT EXISTS auditoria_eventos (
+        id               BIGSERIAL PRIMARY KEY,
+        actor_usuario_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
+        actor_rol        TEXT NOT NULL,
+        accion           TEXT NOT NULL,
+        recurso_tipo     TEXT NOT NULL,
+        recurso_id       TEXT,
+        metadata         JSONB NOT NULL DEFAULT '{}'::jsonb,
+        ip               INET,
+        created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        CONSTRAINT chk_auditoria_accion_not_blank CHECK (btrim(accion) <> ''),
+        CONSTRAINT chk_auditoria_recurso_tipo_not_blank CHECK (btrim(recurso_tipo) <> '')
+    )
+    """,
+    "CREATE INDEX IF NOT EXISTS idx_auditoria_eventos_actor_created ON auditoria_eventos(actor_usuario_id, created_at DESC)",
+    "CREATE INDEX IF NOT EXISTS idx_auditoria_eventos_recurso ON auditoria_eventos(recurso_tipo, recurso_id, created_at DESC)",
+    "CREATE INDEX IF NOT EXISTS idx_auditoria_eventos_accion_created ON auditoria_eventos(accion, created_at DESC)",
 
     # -----------------------------------------------------------------------
     # Perfiles / GitHub-style profiles (v2)
@@ -234,6 +252,10 @@ DDL = [
     "ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS avatar_url TEXT",
     "ALTER TABLE solicitudes_tecnicas ADD COLUMN IF NOT EXISTS soporte_oxigeno BOOLEAN NOT NULL DEFAULT FALSE",
     "ALTER TABLE solicitudes_tecnicas ADD COLUMN IF NOT EXISTS padecimiento TEXT",
+    "ALTER TABLE solicitudes_tecnicas ADD COLUMN IF NOT EXISTS unidad_peso_captura TEXT NOT NULL DEFAULT 'kg' CHECK (unidad_peso_captura IN ('kg', 'lb'))",
+    "ALTER TABLE solicitudes_tecnicas ADD COLUMN IF NOT EXISTS equipo_solicitado TEXT",
+    "ALTER TABLE solicitudes_tecnicas ADD COLUMN IF NOT EXISTS estudio_clinico_path TEXT",
+    "ALTER TABLE solicitudes_tecnicas ADD COLUMN IF NOT EXISTS estudio_clinico_url TEXT",
     # -----------------------------------------------------------------------
     # Email onboarding / password self-service (migration 0024).
     # Mirrored here (idempotently) so tests/conftest.py can build the test

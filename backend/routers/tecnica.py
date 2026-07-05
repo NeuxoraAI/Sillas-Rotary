@@ -7,12 +7,13 @@ from urllib.parse import urlparse, unquote
 from datetime import datetime, timezone, date
 from typing import Annotated, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, field_validator, model_validator, ValidationInfo
 from supabase import create_client
 
 from database import get_db, _DBAdapter
+from audit import registrar_evento
 from routers.auth import CurrentUser, assert_resource_owner, require_roles
 from validators import (
     validate_padecimiento,
@@ -847,8 +848,9 @@ def _calcular_edad(fecha_nacimiento_str: Optional[str]) -> Optional[int]:
 
 @router.get("/tecnica/beneficiarios/export")
 def exportar_beneficiarios_tecnica(
+    request: Request,
     db: Annotated[_DBAdapter, Depends(get_db)],
-    _usuario: Annotated[CurrentUser, Depends(require_roles("tecnico", "admin"))],
+    usuario: Annotated[CurrentUser, Depends(require_roles("tecnico", "admin"))],
     q: Optional[str] = None,
     sede: Optional[str] = None,
     pais_id: Optional[int] = None,
@@ -1031,6 +1033,16 @@ def exportar_beneficiarios_tecnica(
     wb.save(buffer)
     buffer.seek(0)
 
+    registrar_evento(
+        db,
+        actor=usuario,
+        accion="export.generate",
+        recurso_tipo="tecnica_beneficiarios",
+        recurso_id="bulk",
+        metadata={"row_count": len(rows), "ids_count": len(ids_list), "filters_applied": bool(params)},
+        request=request,
+    )
+
     filename = f"BASE_DE_DATOS_EXPORT_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
     return StreamingResponse(
         buffer,
@@ -1042,6 +1054,7 @@ def exportar_beneficiarios_tecnica(
 @router.get("/tecnica/beneficiarios/{beneficiario_id}")
 def obtener_detalle_tecnico(
     beneficiario_id: int,
+    request: Request,
     db: Annotated[_DBAdapter, Depends(get_db)],
     usuario: Annotated[CurrentUser, Depends(require_roles("tecnico", "admin"))],
 ) -> dict:
@@ -1050,6 +1063,15 @@ def obtener_detalle_tecnico(
         "readonly_base": True,
         "can_operate": usuario.rol == "tecnico",
     }
+    registrar_evento(
+        db,
+        actor=usuario,
+        accion="beneficiario.detail.view",
+        recurso_tipo="beneficiario",
+        recurso_id=beneficiario_id,
+        metadata={"surface": "tecnica"},
+        request=request,
+    )
     return snapshot
 
 
@@ -1438,6 +1460,7 @@ def obtener_foto_solicitud(
     id: int,
     db: Annotated[_DBAdapter, Depends(get_db)],
     usuario: Annotated[CurrentUser, Depends(require_roles("capturista", "tecnico", "admin", "organizacion"))],
+    request: Request = None,
 ) -> dict:
     if usuario.rol not in {"capturista", "tecnico", "admin", "organizacion"}:
         raise HTTPException(status_code=403, detail="No tiene permisos para esta acción")
@@ -1465,6 +1488,16 @@ def obtener_foto_solicitud(
     signed_url = _signed_url_from_response(signed_raw)
     if signed_url is None:
         raise HTTPException(status_code=500, detail="No se pudo generar URL firmada")
+
+    registrar_evento(
+        db,
+        actor=usuario,
+        accion="signed_url.generate",
+        recurso_tipo="solicitud_foto",
+        recurso_id=id,
+        metadata={"bucket": _BUCKET, "expires_in": _SIGNED_URL_TTL_SECONDS},
+        request=request,
+    )
 
     return {
         "foto_path": foto_path,

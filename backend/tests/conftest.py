@@ -173,6 +173,7 @@ def override_db(_test_db_conn):
 # Tables in dependency order: children (leaf nodes) first, parents last.
 # This ensures FK constraints are respected when deleting.
 _TABLES_ORDER = [
+    "auditoria_eventos",
     "organizaciones_lideres",
     "solicitudes_tecnicas",
     "estudios_socioeconomicos",

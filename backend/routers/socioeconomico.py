@@ -16,12 +16,13 @@ import psycopg2.errors
 from typing import Annotated, Optional
 from urllib.parse import urlparse, unquote
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, field_validator, model_validator
 from supabase import create_client
 
 from database import get_db, _DBAdapter
+from audit import registrar_evento
 from routers.auth import CurrentUser, assert_resource_owner, require_roles
 from utils.text import normalize_text
 from validators import (
@@ -652,8 +653,10 @@ async def upload_documento_estudio(
 
 @router.get("/documentos")
 def ver_documento_estudio(
+    request: Request,
+    db: Annotated[_DBAdapter, Depends(get_db)],
     path: str = Query(...),
-    _usuario: Annotated[CurrentUser, Depends(require_roles("capturista", "admin", "organizacion", "tecnico"))] = None,
+    usuario: Annotated[CurrentUser, Depends(require_roles("capturista", "admin", "organizacion", "tecnico"))] = None,
 ):
     document_path = extract_document_path(path) or path.strip()
     if not document_path:
@@ -667,6 +670,16 @@ def ver_documento_estudio(
     signed_url = _signed_url_from_response(signed_raw)
     if not signed_url:
         raise HTTPException(status_code=500, detail="No se pudo generar URL firmada")
+
+    registrar_evento(
+        db,
+        actor=usuario,
+        accion="signed_url.generate",
+        recurso_tipo="documento_estudio",
+        recurso_id=document_path,
+        metadata={"bucket": _DOCUMENT_BUCKET, "expires_in": _DOCUMENT_SIGNED_URL_TTL_SECONDS},
+        request=request,
+    )
 
     return RedirectResponse(url=signed_url, status_code=307)
 
