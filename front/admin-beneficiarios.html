@@ -29,6 +29,7 @@
       };
     </script>
     <link href="assets/css/theme.css" rel="stylesheet"/>
+    <script src="assets/js/common.js"></script>
     <script src="assets/js/session-guard.js"></script>
     <script src="assets/js/apiClient.js"></script>
     <script src="assets/js/confirmation-modal.js?v=2"></script>
@@ -473,28 +474,13 @@
       // ═══════════════════════════════════════════════════════════════════════════
       // HELPERS
       // ═══════════════════════════════════════════════════════════════════════════
-      function _getSession() {
-        try { return JSON.parse(localStorage.getItem("session") || "null"); } catch (_) { return null; }
-      }
       // Thin wrapper over ApiClient: centralizes base URL + Bearer auth +
       // no-store GET caching (see assets/js/apiClient.js). Paths omit "/api".
       function _authFetch(path, opts) {
         return ApiClient.fetch(path, opts);
       }
-      function _escapeHtml(str) {
-        if (str == null) return "";
-        const d = document.createElement("div"); d.textContent = str; return d.innerHTML;
-      }
       function _valOrNaHtml(val) {
         return val != null && val !== "" ? _escapeHtml(String(val)) : '<span class="text-slate-300 italic">No capturado</span>';
-      }
-      function _formatDate(iso) {
-        if (!iso) return "—";
-        try {
-          const d = new Date(iso);
-          if (isNaN(d.getTime())) return iso;
-          return d.toLocaleDateString("es-MX", { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" });
-        } catch (_) { return iso; }
       }
       function _debounce(fn, ms) {
         let timer;

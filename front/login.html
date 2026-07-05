@@ -27,6 +27,7 @@
   }
 </script>
 <link href="assets/css/theme.css" rel="stylesheet"/>
+<script src="assets/js/common.js"></script>
 <script src="assets/js/apiClient.js"></script>
 <script src="assets/js/theme-toggle.js"></script>
 <link href="assets/css/login.css" rel="stylesheet"/>
@@ -316,11 +317,6 @@
   });
 
   // ── Helpers ──────────────────────────────────────────────────────────────
-
-  function _getSession() {
-    try { return JSON.parse(localStorage.getItem('session') || 'null'); }
-    catch (_) { return null; }
-  }
 
   function _redirectByRole(rol) {
     if (rol === 'admin') {
