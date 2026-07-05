@@ -70,7 +70,7 @@ _DOCUMENT_ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".pdf"}
 _DOCUMENT_MAX_SIZE_BYTES = 10 * 1024 * 1024
 _DOCUMENT_BUCKET = "documentos-estudio"
 _DOCUMENT_STORAGE_URL_PREFIX = f"storage://{_DOCUMENT_BUCKET}/"
-_DOCUMENT_TYPES = {"credencial", "comprobante_domicilio"}
+_DOCUMENT_TYPES = {"credencial", "comprobante_domicilio", "estudio_clinico"}
 _DOCUMENT_SIGNED_URL_TTL_SECONDS = 60
 
 
@@ -121,6 +121,16 @@ def _signed_url_from_response(payload: object) -> Optional[str]:
     if isinstance(payload, dict):
         return payload.get("signedURL") or payload.get("signedUrl") or payload.get("url")
     return None
+
+
+def _resolve_document_preview_url(document_path: Optional[str]) -> Optional[str]:
+    if not document_path:
+        return None
+    try:
+        signed_raw = _storage().create_signed_url(document_path, _DOCUMENT_SIGNED_URL_TTL_SECONDS)
+    except Exception:
+        return None
+    return _signed_url_from_response(signed_raw)
 
 
 # ---------------------------------------------------------------------------
@@ -506,6 +516,8 @@ class EstudioIn(BaseModel):
     credencial_url: Optional[str] = None
     comprobante_domicilio_path: Optional[str] = None
     comprobante_domicilio_url: Optional[str] = None
+    estudio_clinico_path: Optional[str] = None
+    estudio_clinico_url: Optional[str] = None
 
     @field_validator("status")
     @classmethod
@@ -561,6 +573,8 @@ class EstudioUpdateRequest(BaseModel):
     credencial_url: Optional[str] = None
     comprobante_domicilio_path: Optional[str] = None
     comprobante_domicilio_url: Optional[str] = None
+    estudio_clinico_path: Optional[str] = None
+    estudio_clinico_url: Optional[str] = None
 
     @field_validator("status")
     @classmethod
@@ -633,6 +647,7 @@ async def upload_documento_estudio(
         "tipo": tipo,
         "documento_path": filename,
         "documento_url": _derive_document_url(filename),
+        "documento_url_resolved": _resolve_document_preview_url(filename),
     }
 
 
@@ -683,6 +698,10 @@ def crear_estudio(
     comprobante_path, comprobante_url = _resolve_document_refs(
         document_path=body.estudio.comprobante_domicilio_path,
         document_url=body.estudio.comprobante_domicilio_url,
+    )
+    estudio_clinico_path, estudio_clinico_url = _resolve_document_refs(
+        document_path=body.estudio.estudio_clinico_path,
+        document_url=body.estudio.estudio_clinico_url,
     )
 
     # 1. Compose canonical nombre from normalized structured fields
@@ -744,9 +763,10 @@ def crear_estudio(
             (beneficiario_id, usuario_id, otras_fuentes_ingreso,
              monto_otras_fuentes, tuvo_silla_previa, como_obtuvo_silla,
              elaboro_estudio, fecha_estudio, sede, ciudad_registro, status,
-             credencial_path, credencial_url,
-             comprobante_domicilio_path, comprobante_domicilio_url)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+              credencial_path, credencial_url,
+              comprobante_domicilio_path, comprobante_domicilio_url,
+              estudio_clinico_path, estudio_clinico_url)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         RETURNING id
         """,
         (
@@ -765,6 +785,8 @@ def crear_estudio(
             credencial_url,
             comprobante_path,
             comprobante_url,
+            estudio_clinico_path,
+            estudio_clinico_url,
         ),
     ).fetchone()["id"]
 
@@ -884,6 +906,10 @@ def obtener_estudio(
     ).fetchall()
 
     result = dict(estudio_row)
+    if result.get("estudio_clinico_path"):
+        result["estudio_clinico_url_resolved"] = _resolve_document_preview_url(
+            result["estudio_clinico_path"]
+        )
     result["beneficiario"] = dict(beneficiario_row)
     result["tutores"] = [
         _tutor_response(dict(t)) for t in tutores_rows
@@ -1007,6 +1033,15 @@ def actualizar_estudio(
         fields["comprobante_domicilio_path"] = comprobante_path
     if comprobante_url is not None:
         fields["comprobante_domicilio_url"] = comprobante_url
+
+    estudio_clinico_path, estudio_clinico_url = _resolve_document_refs(
+        document_path=fields.pop("estudio_clinico_path", None),
+        document_url=fields.get("estudio_clinico_url"),
+    )
+    if estudio_clinico_path is not None:
+        fields["estudio_clinico_path"] = estudio_clinico_path
+    if estudio_clinico_url is not None:
+        fields["estudio_clinico_url"] = estudio_clinico_url
     if not fields:
         row = db.execute(
             "SELECT id, status, updated_at FROM estudios_socioeconomicos WHERE id = %s",

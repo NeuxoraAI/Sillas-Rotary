@@ -14,7 +14,7 @@ from pydantic import BaseModel, field_validator
 
 from database import get_db, _DBAdapter
 from routers.auth import CurrentUser, assert_resource_owner, require_roles
-from routers.socioeconomico import _assert_curp_disponible, _resolve_document_refs
+from routers.socioeconomico import _assert_curp_disponible, _resolve_document_preview_url, _resolve_document_refs
 from utils.text import normalize_text
 from validators import (
     validate_nombre,
@@ -619,14 +619,19 @@ def _create_borrador(
             document_path=body.comprobante_domicilio_path,
             document_url=body.comprobante_domicilio_url,
         )
+        estudio_clinico_path, estudio_clinico_url = _resolve_document_refs(
+            document_path=body.estudio_clinico_path,
+            document_url=body.estudio_clinico_url,
+        )
         estudio_id = db.execute(
             """
             INSERT INTO estudios_socioeconomicos
                 (beneficiario_id, usuario_id, tuvo_silla_previa, como_obtuvo_silla,
                  elaboro_estudio, fecha_estudio, sede, ciudad_registro,
-                 credencial_path, credencial_url,
-                 comprobante_domicilio_path, comprobante_domicilio_url, status)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                  credencial_path, credencial_url,
+                  comprobante_domicilio_path, comprobante_domicilio_url,
+                  estudio_clinico_path, estudio_clinico_url, status)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
             """,
             (
@@ -642,6 +647,8 @@ def _create_borrador(
                 credencial_url,
                 comprobante_path,
                 comprobante_url,
+                estudio_clinico_path,
+                estudio_clinico_url,
                 body.status or "borrador",
             ),
         ).fetchone()["id"]
@@ -881,6 +888,14 @@ def _patch_estudio(db: _DBAdapter, body: GuardarBorradorRequest, estudio_id: int
         if comprobante_path is not None:
             fields["comprobante_domicilio_path"] = comprobante_path
             fields["comprobante_domicilio_url"] = comprobante_url
+    if body.estudio_clinico_path is not None or body.estudio_clinico_url is not None:
+        estudio_clinico_path, estudio_clinico_url = _resolve_document_refs(
+            document_path=body.estudio_clinico_path,
+            document_url=body.estudio_clinico_url,
+        )
+        if estudio_clinico_path is not None:
+            fields["estudio_clinico_path"] = estudio_clinico_path
+            fields["estudio_clinico_url"] = estudio_clinico_url
     if body.status is not None:
         fields["status"] = body.status
 
@@ -906,8 +921,6 @@ def _patch_solicitud(db: _DBAdapter, body: GuardarBorradorRequest, solicitud_id:
         ("padecimiento", body.padecimiento),
         ("soporte_oxigeno", body.soporte_oxigeno),
         ("equipo_solicitado", body.equipo_solicitado),
-        ("estudio_clinico_path", body.estudio_clinico_path),
-        ("estudio_clinico_url", body.estudio_clinico_url),
         ("entidad_solicitante", body.entidad_solicitante),
         ("prioridad", body.prioridad),
         ("justificacion", body.justificacion),
@@ -1018,6 +1031,10 @@ def obtener_borrador(
         return result
 
     response = _row_to_json(dict(estudio_row))
+    if response.get("estudio_clinico_path"):
+        response["estudio_clinico_url_resolved"] = _resolve_document_preview_url(
+            response["estudio_clinico_path"]
+        )
     response["beneficiario"] = _row_to_json(dict(beneficiario_row)) if beneficiario_row else None
     response["tutores"] = [_row_to_json(_tutor_response(dict(t))) for t in tutores_rows] if tutores_rows else []
     response["solicitud"] = _row_to_json(dict(solicitud_row)) if solicitud_row else None

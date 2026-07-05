@@ -241,6 +241,10 @@ def _build_snapshot(db: _DBAdapter, beneficiario_id: int) -> dict:
             estudio["comprobante_domicilio_url_resolved"] = _resolve_storage_url(
                 estudio["comprobante_domicilio_url"], "documentos-estudio"
             )
+        if estudio.get("estudio_clinico_url"):
+            estudio["estudio_clinico_url_resolved"] = _resolve_storage_url(
+                estudio["estudio_clinico_url"], "documentos-estudio"
+            )
 
     solicitud = _row_to_dict(
         db.execute(
@@ -1270,6 +1274,21 @@ def obtener_solicitud(
         out["foto_url_resolved"] = _resolve_storage_url(out["foto_url"], _BUCKET)
     if out.get("estudio_clinico_url"):
         out["estudio_clinico_url_resolved"] = _resolve_storage_url(out["estudio_clinico_url"], _DOCUMENT_BUCKET)
+    else:
+        estudio = db.execute(
+            """
+            SELECT estudio_clinico_path, estudio_clinico_url
+            FROM estudios_socioeconomicos
+            WHERE beneficiario_id = %s
+            ORDER BY id DESC
+            LIMIT 1
+            """,
+            (row["beneficiario_id"],),
+        ).fetchone()
+        if estudio and estudio.get("estudio_clinico_url"):
+            out["estudio_clinico_path"] = estudio.get("estudio_clinico_path")
+            out["estudio_clinico_url"] = estudio["estudio_clinico_url"]
+            out["estudio_clinico_url_resolved"] = _resolve_storage_url(estudio["estudio_clinico_url"], _DOCUMENT_BUCKET)
     return out
 
 

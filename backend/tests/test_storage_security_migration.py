@@ -29,6 +29,19 @@ def test_incremental_migration_adds_document_refs_to_estudios() -> None:
     assert "comprobante_domicilio_path" in content
 
 
+def test_incremental_migration_adds_estudio_clinico_refs_to_estudios() -> None:
+    migration_file = (
+        Path(__file__).resolve().parents[1]
+        / "migrations"
+        / "0025_add_estudio_clinico_refs_to_estudios.sql"
+    )
+    content = migration_file.read_text(encoding="utf-8").lower()
+
+    assert "alter table public.estudios_socioeconomicos" in content
+    assert "estudio_clinico_path" in content
+    assert "update public.estudios_socioeconomicos" in content
+
+
 def test_init_storage_hardens_existing_bucket_to_private(monkeypatch) -> None:
     calls: list[tuple[str, dict]] = []
 

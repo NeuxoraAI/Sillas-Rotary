@@ -603,6 +603,8 @@ class TestSocioeconomicoDocumentContracts:
                 "credencial_url": "storage://documentos-estudio/credencial/doc-1.pdf",
                 "comprobante_domicilio_path": "comprobante_domicilio/doc-2.png",
                 "comprobante_domicilio_url": "storage://documentos-estudio/comprobante_domicilio/doc-2.png",
+                "estudio_clinico_path": "estudio_clinico/doc-3.jpg",
+                "estudio_clinico_url": "storage://documentos-estudio/estudio_clinico/doc-3.jpg",
             }
         )
 
@@ -617,6 +619,8 @@ class TestSocioeconomicoDocumentContracts:
         assert data["credencial_url"] == "storage://documentos-estudio/credencial/doc-1.pdf"
         assert data["comprobante_domicilio_path"] == "comprobante_domicilio/doc-2.png"
         assert data["comprobante_domicilio_url"] == "storage://documentos-estudio/comprobante_domicilio/doc-2.png"
+        assert data["estudio_clinico_path"] == "estudio_clinico/doc-3.jpg"
+        assert data["estudio_clinico_url"] == "storage://documentos-estudio/estudio_clinico/doc-3.jpg"
 
     def test_patch_estudio_updates_document_refs(self, client, capturista_headers, region_lon):
         create_response = client.post(
@@ -633,6 +637,7 @@ class TestSocioeconomicoDocumentContracts:
             json={
                 "credencial_url": "storage://documentos-estudio/credencial/nueva-credencial.pdf",
                 "comprobante_domicilio_url": "storage://documentos-estudio/comprobante_domicilio/nuevo-comprobante.jpg",
+                "estudio_clinico_url": "storage://documentos-estudio/estudio_clinico/nuevo-estudio.jpg",
             },
         )
         assert patch_response.status_code == 200
@@ -644,6 +649,8 @@ class TestSocioeconomicoDocumentContracts:
         assert data["credencial_url"] == "storage://documentos-estudio/credencial/nueva-credencial.pdf"
         assert data["comprobante_domicilio_path"] == "comprobante_domicilio/nuevo-comprobante.jpg"
         assert data["comprobante_domicilio_url"] == "storage://documentos-estudio/comprobante_domicilio/nuevo-comprobante.jpg"
+        assert data["estudio_clinico_path"] == "estudio_clinico/nuevo-estudio.jpg"
+        assert data["estudio_clinico_url"] == "storage://documentos-estudio/estudio_clinico/nuevo-estudio.jpg"
 
 
 class TestCurpDedup:
