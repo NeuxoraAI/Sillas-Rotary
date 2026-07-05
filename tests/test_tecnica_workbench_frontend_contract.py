@@ -21,47 +21,53 @@ def _read(path: Path) -> str:
 def test_tecnica_declares_workbench_list_filters_and_states() -> None:
     html = _read(TECNICA_FILE)
 
-    assert "id=\"search-q\"" in html
+    assert "id=\"input-search\"" in html
+    assert "id=\"filter-pais\"" in html
+    assert "id=\"filter-region\"" in html
+    assert "id=\"filter-ciudad\"" in html
     assert "id=\"filter-sede\"" in html
-    assert "id=\"filter-estado\"" in html
-    assert "id=\"filter-revision\"" in html
-    assert "id=\"tabla-beneficiarios\"" in html
-    assert "id=\"empty-state\"" in html
+    assert "id=\"filter-foto\"" in html
+    assert "id=\"state-loading\"" in html
+    assert "id=\"state-empty\"" in html
+    assert "id=\"list-container\"" in html
+    assert "id=\"pagination\"" in html
 
 
 def test_tecnica_uses_phase2_operational_endpoints() -> None:
     html = _read(TECNICA_FILE)
 
-    assert "fetch('/api/tecnica/beneficiarios'" in html
-    assert "`/api/tecnica/beneficiarios/${beneficiarioId}`" in html
-    assert "`/api/tecnica/beneficiarios/${beneficiarioId}/iniciar`" in html
-    assert "`/api/tecnica/procesos/${procesoId}/continuar`" in html
-    assert "`/api/tecnica/procesos/${procesoId}/finalizar`" in html
-    assert "`/api/tecnica/procesos/${procesoId}/solicitar-revision`" in html
-    assert "`/api/tecnica/procesos/${procesoId}/pdf`" in html
+    assert "return ApiClient.fetch(path, opts);" in html
+    assert '"/paises"' in html
+    assert '"/regiones?pais_id=" + paisId' in html
+    assert '"/tecnica/beneficiarios/export?" + params.toString()' in html
+    assert '"/tecnica/beneficiarios?" + params.toString()' in html
+    assert '"/tecnica/beneficiarios/" + beneficiarioId' in html
 
 
 def test_tecnica_renders_readonly_snapshot_and_participants() -> None:
     html = _read(TECNICA_FILE)
 
-    assert "renderReadonlySnapshot" in html
-    assert "readonly_base" in html
-    assert "id=\"detalle-readonly\"" in html
-    assert "id=\"participantes-log\"" in html
-    assert "id=\"btn-iniciar\"" in html
-    assert "id=\"btn-continuar\"" in html
-    assert "id=\"btn-finalizar\"" in html
-    assert "id=\"btn-revision\"" in html
-    assert "id=\"btn-pdf\"" in html
+    assert "function renderDetail(data)" in html
+    assert "id=\"modal-overlay\"" in html
+    assert "id=\"modal-content\"" in html
+    assert "Tutores / Referencias" in html
+    assert "modal-tabs" in html
+    assert '{ id: "ident", label: "Identificación"' in html
+    assert '{ id: "clin",  label: "Datos clínicos"' in html
+    assert '{ id: "obs",   label: "Observaciones"' in html
+    assert '{ id: "files", label: "Archivos"' in html
+    assert "Vista de solo lectura" in html
+    assert "modalFooter.classList.add(\"hidden\");" in html
 
 
-def test_admin_users_declares_pending_reviews_widget() -> None:
+def test_admin_users_does_not_declare_stale_pending_reviews_widget() -> None:
     html = _read(ADMIN_USERS_FILE)
 
-    assert "id=\"tecnica-revisiones-card\"" in html
-    assert "id=\"count-revisiones\"" in html
-    assert "id=\"tabla-revisiones\"" in html
-    assert "fetch('/api/admin/tecnica/revisiones-pendientes'" in html
+    assert "id=\"form-crear\"" in html
+    assert "id=\"tabla-usuarios\"" in html
+    assert "return ApiClient.fetch(path, opts);" in html
+    assert "id=\"tecnica-revisiones-card\"" not in html
+    assert "revisiones-pendientes" not in html
 
 
 def test_admin_users_normal_flow_does_not_expose_permanent_delete() -> None:
