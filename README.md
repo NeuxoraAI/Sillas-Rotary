@@ -372,6 +372,12 @@ solicitudes_tecnicas  ──→  beneficiarios + usuarios
 | Headers de seguridad | X-Frame-Options, X-Content-Type-Options, Cache-Control |
 | Docs en producción | `/docs`, `/redoc`, `/openapi.json` desactivados cuando `ENV=production` |
 
+### Decisión sobre almacenamiento JWT
+
+El frontend conserva temporalmente el JWT en `localStorage['session']` como riesgo aceptado de corto plazo. La decisión, el radio de impacto XSS, los requisitos de CSP/sanitización, el inventario de terceros y el plan de migración a cookies `httpOnly` + CSRF están documentados en `docs/JWT_STORAGE_SECURITY.md`.
+
+Mientras esa decisión siga vigente, no se deben agregar nuevos scripts de terceros a páginas autenticadas sin justificar por qué necesitan ejecutarse en páginas que pueden leer tokens.
+
 ### Postura RLS y acceso a base de datos
 
 La autorización de negocio vive en FastAPI: cada endpoint protegido valida JWT,
