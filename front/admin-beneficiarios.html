@@ -1542,7 +1542,10 @@
         var extraParts = [];
         Object.keys(attrs).forEach(function(k) {
           var v = attrs[k];
-          if (v === true || v === "true") { extraParts.push(k); }
+          // data-* attributes must keep their value: validations.js matches
+          // data-uppercase === "true", so a bare attribute would disable it.
+          if (k.indexOf("data-") === 0) { if (v != null) extraParts.push(k + '="' + v + '"'); }
+          else if (v === true || v === "true") { extraParts.push(k); }
           else if (v !== false && v !== "false" && v != null) { extraParts.push(k + '="' + v + '"'); }
         });
         var extra = extraParts.join(" ");
