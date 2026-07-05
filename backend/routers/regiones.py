@@ -7,10 +7,10 @@ Endpoints:
 - POST  GET   /api/regiones        — Region CRUD (admin / auth)
 - PATCH       /api/regiones/{id}   — Edit region name/code/activo (admin)
 
-Also exports generate_folio(db, region_id) for use in socioeconomico router.
+Legacy `region_counters` rows are still consulted to protect existing folios,
+but new captures no longer generate folios.
 """
 
-import datetime
 from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -18,7 +18,6 @@ from pydantic import BaseModel, field_validator
 
 from database import get_db, _DBAdapter
 from routers.auth import CurrentUser, require_admin, require_auth
-from utils.folio import format_folio
 
 router = APIRouter()
 
@@ -117,70 +116,6 @@ class RegionResponse(BaseModel):
     nombre: str
     codigo: str
     activo: bool
-
-
-# ---------------------------------------------------------------------------
-# Folio generation (exported for use in socioeconomico router)
-# ---------------------------------------------------------------------------
-
-
-def generate_folio(db: _DBAdapter, region_id: int) -> str:
-    """
-    Generate the next folio for the given region and current year.
-
-    DEPRECATED (Issue #32): folio is no longer the beneficiario identifier —
-    CURP (beneficiarios.curp_benef) replaced it. New estudios/borradores no
-    longer call this function; it is kept only for legacy/reporting use and is
-    no longer wired into the capture flow.
-
-    Uses a single atomic INSERT ... ON CONFLICT DO UPDATE to safely
-    increment the counter without race conditions.
-
-    Args:
-        db: Active database adapter
-        region_id: ID of the region for which to generate the folio
-
-    Returns:
-        Formatted folio string like "MX-LON-2026-001"
-
-    Raises:
-        HTTPException 404 if region_id is invalid
-    """
-    # Fetch region + pais codes
-    row = db.execute(
-        """
-        SELECT r.codigo AS region_codigo, p.codigo AS pais_codigo
-        FROM regiones r
-        JOIN paises p ON p.id = r.pais_id
-        WHERE r.id = %s AND r.activo = TRUE
-        """,
-        (region_id,),
-    ).fetchone()
-
-    if row is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Región no encontrada o inactiva: {region_id}",
-        )
-
-    pais_codigo = row["pais_codigo"]
-    region_codigo = row["region_codigo"]
-    anio = datetime.date.today().year
-
-    # Atomic counter upsert — race-safe
-    counter_row = db.execute(
-        """
-        INSERT INTO region_counters (pais_codigo, region_codigo, anio, ultimo_numero)
-        VALUES (%s, %s, %s, 1)
-        ON CONFLICT (pais_codigo, region_codigo, anio)
-        DO UPDATE SET ultimo_numero = region_counters.ultimo_numero + 1
-        RETURNING ultimo_numero
-        """,
-        (pais_codigo, region_codigo, anio),
-    ).fetchone()
-
-    numero = counter_row["ultimo_numero"]
-    return format_folio(pais_codigo, region_codigo, anio, numero)
 
 
 # ---------------------------------------------------------------------------

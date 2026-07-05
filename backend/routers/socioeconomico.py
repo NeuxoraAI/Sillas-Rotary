@@ -5,7 +5,7 @@ Changes from v1:
 - Uses Depends(get_db) instead of context manager
 - Uses require_auth (JWT) — identity via usuario.usuario_id (v2)
 - region_id + sede at top level of EstudioCreateRequest (moved from EstudioIn)
-- CURP (curp_benef) is the natural beneficiary identifier (folio column dropped, Issue #32)
+- CURP (curp_benef) is the natural beneficiary identifier; folio is legacy-only.
 """
 
 import os
@@ -553,7 +553,7 @@ class EstudioCreateRequest(BaseModel):
 class EstudioCreateResponse(BaseModel):
     estudio_id: int
     beneficiario_id: int
-    # CURP is the natural identifier shown to users (Issue #32: folio column dropped).
+    # CURP is the natural identifier shown to users; folio remains legacy-only.
     curp: Optional[str] = None
     status: str
 

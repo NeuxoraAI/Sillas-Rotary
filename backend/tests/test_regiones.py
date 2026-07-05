@@ -1,11 +1,22 @@
 """
-Integration tests for region catalog and folio generation.
+Integration tests for region catalog and legacy folio protections.
 
 TDD: Tests written BEFORE implementation.
-Spec reference: region-catalog + folio-generation (fase-1-fundacion).
+Spec reference: region-catalog + legacy region_counters safeguards.
 """
 
-import pytest
+
+def _seed_region_counter(conn, *, pais_codigo: str, region_codigo: str, anio: int = 2026) -> None:
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            INSERT INTO region_counters (pais_codigo, region_codigo, anio, ultimo_numero)
+            VALUES (%s, %s, %s, 1)
+            ON CONFLICT (pais_codigo, region_codigo, anio) DO NOTHING
+            """,
+            (pais_codigo, region_codigo, anio),
+        )
+    conn.commit()
 
 
 class TestPaises:
@@ -151,10 +162,13 @@ class TestUpdatePais:
         assert res.json()["codigo"] == "MXX"
 
     def test_codigo_change_blocked_when_folios_exist(self, client, admin_headers, pais_mx, region_lon,
-                                                      capturista_headers):
+                                                      _test_db_conn):
         """Changing codigo is rejected when region_counters already has rows for that code."""
-        payload = _estudio_payload(region_lon["id"], nombre="Bene Folio")
-        client.post("/api/estudios", json=payload, headers=capturista_headers)
+        _seed_region_counter(
+            _test_db_conn,
+            pais_codigo=pais_mx["codigo"],
+            region_codigo=region_lon["codigo"],
+        )
 
         res = client.patch(f"/api/paises/{pais_mx['id']}", json={"codigo": "MXX"}, headers=admin_headers)
         assert res.status_code == 409
@@ -205,10 +219,13 @@ class TestUpdateRegion:
         assert res.json()["codigo"] == "LNX"
 
     def test_region_codigo_change_blocked_when_folios_exist(self, client, admin_headers, region_lon,
-                                                              pais_mx, capturista_headers):
+                                                              pais_mx, _test_db_conn):
         """Changing region codigo is rejected when region_counters already has rows."""
-        payload = _estudio_payload(region_lon["id"], nombre="Bene Folio Region")
-        client.post("/api/estudios", json=payload, headers=capturista_headers)
+        _seed_region_counter(
+            _test_db_conn,
+            pais_codigo=pais_mx["codigo"],
+            region_codigo=region_lon["codigo"],
+        )
 
         res = client.patch(f"/api/regiones/{region_lon['id']}", json={"codigo": "LNX"}, headers=admin_headers)
         assert res.status_code == 409
