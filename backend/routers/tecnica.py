@@ -610,32 +610,12 @@ class SolicitudUpdateRequest(BaseModel):
             return v
         return validate_status(v)
 
-    @model_validator(mode="after")
-    def _validar_completo_t2(self):
-        if self.status != "completo":
-            return self
-
-        missing: list[str] = []
-
-        medidas = {
-            "altura_total_in": self.altura_total_in,
-            "peso_kg": self.peso_kg,
-            "medida_cabeza_asiento": self.medida_cabeza_asiento,
-            "medida_hombro_asiento": self.medida_hombro_asiento,
-            "medida_prof_asiento": self.medida_prof_asiento,
-            "medida_rodilla_talon": self.medida_rodilla_talon,
-            "medida_ancho_cadera": self.medida_ancho_cadera,
-        }
-        for field_name, value in medidas.items():
-            if value is None:
-                missing.append(field_name)
-
-        if missing:
-            raise ValueError(
-                f"{', '.join(missing)} es obligatorio cuando status es completo"
-            )
-
-        return self
+    # NOTA (Issue #129): NO se valida aquí la completitud de medidas al cerrar
+    # (status="completo"). Este es un modelo de actualización PARCIAL y Pydantic
+    # no tiene acceso a la BD, por lo que no puede conocer las medidas ya
+    # persistidas en el borrador. La verificación de completitud contra el estado
+    # FUSIONADO (cuerpo + BD) se hace en el endpoint `actualizar_solicitud`, que
+    # sí tiene acceso a la BD (mismo enfoque que `finalizar._validate_all_complete`).
 
 
 class SolicitudUpdateResponse(BaseModel):
@@ -1314,6 +1294,31 @@ def actualizar_solicitud(
     assert_resource_owner(existing["usuario_id"], usuario, db=db)
 
     fields = body.model_dump(exclude_none=True)
+
+    # Issue #129: al cerrar (status="completo") las 7 medidas se validan aquí,
+    # contra el estado FUSIONADO (lo enviado en el cuerpo + lo ya persistido en
+    # `solicitudes_tecnicas` desde el borrador). Se hace en el endpoint —no en el
+    # modelo Pydantic— porque aquí sí hay acceso a la BD. La autorización
+    # (`assert_resource_owner`) ya se evaluó arriba, de modo que un ajeno recibe
+    # 403 antes de llegar a esta validación. Mismo enfoque que
+    # `finalizar._validate_all_complete`.
+    if fields.get("status") == "completo":
+        _MEDIDA_COLS = (
+            "altura_total_in", "peso_kg",
+            "medida_cabeza_asiento", "medida_hombro_asiento",
+            "medida_prof_asiento", "medida_rodilla_talon",
+            "medida_ancho_cadera",
+        )
+        faltantes = [
+            col for col in _MEDIDA_COLS
+            if fields.get(col) is None and existing[col] is None
+        ]
+        if faltantes:
+            raise HTTPException(
+                status_code=422,
+                detail=f"{', '.join(faltantes)} es obligatorio cuando status es completo",
+            )
+
     # Diagnostico lives on beneficiarios, not solicitudes_tecnicas
     diagnostico = fields.pop("diagnostico", None)
     if diagnostico is not None:
