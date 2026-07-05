@@ -1117,26 +1117,15 @@
   }
 
   // ─────────────────────────────────────────────────────────────────
-  // Auto-uppercase: free-text inputs and textareas are uppercased as
-  // the user types, mirroring the backend's normalize_text so data is
-  // stored and displayed in a single canonical format.
-  // Opt out per field with the data-no-uppercase attribute.
+  // Auto-uppercase: explicit opt-in only. Add data-uppercase="true" to
+  // fields that must be stored in uppercase; free-text fields keep user casing.
   // ─────────────────────────────────────────────────────────────────
-
-  // Allowlist: only free-text controls. Radios/checkboxes are HTMLInputElements
-  // too and fire "input" on selection — uppercasing their value would corrupt
-  // catalog payloads (e.g. prioridad "Alta" -> "ALTA").
-  const UPPERCASE_ALLOWED_TYPES = new Set(["text"]);
-  const UPPERCASE_EXCLUDED_NAME_RE = /(email|password|contrasena|search|buscar)/i;
 
   function shouldAutoUppercase(el) {
     const isInput = el instanceof HTMLInputElement;
     const isTextarea = el instanceof HTMLTextAreaElement;
     if (!isInput && !isTextarea) return false;
-    if (el.dataset && el.dataset.noUppercase !== undefined) return false;
-    if (isInput && !UPPERCASE_ALLOWED_TYPES.has((el.type || "text").toLowerCase())) return false;
-    if (UPPERCASE_EXCLUDED_NAME_RE.test(el.name || el.id || "")) return false;
-    return true;
+    return el.dataset?.uppercase === "true" || el.getAttribute("data-uppercase") === "true";
   }
 
   document.addEventListener("input", (event) => {

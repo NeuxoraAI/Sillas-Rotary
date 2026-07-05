@@ -115,6 +115,7 @@
                 name="nombres"
                 autocomplete="off"
                 type="text"
+                data-uppercase="true"
                 minlength="2"
                 maxlength="60"
                 pattern="^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ. ]+$"
@@ -131,6 +132,7 @@
                 name="apellido_paterno"
                 autocomplete="off"
                 type="text"
+                data-uppercase="true"
                 minlength="2"
                 maxlength="40"
                 pattern="^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ. ]+$"
@@ -147,6 +149,7 @@
                 name="apellido_materno"
                 autocomplete="off"
                 type="text"
+                data-uppercase="true"
                 minlength="2"
                 maxlength="40"
                 pattern="^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ. ]+$"
@@ -162,6 +165,7 @@
                 class="w-full uppercase"
                 name="curp"
                 type="text"
+                data-uppercase="true"
                 minlength="18"
                 maxlength="18"
                 pattern="^[A-Z][AEIOUX][A-Z]{2}\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])[HM](AS|BC|BS|CC|CL|CM|CS|CH|DF|DG|GT|GR|HG|JC|MC|MN|MS|NT|NL|OC|PL|QT|QR|SP|SL|SR|TC|TS|TL|VZ|YN|ZS|NE)[B-DF-HJ-NP-TV-Z]{3}[A-Z\d]\d$"
@@ -193,6 +197,7 @@
                 class="w-full"
                 name="calle"
                 type="text"
+                data-uppercase="true"
                 minlength="3"
                 maxlength="120"
                 pattern="^[A-Za-záéíóúÁÉÍÓÚüÜñÑ0-9.\- ]+$"
@@ -203,7 +208,7 @@
             </div>
             <div class="space-y-2">
               <label class="block text-sm font-semibold text-slate-700">Número exterior</label>
-              <input class="w-full" name="num_ext" type="text" minlength="1" maxlength="10" pattern="[A-Za-z0-9\-\/]{1,10}" required aria-describedby="num_ext-error" />
+              <input class="w-full" name="num_ext" type="text" data-uppercase="true" minlength="1" maxlength="10" pattern="[A-Za-z0-9\-\/]{1,10}" required aria-describedby="num_ext-error" />
               <p class="field-error hidden text-red-600 text-xs mt-1" id="num_ext-error" data-error-for="num_ext" role="alert"></p>
             </div>
             <div class="space-y-2">
@@ -211,7 +216,7 @@
                 <input class="h-4 w-4" name="tiene_num_interior" type="checkbox" />
                 <span>Agregar número interior</span>
               </label>
-              <input class="w-full text-slate-400 cursor-not-allowed" name="num_int" type="text" minlength="1" maxlength="10" pattern="[A-Za-z0-9\-\/]{0,10}" disabled />
+              <input class="w-full text-slate-400 cursor-not-allowed" name="num_int" type="text" data-uppercase="true" minlength="1" maxlength="10" pattern="[A-Za-z0-9\-\/]{0,10}" disabled />
             </div>
             <div class="space-y-2">
               <label class="block text-sm font-semibold text-slate-700"
@@ -221,6 +226,7 @@
                 class="w-full"
                 name="colonia"
                 type="text"
+                data-uppercase="true"
                 minlength="2"
                 maxlength="120"
                 pattern="^[A-Za-záéíóúÁÉÍÓÚüÜñÑ0-9.\- ]+$"
@@ -307,6 +313,7 @@
                       class="w-full mt-1"
                       name="tutor1_nombres"
                       type="text"
+                      data-uppercase="true"
                       minlength="2"
                       maxlength="60"
                       pattern="^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ. ]+$"
@@ -322,6 +329,7 @@
                       class="w-full mt-1"
                       name="tutor1_apellido_paterno"
                       type="text"
+                      data-uppercase="true"
                       minlength="2"
                       maxlength="40"
                       pattern="^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ. ]+$"
@@ -337,6 +345,7 @@
                       class="w-full mt-1"
                       name="tutor1_apellido_materno"
                       type="text"
+                      data-uppercase="true"
                       minlength="2"
                       maxlength="40"
                       pattern="^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ. ]+$"
@@ -445,6 +454,7 @@
                     class="w-full mt-1"
                     name="tutor1_fuente_empleo"
                     type="text"
+                    data-uppercase="true"
                     minlength="2"
                     maxlength="80"
                     pattern="^[A-Za-záéíóúÁÉÍÓÚüÜñÑ0-9\s\-().\/.,]+$"
@@ -488,7 +498,7 @@
                 </label>
                 <div>
                   <label class="text-xs font-bold text-slate-500 uppercase">Otra fuente</label>
-                  <input class="w-full mt-1" name="tutor1_otras_fuentes_ingreso" type="text" minlength="2" maxlength="100" pattern="^[A-Za-záéíóúÁÉÍÓÚüÜñÑ0-9\s\-().\/.,]+$" disabled aria-describedby="tutor1_otras_fuentes_ingreso-error" />
+                  <input class="w-full mt-1" name="tutor1_otras_fuentes_ingreso" type="text" data-uppercase="true" minlength="2" maxlength="100" pattern="^[A-Za-záéíóúÁÉÍÓÚüÜñÑ0-9\s\-().\/.,]+$" disabled aria-describedby="tutor1_otras_fuentes_ingreso-error" />
                   <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor1_otras_fuentes_ingreso-error" data-error-for="tutor1_otras_fuentes_ingreso" role="alert"></p>
                 </div>
                 <div>
@@ -566,6 +576,7 @@
                       class="w-full mt-1"
                       name="tutor2_nombres"
                       type="text"
+                      data-uppercase="true"
                       minlength="2"
                       maxlength="60"
                       pattern="^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ. ]+$"
@@ -580,6 +591,7 @@
                       class="w-full mt-1"
                       name="tutor2_apellido_paterno"
                       type="text"
+                      data-uppercase="true"
                       minlength="2"
                       maxlength="40"
                       pattern="^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ. ]+$"
@@ -594,6 +606,7 @@
                       class="w-full mt-1"
                       name="tutor2_apellido_materno"
                       type="text"
+                      data-uppercase="true"
                       minlength="2"
                       maxlength="40"
                       pattern="^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ. ]+$"
@@ -696,6 +709,7 @@
                     class="w-full mt-1"
                     name="tutor2_fuente_empleo"
                     type="text"
+                    data-uppercase="true"
                     minlength="2"
                     maxlength="80"
                     pattern="^[A-Za-záéíóúÁÉÍÓÚüÜñÑ0-9\s\-().\/.,]+$"
@@ -739,7 +753,7 @@
                 </label>
                 <div>
                   <label class="text-xs font-bold text-slate-500 uppercase">Otra fuente</label>
-                  <input class="w-full mt-1" name="tutor2_otras_fuentes_ingreso" type="text" minlength="2" maxlength="100" pattern="^[A-Za-záéíóúÁÉÍÓÚüÜñÑ0-9\s\-().\/.,]+$" disabled aria-describedby="tutor2_otras_fuentes_ingreso-error" />
+                  <input class="w-full mt-1" name="tutor2_otras_fuentes_ingreso" type="text" data-uppercase="true" minlength="2" maxlength="100" pattern="^[A-Za-záéíóúÁÉÍÓÚüÜñÑ0-9\s\-().\/.,]+$" disabled aria-describedby="tutor2_otras_fuentes_ingreso-error" />
                   <p class="field-error hidden text-red-600 text-xs mt-1" id="tutor2_otras_fuentes_ingreso-error" data-error-for="tutor2_otras_fuentes_ingreso" role="alert"></p>
                 </div>
                 <div>
