@@ -16,7 +16,7 @@ from pydantic import BaseModel, field_validator
 
 from database import get_db, _DBAdapter
 from routers.auth import CurrentUser, assert_resource_owner, require_roles
-from validators import field_label
+from validators import field_label, validate_curp
 
 router = APIRouter()
 
@@ -89,6 +89,20 @@ def _validate_all_complete(
     for field in ben_required:
         if not beneficiario_row.get(field):
             missing.append({"form": "beneficiario", "field": field})
+
+    # CURP: el formato y el dígito verificador se validan SOLO al finalizar
+    # (los borradores la guardan sin verificar). Si está presente pero es
+    # inválida, se reporta como campo a corregir, ruteado a Socioeconómico.
+    curp = beneficiario_row.get("curp_benef")
+    if curp:
+        try:
+            validate_curp(curp)
+        except ValueError:
+            missing.append({
+                "form": "beneficiario",
+                "field": "curp_benef",
+                "message": "La CURP ingresada no es válida (revisá el formato y el dígito verificador).",
+            })
 
     # ── Estudio required fields ────────────────────────────────────────────
     if not estudio_row.get("fecha_estudio"):

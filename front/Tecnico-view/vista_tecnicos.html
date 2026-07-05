@@ -35,6 +35,7 @@
     <link href="../assets/css/theme.css" rel="stylesheet"/>
     <script src="../assets/js/theme-toggle.js"></script>
 <script src="../assets/js/delight.js"></script>
+    <script src="../assets/js/common.js"></script>
     <script src="../assets/js/session-guard.js"></script>
     <script src="../assets/js/apiClient.js"></script>
     <script src="../assets/js/change-password.js"></script>
@@ -525,43 +526,10 @@
       // HELPERS
       // ═══════════════════════════════════════════════════════════════════════════
 
-      function _getSession() {
-        try {
-          return JSON.parse(localStorage.getItem("session") || "null");
-        } catch (_) {
-          return null;
-        }
-      }
-
       // Delegates to ApiClient: paths omit "/api" (added centrally), and the
       // base URL + Bearer auth live in assets/js/apiClient.js.
       function _authFetch(path, opts) {
         return ApiClient.fetch(path, opts);
-      }
-
-      function _formatRol(rol) {
-        const map = {
-          admin: "Administrador",
-          capturista: "Capturista",
-          tecnico: "Técnico",
-        };
-        return map[rol] || rol || "—";
-      }
-
-      function _formatDate(iso) {
-        if (!iso) return "—";
-        try {
-          const d = new Date(iso);
-          return d.toLocaleDateString("es-MX", {
-            year: "numeric",
-            month: "short",
-            day: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-          });
-        } catch (_) {
-          return iso;
-        }
       }
 
       function _debounce(fn, ms) {
@@ -570,13 +538,6 @@
           clearTimeout(timer);
           timer = setTimeout(() => fn.apply(this, args), ms);
         };
-      }
-
-      function _escapeHtml(str) {
-        if (str == null) return "";
-        const d = document.createElement("div");
-        d.textContent = str;
-        return d.innerHTML;
       }
 
       function _valOrNa(val) {

@@ -30,6 +30,7 @@
 <link href="../assets/css/theme.css" rel="stylesheet"/>
 <script src="../assets/js/theme-toggle.js"></script>
 <script src="../assets/js/delight.js"></script>
+<script src="../assets/js/common.js"></script>
 <script src="../assets/js/session-guard.js"></script>
 <script src="../assets/js/apiClient.js"></script>
 <script src="../assets/js/confirmation-modal.js?v=2"></script>
@@ -777,9 +778,6 @@
   });
 
   // ── Helpers ─────────────────────────────────────────────────────────────────
-  function _esc(str) {
-    return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  }
   function _show(el, msg) { el.textContent = msg; el.classList.remove('hidden'); }
   function _hide(el)      { el.textContent = ''; el.classList.add('hidden'); }
   function _showEl(id, msg) { const el = document.getElementById(id); if (msg !== undefined) el.textContent = msg; el.classList.remove('hidden'); }

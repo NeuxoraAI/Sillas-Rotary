@@ -22,7 +22,7 @@ from routers.tecnica import (
 from routers.socioeconomico import _assert_curp_disponible, _resolve_como_obtuvo_silla
 from validators import (
     validate_nombre,
-    validate_curp,
+    validate_curp_formato,
     validate_apellido,
     validate_email_format,
     validate_diagnostico,
@@ -121,9 +121,14 @@ class AdminBeneficiarioUpdateRequest(BaseModel):
     @field_validator("curp")
     @classmethod
     def _curp_valida(cls, v: Optional[str]) -> Optional[str]:
+        # El admin valida la CURP por FORMATO únicamente (NO el dígito
+        # verificador): es quien registra casos atípicos —CURPs reales cuyo
+        # dígito no coincide con el algoritmo estándar por anomalías de emisión
+        # de RENAPO— que el capturista dejó en borrador. El formato sí se exige
+        # (coincide con el CHECK de la BD), así que no entra basura.
         if v is None or v == "":
             return v
-        return validate_curp(v)
+        return validate_curp_formato(v)
 
     @field_validator("fecha_nacimiento")
     @classmethod
