@@ -18,7 +18,6 @@ from routers.socioeconomico import _assert_curp_disponible, _resolve_document_pr
 from utils.text import normalize_text
 from validators import (
     validate_nombre,
-    validate_curp,
     validate_apellido,
     validate_diagnostico,
     validate_calle,
@@ -217,7 +216,13 @@ class GuardarBorradorRequest(BaseModel):
     @field_validator("curp")
     @classmethod
     def _curp_valida(cls, v: Optional[str]) -> Optional[str]:
-        return validate_optional(validate_curp)(v)
+        # Los BORRADORES no verifican el formato ni el dígito verificador de la
+        # CURP: solo se normaliza (mayúsculas/trim). Antes, una CURP parcial o de
+        # prueba impedía guardar el borrador. La validación estricta ocurre al
+        # FINALIZAR el registro (finalizar-registro), no aquí.
+        if v is None or v == "":
+            return v
+        return v.strip().upper()
 
     @field_validator("fecha_nacimiento")
     @classmethod

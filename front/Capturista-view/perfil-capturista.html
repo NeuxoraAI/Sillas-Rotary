@@ -27,6 +27,7 @@
   }
 </script>
 <link href="../assets/css/theme.css" rel="stylesheet"/>
+<script src="../assets/js/common.js"></script>
 <script src="../assets/js/session-guard.js"></script>
 <script src="../assets/js/apiClient.js"></script>
 <script src="../assets/js/change-password.js"></script>
@@ -604,9 +605,7 @@
 
         const count = lookup[dateStr] || 0;
         const tooltip = `${dateStr}: ${count} captura${count !== 1 ? 's' : ''}`;
-        svg += `<rect x="${x}" y="${y}" width="${cellSize}" height="${cellSize}" rx="3" fill="${_heatColor(count)}"
-          onmouseenter="showHeatmapTooltip(event,'${_esc(tooltip)}')"
-          onmouseleave="hideHeatmapTooltip()" style="cursor:pointer"/>`;
+        svg += `<rect class="heatmap-day" data-tooltip="${_esc(tooltip)}" x="${x}" y="${y}" width="${cellSize}" height="${cellSize}" rx="3" fill="${_heatColor(count)}" style="cursor:pointer"/>`;
       }
 
       // Day labels (Mon, Wed, Fri)
@@ -630,6 +629,7 @@
         </div>
       `;
       container.innerHTML = svg + legendHtml;
+      bindHeatmapTooltips(container);
     } catch (_) {
       loading.textContent = 'No se pudo cargar la actividad.';
       loading.classList.remove('hidden');
@@ -647,15 +647,6 @@
     }
     el.textContent = parts.join('  ·  ');
     el.classList.remove('hidden');
-  }
-
-  function _formatDate(iso) {
-    try {
-      const d = new Date(iso);
-      const meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-      // UTC getters: keep the displayed date consistent with the UTC-bucketed heatmap
-      return `${String(d.getUTCDate()).padStart(2,'0')} ${meses[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
-    } catch (_) { return iso; }
   }
 
   function _heatColor(count) {
@@ -685,6 +676,13 @@
   function hideHeatmapTooltip() {
     const tip = document.getElementById('heatmap-tip');
     if (tip) tip.style.display = 'none';
+  }
+
+  function bindHeatmapTooltips(container) {
+    container.querySelectorAll('.heatmap-day').forEach((cell) => {
+      cell.addEventListener('mouseenter', (event) => showHeatmapTooltip(event, cell.dataset.tooltip || ''));
+      cell.addEventListener('mouseleave', hideHeatmapTooltip);
+    });
   }
 
   // ── Edit Profile Modal ─────────────────────────────────────────────────────
@@ -746,20 +744,6 @@
 
   // ── Helpers ─────────────────────────────────────────────────────────────────
 
-  function _getSession() {
-    try { return JSON.parse(localStorage.getItem('session') || 'null'); }
-    catch (_) { return null; }
-  }
-
-  function _formatRol(rol) {
-    const map = { admin: 'Administrador', capturista: 'Capturista', tecnico: 'Técnico', organizacion: 'Organización' };
-    return map[rol] || rol || '—';
-  }
-
-  function _esc(str) {
-    return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  }
-
   function _showError(msg) {
     const banner = document.getElementById('error-banner');
     const text   = document.getElementById('error-text');
@@ -777,23 +761,6 @@
     el.classList.add('hidden');
   }
 
-  // Clear in-progress draft state (the multi-step registration). Does NOT
-  // touch the session — used when starting a fresh capture.
-  function _clearDraftStorage() {
-    localStorage.removeItem('draft_socioeconomico');
-    localStorage.removeItem('draft_tecnica');
-    localStorage.removeItem('draft_gestion');
-    localStorage.removeItem('estudio_id');
-    localStorage.removeItem('beneficiario_id');
-    localStorage.removeItem('solicitud_id');
-  }
-
-  function _clearAllStorage() {
-    localStorage.removeItem('session');
-    localStorage.removeItem('region_ctx');
-    localStorage.removeItem('guest_ctx');
-    _clearDraftStorage();
-  }
 </script>
 </body>
 </html>

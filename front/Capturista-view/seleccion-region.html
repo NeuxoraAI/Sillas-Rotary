@@ -28,6 +28,7 @@
 </script>
 <link href="../assets/css/theme.css" rel="stylesheet"/>
 <script src="../assets/js/theme-toggle.js"></script>
+<script src="../assets/js/common.js"></script>
 <script src="../assets/js/session-guard.js"></script>
 <script src="../assets/js/apiClient.js"></script>
 <link href="../assets/css/seleccion-region.css" rel="stylesheet"/>
@@ -324,18 +325,8 @@
 
   // ── Helpers ─────────────────────────────────────────────────────────────────
 
-  function _getSession() {
-    try { return JSON.parse(localStorage.getItem('session') || 'null'); }
-    catch (_) { return null; }
-  }
-
   function _authFetch(path, opts) {
     return ApiClient.fetch(path, opts);
-  }
-
-  function _formatRol(rol) {
-    const map = { admin: 'Administrador', capturista: 'Capturista', tecnico: 'Técnico', organizacion: 'Organización' };
-    return map[rol] || rol || '—';
   }
 
   function _showError(msg) {
