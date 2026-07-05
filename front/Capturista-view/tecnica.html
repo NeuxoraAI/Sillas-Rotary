@@ -867,6 +867,17 @@
       let uploadedEstudioUrl = null;        // canonical storage:// reference (DB)
       let uploadedEstudioPreviewUrl = null; // browser-renderable URL (preview only)
 
+      function toMeasurementSystem(unit) {
+        if (unit === "metric" || unit === "cm") return "metric";
+        if (unit === "imperial" || unit === "in") return "imperial";
+        return null;
+      }
+
+      function restoreMeasurementSystem(data, setVal) {
+        const system = toMeasurementSystem(data?.unidad_captura || data?.unidad_medida);
+        if (system) setVal("unidad_medida", system);
+      }
+
       // Auth guard + Draft Resume
       (async function () {
         // Role guard: capturista may access this form.
@@ -957,9 +968,7 @@
                 }
               }
 
-              // Derive system from stored capture unit — sets the UI selector.
-              const system = (data.unidad_captura === "cm") ? "metric" : "imperial";
-              setVal("unidad_medida", system);
+              restoreMeasurementSystem(data, setVal);
 
               // Set numeric fields verbatim (no arithmetic — values are stored
               // in capture units for borradores and in canonical units for completos,
@@ -1057,10 +1066,7 @@
               const chk = document.querySelector('[name="tiene_observaciones"]');
               if (chk) { chk.checked = true; chk.dispatchEvent(new Event("change")); }
             }
-            if (data.unidad_medida) {
-              const system = data.unidad_medida === "cm" ? "metric" : "imperial";
-              setVal("unidad_medida", system);
-            }
+            restoreMeasurementSystem(data, setVal);
             setVal("altura_total_in", data.altura_total_in);
             setVal("peso_kg", data.peso_kg);
             setVal("medida_cabeza_asiento", data.medida_cabeza_asiento);
