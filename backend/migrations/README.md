@@ -40,6 +40,9 @@ ese entorno.
 | `0021` | `curp_natural_key` |
 | `0022` | `unify_org_leadership_source` |
 | `0023` | `normalize_ciudad_municipio` |
+| `0024` | `password_tokens` |
+| `0025` | `add_estudio_clinico_refs_to_estudios` |
+| `0026` | `auditoria_eventos` |
 
 ## Deprecación de legado
 
