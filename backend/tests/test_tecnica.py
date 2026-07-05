@@ -9,6 +9,24 @@ def _solicitud_payload(beneficiario_id: int) -> dict:
     }
 
 
+def _medidas_payload() -> dict:
+    """Las 7 medidas técnicas obligatorias para cerrar (status="completo").
+
+    Se persisten en el borrador para poder verificar que el cierre por PATCH con
+    cuerpo parcial (`{"status": "completo"}`) usa el estado FUSIONADO
+    (cuerpo + BD) y no exige reenviarlas (Issue #129).
+    """
+    return {
+        "altura_total_in": "30.0",
+        "peso_kg": "20.0",
+        "medida_cabeza_asiento": "25.0",
+        "medida_hombro_asiento": "18.0",
+        "medida_prof_asiento": "16.0",
+        "medida_rodilla_talon": "14.0",
+        "medida_ancho_cadera": "15.0",
+    }
+
+
 def _create_user_and_login(client, admin_headers: dict, *, suffix: str, rol: str) -> dict:
     email = f"{rol}-{suffix}@test.mx"
     password = f"{rol}-pass-123"
@@ -101,6 +119,31 @@ class TestTecnicaRbac:
         assert response.status_code == 403
 
     def test_tecnico_owner_can_patch_borrador(self, client, tecnico_headers, sample_estudio):
+        # Issue #129: las 7 medidas quedan persistidas en el borrador; el cierre
+        # se hace con cuerpo PARCIAL (sin reenviarlas) y debe devolver 200.
+        payload = {
+            **_solicitud_payload(sample_estudio["beneficiario_id"]),
+            **_medidas_payload(),
+        }
+        create_response = client.post(
+            "/api/solicitudes",
+            headers=tecnico_headers,
+            json=payload,
+        )
+        assert create_response.status_code == 201
+        solicitud_id = create_response.json()["solicitud_id"]
+
+        patch_response = client.patch(
+            f"/api/solicitudes/{solicitud_id}",
+            headers=tecnico_headers,
+            json={"status": "completo", "prioridad": "Alta"},
+        )
+        assert patch_response.status_code == 200, patch_response.text
+        assert patch_response.json()["status"] == "completo"
+
+    def test_close_missing_medidas_returns_422(self, client, tecnico_headers, sample_estudio):
+        # Issue #129: si faltan medidas en el estado FUSIONADO (cuerpo + BD),
+        # el cierre por PATCH parcial devuelve 422 con el detalle de faltantes.
         create_response = client.post(
             "/api/solicitudes",
             headers=tecnico_headers,
@@ -112,10 +155,10 @@ class TestTecnicaRbac:
         patch_response = client.patch(
             f"/api/solicitudes/{solicitud_id}",
             headers=tecnico_headers,
-            json={"status": "completo", "prioridad": "Alta"},
+            json={"status": "completo"},
         )
-        assert patch_response.status_code == 200
-        assert patch_response.json()["status"] == "completo"
+        assert patch_response.status_code == 422
+        assert "altura_total_in" in patch_response.text
 
     def test_patch_rechaza_unidad_medida_invalida(self, client, tecnico_headers, sample_estudio):
         create_response = client.post(
@@ -185,10 +228,16 @@ class TestTecnicaRbac:
         tecnico_headers,
         sample_estudio,
     ):
+        # Issue #129: medidas persistidas en el borrador; el admin cierra con
+        # cuerpo parcial (sin reenviarlas) → 200.
+        payload = {
+            **_solicitud_payload(sample_estudio["beneficiario_id"]),
+            **_medidas_payload(),
+        }
         create_response = client.post(
             "/api/solicitudes",
             headers=tecnico_headers,
-            json=_solicitud_payload(sample_estudio["beneficiario_id"]),
+            json=payload,
         )
         assert create_response.status_code == 201
         solicitud_id = create_response.json()["solicitud_id"]
@@ -198,7 +247,7 @@ class TestTecnicaRbac:
             headers=admin_headers,
             json={"status": "completo", "prioridad": "Media"},
         )
-        assert patch_response.status_code == 200
+        assert patch_response.status_code == 200, patch_response.text
         assert patch_response.json()["status"] == "completo"
 
     def test_capturista_cannot_close_existing_solicitud(
