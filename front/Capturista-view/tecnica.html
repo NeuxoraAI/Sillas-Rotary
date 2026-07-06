@@ -255,7 +255,7 @@
                 <legend class="block text-sm font-semibold text-slate-700 mb-2">¿Requiere soporte para oxígeno?</legend>
                 <div class="flex items-center gap-6">
                   <label class="inline-flex items-center">
-                    <input class="text-primary focus:ring-primary h-4 w-4" name="soporte_oxigeno" type="radio" value="true" />
+                    <input class="text-primary focus:ring-primary h-4 w-4" name="soporte_oxigeno" type="radio" value="true" aria-describedby="soporte_oxigeno-error" />
                     <span class="ml-2 text-sm font-medium text-slate-700">Sí</span>
                   </label>
                   <label class="inline-flex items-center">
@@ -264,6 +264,7 @@
                   </label>
                 </div>
               </fieldset>
+              <p class="field-error hidden text-red-600 text-xs mt-1" id="soporte_oxigeno-error" data-error-for="soporte_oxigeno" role="alert"></p>
             </div>
           </div>
         </section>
@@ -950,11 +951,13 @@
               // Set hidden technical field and restore selected padecimientos
               setVal("padecimiento", data.padecimiento);
               restorePadecimientosSelection(data.padecimiento);
-              // Radio group — restore by checking the matching option
-              const oxiRadioA = document.querySelector(
-                `[name="soporte_oxigeno"][value="${data.soporte_oxigeno === true ? "true" : "false"}"]`,
-              );
-              if (oxiRadioA) oxiRadioA.checked = true;
+              // Radio group — restore only if explicitly selected (true/false), not when null
+              if (typeof data.soporte_oxigeno === "boolean") {
+                const oxiRadioA = document.querySelector(
+                  `[name="soporte_oxigeno"][value="${data.soporte_oxigeno ? "true" : "false"}"]`,
+                );
+                if (oxiRadioA) oxiRadioA.checked = true;
+              }
 
               // Set textarea
               setVal("observaciones_posturales", data.observaciones_posturales);
@@ -1061,10 +1064,13 @@
             setVal("equipo_solicitado", data.equipo_solicitado);
             setVal("padecimiento", data.padecimiento);
             restorePadecimientosSelection(data.padecimiento);
-            const oxiRadioB = document.querySelector(
-              `[name="soporte_oxigeno"][value="${data.soporte_oxigeno === true ? "true" : "false"}"]`,
-            );
-            if (oxiRadioB) oxiRadioB.checked = true;
+            // Radio group — restore only if explicitly selected (true/false), not when null
+            if (typeof data.soporte_oxigeno === "boolean") {
+              const oxiRadioB = document.querySelector(
+                `[name="soporte_oxigeno"][value="${data.soporte_oxigeno ? "true" : "false"}"]`,
+              );
+              if (oxiRadioB) oxiRadioB.checked = true;
+            }
             setVal("observaciones_posturales", data.observaciones_posturales);
             if (data.observaciones_posturales && data.observaciones_posturales.trim()) {
               const chk = document.querySelector('[name="tiene_observaciones"]');
@@ -2879,15 +2885,6 @@
 
       // CONTINUAR button: validate + save to localStorage + navigate
       document.getElementById("btn-continuar-tecnica")?.addEventListener("click", () => {
-        const soporteOxigeno = document.querySelector('[name="soporte_oxigeno"]:checked');
-        if (!soporteOxigeno) {
-          alert("Debes indicar si requiere soporte para oxígeno.");
-          document
-            .querySelector('[name="soporte_oxigeno"]')
-            ?.closest("fieldset")
-            ?.scrollIntoView({ behavior: "smooth", block: "center" });
-          return;
-        }
         continuarSolicitudTecnica();
       });
 
