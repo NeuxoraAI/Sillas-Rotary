@@ -61,7 +61,7 @@ def test_detalle_consolidado_readonly_permissions():
         {"id": 100, "status": "completo"},
         {"id": 200, "status": "borrador"},
     ])
-    out = obtener_detalle_tecnico(beneficiario_id=10, db=db, usuario=_tec_user())
+    out = obtener_detalle_tecnico(beneficiario_id=10, request=None, db=db, usuario=_tec_user())
     assert out["beneficiario"]["id"] == 10
     assert out["permisos"]["readonly_base"] is True
     assert "proceso_tecnico" not in out

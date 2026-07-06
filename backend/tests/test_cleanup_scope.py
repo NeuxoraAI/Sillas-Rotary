@@ -33,9 +33,10 @@ class TestTablesOrder:
         assert "historial_estados" not in _TABLES_ORDER
 
     def test_first_table_is_a_leaf_child(self) -> None:
-        """The first table to clean must be a leaf child — organizaciones_lideres
-        (FK to organizaciones/usuarios), deleted before its parents."""
-        assert _TABLES_ORDER[0] == "organizaciones_lideres"
+        """The first table to clean must be a leaf child (nothing FK-references it).
+        auditoria_eventos (append-only audit log) is a leaf and is cleaned first;
+        organizaciones_lideres must still precede its parents."""
+        assert _TABLES_ORDER[0] == "auditoria_eventos"
         assert _TABLES_ORDER.index("organizaciones_lideres") < _TABLES_ORDER.index("organizaciones")
         assert _TABLES_ORDER.index("organizaciones_lideres") < _TABLES_ORDER.index("usuarios")
 
@@ -134,5 +135,5 @@ class TestSchemaQualification:
         monkeypatch.setenv("TEST_DB_SCHEMA", "test_suite")
         qualified = _qualified_table_names()
 
-        assert qualified[0] == "test_suite.organizaciones_lideres"
+        assert qualified[0] == "test_suite.auditoria_eventos"
         assert qualified[-1] == "test_suite.usuarios"
