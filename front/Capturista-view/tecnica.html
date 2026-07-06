@@ -690,7 +690,7 @@
                 Capturar fotografía del paciente
               </h3>
               <p class="text-sm text-slate-600">
-                Acomodá al paciente frente a la cámara y tomá la foto.
+                Acomode al paciente frente a la cámara y tome la foto.
               </p>
             </div>
             <button
@@ -2152,7 +2152,7 @@
           if (errorEl) {
             errorEl.textContent = err instanceof Error
               ? err.message
-              : "No se pudo subir el archivo. Revisá tu conexión e intentá de nuevo.";
+              : "No se pudo subir el archivo. Revise su conexión e intente de nuevo.";
             errorEl.classList.remove("hidden");
           }
           return false;
@@ -2203,8 +2203,8 @@
         const formatErrors = collectDraftFormatErrors("Técnica", "tecnica.html");
         if (formatErrors.length > 0) {
           showValidationModal(formatErrors, {
-            title: "Revisá el formato antes de guardar",
-            description: "Podés guardar borradores incompletos, pero primero corregí los campos que ya tienen un valor inválido.",
+            title: "Revise el formato antes de guardar",
+            description: "Puede guardar borradores incompletos, pero primero corrija los campos que ya tienen un valor inválido.",
           });
           return;
         }
