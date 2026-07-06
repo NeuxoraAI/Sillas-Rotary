@@ -52,6 +52,18 @@ def _create_user_and_login(client, admin_headers: dict, *, suffix: str, rol: str
 
 
 class TestTecnicaRbac:
+    def test_equipo_solicitado_persiste(self, client, capturista_headers, sample_estudio):
+        payload = _solicitud_payload(sample_estudio["beneficiario_id"])
+        payload["equipo_solicitado"] = "Silla de ruedas neurológica PCI"
+
+        create_response = client.post("/api/solicitudes", headers=capturista_headers, json=payload)
+        assert create_response.status_code == 201, create_response.text
+        solicitud_id = create_response.json()["solicitud_id"]
+
+        get_response = client.get(f"/api/solicitudes/{solicitud_id}", headers=capturista_headers)
+        assert get_response.status_code == 200, get_response.text
+        assert get_response.json()["equipo_solicitado"] == "Silla de ruedas neurológica PCI"
+
     def test_soporte_oxigeno_persiste(self, client, capturista_headers, sample_estudio):
         payload = _solicitud_payload(sample_estudio["beneficiario_id"])
         payload["soporte_oxigeno"] = True
