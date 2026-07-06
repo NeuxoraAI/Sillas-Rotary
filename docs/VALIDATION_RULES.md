@@ -25,6 +25,8 @@ Este documento define TODAS las reglas de validación del sistema. Cualquier cam
 | `status` | borrador, completo | Sí |
 | `imss_estatus` / `infonavit_estatus` | SI, NO | Sí (para Tutor 1) |
 | `curp` | 18 caracteres `A-Z`/`0-9` con estructura CURP + dígito verificador | Sí |
+| `soporte_oxigeno` | true, false | Sí |
+| `padecimiento` | Lista separada por comas (máx 500 chars) | No |
 
 *Condicional: obligatorio cuando `tuvo_silla_previa = true`.
 
@@ -44,6 +46,7 @@ Este documento define TODAS las reglas de validación del sistema. Cualquier cam
 | `observaciones_posturales` | `^[a-zA-ZáéíóúÁÉÍÓÚäëïöüÄËÏÖÜñÑ0-9 ()\/\-.,:;]*$` | idéntica | ✅ |
 | `justificacion` | `^[a-zA-ZáéíóúÁÉÍÓÚäëïöüÄËÏÖÜñÑ0-9 ()\/\-.,:;]*$` | idéntica | ✅ |
 | `entidad_solicitante` | `^[a-zA-ZáéíóúÁÉÍÓÚäëïöüÄËÏÖÜñÑ0-9 ()\/\-.,]*$` | idéntica | ✅ |
+| `padecimiento` | `^[a-zA-ZáéíóúÁÉÍÓÚäëïöüÄËÏÖÜñÑ0-9 ()\-/.,:;]*$` | idéntica | ✅ |
 | `medida_*` | `^[0-9]+(\.[0-9]{1,3})?$` | idéntica | ✅ |
 | `curp` | `_CURP_RE` (ver abajo) | `CURP_RE` idéntica | ✅ |
 
@@ -67,6 +70,7 @@ Este documento define TODAS las reglas de validación del sistema. Cualquier cam
 | `observaciones_posturales` | 0 | 500 | longitud |
 | `justificacion` | 0 | 500 | longitud |
 | `entidad_solicitante` | 0 | 64 | longitud |
+| `padecimiento` | 0 | 500 | longitud |
 | `fuente_empleo` | 0 | 80 | longitud |
 | `otras_fuentes_ingreso` | 0 | 100 | longitud |
 | `ingreso_mensual` | 0 | 999,999,999 | entero |
