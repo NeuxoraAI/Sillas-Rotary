@@ -559,10 +559,12 @@ class EstudioCreateResponse(BaseModel):
 
 
 class EstudioUpdateRequest(BaseModel):
+    # `otras_fuentes_ingreso` / `monto_otras_fuentes` a nivel estudio son columnas
+    # muertas (eliminadas por la migración 0028; el frontend solo las usa por
+    # tutor). No se declaran aquí para que un PATCH no intente escribirlas en
+    # estudios_socioeconomicos (columna inexistente en public → UndefinedColumn).
     tuvo_silla_previa: Optional[bool] = None
     como_obtuvo_silla: Optional[str] = None
-    otras_fuentes_ingreso: Optional[str] = None
-    monto_otras_fuentes: Optional[float] = None
     elaboro_estudio: Optional[str] = None
     ciudad_registro: Optional[str] = None
     fecha_estudio: Optional[str] = None
@@ -612,12 +614,13 @@ class EstudioUpdateResponse(BaseModel):
 # Endpoints
 # ---------------------------------------------------------------------------
 
-@router.post("/upload-documento")
-async def upload_documento_estudio(
-    tipo: str = Form(...),
-    archivo: UploadFile = File(...),
-    _usuario: Annotated[CurrentUser, Depends(require_roles("capturista", "admin", "organizacion"))] = None,
-) -> dict:
+async def procesar_upload_documento(tipo: str, archivo: UploadFile) -> dict:
+    """Validate + store a study document blob and return its path/url refs.
+
+    Shared by the capture endpoint (`POST /upload-documento`) and the admin
+    edit endpoint (`POST /admin/upload-documento`, Issue #130). Role gating is
+    the caller's responsibility.
+    """
     if tipo not in _DOCUMENT_TYPES:
         raise HTTPException(status_code=422, detail="Tipo de documento no permitido")
 
@@ -649,6 +652,15 @@ async def upload_documento_estudio(
         "documento_url": _derive_document_url(filename),
         "documento_url_resolved": _resolve_document_preview_url(filename),
     }
+
+
+@router.post("/upload-documento")
+async def upload_documento_estudio(
+    tipo: str = Form(...),
+    archivo: UploadFile = File(...),
+    _usuario: Annotated[CurrentUser, Depends(require_roles("capturista", "organizacion"))] = None,
+) -> dict:
+    return await procesar_upload_documento(tipo, archivo)
 
 
 @router.get("/documentos")
@@ -687,7 +699,7 @@ def ver_documento_estudio(
 def crear_estudio(
     body: EstudioCreateRequest,
     db: Annotated[_DBAdapter, Depends(get_db)],
-    usuario: Annotated[CurrentUser, Depends(require_roles("capturista", "admin", "organizacion"))],
+    usuario: Annotated[CurrentUser, Depends(require_roles("capturista", "organizacion"))],
 ) -> EstudioCreateResponse:
     """Create a complete estudio socioeconómico with beneficiario, tutores, and study data."""
     _validar_tutores(body.tutores)
@@ -760,20 +772,17 @@ def crear_estudio(
     estudio_id = db.execute(
         """
         INSERT INTO estudios_socioeconomicos
-            (beneficiario_id, usuario_id, otras_fuentes_ingreso,
-             monto_otras_fuentes, tuvo_silla_previa, como_obtuvo_silla,
+            (beneficiario_id, usuario_id, tuvo_silla_previa, como_obtuvo_silla,
              elaboro_estudio, fecha_estudio, sede, ciudad_registro, status,
               credencial_path, credencial_url,
               comprobante_domicilio_path, comprobante_domicilio_url,
               estudio_clinico_path, estudio_clinico_url)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         RETURNING id
         """,
         (
             beneficiario_id,
             usuario.usuario_id,
-            None,
-            None,
             int(estudio.tuvo_silla_previa) if estudio.tuvo_silla_previa is not None else None,
             _resolve_como_obtuvo_silla(estudio.tuvo_silla_previa, estudio.como_obtuvo_silla),
             _resolve_elaboro_estudio(usuario, estudio.elaboro_estudio),
@@ -960,7 +969,7 @@ def actualizar_estudio(
     id: int,
     body: EstudioUpdateRequest,
     db: Annotated[_DBAdapter, Depends(get_db)],
-    usuario: Annotated[CurrentUser, Depends(require_roles("capturista", "admin", "organizacion"))],
+    usuario: Annotated[CurrentUser, Depends(require_roles("capturista", "organizacion"))],
 ) -> EstudioUpdateResponse:
     """Partial update of an estudio. Only the owner or an admin may update it."""
     existing = db.execute(
