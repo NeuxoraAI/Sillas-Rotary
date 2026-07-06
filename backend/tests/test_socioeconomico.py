@@ -366,8 +366,9 @@ class TestSocioeconomicoRbac:
         assert get_response.json()["id"] == estudio_id
 
     def test_admin_patch_preserves_elaboro_estudio(self, client, admin_headers, capturista_headers, region_lon):
-        """Issue #107: el admin editando un estudio ajeno no debe pisar la autoría
-        (`elaboro_estudio`) con su propio nombre."""
+        """Issue #107 + #130: el admin edita un estudio ajeno por su ruta dedicada
+        (`/admin/beneficiarios/{id}/estudio`) — el endpoint de captura le está
+        vedado (403) — y esa edición no debe pisar la autoría (`elaboro_estudio`)."""
         create_response = client.post(
             "/api/estudios",
             headers=capturista_headers,
@@ -375,18 +376,27 @@ class TestSocioeconomicoRbac:
         )
         assert create_response.status_code == 201
         estudio_id = create_response.json()["estudio_id"]
+        beneficiario_id = create_response.json()["beneficiario_id"]
 
         # El capturista dueño dejó la autoría como "Capturista Test"
         before = client.get(f"/api/estudios/{estudio_id}", headers=admin_headers).json()
         assert before["elaboro_estudio"] == "Capturista Test"
 
-        # El admin edita un campo cualquiera sin enviar elaboro_estudio
-        patch_response = client.patch(
+        # Issue #130: el endpoint general de captura queda cerrado al admin.
+        forbidden = client.patch(
             f"/api/estudios/{estudio_id}",
             headers=admin_headers,
-            json={"monto_otras_fuentes": 1500},
+            json={"ciudad_registro": "Guadalajara"},
         )
-        assert patch_response.status_code == 200
+        assert forbidden.status_code == 403
+
+        # El admin edita un campo por su ruta dedicada, sin enviar elaboro_estudio.
+        patch_response = client.patch(
+            f"/api/admin/beneficiarios/{beneficiario_id}/estudio",
+            headers=admin_headers,
+            json={"ciudad_registro": "Guadalajara"},
+        )
+        assert patch_response.status_code == 200, patch_response.text
 
         after = client.get(f"/api/estudios/{estudio_id}", headers=admin_headers).json()
         assert after["elaboro_estudio"] == "Capturista Test"
@@ -413,57 +423,40 @@ class TestSocioeconomicoRbac:
 
 class TestSocioeconomicoMonetaryContract:
     def test_post_persists_clean_numeric_monetary_fields(self, client, capturista_headers, region_lon):
+        # Los montos de "otras fuentes de ingreso" viven a nivel TUTOR (el nivel
+        # estudio se eliminó en la migración 0028). Se persisten como numérico limpio.
         payload = _estudio_payload(region_lon["id"])
         payload["tutores"][0]["sin_empleo"] = False
         payload["tutores"][0]["fuente_empleo"] = "EMPLEADO"
         payload["tutores"][0]["ingreso_mensual"] = 12500
-        payload["tutores"].append(
-            {
-                "numero_tutor": 2,
-                "nombres": "TUTOR",
-                "apellido_paterno": "SECUNDARIO",
-                "apellido_materno": "TEST",
-                "edad": 40,
-                "nivel_estudios": "SECUNDARIA",
-                "estado_civil": "CASADO",
-                "vivienda": "PROPIA",
-                "fuente_empleo": "EMPLEADO",
-                "ingreso_mensual": 8400,
-                "sin_empleo": False,
-                "tiene_imss": False,
-                "tiene_infonavit": False,
-            }
-        )
-        create_response = client.post("/api/estudios", headers=capturista_headers, json=payload)
-        assert create_response.status_code == 201
-        estudio_id = create_response.json()["estudio_id"]
+        payload["tutores"][0]["otras_fuentes_aplica"] = True
+        payload["tutores"][0]["otras_fuentes_ingreso"] = "VENTAS"
+        payload["tutores"][0]["monto_otras_fuentes"] = 3499.25
 
-        patch_response = client.patch(
-            f"/api/estudios/{estudio_id}",
-            headers=capturista_headers,
-            json={"monto_otras_fuentes": 3499.25, "status": "borrador"},
-        )
-        assert patch_response.status_code == 200
+        create_response = client.post("/api/estudios", headers=capturista_headers, json=payload)
+        assert create_response.status_code == 201, create_response.text
+        estudio_id = create_response.json()["estudio_id"]
 
         get_response = client.get(f"/api/estudios/{estudio_id}", headers=capturista_headers)
         assert get_response.status_code == 200
-        assert get_response.json()["monto_otras_fuentes"] == 3499.25
+        assert get_response.json()["tutores"][0]["monto_otras_fuentes"] == 3499.25
 
-    def test_post_and_patch_allow_null_for_empty_or_invalidated_monetary_inputs(
+    def test_post_allows_null_for_empty_or_invalidated_monetary_inputs(
         self,
         client,
         capturista_headers,
         region_lon,
     ):
+        # Los montos monetarios (por tutor) pueden almacenarse como None. Con
+        # sin_empleo=True, ingreso_mensual no es requerido y se guarda como 0.
         payload = _estudio_payload(region_lon["id"])
-        # Test that monetary fields can store None. With sin_empleo=True,
-        # ingreso_mensual is not required and stored as 0 in DB, then returned as 0.
         payload["tutores"][0]["sin_empleo"] = True
         payload["tutores"][0]["ingreso_mensual"] = None
-        payload["estudio"]["monto_otras_fuentes"] = None
+        payload["tutores"][0]["otras_fuentes_aplica"] = False
+        payload["tutores"][0]["monto_otras_fuentes"] = None
 
         create_response = client.post("/api/estudios", headers=capturista_headers, json=payload)
-        assert create_response.status_code == 201
+        assert create_response.status_code == 201, create_response.text
         estudio_id = create_response.json()["estudio_id"]
 
         get_response = client.get(f"/api/estudios/{estudio_id}", headers=capturista_headers)
@@ -471,18 +464,7 @@ class TestSocioeconomicoMonetaryContract:
         data = get_response.json()
         # When sin_empleo=True, DB stores ingreso_mensual as 0, API returns 0
         assert data["tutores"][0]["ingreso_mensual"] == 0
-        assert data["monto_otras_fuentes"] is None
-
-        patch_response = client.patch(
-            f"/api/estudios/{estudio_id}",
-            headers=capturista_headers,
-            json={"monto_otras_fuentes": None, "status": "borrador"},
-        )
-        assert patch_response.status_code == 200
-
-        get_after_patch = client.get(f"/api/estudios/{estudio_id}", headers=capturista_headers)
-        assert get_after_patch.status_code == 200
-        assert get_after_patch.json()["monto_otras_fuentes"] is None
+        assert data["tutores"][0]["monto_otras_fuentes"] is None
 
 class TestNivelEstudiosCatalog:
     """RF-02: nivel_estudios must use closed 8-code catalog."""

@@ -59,7 +59,33 @@ def test_extract_foto_path_from_storage_scheme_url() -> None:
     assert result == "path/sub/foto.png"
 
 
-def test_obtener_foto_rechaza_capturista_aunque_sea_owner(monkeypatch) -> None:
+def test_obtener_foto_permite_capturista_owner(monkeypatch) -> None:
+    # Issue #130 + lectura compartida (CLAUDE.md, tecnica.py): el capturista —
+    # que ahora es quien captura y sube la foto — puede ver la de su propio
+    # registro. La foto se devuelve con URL firmada, sin 403.
+    db = _FakeDB(
+        {
+            "id": 12,
+            "usuario_id": 77,
+            "foto_path": "owner/foto.png",
+            "foto_url": None,
+        }
+    )
+    monkeypatch.setattr(tecnica, "_storage", lambda: _FakeStorage())
+
+    out = tecnica.obtener_foto_solicitud(
+        id=12,
+        db=db,
+        usuario=_user(usuario_id=77, rol="capturista"),
+    )
+
+    assert out["foto_path"] == "owner/foto.png"
+    assert out["url"].startswith("https://storage.local/sign/")
+
+
+def test_obtener_foto_rechaza_capturista_no_owner(monkeypatch) -> None:
+    # Titularidad: un capturista que NO es dueño (ni líder/admin) del registro
+    # recibe 403 vía assert_resource_owner.
     db = _FakeDB(
         {
             "id": 12,
@@ -74,7 +100,7 @@ def test_obtener_foto_rechaza_capturista_aunque_sea_owner(monkeypatch) -> None:
         tecnica.obtener_foto_solicitud(
             id=12,
             db=db,
-            usuario=_user(usuario_id=77, rol="capturista"),
+            usuario=_user(usuario_id=999, rol="capturista"),
         )
 
     assert exc.value.status_code == 403

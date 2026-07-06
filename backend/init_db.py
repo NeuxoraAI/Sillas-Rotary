@@ -256,6 +256,17 @@ DDL = [
     "ALTER TABLE solicitudes_tecnicas ADD COLUMN IF NOT EXISTS equipo_solicitado TEXT",
     "ALTER TABLE solicitudes_tecnicas ADD COLUMN IF NOT EXISTS estudio_clinico_path TEXT",
     "ALTER TABLE solicitudes_tecnicas ADD COLUMN IF NOT EXISTS estudio_clinico_url TEXT",
+    # Migration 0025: el estudio clínico se persiste también en el estudio
+    # socioeconómico (junto a credencial y comprobante). Espejado aquí para que
+    # conftest sincronice el testschema existente (CREATE IF NOT EXISTS no añade
+    # columnas a tablas ya creadas).
+    "ALTER TABLE estudios_socioeconomicos ADD COLUMN IF NOT EXISTS estudio_clinico_path TEXT",
+    "ALTER TABLE estudios_socioeconomicos ADD COLUMN IF NOT EXISTS estudio_clinico_url TEXT",
+    # Migration 0028: `otras_fuentes_ingreso` / `monto_otras_fuentes` a nivel
+    # estudio son columnas muertas (el dato vive por tutor). Espejado aquí para
+    # que el testschema refleje public (la CREATE TABLE de arriba aún las lista).
+    "ALTER TABLE estudios_socioeconomicos DROP COLUMN IF EXISTS otras_fuentes_ingreso",
+    "ALTER TABLE estudios_socioeconomicos DROP COLUMN IF EXISTS monto_otras_fuentes",
     # -----------------------------------------------------------------------
     # Email onboarding / password self-service (migration 0024).
     # Mirrored here (idempotently) so tests/conftest.py can build the test

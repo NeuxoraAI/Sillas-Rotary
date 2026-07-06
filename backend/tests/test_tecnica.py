@@ -52,33 +52,33 @@ def _create_user_and_login(client, admin_headers: dict, *, suffix: str, rol: str
 
 
 class TestTecnicaRbac:
-    def test_soporte_oxigeno_persiste(self, client, tecnico_headers, sample_estudio):
+    def test_soporte_oxigeno_persiste(self, client, capturista_headers, sample_estudio):
         payload = _solicitud_payload(sample_estudio["beneficiario_id"])
         payload["soporte_oxigeno"] = True
-        create_response = client.post("/api/solicitudes", headers=tecnico_headers, json=payload)
+        create_response = client.post("/api/solicitudes", headers=capturista_headers, json=payload)
         assert create_response.status_code == 201
         solicitud_id = create_response.json()["solicitud_id"]
-        get_response = client.get(f"/api/solicitudes/{solicitud_id}", headers=tecnico_headers)
+        get_response = client.get(f"/api/solicitudes/{solicitud_id}", headers=capturista_headers)
         assert get_response.status_code == 200
         assert get_response.json()["soporte_oxigeno"] is True
 
-    def test_unidad_cm_no_convierte_en_borrador(self, client, tecnico_headers, sample_estudio):
+    def test_unidad_cm_no_convierte_en_borrador(self, client, capturista_headers, sample_estudio):
         """Borradores must store measurement values verbatim (no unit conversion).
         Conversion to canonical units (inches/lb) happens only at final submission."""
         payload = _solicitud_payload(sample_estudio["beneficiario_id"])
         # status is "borrador" from _solicitud_payload — values must be stored as-is
         payload.update({"unidad_medida": "cm", "altura_total_in": 25.4})
-        create_response = client.post("/api/solicitudes", headers=tecnico_headers, json=payload)
+        create_response = client.post("/api/solicitudes", headers=capturista_headers, json=payload)
         assert create_response.status_code == 201
         solicitud_id = create_response.json()["solicitud_id"]
-        get_response = client.get(f"/api/solicitudes/{solicitud_id}", headers=tecnico_headers)
+        get_response = client.get(f"/api/solicitudes/{solicitud_id}", headers=capturista_headers)
         assert get_response.status_code == 200
         body = get_response.json()
         assert body["unidad_captura"] == "cm"
         # Value must be stored verbatim — NOT converted to 10.0 inches
         assert float(body["altura_total_in"]) == pytest.approx(25.4, rel=1e-3)
 
-    def test_unidad_cm_convierte_al_finalizar(self, client, tecnico_headers, sample_estudio):
+    def test_unidad_cm_convierte_al_finalizar(self, client, capturista_headers, sample_estudio):
         """Unit conversion to canonical (inches/lb) happens only when status becomes completo."""
         medidas_completo = {
             "unidad_medida": "cm",
@@ -100,34 +100,44 @@ class TestTecnicaRbac:
             "status": "completo",
             **medidas_completo,
         }
-        create_response = client.post("/api/solicitudes", headers=tecnico_headers, json=payload)
+        create_response = client.post("/api/solicitudes", headers=capturista_headers, json=payload)
         assert create_response.status_code == 201
         solicitud_id = create_response.json()["solicitud_id"]
-        get_response = client.get(f"/api/solicitudes/{solicitud_id}", headers=tecnico_headers)
+        get_response = client.get(f"/api/solicitudes/{solicitud_id}", headers=capturista_headers)
         assert get_response.status_code == 200
         body = get_response.json()
         assert body["unidad_captura"] == "cm"
         # 25.4 cm ÷ 2.54 = 10.0 inches — conversion must have happened
         assert float(body["altura_total_in"]) == pytest.approx(10.0, rel=1e-3)
 
-    def test_capturista_cannot_create_solicitud(self, client, capturista_headers, sample_estudio):
+    def test_capturista_can_create_solicitud(self, client, capturista_headers, sample_estudio):
+        # Issue #130: el capturista (no el técnico) crea las solicitudes técnicas.
         response = client.post(
             "/api/solicitudes",
             headers=capturista_headers,
             json=_solicitud_payload(sample_estudio["beneficiario_id"]),
         )
+        assert response.status_code == 201
+
+    def test_tecnico_cannot_create_solicitud(self, client, tecnico_headers, sample_estudio):
+        # Issue #130: el técnico es de solo lectura sobre registros → 403 al crear.
+        response = client.post(
+            "/api/solicitudes",
+            headers=tecnico_headers,
+            json=_solicitud_payload(sample_estudio["beneficiario_id"]),
+        )
         assert response.status_code == 403
 
-    def test_tecnico_owner_can_patch_borrador(self, client, tecnico_headers, sample_estudio):
-        # Issue #129: las 7 medidas quedan persistidas en el borrador; el cierre
-        # se hace con cuerpo PARCIAL (sin reenviarlas) y debe devolver 200.
+    def test_capturista_owner_can_patch_borrador(self, client, capturista_headers, sample_estudio):
+        # Issue #129 + #130: el capturista dueño cierra el borrador con cuerpo
+        # PARCIAL (las 7 medidas ya están persistidas) y debe devolver 200.
         payload = {
             **_solicitud_payload(sample_estudio["beneficiario_id"]),
             **_medidas_payload(),
         }
         create_response = client.post(
             "/api/solicitudes",
-            headers=tecnico_headers,
+            headers=capturista_headers,
             json=payload,
         )
         assert create_response.status_code == 201
@@ -135,18 +145,18 @@ class TestTecnicaRbac:
 
         patch_response = client.patch(
             f"/api/solicitudes/{solicitud_id}",
-            headers=tecnico_headers,
+            headers=capturista_headers,
             json={"status": "completo", "prioridad": "Alta"},
         )
         assert patch_response.status_code == 200, patch_response.text
         assert patch_response.json()["status"] == "completo"
 
-    def test_close_missing_medidas_returns_422(self, client, tecnico_headers, sample_estudio):
+    def test_close_missing_medidas_returns_422(self, client, capturista_headers, sample_estudio):
         # Issue #129: si faltan medidas en el estado FUSIONADO (cuerpo + BD),
         # el cierre por PATCH parcial devuelve 422 con el detalle de faltantes.
         create_response = client.post(
             "/api/solicitudes",
-            headers=tecnico_headers,
+            headers=capturista_headers,
             json=_solicitud_payload(sample_estudio["beneficiario_id"]),
         )
         assert create_response.status_code == 201
@@ -154,16 +164,16 @@ class TestTecnicaRbac:
 
         patch_response = client.patch(
             f"/api/solicitudes/{solicitud_id}",
-            headers=tecnico_headers,
+            headers=capturista_headers,
             json={"status": "completo"},
         )
         assert patch_response.status_code == 422
         assert "altura_total_in" in patch_response.text
 
-    def test_patch_rechaza_unidad_medida_invalida(self, client, tecnico_headers, sample_estudio):
+    def test_patch_rechaza_unidad_medida_invalida(self, client, capturista_headers, sample_estudio):
         create_response = client.post(
             "/api/solicitudes",
-            headers=tecnico_headers,
+            headers=capturista_headers,
             json=_solicitud_payload(sample_estudio["beneficiario_id"]),
         )
         assert create_response.status_code == 201
@@ -171,15 +181,15 @@ class TestTecnicaRbac:
 
         patch_response = client.patch(
             f"/api/solicitudes/{solicitud_id}",
-            headers=tecnico_headers,
+            headers=capturista_headers,
             json={"unidad_medida": "mm"},
         )
         assert patch_response.status_code == 422
 
-    def test_patch_rechaza_medida_fuera_de_rango(self, client, tecnico_headers, sample_estudio):
+    def test_patch_rechaza_medida_fuera_de_rango(self, client, capturista_headers, sample_estudio):
         create_response = client.post(
             "/api/solicitudes",
-            headers=tecnico_headers,
+            headers=capturista_headers,
             json=_solicitud_payload(sample_estudio["beneficiario_id"]),
         )
         assert create_response.status_code == 201
@@ -187,108 +197,115 @@ class TestTecnicaRbac:
 
         patch_response = client.patch(
             f"/api/solicitudes/{solicitud_id}",
-            headers=tecnico_headers,
+            headers=capturista_headers,
             json={"peso_kg": -1},
         )
         assert patch_response.status_code == 422
 
-    def test_non_owner_tecnico_patch_forbidden(
-        self,
-        client,
-        admin_headers,
-        tecnico_headers,
-        sample_estudio,
-    ):
-        create_response = client.post(
-            "/api/solicitudes",
-            headers=tecnico_headers,
-            json=_solicitud_payload(sample_estudio["beneficiario_id"]),
-        )
-        assert create_response.status_code == 201
-        solicitud_id = create_response.json()["solicitud_id"]
-
-        other_tecnico_headers = _create_user_and_login(
-            client,
-            admin_headers,
-            suffix="other-tec",
-            rol="tecnico",
-        )
-
-        patch_response = client.patch(
-            f"/api/solicitudes/{solicitud_id}",
-            headers=other_tecnico_headers,
-            json={"status": "completo"},
-        )
-        assert patch_response.status_code == 403
-
-    def test_admin_can_patch_foreign_solicitud(
-        self,
-        client,
-        admin_headers,
-        tecnico_headers,
-        sample_estudio,
-    ):
-        # Issue #129: medidas persistidas en el borrador; el admin cierra con
-        # cuerpo parcial (sin reenviarlas) → 200.
-        payload = {
-            **_solicitud_payload(sample_estudio["beneficiario_id"]),
-            **_medidas_payload(),
-        }
-        create_response = client.post(
-            "/api/solicitudes",
-            headers=tecnico_headers,
-            json=payload,
-        )
-        assert create_response.status_code == 201
-        solicitud_id = create_response.json()["solicitud_id"]
-
-        patch_response = client.patch(
-            f"/api/solicitudes/{solicitud_id}",
-            headers=admin_headers,
-            json={"status": "completo", "prioridad": "Media"},
-        )
-        assert patch_response.status_code == 200, patch_response.text
-        assert patch_response.json()["status"] == "completo"
-
-    def test_capturista_cannot_close_existing_solicitud(
+    def test_tecnico_cannot_patch_solicitud(
         self,
         client,
         capturista_headers,
         tecnico_headers,
         sample_estudio,
     ):
+        # Issue #130: el técnico → 403 al editar (compuerta de rol, antes de la
+        # verificación de titularidad).
         create_response = client.post(
             "/api/solicitudes",
-            headers=tecnico_headers,
+            headers=capturista_headers,
             json=_solicitud_payload(sample_estudio["beneficiario_id"]),
         )
         assert create_response.status_code == 201
         solicitud_id = create_response.json()["solicitud_id"]
 
-        close_response = client.patch(
+        patch_response = client.patch(
             f"/api/solicitudes/{solicitud_id}",
-            headers=capturista_headers,
+            headers=tecnico_headers,
             json={"status": "completo"},
         )
-        assert close_response.status_code == 403
+        assert patch_response.status_code == 403
+
+    def test_non_owner_capturista_patch_forbidden(
+        self,
+        client,
+        admin_headers,
+        capturista_headers,
+        sample_estudio,
+    ):
+        # Titularidad: otro capturista (no dueño) no puede editar la solicitud
+        # ajena → 403 (assert_resource_owner), aunque su rol sí permita escribir.
+        create_response = client.post(
+            "/api/solicitudes",
+            headers=capturista_headers,
+            json=_solicitud_payload(sample_estudio["beneficiario_id"]),
+        )
+        assert create_response.status_code == 201
+        solicitud_id = create_response.json()["solicitud_id"]
+
+        other_capturista_headers = _create_user_and_login(
+            client,
+            admin_headers,
+            suffix="other-cap",
+            rol="capturista",
+        )
+
+        patch_response = client.patch(
+            f"/api/solicitudes/{solicitud_id}",
+            headers=other_capturista_headers,
+            json={"status": "completo"},
+        )
+        assert patch_response.status_code == 403
+
+    def test_admin_can_edit_foreign_solicitud_via_admin_route(
+        self,
+        client,
+        admin_headers,
+        capturista_headers,
+        sample_estudio,
+    ):
+        # Issue #130: el admin NO edita por PATCH /solicitudes/{id} (403); usa su
+        # ruta dedicada /admin/beneficiarios/{id}/solicitud para campos no-status.
+        create_response = client.post(
+            "/api/solicitudes",
+            headers=capturista_headers,
+            json=_solicitud_payload(sample_estudio["beneficiario_id"]),
+        )
+        assert create_response.status_code == 201
+        solicitud_id = create_response.json()["solicitud_id"]
+
+        # El endpoint de captura queda cerrado al admin.
+        forbidden = client.patch(
+            f"/api/solicitudes/{solicitud_id}",
+            headers=admin_headers,
+            json={"prioridad": "Media"},
+        )
+        assert forbidden.status_code == 403
+
+        # La ruta dedicada del admin edita la solicitud existente → 200.
+        admin_edit = client.patch(
+            f"/api/admin/beneficiarios/{sample_estudio['beneficiario_id']}/solicitud",
+            headers=admin_headers,
+            json={"prioridad": "Media"},
+        )
+        assert admin_edit.status_code == 200, admin_edit.text
 
     def test_org_leader_can_read_solicitud(
         self,
         client,
         admin_headers,
-        tecnico_user,
-        tecnico_headers,
         capturista_user,
         capturista_headers,
+        organizacion_user,
+        organizacion_headers,
         sample_estudio,
     ):
-        """Regression #54: an org leader must read solicitudes técnicas captured
-        under their organization. The endpoint previously called
-        assert_resource_owner without db/estudio_id, so the leader bypass never
-        ran and leaders got 403."""
+        """Regression #54 + #130: el capturista crea/posee la solicitud; el líder
+        de la organización que la capturó debe poder leerla vía el bypass de
+        líder (assert_resource_owner con db). Un ajeno recibe 403."""
         create_response = client.post(
             "/api/solicitudes",
-            headers=tecnico_headers,
+            headers=capturista_headers,
             json=_solicitud_payload(sample_estudio["beneficiario_id"]),
         )
         assert create_response.status_code == 201, create_response.text
@@ -299,22 +316,23 @@ class TestTecnicaRbac:
         org_response = client.post(
             "/api/organizaciones",
             headers=admin_headers,
-            json={"nombre": "Rotary Líder Test", "usuario_id": tecnico_user["id"]},
+            json={"nombre": "Rotary Líder Test", "usuario_id": capturista_user["id"]},
         )
         assert org_response.status_code == 201, org_response.text
         org_id = org_response.json()["id"]
 
+        # A different user (organizacion_user) is the registered leader.
         leader_assign = client.post(
             f"/api/organizaciones/{org_id}/lider",
             headers=admin_headers,
-            json={"lider_usuario_id": capturista_user["id"]},
+            json={"lider_usuario_id": organizacion_user["id"]},
         )
         assert leader_assign.status_code == 200
 
-        # Leader bypass: capturista_user leads the org that owns the solicitud → 200
+        # Leader bypass: organizacion_user leads the org that owns the solicitud → 200
         leader_response = client.get(
             f"/api/solicitudes/{solicitud_id}",
-            headers=capturista_headers,
+            headers=organizacion_headers,
         )
         assert leader_response.status_code == 200
 
@@ -582,7 +600,7 @@ class TestValidationErrorFormat:
 class TestWeightUnitConversion:
     """Test lb→kg conversion and unidad_peso_captura validation."""
 
-    def test_post_lb_borrador_stores_verbatim(self, client, tecnico_headers, sample_estudio):
+    def test_post_lb_borrador_stores_verbatim(self, client, capturista_headers, sample_estudio):
         """POST borrador with unidad_peso_captura=lb stores value verbatim (no conversion).
         Conversion to canonical lb happens only at final submission (status=completo)."""
         payload = _solicitud_payload(sample_estudio["beneficiario_id"])
@@ -590,42 +608,42 @@ class TestWeightUnitConversion:
             "unidad_peso_captura": "lb",
             "peso_kg": "220.462",
         })
-        create_response = client.post("/api/solicitudes", headers=tecnico_headers, json=payload)
+        create_response = client.post("/api/solicitudes", headers=capturista_headers, json=payload)
         assert create_response.status_code == 201
         solicitud_id = create_response.json()["solicitud_id"]
-        get_response = client.get(f"/api/solicitudes/{solicitud_id}", headers=tecnico_headers)
+        get_response = client.get(f"/api/solicitudes/{solicitud_id}", headers=capturista_headers)
         assert get_response.status_code == 200
         body = get_response.json()
         assert body["unidad_peso_captura"] == "lb"
         # Borrador: value must be stored as-is, NOT converted
         assert float(body["peso_kg"]) == pytest.approx(220.462, rel=1e-3)
 
-    def test_post_kg_no_conversion(self, client, tecnico_headers, sample_estudio):
+    def test_post_kg_no_conversion(self, client, capturista_headers, sample_estudio):
         """POST with unidad_peso_captura=kg stores weight unchanged."""
         payload = _solicitud_payload(sample_estudio["beneficiario_id"])
         payload.update({
             "unidad_peso_captura": "kg",
             "peso_kg": "100.000",
         })
-        create_response = client.post("/api/solicitudes", headers=tecnico_headers, json=payload)
+        create_response = client.post("/api/solicitudes", headers=capturista_headers, json=payload)
         assert create_response.status_code == 201
         solicitud_id = create_response.json()["solicitud_id"]
-        get_response = client.get(f"/api/solicitudes/{solicitud_id}", headers=tecnico_headers)
+        get_response = client.get(f"/api/solicitudes/{solicitud_id}", headers=capturista_headers)
         assert get_response.status_code == 200
         body = get_response.json()
         assert body["peso_kg"] == 100.0
 
-    def test_patch_lb_borrador_stores_verbatim(self, client, tecnico_headers, sample_estudio):
+    def test_patch_lb_borrador_stores_verbatim(self, client, capturista_headers, sample_estudio):
         """PATCH borrador with unidad_peso_captura=lb stores value verbatim (no conversion).
         Conversion only happens when the solicitud is finalized (status=completo)."""
         payload = _solicitud_payload(sample_estudio["beneficiario_id"])
-        create_response = client.post("/api/solicitudes", headers=tecnico_headers, json=payload)
+        create_response = client.post("/api/solicitudes", headers=capturista_headers, json=payload)
         assert create_response.status_code == 201
         solicitud_id = create_response.json()["solicitud_id"]
 
         patch_response = client.patch(
             f"/api/solicitudes/{solicitud_id}",
-            headers=tecnico_headers,
+            headers=capturista_headers,
             json={
                 "unidad_peso_captura": "lb",
                 "peso_kg": "220.462",
@@ -633,52 +651,52 @@ class TestWeightUnitConversion:
             },
         )
         assert patch_response.status_code == 200
-        get_response = client.get(f"/api/solicitudes/{solicitud_id}", headers=tecnico_headers)
+        get_response = client.get(f"/api/solicitudes/{solicitud_id}", headers=capturista_headers)
         assert get_response.status_code == 200
         body = get_response.json()
         assert body["unidad_peso_captura"] == "lb"
         # Borrador: value must be stored as-is, NOT converted
         assert float(body["peso_kg"]) == pytest.approx(220.462, rel=1e-3)
 
-    def test_rechaza_unidad_peso_invalida(self, client, tecnico_headers, sample_estudio):
+    def test_rechaza_unidad_peso_invalida(self, client, capturista_headers, sample_estudio):
         """POST with invalid unidad_peso_captura returns 422."""
         payload = _solicitud_payload(sample_estudio["beneficiario_id"])
         payload["unidad_peso_captura"] = "stone"
-        create_response = client.post("/api/solicitudes", headers=tecnico_headers, json=payload)
+        create_response = client.post("/api/solicitudes", headers=capturista_headers, json=payload)
         assert create_response.status_code == 422
 
-    def test_patch_rechaza_unidad_peso_invalida(self, client, tecnico_headers, sample_estudio):
+    def test_patch_rechaza_unidad_peso_invalida(self, client, capturista_headers, sample_estudio):
         """PATCH with invalid unidad_peso_captura returns 422."""
         payload = _solicitud_payload(sample_estudio["beneficiario_id"])
-        create_response = client.post("/api/solicitudes", headers=tecnico_headers, json=payload)
+        create_response = client.post("/api/solicitudes", headers=capturista_headers, json=payload)
         assert create_response.status_code == 201
         solicitud_id = create_response.json()["solicitud_id"]
         patch_response = client.patch(
             f"/api/solicitudes/{solicitud_id}",
-            headers=tecnico_headers,
+            headers=capturista_headers,
             json={"unidad_peso_captura": "oz"},
         )
         assert patch_response.status_code == 422
 
-    def test_post_default_unidad_peso(self, client, tecnico_headers, sample_estudio):
+    def test_post_default_unidad_peso(self, client, capturista_headers, sample_estudio):
         """POST without unidad_peso_captura defaults to kg."""
         payload = _solicitud_payload(sample_estudio["beneficiario_id"])
         payload["peso_kg"] = "75.000"
-        create_response = client.post("/api/solicitudes", headers=tecnico_headers, json=payload)
+        create_response = client.post("/api/solicitudes", headers=capturista_headers, json=payload)
         assert create_response.status_code == 201
         solicitud_id = create_response.json()["solicitud_id"]
-        get_response = client.get(f"/api/solicitudes/{solicitud_id}", headers=tecnico_headers)
+        get_response = client.get(f"/api/solicitudes/{solicitud_id}", headers=capturista_headers)
         assert get_response.status_code == 200
         body = get_response.json()
         assert body["unidad_peso_captura"] == "kg"
         assert body["peso_kg"] == 75.0
 
     def test_patch_finalizar_sin_unidad_medida_convierte_stored_cm(
-        self, client, tecnico_headers, sample_estudio
+        self, client, capturista_headers, sample_estudio
     ):
         """PATCH status=completo with measurements but without unidad_medida uses stored capture unit.
 
-        Scenario: borrador was created in cm/kg. Tecnico finalizes via PATCH resending the same
+        Scenario: borrador was created in cm/kg. El capturista finalizes via PATCH resending the same
         numeric values but omitting unidad_medida — the stored unidad_captura ("cm") must drive
         the conversion, so values end up in canonical inches/lb.
         """
@@ -695,7 +713,7 @@ class TestWeightUnitConversion:
             "medida_rodilla_talon": 35.0,
             "medida_ancho_cadera": 38.0,
         })
-        create_response = client.post("/api/solicitudes", headers=tecnico_headers, json=borrador_payload)
+        create_response = client.post("/api/solicitudes", headers=capturista_headers, json=borrador_payload)
         assert create_response.status_code == 201
         solicitud_id = create_response.json()["solicitud_id"]
 
@@ -703,7 +721,7 @@ class TestWeightUnitConversion:
         #    The backend must use stored unidad_captura ("cm") to convert.
         patch_response = client.patch(
             f"/api/solicitudes/{solicitud_id}",
-            headers=tecnico_headers,
+            headers=capturista_headers,
             json={
                 "status": "completo",
                 # No unidad_medida → stored "cm" should be used
@@ -720,7 +738,7 @@ class TestWeightUnitConversion:
         assert patch_response.json()["status"] == "completo"
 
         # 3. GET and verify canonical values
-        get_response = client.get(f"/api/solicitudes/{solicitud_id}", headers=tecnico_headers)
+        get_response = client.get(f"/api/solicitudes/{solicitud_id}", headers=capturista_headers)
         assert get_response.status_code == 200
         body = get_response.json()
 

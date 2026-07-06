@@ -184,14 +184,30 @@ class TestRouterRoleGuards:
         res = client.post("/api/estudios", json=payload, headers=tecnico_headers)
         assert res.status_code == 403
 
-    def test_capturista_blocked_from_tecnica_create(self, client, capturista_headers, sample_estudio):
+    def test_capturista_can_create_tecnica(self, client, capturista_headers, sample_estudio):
+        # Issue #130: el capturista (no el técnico) crea las solicitudes técnicas.
         payload = {
             "beneficiario_id": sample_estudio["beneficiario_id"],
             "entorno": "Urbano / Interiores",
             "control_tronco": "Completo",
             "control_cabeza": "Independiente",
+            "control_de_piernas": "Parcial",
             "status": "borrador",
         }
 
         res = client.post("/api/solicitudes", json=payload, headers=capturista_headers)
+        assert res.status_code == 201
+
+    def test_tecnico_blocked_from_tecnica_create(self, client, tecnico_headers, sample_estudio):
+        # Issue #130: el técnico es de solo lectura → 403 al crear una solicitud técnica.
+        payload = {
+            "beneficiario_id": sample_estudio["beneficiario_id"],
+            "entorno": "Urbano / Interiores",
+            "control_tronco": "Completo",
+            "control_cabeza": "Independiente",
+            "control_de_piernas": "Parcial",
+            "status": "borrador",
+        }
+
+        res = client.post("/api/solicitudes", json=payload, headers=tecnico_headers)
         assert res.status_code == 403

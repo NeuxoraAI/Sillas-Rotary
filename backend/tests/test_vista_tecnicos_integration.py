@@ -4,6 +4,7 @@ Requires a real PostgreSQL test database configured via TEST_DATABASE_URL
 or TEST_DB_SCHEMA. Skipped automatically when no test DB is available.
 """
 
+import psycopg2.extras
 import pytest
 
 
@@ -15,7 +16,7 @@ def _get_token(client, email: str, password: str) -> str:
 
 
 def _create_pais(_test_db_conn, nombre: str, codigo: str) -> dict:
-    with _test_db_conn.cursor() as cur:
+    with _test_db_conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
         cur.execute(
             "INSERT INTO paises (nombre, codigo) VALUES (%s, %s) RETURNING *",
             (nombre, codigo),
@@ -26,7 +27,7 @@ def _create_pais(_test_db_conn, nombre: str, codigo: str) -> dict:
 
 
 def _create_region(_test_db_conn, pais_id: int, nombre: str, codigo: str) -> dict:
-    with _test_db_conn.cursor() as cur:
+    with _test_db_conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
         cur.execute(
             "INSERT INTO regiones (pais_id, nombre, codigo) VALUES (%s, %s, %s) RETURNING *",
             (pais_id, nombre, codigo),
@@ -45,7 +46,7 @@ def _create_beneficiario(
     diagnostico: str | None = None,
     telefonos: str | None = None,
 ) -> dict:
-    with _test_db_conn.cursor() as cur:
+    with _test_db_conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
         cur.execute(
             """
             INSERT INTO beneficiarios (nombre, region_id, ciudad, diagnostico, telefonos)
@@ -59,7 +60,7 @@ def _create_beneficiario(
 
 
 def _create_estudio(_test_db_conn, beneficiario_id: int, usuario_id: int, sede: str) -> dict:
-    with _test_db_conn.cursor() as cur:
+    with _test_db_conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
         cur.execute(
             """
             INSERT INTO estudios_socioeconomicos
@@ -82,7 +83,7 @@ def _create_solicitud_tecnica(
     altura_total_in: float | None = None,
     foto_url: str | None = None,
 ) -> dict:
-    with _test_db_conn.cursor() as cur:
+    with _test_db_conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
         cur.execute(
             """
             INSERT INTO solicitudes_tecnicas
@@ -102,7 +103,7 @@ def _create_user(conn, nombre: str, email: str, password: str, rol: str) -> dict
     from passlib.context import CryptContext
     pwd = CryptContext(schemes=["bcrypt"], deprecated="auto")
     pw_hash = pwd.hash(password)
-    with conn.cursor() as cur:
+    with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
         cur.execute(
             "INSERT INTO usuarios (nombre, email, password_hash, rol) VALUES (%s, %s, %s, %s) RETURNING *",
             (nombre, email, pw_hash, rol),

@@ -69,7 +69,6 @@ class TestNombreEstructuradoValidacion:
         ("García", "GARCIA"),
         ("Pérez", "PEREZ"),
         ("de la Cruz", "DE LA CRUZ"),
-        ("Mc'Donald", "MC'DONALD"),
     ])
     def test_apellido_paterno_normalization(self, raw, expected):
         """Apellido paterno normalization strips accents and uppercases."""
@@ -77,6 +76,15 @@ class TestNombreEstructuradoValidacion:
 
         obj = BeneficiarioIn(**self._make_input(apellido_paterno=raw))
         assert obj.apellido_paterno == expected
+
+    def test_apellido_paterno_rechaza_apostrofo(self):
+        """Política vigente de validación (`_NOMBRE_RE`): los nombres/apellidos NO
+        permiten apóstrofo. Un apellido con `'` es rechazado (ValidationError)."""
+        from pydantic import ValidationError
+        from routers.socioeconomico import BeneficiarioIn
+
+        with pytest.raises(ValidationError):
+            BeneficiarioIn(**self._make_input(apellido_paterno="Mc'Donald"))
 
     @pytest.mark.parametrize("raw,expected", [
         ("López", "LOPEZ"),
