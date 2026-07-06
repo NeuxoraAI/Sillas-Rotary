@@ -1062,7 +1062,7 @@ def obtener_detalle_tecnico(
 @router.post("/upload-foto")
 async def upload_foto(
     foto: UploadFile = File(...),
-    _usuario: Annotated[CurrentUser, Depends(require_roles("capturista", "tecnico", "admin", "organizacion"))] = None,
+    _usuario: Annotated[CurrentUser, Depends(require_roles("capturista", "organizacion"))] = None,
 ) -> dict:
     if foto.content_type not in _ALLOWED_CONTENT_TYPES:
         raise HTTPException(status_code=400, detail="Tipo de archivo no permitido")
@@ -1099,7 +1099,7 @@ async def upload_foto(
 @router.post("/upload-estudio-clinico")
 async def upload_estudio_clinico(
     archivo: UploadFile = File(...),
-    _usuario: Annotated[CurrentUser, Depends(require_roles("capturista", "tecnico", "admin", "organizacion"))] = None,
+    _usuario: Annotated[CurrentUser, Depends(require_roles("capturista", "organizacion"))] = None,
 ) -> dict:
     """Upload a clinical study document (JPG, PNG, or PDF) to documentos-estudio bucket."""
     if archivo.content_type not in _DOCUMENT_ALLOWED_CONTENT_TYPES:
@@ -1136,7 +1136,7 @@ async def upload_estudio_clinico(
 def crear_solicitud(
     body: SolicitudCreateRequest,
     db: Annotated[_DBAdapter, Depends(get_db)],
-    usuario: Annotated[CurrentUser, Depends(require_roles("capturista", "tecnico", "admin", "organizacion"))],
+    usuario: Annotated[CurrentUser, Depends(require_roles("capturista", "organizacion"))],
 ) -> SolicitudCreateResponse:
     # Normalize units only on final submission (status=completo).
     # For borradores, store values exactly as sent so open/save cycles
@@ -1277,7 +1277,7 @@ def actualizar_solicitud(
     id: int,
     body: SolicitudUpdateRequest,
     db: Annotated[_DBAdapter, Depends(get_db)],
-    usuario: Annotated[CurrentUser, Depends(require_roles("capturista", "tecnico", "admin", "organizacion"))],
+    usuario: Annotated[CurrentUser, Depends(require_roles("capturista", "organizacion"))],
 ) -> SolicitudUpdateResponse:
     existing = db.execute(
         """SELECT id, usuario_id, beneficiario_id,
