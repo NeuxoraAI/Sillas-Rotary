@@ -221,7 +221,7 @@ def _validate_all_complete(
 def finalizar_registro(
     body: FinalizarRegistroRequest,
     db: Annotated[_DBAdapter, Depends(get_db)],
-    usuario: Annotated[CurrentUser, Depends(require_roles("capturista", "admin", "organizacion"))],
+    usuario: Annotated[CurrentUser, Depends(require_roles("capturista", "organizacion"))],
 ) -> FinalizarRegistroResponse:
     """
     Validate completeness of all three forms and transition both estudio

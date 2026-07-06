@@ -526,7 +526,7 @@ def _tutor_response(t: dict) -> dict:
 def guardar_borrador(
     body: GuardarBorradorRequest,
     db: Annotated[_DBAdapter, Depends(get_db)],
-    usuario: Annotated[CurrentUser, Depends(require_roles("capturista", "admin", "organizacion"))],
+    usuario: Annotated[CurrentUser, Depends(require_roles("capturista", "organizacion"))],
 ) -> GuardarBorradorResponse:
     """
     Atomic draft save: create or update all 3 forms in one transaction.
