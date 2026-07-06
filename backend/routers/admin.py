@@ -6,7 +6,7 @@ import io
 from datetime import datetime
 from typing import Annotated, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, field_validator, ValidationInfo
 from decimal import Decimal
@@ -19,7 +19,16 @@ from routers.tecnica import (
     _build_snapshot,
     _calcular_edad,
 )
-from routers.socioeconomico import _assert_curp_disponible, _resolve_como_obtuvo_silla
+from routers.socioeconomico import (
+    TutorUpdateIn,
+    _assert_curp_disponible,
+    _insertar_tutores,
+    _resolve_como_obtuvo_silla,
+    _resolve_document_refs,
+    _tutor_tiene_datos,
+    _validar_tutores_update,
+    procesar_upload_documento,
+)
 from validators import (
     validate_nombre,
     validate_curp_formato,
@@ -214,6 +223,15 @@ class AdminEstudioUpdateRequest(BaseModel):
     sede: Optional[str] = None
     ciudad_registro: Optional[str] = None
     elaboro_estudio: Optional[str] = None
+    # Issue #130: el admin edita tutores y documentos por esta ruta dedicada
+    # (antes iban por PATCH /estudios/{id}, ahora cerrado a captura).
+    tutores: Optional[list[TutorUpdateIn]] = None
+    credencial_path: Optional[str] = None
+    credencial_url: Optional[str] = None
+    comprobante_domicilio_path: Optional[str] = None
+    comprobante_domicilio_url: Optional[str] = None
+    estudio_clinico_path: Optional[str] = None
+    estudio_clinico_url: Optional[str] = None
 
     @field_validator("como_obtuvo_silla", "ciudad_registro", mode="before")
     @classmethod
@@ -741,13 +759,29 @@ def actualizar_estudio_admin(
     db: Annotated[_DBAdapter, Depends(get_db)],
     usuario: Annotated[CurrentUser, Depends(require_roles("admin"))],
 ) -> dict:
-    """Update estudio. Admin only — no owner check."""
+    """Update estudio fields, tutores and documents. Admin only — no owner check.
+
+    Issue #130: tutores y documentos antes se editaban por PATCH /estudios/{id};
+    ese endpoint quedó cerrado a captura, así que el admin los edita aquí,
+    reutilizando exactamente la misma lógica (replace de tutores + resolución de
+    refs de documento) que el flujo del capturista.
+    """
     estudio = _ensure_estudio(db, beneficiario_id)
 
-    fields = body.model_dump(exclude_none=True)
-    if not fields:
-        return {"estudio_id": estudio["id"], "updated": False}
+    did_update = False
 
+    # Tutores: reemplazo completo (delete + insert), espejo de PATCH /estudios.
+    if body.tutores is not None:
+        _validar_tutores_update(body.tutores)
+        tutores_a_insertar = [
+            t for t in body.tutores if t.numero_tutor == 1 or _tutor_tiene_datos(t)
+        ]
+        db.execute("DELETE FROM tutores WHERE beneficiario_id = %s", (beneficiario_id,))
+        if tutores_a_insertar:
+            _insertar_tutores(db, beneficiario_id, tutores_a_insertar)
+        did_update = True
+
+    fields = body.model_dump(exclude_none=True, exclude={"tutores"})
     fields = _nullify_empty_strings(fields)
 
     if "tuvo_silla_previa" in fields:
@@ -756,14 +790,33 @@ def actualizar_estudio_admin(
             fields["tuvo_silla_previa"], fields.get("como_obtuvo_silla")
         )
 
-    set_clause = ", ".join(f"{k} = %s" for k in fields)
-    values = list(fields.values())
-    values.append(estudio["id"])
+    for path_key, url_key in (
+        ("credencial_path", "credencial_url"),
+        ("comprobante_domicilio_path", "comprobante_domicilio_url"),
+        ("estudio_clinico_path", "estudio_clinico_url"),
+    ):
+        resolved_path, resolved_url = _resolve_document_refs(
+            document_path=fields.pop(path_key, None),
+            document_url=fields.get(url_key),
+        )
+        if resolved_path is not None:
+            fields[path_key] = resolved_path
+        if resolved_url is not None:
+            fields[url_key] = resolved_url
 
-    db.execute(
-        f"UPDATE estudios_socioeconomicos SET {set_clause}, updated_at = NOW() WHERE id = %s",
-        values,
-    )
+    if fields:
+        set_clause = ", ".join(f"{k} = %s" for k in fields)
+        values = list(fields.values())
+        values.append(estudio["id"])
+
+        db.execute(
+            f"UPDATE estudios_socioeconomicos SET {set_clause}, updated_at = NOW() WHERE id = %s",
+            values,
+        )
+        did_update = True
+
+    if not did_update:
+        return {"estudio_id": estudio["id"], "updated": False}
 
     registrar_evento(
         db,
@@ -771,11 +824,29 @@ def actualizar_estudio_admin(
         accion="admin.patch",
         recurso_tipo="estudio_socioeconomico",
         recurso_id=estudio["id"],
-        metadata={"beneficiario_id": beneficiario_id, "fields": sorted(fields.keys())},
+        metadata={
+            "beneficiario_id": beneficiario_id,
+            "fields": sorted(fields.keys()),
+            "tutores": body.tutores is not None,
+        },
         request=request,
     )
 
     return {"estudio_id": estudio["id"], "updated": True}
+
+
+@router.post("/admin/upload-documento")
+async def upload_documento_admin(
+    tipo: str = Form(...),
+    archivo: UploadFile = File(...),
+    _usuario: Annotated[CurrentUser, Depends(require_roles("admin"))] = None,
+) -> dict:
+    """Admin-only document upload (Issue #130).
+
+    Mirrors ``POST /upload-documento`` but restricted to ``admin`` so the admin
+    edit flow keeps document uploads without reopening the capture endpoint.
+    """
+    return await procesar_upload_documento(tipo, archivo)
 
 
 @router.patch("/admin/beneficiarios/{beneficiario_id}/solicitud")
