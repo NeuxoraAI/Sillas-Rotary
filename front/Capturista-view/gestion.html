@@ -874,6 +874,10 @@
         if (!(draftTecnica.foto_url || "").trim()) {
           errors.push({ form: "Técnica", label: "Fotografía del paciente", message: "Adjunte la fotografía del paciente para finalizar", url: "tecnica.html", stashEntry: mkE("tecnica", "[data-purpose='patient-photo-upload']", "#photo-error", "Adjunte la fotografía del paciente para finalizar") });
         }
+        // Soporte de oxígeno obligatorio (Issue #162).
+        if (typeof draftTecnica.soporte_oxigeno !== "boolean") {
+          errors.push({ form: "Técnica", label: "Soporte de oxígeno", message: "Este campo es obligatorio", url: "tecnica.html", stashEntry: mkT("tecnica", "soporte_oxigeno", "Este campo es obligatorio") });
+        }
 
         return errors.concat(collectDraftFormatErrors("Gestión", "gestion.html"));
       }
