@@ -1979,11 +1979,13 @@
             if (!res.ok) { const err = await res.json().catch(() => ({})); errors.push("Estudio: " + (err.detail || res.status)); }
           }
 
-          // 3. Save tutors + documents via /api/estudios/{id} (regular endpoint, admin-allowed)
+          // 3. Save tutors + documents via the admin estudio route (Issue #130:
+          //    /estudios/{id} ya no admite escritura de admin; la ruta dedicada
+          //    /admin/beneficiarios/{id}/estudio acepta tutores + documentos).
           if (estudioId && _hasTutorOrDocChanges()) {
             const fullPayload = _extractEstudioFullPayload(state.editDraft.estudio, state.serverOriginal.estudio);
             if (fullPayload) {
-              const res = await _authFetch("/estudios/" + estudioId, {
+              const res = await _authFetch("/admin/beneficiarios/" + benId + "/estudio", {
                 method: "PATCH", headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(fullPayload),
               });
@@ -2225,7 +2227,7 @@
         var formData = new FormData();
         formData.append("tipo", tipo);
         formData.append("archivo", file);
-        var res = await _authFetch("/upload-documento", { method: "POST", body: formData });
+        var res = await _authFetch("/admin/upload-documento", { method: "POST", body: formData });
         if (!res.ok) {
           var errData = await res.json().catch(function () { return {}; });
           throw new Error(errData.detail || "Error al subir " + tipo);
