@@ -161,6 +161,10 @@ def _validate_all_complete(
     if not solicitud_row.get("foto_url"):
         missing.append({"form": "solicitud", "field": "foto_url"})
 
+    # Soporte de oxígeno obligatorio (Issue #162).
+    if solicitud_row.get("soporte_oxigeno") is None:
+        missing.append({"form": "solicitud", "field": "soporte_oxigeno"})
+
     # ── Tutor 1 required fields ────────────────────────────────────────────
     tutor1 = next((t for t in tutores_rows if t.get("numero_tutor") == 1), None)
     if tutor1 is None:
