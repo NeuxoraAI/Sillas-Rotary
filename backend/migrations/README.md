@@ -43,6 +43,8 @@ ese entorno.
 | `0024` | `password_tokens` |
 | `0025` | `add_estudio_clinico_refs_to_estudios` |
 | `0026` | `auditoria_eventos` |
+| `0027` | `add_equipo_solicitado_estudio_clinico` |
+| `0028` | `drop_dead_columns` |
 
 ## Deprecación de legado
 
