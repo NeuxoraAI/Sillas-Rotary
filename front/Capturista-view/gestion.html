@@ -565,8 +565,8 @@
         const formatErrors = collectDraftFormatErrors("Gestión", "gestion.html");
         if (formatErrors.length > 0) {
           showValidationModal(formatErrors, {
-            title: "Revisá el formato antes de guardar",
-            description: "Podés guardar borradores incompletos, pero primero corregí los campos que ya tienen un valor inválido.",
+            title: "Revise el formato antes de guardar",
+            description: "Puede guardar borradores incompletos, pero primero corrija los campos que ya tienen un valor inválido.",
           });
           return;
         }
@@ -739,7 +739,7 @@
                  d.loc.some((p) => String(p).toLowerCase().includes("curp")),
         );
         if (!curpErr) return null;
-        const message = "La CURP ingresada no es válida (revisá el formato y el dígito verificador). Corregila para poder finalizar.";
+        const message = "La CURP ingresada no es válida (revise el formato y el dígito verificador). Corríjala para poder finalizar.";
         return {
           form: "Socioeconómico",
           label: "CURP",
@@ -1084,7 +1084,7 @@
           if (gestionErrors.length > 0) {
             showValidationModal(gestionErrors, {
               title: "No se puede finalizar todavía",
-              description: "Para finalizar sí necesitamos todos los campos obligatorios y formatos correctos. Corregí estos puntos y volvé a intentar.",
+              description: "Para finalizar sí necesitamos todos los campos obligatorios y formatos correctos. Corrija estos puntos y vuelva a intentar.",
             });
             if (btn) { btn.disabled = false; btn.textContent = "Finalizar Registro"; }
             return;
@@ -1134,7 +1134,7 @@
             } else if (curpInvalida) {
               showValidationModal([curpInvalida], {
                 title: "CURP inválida",
-                description: "Andá al formulario Socioeconómico y corregí la CURP para poder finalizar.",
+                description: "Vaya al formulario Socioeconómico y corrija la CURP para poder finalizar.",
               });
             } else {
               showValidationModal([{ form: "Registro", label: "Consolidación", message: SR_Validations.formatBackendError(errData, `Error al consolidar el borrador (${guardarRes.status}).`), url: "gestion.html" }]);
@@ -1209,7 +1209,7 @@
                 };
               }), {
                 title: "No se puede finalizar todavía",
-                description: "El servidor confirmó que faltan estos campos. Andá al formulario correspondiente y completalos.",
+                description: "El servidor confirmó que faltan estos campos. Vaya al formulario correspondiente y complételos.",
               });
             } else {
               showValidationModal([{ form: "Registro", label: "Finalización", message: "No es posible finalizar el registro. Completa todos los campos requeridos.", url: "gestion.html" }]);
