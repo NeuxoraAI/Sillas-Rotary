@@ -247,11 +247,20 @@
     await loadRegiones(paisId);
   });
 
+  // Token monotónico: descarta respuestas de /regiones que llegan fuera de
+  // orden al cambiar de país rápidamente. Sin él, las regiones del país
+  // anterior podían quedar pintadas bajo el país nuevo y persistirse un
+  // region_ctx inconsistente (pais_id/region_id cruzados) para toda la sesión.
+  let _regionesToken = 0;
+
   async function loadRegiones(paisId) {
+    const token = ++_regionesToken;
     try {
       const res = await _authFetch('/regiones?pais_id=' + paisId);
+      if (token !== _regionesToken) return; // respuesta obsoleta: ya se pidió otro país
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const regiones = await res.json();
+      if (token !== _regionesToken) return;
 
       if (regiones.length === 0) {
         regionSelect.innerHTML = '<option value="">— Sin regiones disponibles —</option>';
@@ -268,6 +277,7 @@
       });
       regionSelect.disabled = false;
     } catch (_) {
+      if (token !== _regionesToken) return; // no pisar el estado del request vigente
       _showError('No se pudieron cargar las regiones.');
     }
   }

@@ -153,11 +153,12 @@
     });
   }
 
-  function confirmUnsavedNavigation() {
+  function confirmUnsavedNavigation(opts) {
+    opts = opts || {};
     return confirmAction({
       title: "Cambios sin guardar",
       subtitle: "Tienes datos capturados en este flujo.",
-      message: "Si sales ahora, los cambios no guardados se perderán.",
+      message: opts.message || "Si sales ahora, los cambios no guardados se perderán.",
       confirmText: "Salir sin guardar",
       cancelText: "Regresar",
       icon: "warning",

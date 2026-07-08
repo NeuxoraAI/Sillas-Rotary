@@ -718,6 +718,7 @@
     if (email) body.email = email;
     if (telefono) body.telefono = telefono;
 
+    this.disabled = true; // guardia contra doble clic (PATCH duplicado)
     try {
       const res = await ApiClient.fetch('/me/perfil', {
         method: 'PATCH',
@@ -739,6 +740,8 @@
       setTimeout(_closeEditModal, 1500);
     } catch (_) {
       _showEl('edit-error', 'No se pudo conectar con el servidor.');
+    } finally {
+      this.disabled = false;
     }
   });
 

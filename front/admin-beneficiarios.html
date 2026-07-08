@@ -1353,10 +1353,24 @@
         });
       }
       async function _setupMunicipiosCatalog() {
-        await _loadMunicipiosCatalog();
         const estadoSelect = document.getElementById("field-estado_codigo");
         const ciudadSelect = document.getElementById("field-ciudad");
         if (!estadoSelect || !ciudadSelect) return;
+        // Deshabilitar estado (síncrono, mismo task que el render del tab)
+        // mientras baja el catálogo: sin esto, el listener de change se
+        // conecta recién tras el await y un cambio del usuario en esa ventana
+        // se perdía o dejaba ciudad desfasada del draft.
+        estadoSelect.disabled = true;
+        try {
+          await _loadMunicipiosCatalog();
+        } catch (err) {
+          // Catálogo caído: ciudad queda deshabilitada (degradado), estado se
+          // reactiva en finally. Antes esto era una rejection sin manejar.
+          console.error("Error cargando catálogo de municipios:", err);
+          return;
+        } finally {
+          estadoSelect.disabled = false;
+        }
         estadoSelect.addEventListener("change", function () {
           _renderMunicipiosSelect(estadoSelect.value, "");
         });
@@ -1931,7 +1945,23 @@
         _highlightModifiedFields();
       }
 
+      // Single-flight: mientras un guardado global (con subida de documentos)
+      // sigue en vuelo, el modal de confirmación ya se cerró y btn-save-all
+      // vuelve a estar clickeable — sin esta guardia un segundo guardado
+      // concurrente re-subía los documentos y re-emitía los PATCH.
+      let _globalSaveInFlight = false;
+
       async function _runGlobalSave() {
+        if (_globalSaveInFlight) return;
+        _globalSaveInFlight = true;
+        try {
+          await _runGlobalSaveInner();
+        } finally {
+          _globalSaveInFlight = false;
+        }
+      }
+
+      async function _runGlobalSaveInner() {
         const benId = state.currentDetail?.beneficiario?.id;
         const estudioId = state.editDraft.estudio?.estudio_id;
         if (!benId) return;
@@ -2082,11 +2112,19 @@
       });
 
       $("btn-confirm-save").addEventListener("click", async function () {
-        if (typeof state.pendingSave === "function") {
-          var action = state.pendingSave;
+        if (typeof state.pendingSave !== "function") return;
+        var action = state.pendingSave;
+        // _hideSaveWarningModal ya anula pendingSave (doble clic = no-op);
+        // el disabled + btn-loading es feedback mientras el guardado vuela.
+        this.disabled = true;
+        this.classList.add("btn-loading");
+        try {
           _hideSaveWarningModal();
           _clearValidationMarks();
           await action();
+        } finally {
+          this.disabled = false;
+          this.classList.remove("btn-loading");
         }
       });
 
