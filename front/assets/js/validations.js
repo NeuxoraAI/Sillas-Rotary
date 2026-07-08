@@ -707,6 +707,25 @@
         if ((field.value || "").trim()) clearFieldError(name);
       });
     });
+
+    // Issue #166: los listeners de arriba solo cubren campos de texto, así
+    // que el resaltado de "obligatorio" en radios, selects y checkboxes
+    // (aplicado p. ej. por el stash del issue #123 al llegar desde el modal
+    // de finalización) quedaba pegado aunque el usuario ya hubiera corregido.
+    // Delegación en el form: un solo listener cubre también controles
+    // re-renderizados dinámicamente (p. ej. el select de ciudad).
+    formEl.addEventListener("change", (e) => {
+      const el = e.target;
+      const name = el && el.name;
+      if (!name) return;
+      if (el.type === "radio" || el.type === "checkbox") {
+        // Solo al marcar: desmarcar un checkbox no corrige un faltante.
+        if (el.checked) clearFieldError(name);
+      } else if (el.tagName === "SELECT") {
+        // Volver al placeholder (value vacío) no limpia el error.
+        if (el.value) clearFieldError(name);
+      }
+    });
   }
 
   function clearAllFieldErrors(formEl) {
