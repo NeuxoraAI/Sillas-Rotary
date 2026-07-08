@@ -448,6 +448,101 @@ class TestPersistenciaTecnicaBorrador:
 
 
 # ──────────────────────────────────────────────────────────────────────────
+# Issue #131: red de seguridad UniqueViolation para CURP duplicada
+# ──────────────────────────────────────────────────────────────────────────
+
+class TestCurpUniqueViolationSafetyNet:
+    """La carrera concurrente de CURP duplicada (dos guardados que pasan el
+    pre-check antes de que el otro inserte) debe devolver el mismo 409
+    estructurado que el pre-check, no un 500 genérico. Se simula anulando el
+    pre-check con monkeypatch para que el duplicado llegue hasta la UNIQUE."""
+
+    CURP = "GOMC900101HDFNNS08"
+
+    def _payload(self, region_id, **extra):
+        p = {
+            "region_id": region_id,
+            "sede": "León sede Forum",
+            "nombres": "Race",
+            "apellido_paterno": "Curp",
+            "apellido_materno": "Test",
+            "sexo": "M",
+            "telefonos": "4620001111",
+        }
+        p.update(extra)
+        return p
+
+    def _assert_409_curp_duplicada(self, res):
+        assert res.status_code == 409, f"Expected 409, got {res.status_code}: {res.text}"
+        detail = res.json()["detail"]
+        assert detail["type"] == "curp_duplicada"
+        assert detail["curp"] == self.CURP
+        assert "beneficiario_existente" in detail
+
+    def test_create_race_returns_409_estructurado(self, client, capturista_headers, region_lon, monkeypatch):
+        res = client.post(
+            "/api/guardar-borrador",
+            json=self._payload(region_lon["id"], curp=self.CURP),
+            headers=capturista_headers,
+        )
+        assert res.status_code == 201, res.text
+
+        monkeypatch.setattr(
+            "routers.guardar_borrador._assert_curp_disponible", lambda *a, **k: None
+        )
+        res = client.post(
+            "/api/guardar-borrador",
+            json=self._payload(region_lon["id"], curp=self.CURP),
+            headers=capturista_headers,
+        )
+        self._assert_409_curp_duplicada(res)
+
+    def test_update_race_returns_409_estructurado(self, client, capturista_headers, region_lon, monkeypatch):
+        res = client.post(
+            "/api/guardar-borrador",
+            json=self._payload(region_lon["id"], curp=self.CURP),
+            headers=capturista_headers,
+        )
+        assert res.status_code == 201, res.text
+
+        res = client.post(
+            "/api/guardar-borrador",
+            json=self._payload(region_lon["id"], nombres="Otro"),
+            headers=capturista_headers,
+        )
+        assert res.status_code == 201, res.text
+        otro_estudio_id = res.json()["estudio_id"]
+
+        # Cambiar la CURP del segundo borrador a la ya registrada, con el
+        # pre-check anulado: el UPDATE choca con la UNIQUE.
+        monkeypatch.setattr(
+            "routers.guardar_borrador._assert_curp_disponible", lambda *a, **k: None
+        )
+        res = client.post(
+            "/api/guardar-borrador",
+            json={"estudio_id": otro_estudio_id, "curp": self.CURP},
+            headers=capturista_headers,
+        )
+        self._assert_409_curp_duplicada(res)
+
+    def test_precheck_sigue_activo_sin_monkeypatch(self, client, capturista_headers, region_lon):
+        """Sanidad: sin simular la carrera, el pre-check responde el mismo 409."""
+        res = client.post(
+            "/api/guardar-borrador",
+            json=self._payload(region_lon["id"], curp=self.CURP),
+            headers=capturista_headers,
+        )
+        assert res.status_code == 201, res.text
+
+        res = client.post(
+            "/api/guardar-borrador",
+            json=self._payload(region_lon["id"], curp=self.CURP),
+            headers=capturista_headers,
+        )
+        self._assert_409_curp_duplicada(res)
+
+
+# ──────────────────────────────────────────────────────────────────────────
 # Integration tests for GET /api/borrador/{estudio_id}
 # ──────────────────────────────────────────────────────────────────────────
 

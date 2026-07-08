@@ -667,3 +667,61 @@ class TestCurpDedup:
         assert detail["type"] == "curp_duplicada"
         assert detail["curp"] == self.VALID_CURP
         assert "beneficiario_existente" in detail
+
+
+class TestCurpUniqueViolationSafetyNet:
+    """Issue #131 (cabos): la red de seguridad UniqueViolation de crear_estudio
+    llevaba sin test desde su introducción, y actualizar_estudio no la tenía.
+    La carrera (dos escrituras que pasan el pre-check antes de que la otra
+    inserte) se simula anulando el pre-check con monkeypatch para que el
+    duplicado llegue hasta la constraint UNIQUE(curp_benef)."""
+
+    VALID_CURP = "HEGG560427MVZRRL04"
+
+    def _assert_409_curp_duplicada(self, res):
+        assert res.status_code == 409, f"Expected 409, got {res.status_code}: {res.text}"
+        detail = res.json()["detail"]
+        assert detail["type"] == "curp_duplicada"
+        assert detail["curp"] == self.VALID_CURP
+        assert "beneficiario_existente" in detail
+
+    def test_create_race_returns_409_estructurado(self, client, capturista_headers, region_lon, monkeypatch):
+        first = _estudio_payload(region_lon["id"])
+        first["beneficiario"]["curp"] = self.VALID_CURP
+        r1 = client.post("/api/estudios", headers=capturista_headers, json=first)
+        assert r1.status_code == 201, r1.text
+
+        monkeypatch.setattr(
+            "routers.socioeconomico._assert_curp_disponible", lambda *a, **k: None
+        )
+        second = _estudio_payload(region_lon["id"])
+        second["beneficiario"]["curp"] = self.VALID_CURP
+        self._assert_409_curp_duplicada(
+            client.post("/api/estudios", headers=capturista_headers, json=second)
+        )
+
+    def test_update_race_returns_409_estructurado(self, client, capturista_headers, region_lon, monkeypatch):
+        first = _estudio_payload(region_lon["id"])
+        first["beneficiario"]["curp"] = self.VALID_CURP
+        r1 = client.post("/api/estudios", headers=capturista_headers, json=first)
+        assert r1.status_code == 201, r1.text
+
+        second = _estudio_payload(region_lon["id"])
+        r2 = client.post("/api/estudios", headers=capturista_headers, json=second)
+        assert r2.status_code == 201, r2.text
+        otro_estudio_id = r2.json()["estudio_id"]
+
+        # Cambiar la CURP del segundo estudio a la ya registrada, con el
+        # pre-check anulado: el UPDATE choca con la UNIQUE. (El PATCH exige el
+        # beneficiario completo, así que se reenvía el del payload original.)
+        monkeypatch.setattr(
+            "routers.socioeconomico._assert_curp_disponible", lambda *a, **k: None
+        )
+        beneficiario_editado = dict(second["beneficiario"], curp=self.VALID_CURP)
+        self._assert_409_curp_duplicada(
+            client.patch(
+                f"/api/estudios/{otro_estudio_id}",
+                headers=capturista_headers,
+                json={"beneficiario": beneficiario_editado},
+            )
+        )
