@@ -42,6 +42,8 @@ class TestValidateAllComplete:
             "prioridad": "Alta",
             # Fotografía del paciente obligatoria (Issue #121)
             "foto_url": "storage://fotos-tecnica/1/foto.jpg",
+            # Soporte de oxígeno respondido (Issue #162)
+            "soporte_oxigeno": False,
             "status": "borrador",
         }
         beneficiario_row = {
@@ -303,6 +305,8 @@ class TestValidateAllComplete:
             "prioridad": "Alta",
             # Fotografía del paciente obligatoria (Issue #121)
             "foto_url": "storage://fotos-tecnica/1/foto.jpg",
+            # Soporte de oxígeno respondido (Issue #162)
+            "soporte_oxigeno": False,
             "status": "borrador",
         }
         beneficiario_row = {
@@ -465,6 +469,7 @@ class TestValidateAllComplete:
             "entidad_solicitante": "Rotary Club León",
             "prioridad": "Alta",
             "foto_url": "storage://fotos-tecnica/1/foto.jpg",
+            "soporte_oxigeno": False,
             "status": "borrador",
         }
         beneficiario_row = {
@@ -504,6 +509,33 @@ class TestValidateAllComplete:
             }
         ]
         return estudio_row, solicitud_row, beneficiario_row, tutores_rows
+
+    def test_returns_missing_when_soporte_oxigeno_none(self):
+        """Issue #162 + migración 0029: soporte_oxigeno NULL (sin responder)
+        bloquea la finalización. Antes la columna era NOT NULL DEFAULT FALSE y
+        el CREATE forzaba bool(None)→FALSE, así que este chequeo nunca disparaba."""
+        from routers.finalizar import _validate_all_complete
+
+        estudio, solicitud, ben, tutores = self._complete_rows()
+        solicitud["soporte_oxigeno"] = None  # radio sin responder
+
+        missing = _validate_all_complete(estudio, solicitud, ben, tutores)
+
+        hits = [m for m in missing if m["field"] == "soporte_oxigeno"]
+        assert len(hits) == 1, f"Expected soporte_oxigeno in missing, got: {missing}"
+        assert hits[0]["form"] == "solicitud"
+
+    def test_soporte_oxigeno_false_explicito_no_bloquea(self):
+        """Un "No" explícito (FALSE) es respuesta válida y no bloquea finalizar."""
+        from routers.finalizar import _validate_all_complete
+
+        estudio, solicitud, ben, tutores = self._complete_rows()
+        solicitud["soporte_oxigeno"] = False
+
+        missing = _validate_all_complete(estudio, solicitud, ben, tutores)
+
+        hits = [m for m in missing if m["field"] == "soporte_oxigeno"]
+        assert hits == [], f"FALSE explícito no debe reportarse: {missing}"
 
     def test_returns_missing_when_credencial_absent(self):
         """Issue #121: missing credencial evidence blocks finalization."""
@@ -645,8 +677,8 @@ class TestFinalizarRegistroEndpoint:
                      peso_kg, medida_cabeza_asiento, medida_hombro_asiento,
                      medida_prof_asiento, medida_rodilla_talon,
                      medida_ancho_cadera, entidad_solicitante, prioridad,
-                     foto_url, status)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                     foto_url, soporte_oxigeno, status)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 RETURNING id
                 """,
                 (
@@ -654,7 +686,9 @@ class TestFinalizarRegistroEndpoint:
                     "Urbano / Interiores", "Completo", "Independiente", "Parcial",
                     72.0, 45.0, 10.0, 12.0, 14.0, 16.0, 18.0,
                     "Rotary Club León", "Alta",
-                    "storage://fotos-tecnica/1/foto.jpg", "borrador",
+                    # Migración 0029: sin DEFAULT FALSE, el seeder debe responder
+                    # explícitamente para que el registro sea finalizable.
+                    "storage://fotos-tecnica/1/foto.jpg", False, "borrador",
                 ),
             )
             solicitud_id = cur.fetchone()["id"]

@@ -723,16 +723,24 @@
         }
       }
 
+      // Token monotónico: descarta respuestas de /regiones fuera de orden al
+      // cambiar de país rápido (el dropdown quedaría con regiones del país
+      // anterior). El cache sí se escribe siempre: es correcto para SU paisId.
+      let _regionesDropdownToken = 0;
+
       async function loadRegionesDropdown(paisId) {
+        const token = ++_regionesDropdownToken;
         try {
           if (state.regionesCache[paisId]) {
             populateRegionDropdown(state.regionesCache[paisId]);
             return;
           }
           const res = await _authFetch("/regiones?pais_id=" + paisId);
+          if (token !== _regionesDropdownToken) return; // respuesta obsoleta
           if (!res.ok) throw new Error("HTTP " + res.status);
           const regiones = await res.json();
           state.regionesCache[paisId] = regiones;
+          if (token !== _regionesDropdownToken) return;
           populateRegionDropdown(regiones);
         } catch (_) {
           // Non-critical

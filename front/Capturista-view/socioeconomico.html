@@ -36,6 +36,7 @@
     <script src="../assets/js/theme-toggle.js"></script>
     <script src="../assets/js/session-guard.js"></script>
     <script src="../assets/js/apiClient.js"></script>
+    <script src="../assets/js/draft-store.js"></script>
     <script src="../assets/js/confirmation-modal.js?v=2"></script>
     <link href="../assets/css/socioeconomico.css" rel="stylesheet" />
   </head>
@@ -884,13 +885,8 @@
               </div>
             </div>
             <div class="flex flex-col sm:flex-row gap-4">
-              <button
-                id="btn-guardar-borrador"
-                class="px-6 py-3 border border-amber-500 text-amber-700 font-bold hover:bg-amber-50 transition-all uppercase text-sm tracking-wide"
-                type="button"
-              >
-                Guardar Borrador
-              </button>
+              <!-- El botón "Guardar Borrador" ahora es único y vive al
+                   final del wizard (gestion.html). -->
               <button
                 id="btn-continuar-estudio"
                 class="px-10 py-3 bg-green-600 text-white font-bold shadow-lg hover:bg-green-700 transition-all uppercase text-sm tracking-wide active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1715,33 +1711,8 @@
 
         return fallbackMessage;
       }
-      async function persistDraftRemotely({ sessionToken, estudioId, payload }) {
-        if (estudioId) {
-          const patchPayload = {
-            ...payload.estudio,
-            beneficiario: payload.beneficiario,
-            tutores: payload.tutores,
-          };
-
-          const response = await ApiClient.fetch(`/estudios/${estudioId}`, {
-            method: "PATCH",
-            json: patchPayload,
-          });
-
-          return { response, mode: "patch" };
-        }
-
-        const response = await ApiClient.fetch("/estudios", {
-          method: "POST",
-          json: payload,
-        });
-
-        return { response, mode: "post" };
-      }
-      function buildDraftRemoteErrorMessage(errData, fallbackMessage) {
-        const readable = formatBackendErrorMessage(errData, fallbackMessage);
-        return `${readable} Los datos siguen guardados en este dispositivo; vuelve a intentar cuando regrese la conexión.`;
-      }
+      // persistDraftRemotely()/buildDraftRemoteErrorMessage() se eliminaron
+      // junto con submitEstudio(): eran su ruta POST/PATCH directa a /estudios.
       function showSuccessModal({ title, description, onContinue }) {
         const modal = document.getElementById("success-modal");
         const titleEl = document.getElementById("success-modal-title");
@@ -1760,100 +1731,10 @@
         };
         modal.classList.remove("hidden");
       }
-      function clearLocalFormDraft() {
-        localStorage.removeItem(LOCAL_DRAFT_STORAGE_KEY);
-      }
-      function collectLocalFormDraft() {
-        const form = document.querySelector("form");
-        if (!form) return null;
-
-        const values = {};
-        form.querySelectorAll("input, select, textarea").forEach((field) => {
-          if (!field.name || field.disabled || field.type === "file") return;
-
-          if (field.type === "radio") {
-            if (field.checked) values[field.name] = field.value;
-            return;
-          }
-
-          if (field.type === "checkbox") {
-            values[field.name] = field.checked;
-            return;
-          }
-
-          values[field.name] = field.name === "ciudad"
-            ? normalizeMunicipioForPersistence(field.value)
-            : field.value;
-        });
-
-        return {
-          updatedAt: new Date().toISOString(),
-          values,
-        };
-      }
-      function saveLocalFormDraft() {
-        const snapshot = collectLocalFormDraft();
-        if (!snapshot) return;
-        localStorage.setItem(LOCAL_DRAFT_STORAGE_KEY, JSON.stringify(snapshot));
-      }
-      async function applyLocalFormDraft(snapshot) {
-        if (!snapshot?.values) return;
-
-        Object.entries(snapshot.values).forEach(([name, value]) => {
-          const fields = document.querySelectorAll(`[name="${name}"]`);
-          if (!fields.length) return;
-
-          const first = fields[0];
-          if (first.type === "radio") {
-            const target = document.querySelector(`[name="${name}"][value="${value}"]`);
-            if (target) target.checked = true;
-            return;
-          }
-
-          if (first.type === "checkbox") {
-            first.checked = Boolean(value);
-            return;
-          }
-
-          first.value = value ?? "";
-        });
-
-        const ciudadEl = document.getElementById("ciudad");
-        const estadoCodigo = snapshot.values.estado_codigo || "";
-        const ciudad = snapshot.values.ciudad || "";
-        if (ciudadEl && ciudad) {
-          ciudadEl.dataset.pendingValue = ciudad;
-        }
-        if (estadoCodigo) {
-          await loadMunicipiosCatalog();
-          renderMunicipiosSelect(estadoCodigo, ciudad);
-        }
-
-        document.querySelector('[name="silla_previa"]')?.dispatchEvent(new Event("change"));
-      }
-      function getLocalFormDraft() {
-        try {
-          return JSON.parse(localStorage.getItem(LOCAL_DRAFT_STORAGE_KEY) || "null");
-        } catch (_err) {
-          return null;
-        }
-      }
-      function setupLocalDraftAutosave() {
-        const form = document.querySelector("form");
-        if (!form) return;
-
-        let timeoutId = null;
-        const scheduleSave = () => {
-          if (timeoutId) clearTimeout(timeoutId);
-          timeoutId = setTimeout(saveLocalFormDraft, 300);
-        };
-
-        form.querySelectorAll("input, select, textarea").forEach((field) => {
-          if (!field.name || field.type === "file") return;
-          field.addEventListener("input", scheduleSave);
-          field.addEventListener("change", scheduleSave);
-        });
-      }
+      // El subsistema de autosave local (saveLocalFormDraft y compañía) se
+      // eliminó: usaba la constante inexistente LOCAL_DRAFT_STORAGE_KEY
+      // (ReferenceError en el primer input) y nada leía su snapshot. La
+      // persistencia local vive en draft_socioeconomico (CONTINUAR).
       function setupSillaPreviaConditionalField() {
         const sillaPrevia = document.querySelector('[name="silla_previa"]');
         const comoObtuvo = document.querySelector('[name="como_obtuvo_silla"]');
@@ -2138,7 +2019,20 @@
 
 
         // Auth guard + Draft Resume
-      (async function () {
+      // Issue #161: bloquear el formulario desde el primer frame cuando hay
+      // borrador que restaurar (local o por hidratar) — el pintado espera al
+      // catálogo de municipios (red) y sin bloqueo el usuario puede teclear
+      // valores que restoreLocalStorageDraft() sobrescribiría en silencio.
+      // Una captura nueva (sin borrador) no se bloquea. Se libera en el
+      // finally de la cadena de restauración (ver setupMunicipiosCatalog).
+      const _hayBorradorPendiente = Boolean(
+        DraftStore.getDraft("SOCIO") ||
+        new URLSearchParams(window.location.search).get("estudio_id") ||
+        localStorage.getItem("estudio_id"),
+      );
+      if (_hayBorradorPendiente) DraftStore.showOverlay();
+
+      const draftInitReady = (async function () {
         // Role guard: capturista and organizacion may access this form.
         SessionGuard.requireRole(["capturista", "organizacion"], "../login.html");
 
@@ -2171,220 +2065,37 @@
 
 
 
-        // Draft Resume: Check if we have an estudio_id to restore
-        const estudioId = localStorage.getItem("estudio_id");
-        if (estudioId) {
-          try {
-            const res = await ApiClient.fetch(`/estudios/${estudioId}`, {
-              headers: { Accept: "application/json" },
-            });
+        // Hidratación única (local-first, Issue #161): al reanudar un
+        // borrador guardado (estudio_id local sin drafts, o ?estudio_id=
+        // desde "Mis capturas"), GET /borrador siembra los 3 drafts + IDs y
+        // reconstruye region_ctx. El pintado del formulario ocurre
+        // únicamente en restoreLocalStorageDraft(), tras el catálogo de
+        // municipios (ver draftInitReady más abajo).
+        const hydration = await DraftStore.hydrateIfNeeded({ urlEstudioId: isEditMode });
 
-            if (res.ok) {
-              const data = await res.json();
+        if (isEditMode && !hydration.hydrated && !DraftStore.getDraft("SOCIO")) {
+          alert("No se pudo cargar el borrador solicitado.");
+          window.location.href = "perfil-capturista.html";
+          return;
+        }
 
-              // Pre-fill beneficiario fields
-              if (data.beneficiario) {
-                const b = data.beneficiario;
-                const setVal = (name, val) => {
-                  const el = document.querySelector(`[name="${name}"]`);
-                  if (el && val != null) el.value = val;
-                };
-                // Structured name: direct populate or legacy fallback
-                if (b.nombres != null && b.nombres !== "") {
-                  setVal("nombres", b.nombres);
-                  setVal("apellido_paterno", b.apellido_paterno || "");
-                  setVal("apellido_materno", b.apellido_materno || "");
-                } else if (b.nombre) {
-                  // Legacy draft: split nombre by spaces
-                  const parts = (b.nombre || "").trim().split(/\s+/).filter(Boolean);
-                  if (parts.length === 0) {
-                    setVal("nombres", "");
-                    setVal("apellido_paterno", "");
-                    setVal("apellido_materno", "");
-                  } else if (parts.length === 1) {
-                    setVal("nombres", parts[0]);
-                  } else if (parts.length === 2) {
-                    setVal("nombres", parts[0]);
-                    setVal("apellido_paterno", parts[1]);
-                  } else {
-                    setVal("apellido_materno", parts.pop());
-                    setVal("apellido_paterno", parts.pop());
-                    setVal("nombres", parts.join(" "));
-                  }
-                }
-                setVal("curp", b.curp_benef || b.curp);
-                setVal("fecha_nacimiento", b.fecha_nacimiento);
-                setVal("calle", b.calle);
-                setVal("colonia", b.colonia);
-                setVal("num_ext", b.num_ext);
-                if (b.num_int) {
-                  const numIntCheckbox = document.querySelector('[name="tiene_num_interior"]');
-                  if (numIntCheckbox) {
-                    numIntCheckbox.checked = true;
-                    numIntCheckbox.dispatchEvent(new Event("change"));
-                  }
-                }
-                setVal("num_int", b.num_int);
-                setVal("estado_codigo", b.estado_codigo);
-                const ciudadEl = document.getElementById("ciudad");
-                if (ciudadEl && b.ciudad != null) {
-                  ciudadEl.dataset.pendingValue = b.ciudad;
-                }
-                if (b.estado_codigo) {
-                  await loadMunicipiosCatalog();
-                  renderMunicipiosSelect(b.estado_codigo, b.ciudad || "");
-                }
-                // Resync searchable-select triggers (setVal does not fire change)
-                document.getElementById("estado_codigo")?.dispatchEvent(new Event("sr:refresh"));
-                document.getElementById("ciudad")?.dispatchEvent(new Event("sr:refresh"));
-                setVal("telefonos", b.telefonos);
-                setVal("email", b.email);
-                const sexoEl = document.querySelector(`[name="sexo"][value="${b.sexo}"]`);
-                if (sexoEl) sexoEl.checked = true;
-              }
-
-              // Pre-fill tutores
-              if (data.tutores && data.tutores.length > 0) {
-                const ESTADO_CIVIL_CATALOG = ["SOLTERO", "CASADO", "VIUDO", "DIVORCIADO", "UNION_LIBRE"];
-                const setEstadoCivilCatalogValue = (name, val) => {
-                  const el = document.querySelector(`[name="${name}"]`);
-                  if (!el) return;
-                  el.value = ESTADO_CIVIL_CATALOG.includes(val) ? val : "";
-                };
-
-                data.tutores.forEach((t) => {
-                  const num = t.numero_tutor;
-                  const setVal = (name, val) => {
-                    const el = document.querySelector(`[name="${name}"]`);
-                    if (el && val != null) el.value = val;
-                  };
-                  const setChecked = (name, val) => {
-                    const el = document.querySelector(`[name="${name}"]`);
-                    if (el) el.checked = val === 1 || val === true;
-                  };
-                  const setBooleanStatus = (name, raw) => {
-                    let value = null;
-                    if (raw === "SI" || raw === "NO") {
-                      value = raw;
-                    } else if (raw === true || raw === 1) {
-                      value = "SI";
-                    } else if (raw === false || raw === 0) {
-                      value = "NO";
-                    }
-                    if (value === null) return;
-                    const radio = document.querySelector(`[name="${name}"][value="${value}"]`);
-                    if (radio) radio.checked = true;
-                  };
-                  // Structured name: direct populate or legacy fallback from composed nombre
-                  if (t.nombres != null && t.nombres !== "") {
-                    setVal(`tutor${num}_nombres`, t.nombres);
-                    setVal(`tutor${num}_apellido_paterno`, t.apellido_paterno || "");
-                    setVal(`tutor${num}_apellido_materno`, t.apellido_materno || "");
-                  } else if (t.nombre) {
-                    const parts = (t.nombre || "").trim().split(/\s+/).filter(Boolean);
-                    if (parts.length === 0) {
-                      setVal(`tutor${num}_nombres`, "");
-                      setVal(`tutor${num}_apellido_paterno`, "");
-                      setVal(`tutor${num}_apellido_materno`, "");
-                    } else if (parts.length === 1) {
-                      setVal(`tutor${num}_nombres`, parts[0]);
-                    } else if (parts.length === 2) {
-                      setVal(`tutor${num}_nombres`, parts[0]);
-                      setVal(`tutor${num}_apellido_paterno`, parts[1]);
-                    } else {
-                      setVal(`tutor${num}_apellido_materno`, parts.pop());
-                      setVal(`tutor${num}_apellido_paterno`, parts.pop());
-                      setVal(`tutor${num}_nombres`, parts.join(" "));
-                    }
-                  }
-                  setVal(`tutor${num}_edad`, t.edad);
-                  setCatalogSelectValue(`tutor${num}_nivel_estudios`, t.nivel_estudios, NIVEL_ESTUDIOS_CATALOG);
-                  setEstadoCivilCatalogValue(
-                    `tutor${num}_estado_civil`,
-                    t.estado_civil,
-                  );
-                  setVal(`tutor${num}_num_hijos`, t.num_hijos);
-                  setVal(`tutor${num}_vivienda`, t.vivienda);
-                  if (t.email) {
-                    const emailCheckbox = document.querySelector(`[name="tutor${num}_tiene_email"]`);
-                    if (emailCheckbox) {
-                      emailCheckbox.checked = true;
-                      emailCheckbox.dispatchEvent(new Event("change"));
-                    }
-                    setVal(`tutor${num}_email`, t.email);
-                  }
-                  setVal(`tutor${num}_fuente_empleo`, t.fuente_empleo);
-                  setVal(`tutor${num}_antiguedad_anios`, t.antiguedad_meses != null ? Math.floor(t.antiguedad_meses / 12) : "");
-                  setVal(`tutor${num}_antiguedad_meses_extra`, t.antiguedad_meses != null ? t.antiguedad_meses % 12 : "");
-                  setVal(
-                    `tutor${num}_ingreso_mensual`,
-                    t.ingreso_mensual != null
-                      ? SR_Validations.formatIntegerDisplay(String(t.ingreso_mensual))
-                      : t.ingreso_mensual,
-                  );
-                  setChecked(`tutor${num}_sin_empleo`, t.sin_empleo);
-                  setChecked(`tutor${num}_antiguedad_no_aplica`, !(t.antiguedad_aplica == null ? true : t.antiguedad_aplica));
-                  setChecked(`tutor${num}_otras_fuentes_aplica`, t.otras_fuentes_aplica);
-                  setVal(`tutor${num}_otras_fuentes_ingreso`, t.otras_fuentes_ingreso);
-                  setVal(`tutor${num}_monto_otras_fuentes`, t.monto_otras_fuentes != null ? SR_Validations.formatMoneyDisplay(String(t.monto_otras_fuentes)) : t.monto_otras_fuentes);
-                  setBooleanStatus(`tutor${num}_imss`, t.imss_estatus ?? t.tiene_imss);
-                  setBooleanStatus(`tutor${num}_infonavit`, t.infonavit_estatus ?? t.tiene_infonavit);
-                });
-                const tutor2Data = data.tutores.find(t => t.numero_tutor === 2);
-                if (tutor2Data) {
-                  const agregarTutor2Checkbox = document.querySelector('[name="agregar_tutor2"]');
-                  if (agregarTutor2Checkbox) {
-                    agregarTutor2Checkbox.checked = true;
-                    agregarTutor2Checkbox.dispatchEvent(new Event("change"));
-                  }
-                }
-                setupTutorConditionalFields();
-                // Safety net: re-disable Tutor 2 conditional fields if checkbox is not checked.
-                // setupTutorConditionalFields() re-enables them for both tutors, but Tutor 2
-                // fields must stay disabled when the "Agregar segundo tutor" checkbox is off.
-                if (!document.querySelector('[name="agregar_tutor2"]')?.checked) {
-                  const t2Fuente = document.querySelector('[name="tutor2_fuente_empleo"]');
-                  const t2Ingreso = document.querySelector('[name="tutor2_ingreso_mensual"]');
-                  const t2AntigAnios = document.querySelector('[name="tutor2_antiguedad_anios"]');
-                  const t2AntigMeses = document.querySelector('[name="tutor2_antiguedad_meses_extra"]');
-                  if (t2Fuente) SR_Validations.setFieldDisabled(t2Fuente, true);
-                  if (t2Ingreso) SR_Validations.setFieldDisabled(t2Ingreso, true);
-                  if (t2AntigAnios) SR_Validations.setFieldDisabled(t2AntigAnios, true);
-                  if (t2AntigMeses) SR_Validations.setFieldDisabled(t2AntigMeses, true);
-                }
-              }
-
-              // Pre-fill estudio closing fields moved to gestion.html
-
-              // Restore document references
-              if (data.credencial_path) {
-                setDocumentRef("credencial", data.credencial_path, data.credencial_url);
-                setPreviewFromStoredPath("credencial", data.credencial_path);
-                renderDocumentStatus("credencial");
-                renderPreviewCard("credencial");
-              }
-              if (data.comprobante_domicilio_path) {
-                setDocumentRef(
-                  "comprobante_domicilio",
-                  data.comprobante_domicilio_path,
-                  data.comprobante_domicilio_url,
-                );
-                setPreviewFromStoredPath("comprobante_domicilio", data.comprobante_domicilio_path);
-                renderDocumentStatus("comprobante_domicilio");
-                renderPreviewCard("comprobante_domicilio");
-              }
-
-              // Also store beneficiario_id from the draft
-              if (data.beneficiario_id) {
-                localStorage.setItem("beneficiario_id", data.beneficiario_id);
-              }
-            } else if (res.status === 404) {
-              // Draft was deleted, clear the localStorage
-              localStorage.removeItem("estudio_id");
-            }
-          } catch (err) {
-            // Network error, show fresh form
-            console.error("Error loading draft:", err);
+        // Modo edición: por URL (?estudio_id=) o por estudio_id local — al
+        // navegar entre pasos la URL pierde el parámetro, pero se sigue
+        // editando el mismo borrador ya guardado en el backend, y el banner
+        // debe reflejarlo igual.
+        const estudioIdLocal = DraftStore.getIds().estudio_id;
+        if (isEditMode || estudioIdLocal) {
+          document.getElementById("edit-banner")?.classList.remove("hidden");
+          const editBannerText = document.getElementById("edit-banner-text");
+          if (editBannerText) {
+            editBannerText.textContent = `Editando estudio #${estudioIdLocal ?? isEditMode}`;
+          }
+          const formTitle = document.getElementById("form-title");
+          if (formTitle) formTitle.textContent = "EDITAR ESTUDIO SOCIOECONÓMICO";
+          const continueBtn = document.getElementById("btn-continuar-estudio");
+          if (continueBtn) {
+            continueBtn.textContent = "CONTINUAR EDICIÓN";
+            continueBtn.dataset.label = "CONTINUAR EDICIÓN";
           }
         }
 
@@ -2419,7 +2130,9 @@
       document
         .getElementById("btn-volver-perfil")
         .addEventListener("click", async function () {
-          if (formDirty && !(await AppConfirmation.confirmUnsavedNavigation())) return;
+          if (formDirty && !(await AppConfirmation.confirmUnsavedNavigation({
+            message: "Si sale ahora, los cambios no guardados se perderán. El borrador se guarda en el servidor al llegar al paso 3 (Gestión); hasta entonces, los datos capturados viven solo en este dispositivo.",
+          }))) return;
           window.location.href = "perfil-capturista.html";
         });
 
@@ -2545,192 +2258,9 @@
         };
       }
 
-      // -- Guardar Borrador Maestro (todos los formularios) --
-      async function guardarBorradorMaster() {
-        const formatErrors = collectDraftFormatErrors("Socioeconómico", "socioeconomico.html");
-        if (formatErrors.length > 0) {
-          showValidationModal(formatErrors, {
-            title: "Revise el formato antes de guardar",
-            description: "Puede guardar borradores incompletos, pero primero corrija los campos que ya tienen un valor inválido.",
-          });
-          return;
-        }
-
-        const btn = document.getElementById("btn-guardar-borrador");
-        const originalText = btn?.textContent || "Guardar Borrador";
-        if (btn) {
-          btn.disabled = true;
-          btn.textContent = "Guardando...";
-        }
-
-        try {
-          const session = SessionGuard.getSession();
-          if (!session?.token) {
-            showValidationModal([{ form: "Sesión", label: "Inicio de sesión", message: "Debes iniciar sesión para guardar el borrador.", url: "../login.html" }], {
-              title: "Sesión requerida",
-              description: "Iniciá sesión nuevamente para continuar.",
-            });
-            return;
-          }
-
-          // 1. Upload any pending documents, then collect form data with refs
-          let documentRefs = {
-            credencial: { ...uploadedDocumentRefs.credencial },
-            comprobante_domicilio: { ...uploadedDocumentRefs.comprobante_domicilio },
-          };
-          try {
-            if (hasPendingSupportingDocuments()) {
-              documentRefs = await uploadSupportingDocuments(session.token);
-            }
-          } catch (err) {
-            console.warn("No se pudieron subir los documentos del borrador:", err);
-          }
-          const socioData = getFormData("borrador", documentRefs);
-          const tutor1 = (socioData.tutores || []).find((t) => t.numero_tutor === 1) || {};
-          const tutor2 = (socioData.tutores || []).find((t) => t.numero_tutor === 2) || {};
-          const mapTutor = (prefix, tutor) => ({
-            [`${prefix}_nombres`]: tutor.nombres || null,
-            [`${prefix}_apellido_paterno`]: tutor.apellido_paterno || null,
-            [`${prefix}_apellido_materno`]: tutor.apellido_materno || null,
-            [`${prefix}_email`]: tutor.email || null,
-            [`${prefix}_edad`]: tutor.edad ?? null,
-            [`${prefix}_nivel_estudios`]: tutor.nivel_estudios || null,
-            [`${prefix}_estado_civil`]: tutor.estado_civil || null,
-            [`${prefix}_num_hijos`]: tutor.num_hijos ?? null,
-            [`${prefix}_vivienda`]: tutor.vivienda || null,
-            [`${prefix}_fuente_empleo`]: tutor.fuente_empleo || null,
-            [`${prefix}_antiguedad_aplica`]: tutor.antiguedad_aplica ?? null,
-            [`${prefix}_antiguedad_anios`]: tutor.antiguedad_anios ?? null,
-            [`${prefix}_antiguedad_meses_extra`]: tutor.antiguedad_meses_extra ?? null,
-            [`${prefix}_ingreso_mensual`]: tutor.ingreso_mensual ?? null,
-            [`${prefix}_sin_empleo`]: tutor.sin_empleo ?? null,
-            [`${prefix}_otras_fuentes_aplica`]: tutor.otras_fuentes_aplica ?? null,
-            [`${prefix}_otras_fuentes_ingreso`]: tutor.otras_fuentes_ingreso || null,
-            [`${prefix}_monto_otras_fuentes`]: tutor.monto_otras_fuentes ?? null,
-            [`${prefix}_imss_estatus`]: tutor.imss_estatus || null,
-            [`${prefix}_infonavit_estatus`]: tutor.infonavit_estatus || null,
-          });
-
-          // 2. Mergear con localStorage de otros formularios
-          const draftTecnicaRaw = localStorage.getItem("draft_tecnica");
-          const draftGestionRaw = localStorage.getItem("draft_gestion");
-          const draftTecnica = draftTecnicaRaw ? JSON.parse(draftTecnicaRaw) : {};
-          const draftGestion = draftGestionRaw ? JSON.parse(draftGestionRaw) : {};
-          const gestionSillaPrevia = draftGestion.silla_previa === "Sí" ? true : (draftGestion.silla_previa === "No" ? false : null);
-
-          // 3. Armar payload para el backend
-          const estudioId = localStorage.getItem("estudio_id");
-          const solicitudId = localStorage.getItem("solicitud_id");
-          const beneficiarioId = localStorage.getItem("beneficiario_id");
-
-          const payload = {
-            // IDs para UPDATE
-            estudio_id: estudioId ? parseInt(estudioId, 10) : null,
-            solicitud_id: solicitudId ? parseInt(solicitudId, 10) : null,
-            beneficiario_id: beneficiarioId ? parseInt(beneficiarioId, 10) : null,
-            // Region context
-            region_id: socioData.region_id,
-            sede: socioData.sede,
-            ciudad_registro: socioData.ciudad_registro,
-            // Beneficiario
-            nombres: socioData.beneficiario?.nombres || null,
-            apellido_paterno: socioData.beneficiario?.apellido_paterno || null,
-            apellido_materno: socioData.beneficiario?.apellido_materno || null,
-            curp: socioData.beneficiario?.curp || null,
-            fecha_nacimiento: socioData.beneficiario?.fecha_nacimiento || null,
-            diagnostico: socioData.beneficiario?.diagnostico || null,
-            calle: socioData.beneficiario?.calle || null,
-            num_ext: socioData.beneficiario?.num_ext || null,
-            num_int: socioData.beneficiario?.num_int || null,
-            colonia: socioData.beneficiario?.colonia || null,
-            ciudad: socioData.beneficiario?.ciudad || null,
-            estado_codigo: socioData.beneficiario?.estado_codigo || null,
-            estado_nombre: socioData.beneficiario?.estado_nombre || null,
-            sexo: socioData.beneficiario?.sexo || null,
-            telefonos: socioData.beneficiario?.telefonos || null,
-            email: socioData.beneficiario?.email || null,
-            // Estudio
-            tuvo_silla_previa: gestionSillaPrevia ?? socioData.estudio?.tuvo_silla_previa ?? null,
-            como_obtuvo_silla: draftGestion.como_obtuvo_silla || socioData.estudio?.como_obtuvo_silla || null,
-            elaboro_estudio: socioData.estudio?.elaboro_estudio || null,
-            voluntario_contacto: socioData.estudio?.voluntario_contacto || null,
-            fecha_estudio: draftGestion.fecha_estudio || socioData.estudio?.fecha_estudio || null,
-            // Supporting documents captured in this step.
-            credencial_path: socioData.estudio?.credencial_path || null,
-            credencial_url: socioData.estudio?.credencial_url || null,
-            comprobante_domicilio_path: socioData.estudio?.comprobante_domicilio_path || null,
-            comprobante_domicilio_url: socioData.estudio?.comprobante_domicilio_url || null,
-            estudio_clinico_path: draftTecnica.estudio_clinico_path || socioData.estudio?.estudio_clinico_path || null,
-            estudio_clinico_url: draftTecnica.estudio_clinico_url || socioData.estudio?.estudio_clinico_url || null,
-            status: "borrador",
-            // Solicitud (técnica)
-            entorno: draftTecnica.entorno || null,
-            control_tronco: draftTecnica.control_tronco || null,
-            control_cabeza: draftTecnica.control_cabeza || null,
-            control_de_piernas: draftTecnica.control_de_piernas || null,
-            padecimiento: draftTecnica.padecimiento || null,
-            soporte_oxigeno:
-              typeof draftTecnica.soporte_oxigeno === "boolean"
-                ? draftTecnica.soporte_oxigeno
-                : null,
-            altura_total_in: draftTecnica.altura_total_in || null,
-            peso_kg: draftTecnica.peso_kg || null,
-            medida_cabeza_asiento: draftTecnica.medida_cabeza_asiento || null,
-            medida_hombro_asiento: draftTecnica.medida_hombro_asiento || null,
-            medida_prof_asiento: draftTecnica.medida_prof_asiento || null,
-            medida_rodilla_talon: draftTecnica.medida_rodilla_talon || null,
-            medida_ancho_cadera: draftTecnica.medida_ancho_cadera || null,
-            unidad_medida: draftTecnica.unidad_medida || null,
-            unidad_peso_captura: draftTecnica.unidad_peso_captura || null,
-            foto_path: draftTecnica.foto_path || null,
-            foto_url: draftTecnica.foto_url || null,
-            equipo_solicitado: draftTecnica.equipo_solicitado || null,
-            // Gestion
-            entidad_solicitante: draftGestion.entidad_solicitante || null,
-            prioridad: draftGestion.prioridad || null,
-            justificacion: draftGestion.justificacion || null,
-            ...mapTutor("tutor1", tutor1),
-            ...mapTutor("tutor2", tutor2),
-          };
-
-          // 4. Llamar al endpoint
-          const res = await ApiClient.fetch("/guardar-borrador", {
-            method: "POST",
-            json: payload,
-          });
-
-          if (res.ok) {
-            const data = await res.json();
-            // Guardar IDs en localStorage
-            if (data.estudio_id) localStorage.setItem("estudio_id", data.estudio_id);
-            if (data.solicitud_id) localStorage.setItem("solicitud_id", data.solicitud_id);
-            if (data.beneficiario_id) localStorage.setItem("beneficiario_id", data.beneficiario_id);
-            formDirty = false; // draft persisted — no longer dirty
-            showSuccessToast("El borrador ha sido guardado con éxito.", null);
-          } else {
-            const errData = await res.json().catch(() => ({}));
-            if (esCurpDuplicada(res, errData)) {
-              SR_Validations.showFieldError("curp", "Esta CURP ya está registrada");
-              await mostrarModalCurpDuplicada(errData);
-            } else if (res.status === 422 && errData.detail) {
-              const errors = Array.isArray(errData.detail)
-                ? errData.detail.map((e) => e.msg || e.message || JSON.stringify(e)).join("; ")
-                : errData.detail;
-              showValidationModal([{ form: "Socioeconómico", label: "Borrador", message: "No se pudo guardar el borrador. Verifica los campos: " + errors, url: "socioeconomico.html" }]);
-            } else {
-              showValidationModal([{ form: "Socioeconómico", label: "Borrador", message: "Ocurrió un error al guardar el borrador. Intenta nuevamente más tarde.", url: "socioeconomico.html" }]);
-            }
-          }
-        } catch (err) {
-          console.error("Error guardando borrador:", err);
-          showValidationModal([{ form: "Socioeconómico", label: "Borrador", message: "Ocurrió un error al guardar el borrador. Intenta nuevamente más tarde.", url: "socioeconomico.html" }]);
-        } finally {
-          if (btn) {
-            btn.disabled = false;
-            btn.textContent = originalText;
-          }
-        }
-      }
+      // guardarBorradorMaster() se eliminó: el único botón "Guardar
+      // Borrador" del wizard vive en gestion.html y usa
+      // DraftStore.buildMasterPayload (draft-store.js).
 
       // -- Validación del formulario socioeconómico (extraída de submitEstudio) --
       function validarFormularioSocioeconomico() {
@@ -3261,478 +2791,12 @@
         const btn = document.getElementById("btn-continuar-estudio");
         if (!btn) return;
         btn.disabled = isSubmitting;
-        btn.textContent = isSubmitting ? "Guardando..." : (window._editEstudioId ? "ACTUALIZAR ESTUDIO" : "CONTINUAR");
+        btn.textContent = isSubmitting ? "Guardando..." : (btn.dataset.label || "CONTINUAR");
       }
 
-      async function submitEstudio(status) {
-        const session = SessionGuard.getSession();
-        const errorEl = document.getElementById("error-msg");
-        errorEl.classList.add("hidden");
-        errorEl.textContent = "";
-
-        // Limpiar errores previos
-        const form = document.querySelector("form");
-        SR_Validations.clearAllFieldErrors(form);
-
-        // ── Validar campos obligatorios del beneficiario (orden visual de arriba hacia abajo) ──
-        if (status === "completo") {
-          const beneficiarioMissing = [];
-
-          // 1. Datos personales
-          const personalFields = [
-            { id: "nombres", label: "Nombre(s)" },
-            { id: "apellido_paterno", label: "Apellido Paterno" },
-            { id: "apellido_materno", label: "Apellido Materno" },
-            { id: "fecha_nacimiento", label: "Fecha de nacimiento" },
-          ];
-          for (const { id, label } of personalFields) {
-            const el = form.querySelector(`[name="${id}"]`);
-            if (!el || !(el.value || "").trim()) {
-              SR_Validations.showFieldError(id, `${label} es obligatorio`);
-              beneficiarioMissing.push({ id, label });
-            }
-          }
-
-          // Sexo (radio group)
-          if (!form.querySelector('[name="sexo"]:checked')) {
-            SR_Validations.showFieldError("sexo", "Sexo es obligatorio");
-            beneficiarioMissing.push({ id: "sexo", label: "Sexo" });
-          }
-
-          // 2. Domicilio
-          const domicilioFields = [
-            { id: "calle", label: "Calle" },
-            { id: "num_ext", label: "Número exterior" },
-            { id: "colonia", label: "Colonia" },
-            { id: "ciudad", label: "Ciudad" },
-            { id: "estado_codigo", label: "Estado" },
-          ];
-          for (const { id, label } of domicilioFields) {
-            const el = form.querySelector(`[name="${id}"]`);
-            if (!el || !(el.value || "").trim()) {
-              SR_Validations.showFieldError(id, `${label} es obligatorio`);
-              beneficiarioMissing.push({ id, label });
-            }
-          }
-
-          // 3. Contacto – Teléfono (regex + sanitización)
-          const telefonoInput = form.querySelector('[name="telefonos"]');
-          if (telefonoInput) {
-            telefonoInput.value = SR_Validations.sanitizeIntegerInput(telefonoInput.value);
-            if (!SR_Validations.TELEFONO_RE.test(telefonoInput.value.trim())) {
-              SR_Validations.showFieldError("telefonos", "El teléfono debe contener exactamente 10 dígitos numéricos");
-              beneficiarioMissing.push({ id: "telefonos", label: "Teléfono" });
-            }
-          }
-
-          if (beneficiarioMissing.length > 0) {
-            errorEl.textContent = "Complete los campos obligatorios del beneficiario: " + beneficiarioMissing.map(m => m.label).join(", ");
-            errorEl.classList.remove("hidden");
-            return;
-          }
-        }
-
-        // Validar campos obligatorios de Tutor 1
-        if (status === "completo") {
-          const tutor1Missing = [];
-
-          // Campos estáticos obligatorios
-          const tutor1StaticFields = [
-            { id: "tutor1_edad", label: "Edad del Tutor 1" },
-            { id: "tutor1_nivel_estudios", label: "Nivel de estudios del Tutor 1" },
-            { id: "tutor1_estado_civil", label: "Estado civil del Tutor 1" },
-            { id: "tutor1_num_hijos", label: "Número de hijos del Tutor 1" },
-            { id: "tutor1_vivienda", label: "Vivienda del Tutor 1" },
-          ];
-          for (const { id, label } of tutor1StaticFields) {
-            const el = form.querySelector(`[name="${id}"]`);
-            const val = (el?.value || "").trim();
-            if (!val) {
-              SR_Validations.showFieldError(id, `${label} es obligatorio`);
-              tutor1Missing.push(label);
-            }
-          }
-
-          // Validar edad mínima del tutor (18 años)
-          const tutor1EdadVal = parseInt((form.querySelector('[name="tutor1_edad"]')?.value || "").trim(), 10);
-          if (!isNaN(tutor1EdadVal) && tutor1EdadVal < 18) {
-            SR_Validations.showFieldError("tutor1_edad", "El tutor debe tener al menos 18 años");
-            tutor1Missing.push("Edad del Tutor 1 (mínimo 18 años)");
-          }
-
-          // IMSS e INFONAVIT
-          if (!form.querySelector('[name="tutor1_imss"]:checked')) {
-            SR_Validations.showFieldError("tutor1_imss", "IMSS del Tutor 1 es obligatorio");
-            tutor1Missing.push("IMSS del Tutor 1");
-          }
-          if (!form.querySelector('[name="tutor1_infonavit"]:checked')) {
-            SR_Validations.showFieldError("tutor1_infonavit", "INFONAVIT del Tutor 1 es obligatorio");
-            tutor1Missing.push("INFONAVIT del Tutor 1");
-          }
-
-          // Campos condicionales
-          const tutor1SinEmpleo = form.querySelector('[name="tutor1_sin_empleo"]');
-          if (!tutor1SinEmpleo?.checked) {
-            const fuente = (form.querySelector('[name="tutor1_fuente_empleo"]')?.value || "").trim();
-            if (!fuente) {
-              SR_Validations.showFieldError("tutor1_fuente_empleo", "Fuente de empleo del Tutor 1 es obligatoria");
-              tutor1Missing.push("Fuente de empleo del Tutor 1");
-            }
-            const ingreso = (form.querySelector('[name="tutor1_ingreso_mensual"]')?.value || "").trim();
-            if (!ingreso) {
-              SR_Validations.showFieldError("tutor1_ingreso_mensual", "Ingreso mensual del Tutor 1 es obligatorio");
-              tutor1Missing.push("Ingreso mensual del Tutor 1");
-            }
-          }
-
-          const tutor1AntiguedadNoAplica = form.querySelector('[name="tutor1_antiguedad_no_aplica"]');
-          if (!tutor1AntiguedadNoAplica?.checked && !tutor1SinEmpleo?.checked) {
-            const anios = (form.querySelector('[name="tutor1_antiguedad_anios"]')?.value || "").trim();
-            const meses = (form.querySelector('[name="tutor1_antiguedad_meses_extra"]')?.value || "").trim();
-            if (!anios && !meses) {
-              SR_Validations.showFieldError("tutor1_antiguedad_anios", "Antigüedad del Tutor 1 es obligatoria");
-              tutor1Missing.push("Antigüedad del Tutor 1");
-            }
-          }
-
-          const tutor1OtrasAplica = form.querySelector('[name="tutor1_otras_fuentes_aplica"]');
-          if (tutor1OtrasAplica?.checked) {
-            const otrasFuente = (form.querySelector('[name="tutor1_otras_fuentes_ingreso"]')?.value || "").trim();
-            if (!otrasFuente) {
-              SR_Validations.showFieldError("tutor1_otras_fuentes_ingreso", "Otra fuente de ingreso del Tutor 1 es obligatoria");
-              tutor1Missing.push("Otra fuente de ingreso del Tutor 1");
-            }
-            const otrasMonto = (form.querySelector('[name="tutor1_monto_otras_fuentes"]')?.value || "").trim();
-            if (!otrasMonto) {
-              SR_Validations.showFieldError("tutor1_monto_otras_fuentes", "Monto de otras fuentes del Tutor 1 es obligatorio");
-              tutor1Missing.push("Monto de otras fuentes del Tutor 1");
-            }
-          }
-
-          if (tutor1Missing.length > 0) {
-            errorEl.textContent = "Complete los campos obligatorios del Tutor 1: " + tutor1Missing.join(", ");
-            errorEl.classList.remove("hidden");
-            return;
-          }
-        }
-
-        // Validar campos obligatorios de Tutor 2
-        if (status === "completo") {
-          const agregarTutor2Chk = form.querySelector('[name="agregar_tutor2"]');
-          if (agregarTutor2Chk?.checked) {
-            const tutor2Missing = [];
-
-            // Campos estáticos obligatorios
-            const tutor2StaticFields = [
-              { id: "tutor2_edad", label: "Edad del Tutor 2" },
-              { id: "tutor2_nivel_estudios", label: "Nivel de estudios del Tutor 2" },
-              { id: "tutor2_estado_civil", label: "Estado civil del Tutor 2" },
-              { id: "tutor2_num_hijos", label: "Número de hijos del Tutor 2" },
-              { id: "tutor2_vivienda", label: "Vivienda del Tutor 2" },
-            ];
-            for (const { id, label } of tutor2StaticFields) {
-              const el = form.querySelector(`[name="${id}"]`);
-              const val = (el?.value || "").trim();
-              if (!val) {
-                SR_Validations.showFieldError(id, `${label} es obligatorio`);
-                tutor2Missing.push(label);
-              }
-            }
-
-            // Validar edad mínima del tutor (18 años)
-            const tutor2EdadVal = parseInt((form.querySelector('[name="tutor2_edad"]')?.value || "").trim(), 10);
-            if (!isNaN(tutor2EdadVal) && tutor2EdadVal < 18) {
-              SR_Validations.showFieldError("tutor2_edad", "El tutor debe tener al menos 18 años");
-              tutor2Missing.push("Edad del Tutor 2 (mínimo 18 años)");
-            }
-
-            // IMSS e INFONAVIT
-            if (!form.querySelector('[name="tutor2_imss"]:checked')) {
-              SR_Validations.showFieldError("tutor2_imss", "IMSS del Tutor 2 es obligatorio");
-              tutor2Missing.push("IMSS del Tutor 2");
-            }
-            if (!form.querySelector('[name="tutor2_infonavit"]:checked')) {
-              SR_Validations.showFieldError("tutor2_infonavit", "INFONAVIT del Tutor 2 es obligatorio");
-              tutor2Missing.push("INFONAVIT del Tutor 2");
-            }
-
-            // Campos condicionales
-            const tutor2SinEmpleo = form.querySelector('[name="tutor2_sin_empleo"]');
-            if (!tutor2SinEmpleo?.checked) {
-              const fuente = (form.querySelector('[name="tutor2_fuente_empleo"]')?.value || "").trim();
-              if (!fuente) {
-                SR_Validations.showFieldError("tutor2_fuente_empleo", "Fuente de empleo del Tutor 2 es obligatoria");
-                tutor2Missing.push("Fuente de empleo del Tutor 2");
-              }
-              const ingreso = (form.querySelector('[name="tutor2_ingreso_mensual"]')?.value || "").trim();
-              if (!ingreso) {
-                SR_Validations.showFieldError("tutor2_ingreso_mensual", "Ingreso mensual del Tutor 2 es obligatorio");
-                tutor2Missing.push("Ingreso mensual del Tutor 2");
-              }
-            }
-
-            const tutor2AntiguedadNoAplica = form.querySelector('[name="tutor2_antiguedad_no_aplica"]');
-            if (!tutor2AntiguedadNoAplica?.checked && !tutor2SinEmpleo?.checked) {
-              const anios = (form.querySelector('[name="tutor2_antiguedad_anios"]')?.value || "").trim();
-              const meses = (form.querySelector('[name="tutor2_antiguedad_meses_extra"]')?.value || "").trim();
-              if (!anios && !meses) {
-                SR_Validations.showFieldError("tutor2_antiguedad_anios", "Antigüedad del Tutor 2 es obligatoria");
-                tutor2Missing.push("Antigüedad del Tutor 2");
-              }
-            }
-
-            const tutor2OtrasAplica = form.querySelector('[name="tutor2_otras_fuentes_aplica"]');
-            if (tutor2OtrasAplica?.checked) {
-              const otrasFuente = (form.querySelector('[name="tutor2_otras_fuentes_ingreso"]')?.value || "").trim();
-              if (!otrasFuente) {
-                SR_Validations.showFieldError("tutor2_otras_fuentes_ingreso", "Otra fuente de ingreso del Tutor 2 es obligatoria");
-                tutor2Missing.push("Otra fuente de ingreso del Tutor 2");
-              }
-              const otrasMonto = (form.querySelector('[name="tutor2_monto_otras_fuentes"]')?.value || "").trim();
-              if (!otrasMonto) {
-                SR_Validations.showFieldError("tutor2_monto_otras_fuentes", "Monto de otras fuentes del Tutor 2 es obligatorio");
-                tutor2Missing.push("Monto de otras fuentes del Tutor 2");
-              }
-            }
-
-            if (tutor2Missing.length > 0) {
-              errorEl.textContent = "Complete los campos obligatorios del Tutor 2: " + tutor2Missing.join(", ");
-              errorEl.classList.remove("hidden");
-              return;
-            }
-          }
-        }
-
-        // Validar constraints HTML5 (minlength, pattern) replicando validación nativa desactivada por novalidate
-        if (status === "completo") {
-          const constraintErrors = SR_Validations.validateHTML5Constraints(form);
-          if (constraintErrors.length > 0) {
-            constraintErrors.forEach(({ id, message }) => {
-              SR_Validations.showFieldError(id, message);
-            });
-            errorEl.textContent = "Revise los campos con formato incorrecto";
-            errorEl.classList.remove("hidden");
-            return;
-          }
-        }
-
-        // Validar rango de campos monetarios (0 a 999,999,999)
-        if (status === "completo") {
-          const monetaryFields = [
-            { name: "tutor1_ingreso_mensual", label: "Ingreso mensual del Tutor 1" },
-            { name: "tutor1_monto_otras_fuentes", label: "Monto de otras fuentes del Tutor 1" },
-            { name: "tutor2_ingreso_mensual", label: "Ingreso mensual del Tutor 2" },
-            { name: "tutor2_monto_otras_fuentes", label: "Monto de otras fuentes del Tutor 2" },
-          ];
-          const MAX_MONETARY = SR_Validations.LIMITS.INGRESO_MENSUAL_MAX;
-          const rangeErrors = [];
-          for (const { name, label } of monetaryFields) {
-            const input = form.querySelector(`[name="${name}"]`);
-            if (!input || input.disabled) continue;
-            const raw = input.value.trim();
-            if (!raw) continue;
-            const num = SR_Validations.toIntegerOrNull(raw);
-            if (num !== null && (num < 0 || num > MAX_MONETARY)) {
-              SR_Validations.showFieldError(name, `${label} debe estar entre $0 y $999,999,999`);
-              rangeErrors.push(label);
-            }
-          }
-          if (rangeErrors.length > 0) {
-            errorEl.textContent = "Revise los montos monetarios: " + rangeErrors.join(", ");
-            errorEl.classList.remove("hidden");
-            return;
-          }
-        }
-
-        // Validar formato de correos electrónicos si están activos
-        if (status === "completo") {
-          const emailErrors = [];
-          [1, 2].forEach((num) => {
-            const tieneEmail = form.querySelector(`[name="tutor${num}_tiene_email"]`)?.checked;
-            const emailInput = form.querySelector(`[name="tutor${num}_email"]`);
-            if (tieneEmail && emailInput && emailInput.value.trim()) {
-              const val = emailInput.value.trim().toLowerCase();
-              if (!SR_Validations.EMAIL_RE.test(val)) {
-                SR_Validations.showFieldError(`tutor${num}_email`, "El correo electrónico no es válido");
-                emailErrors.push(`Correo electrónico del Tutor ${num}`);
-              }
-              if (val.length > SR_Validations.LIMITS.EMAIL_MAX) {
-                SR_Validations.showFieldError(`tutor${num}_email`, "El correo electrónico excede 254 caracteres");
-                emailErrors.push(`Correo electrónico del Tutor ${num}`);
-              }
-            }
-          });
-          if (emailErrors.length > 0) {
-            errorEl.textContent = "Revise los correos electrónicos: " + emailErrors.join(", ");
-            errorEl.classList.remove("hidden");
-            return;
-          }
-        }
-
-        if (!session?.token) {
-          window.location.href = "../login.html";
-          return;
-        }
-
-        const estudioId = localStorage.getItem("estudio_id");
-
-        try {
-          let res, data;
-
-          // Prepare document references
-          let documentRefs = {
-            credencial: { ...uploadedDocumentRefs.credencial },
-            comprobante_domicilio: { ...uploadedDocumentRefs.comprobante_domicilio },
-          };
-
-          // Upload supporting documents if not a draft save
-          const shouldDeferDocuments = status === "borrador";
-          if (!shouldDeferDocuments) {
-            documentRefs = await uploadSupportingDocuments(session.token);
-          }
-
-          if (estudioId) {
-            // PATCH existing draft - update estudio fields + tutores (for resumed edits)
-            const payload = getFormData(status, documentRefs);
-            const patchPayload = {
-              ...payload.estudio,
-              beneficiario: payload.beneficiario,
-              tutores: payload.tutores,
-            };
-
-            res = await ApiClient.fetch(`/estudios/${estudioId}`, {
-              method: "PATCH",
-              json: patchPayload,
-            });
-
-            if (!res.ok) {
-              const errData = await res.json().catch(() => ({}));
-              if (esCurpDuplicada(res, errData)) {
-                SR_Validations.showFieldError("curp", "Esta CURP ya está registrada");
-                await mostrarModalCurpDuplicada(errData);
-                return;
-              }
-              errorEl.textContent = SR_Validations.formatBackendError(
-                errData,
-                "Error al actualizar el estudio. Intente de nuevo.",
-              );
-              errorEl.classList.remove("hidden");
-              return;
-            }
-
-            data = await res.json();
-
-            // After successful PATCH, upload pending documents if any
-            if (shouldDeferDocuments && hasPendingSupportingDocuments() && estudioId) {
-              try {
-                const nextRefs = await uploadSupportingDocuments(session.token);
-                const attachmentPayload = getFormData(status, nextRefs);
-                const attachmentResponse = await ApiClient.fetch(`/estudios/${estudioId}`, {
-                  method: "PATCH",
-                  json: {
-                    ...attachmentPayload.estudio,
-                    tutores: attachmentPayload.tutores,
-                  },
-                });
-                if (!attachmentResponse.ok) {
-                  errorEl.textContent =
-                    "El borrador del estudio sí se guardó, pero no se pudieron vincular los documentos al servidor. Los datos permanecen guardados en este dispositivo.";
-                  errorEl.classList.remove("hidden");
-                }
-              } catch (err) {
-                errorEl.textContent =
-                  err instanceof Error
-                    ? `El borrador del estudio sí se guardó, pero los documentos no se pudieron subir: ${err.message}`
-                    : "El borrador del estudio sí se guardó, pero los documentos no se pudieron subir.";
-                errorEl.classList.remove("hidden");
-              }
-            }
-
-            // After successful PATCH with status 'completo', keep estudio_id
-            // for gestion.html to close the full flow; keep beneficiario_id for tecnica.html
-            if (status === "completo") {
-              showSuccessToast("Estudio guardado correctamente", "tecnica.html");
-              return true;
-            } else {
-              showSuccessToast("Borrador guardado correctamente", null);
-            }
-          } else {
-            // POST new estudio
-            const payload = getFormData(status, documentRefs);
-            console.log('[DEBUG] Payload being sent:', JSON.stringify(payload, null, 2));
-
-            res = await ApiClient.fetch("/estudios", {
-              method: "POST",
-              json: payload,
-            });
-
-            if (!res.ok) {
-              const errData = await res.json().catch(() => ({}));
-              console.error('[DEBUG] Backend error:', errData);
-              if (esCurpDuplicada(res, errData)) {
-                SR_Validations.showFieldError("curp", "Esta CURP ya está registrada");
-                await mostrarModalCurpDuplicada(errData);
-                return;
-              }
-              errorEl.textContent = SR_Validations.formatBackendError(
-                errData,
-                "Error al guardar el estudio. Intente de nuevo.",
-              );
-              errorEl.classList.remove("hidden");
-              return;
-            }
-
-            data = await res.json();
-
-            // Store IDs for later use
-            if (data.estudio_id) {
-              localStorage.setItem("estudio_id", data.estudio_id);
-            }
-            if (data.beneficiario_id) {
-              localStorage.setItem("beneficiario_id", data.beneficiario_id);
-            }
-
-            // Upload pending documents for borrador
-            if (shouldDeferDocuments && hasPendingSupportingDocuments() && data.estudio_id) {
-              try {
-                const nextRefs = await uploadSupportingDocuments(session.token);
-                const attachmentPayload = getFormData(status, nextRefs);
-                const attachmentResponse = await ApiClient.fetch(`/estudios/${data.estudio_id}`, {
-                  method: "PATCH",
-                  json: {
-                    ...attachmentPayload.estudio,
-                    tutores: attachmentPayload.tutores,
-                  },
-                });
-                if (!attachmentResponse.ok) {
-                  errorEl.textContent =
-                    "El borrador del estudio sí se guardó, pero no se pudieron vincular los documentos al servidor. Los datos permanecen guardados en este dispositivo.";
-                  errorEl.classList.remove("hidden");
-                }
-              } catch (err) {
-                errorEl.textContent =
-                  err instanceof Error
-                    ? `El borrador del estudio sí se guardó, pero los documentos no se pudieron subir: ${err.message}`
-                    : "El borrador del estudio sí se guardó, pero los documentos no se pudieron subir.";
-                errorEl.classList.remove("hidden");
-              }
-            }
-
-            if (status === "completo") {
-              // Estudio completed — keep estudio_id for gestion.html
-              // keep beneficiario_id for tecnica.html
-              showSuccessToast("Estudio guardado correctamente", "tecnica.html");
-              return true;
-            } else {
-              // Borrador saved — keep both IDs for later resumption
-              showSuccessToast("Borrador guardado correctamente", null);
-            }
-          }
-        } catch (err) {
-          errorEl.textContent = "No se pudo conectar con el servidor.";
-          errorEl.classList.remove("hidden");
-        }
-      }
+      // submitEstudio() (POST /estudios + subida diferida) se eliminó: no
+      // tenía llamadores tras el rediseño offline-first; la creación del
+      // estudio ocurre vía POST /guardar-borrador desde gestion.html.
 
       // Guardar Borrador button
       setupNameFieldValidation();
@@ -3751,15 +2815,23 @@
       setupEstadosCatalog();
       setupMunicipiosCatalog().catch((err) => {
         console.error("Error cargando catálogo de municipios:", err);
-      }).then(() => {
-        // After catalogs are loaded, restore localStorage draft
-        restoreLocalStorageDraft();
+      }).then(() => draftInitReady).then(() => {
+        // Tras catálogos + hidratación, pintar desde el draft local — único
+        // camino de restauración (antes convivían tres y competían).
+        // return: el overlay debe sostenerse hasta que el pintado async
+        // termine de verdad (incluye su re-await del catálogo).
+        return restoreLocalStorageDraft();
+      }).catch((err) => {
+        // Sin esto, un catálogo caído dejaba una rejection sin manejar y
+        // el finally no correría — la UI quedaría bloqueada para siempre.
+        console.error("Error restaurando borrador local:", err);
+      }).finally(() => {
+        if (_hayBorradorPendiente) DraftStore.hideOverlay();
       });
       setupTutorConditionalFields();
       setupTutor2Toggle();
       setupSillaPreviaConditionalField();
       setupDocumentInputs();
-      setupLocalDraftAutosave();
 
       // Camera buttons
       document.getElementById("camera-close")?.addEventListener("click", closeCameraModal);
@@ -3801,328 +2873,23 @@
         continuarEstudioSocioeconomico();
       });
 
-      // GUARDAR BORRADOR button: save all 3 forms to backend (format validation only)
-      document.getElementById("btn-guardar-borrador")?.addEventListener("click", guardarBorradorMaster);
+      // El botón "Guardar Borrador" se eliminó de esta vista: el guardado
+      // maestro vive en gestion.html. El modo edición (?estudio_id=) lo
+      // hidrata el IIFE de arriba vía DraftStore.
 
-      // ── Edit mode (estudio_id query param) ───────────────────────────────────
-      const urlParams = new URLSearchParams(window.location.search);
-      const estudioId = urlParams.get("estudio_id");
+      // populateFormWithData / cacheLoadedDraftForContinuation /
+      // loadExistingEstudio se eliminaron: la reanudación de borradores la
+      // resuelve DraftStore.hydrateIfNeeded (draft-store.js), que siembra
+      // los 3 drafts + IDs desde GET /borrador, y el pintado único de
+      // restoreLocalStorageDraft().
 
-      if (estudioId) {
-        loadExistingEstudio(parseInt(estudioId));
-      }
-
-      function populateFormWithData(data) {
-        const estudioId = data.estudio_id || data.id;
-        const folio = data.folio || data.beneficiario?.folio || estudioId;
-
-        // Show edit banner (form-title no longer exists in the redesigned layout)
-        document.getElementById("edit-banner")?.classList.remove("hidden");
-        const editBannerText = document.getElementById("edit-banner-text");
-        if (editBannerText) editBannerText.textContent = `Editando estudio #${folio}`;
-        const formTitle = document.getElementById("form-title");
-        if (formTitle) formTitle.textContent = "EDITAR ESTUDIO SOCIOECONÓMICO";
-
-        // Reconstruct region_ctx if missing (edit mode from profile)
-        const b = data.beneficiario || {};
-        const existingRegionCtx = JSON.parse(localStorage.getItem("region_ctx") || "null");
-        if (!existingRegionCtx && (b.region_id || data.sede)) {
-          localStorage.setItem("region_ctx", JSON.stringify({
-            region_id: b.region_id,
-            sede: data.sede || "",
-            region_nombre: data.ciudad_registro || "",
-          }));
-        }
-
-        // Pre-populate BENEFICIARIO fields
-        const _setVal = (name, val) => {
-          const el = document.querySelector(`[name="${name}"]`);
-          if (el && val != null) el.value = val;
-        };
-        _setVal("nombres", b.nombres || b.nombre || "");
-        _setVal("apellido_paterno", b.apellido_paterno || "");
-        _setVal("apellido_materno", b.apellido_materno || "");
-        _setVal("curp", b.curp_benef || b.curp || "");
-        _setVal("fecha_nacimiento", b.fecha_nacimiento || "");
-        _setVal("calle", b.calle || "");
-        _setVal("num_ext", b.num_ext || "");
-        _setVal("colonia", b.colonia || "");
-        _setVal("telefonos", b.telefonos || "");
-        _setVal("email", b.email || "");
-        if (b.sexo) {
-          const sexoRadio = document.querySelector(`[name="sexo"][value="${b.sexo}"]`);
-          if (sexoRadio) sexoRadio.checked = true;
-        }
-        if (b.num_int) {
-          const numIntCheckbox = document.querySelector('[name="tiene_num_interior"]');
-          if (numIntCheckbox) {
-            numIntCheckbox.checked = true;
-            numIntCheckbox.dispatchEvent(new Event("change"));
-          }
-          _setVal("num_int", b.num_int);
-        }
-        if (b.estado_codigo) {
-          _setVal("estado_codigo", b.estado_codigo);
-          renderMunicipiosSelect(b.estado_codigo, b.ciudad || "");
-        }
-
-        // Pre-populate ESTUDIO fields (silla previa, etc.)
-        if (data.tuvo_silla_previa != null) {
-          const sillaRadio = document.querySelector(`[name="silla_previa"][value="${data.tuvo_silla_previa ? '1' : '0'}"]`);
-          if (sillaRadio) {
-            sillaRadio.checked = true;
-            sillaRadio.dispatchEvent(new Event("change"));
-          }
-        }
-        if (data.como_obtuvo_silla) {
-          _setVal("como_obtuvo_silla", data.como_obtuvo_silla);
-        }
-        if (data.elaboro_estudio) {
-          _setVal("elaboro_estudio", data.elaboro_estudio);
-        }
-        if (data.fecha_estudio) {
-          _setVal("fecha_estudio", data.fecha_estudio);
-        }
-        if (data.voluntario_contacto) {
-          _setVal("voluntario_contacto", data.voluntario_contacto);
-        }
-
-        // Pre-populate TUTORES
-        const tutores = data.tutores || [];
-        tutores.forEach((t) => {
-          const num = t.numero_tutor;
-          const prefix = `tutor${num}`;
-          _setVal(`${prefix}_nombres`, t.nombres || t.nombre || "");
-          _setVal(`${prefix}_apellido_paterno`, t.apellido_paterno || "");
-          _setVal(`${prefix}_apellido_materno`, t.apellido_materno || "");
-          if (t.edad != null) _setVal(`${prefix}_edad`, String(t.edad));
-          if (t.nivel_estudios) _setVal(`${prefix}_nivel_estudios`, t.nivel_estudios);
-          if (t.estado_civil) _setVal(`${prefix}_estado_civil`, t.estado_civil);
-          if (t.num_hijos != null) _setVal(`${prefix}_num_hijos`, String(t.num_hijos));
-          if (t.vivienda) _setVal(`${prefix}_vivienda`, t.vivienda);
-          if (t.fuente_empleo) _setVal(`${prefix}_fuente_empleo`, t.fuente_empleo);
-          if (t.antiguedad_anios != null && t.antiguedad_anios > 0) _setVal(`${prefix}_antiguedad_anios`, String(t.antiguedad_anios));
-          if (t.antiguedad_meses_extra != null && t.antiguedad_meses_extra > 0) _setVal(`${prefix}_antiguedad_meses_extra`, String(t.antiguedad_meses_extra));
-          if (t.ingreso_mensual != null) _setVal(`${prefix}_ingreso_mensual`, SR_Validations.formatIntegerDisplay(String(t.ingreso_mensual)));
-          if (t.sin_empleo) {
-            const sinEmpChk = document.querySelector(`[name="${prefix}_sin_empleo"]`);
-            if (sinEmpChk) { sinEmpChk.checked = true; sinEmpChk.dispatchEvent(new Event("change")); }
-          }
-          if (t.imss_estatus) {
-            const imssRadio = document.querySelector(`[name="${prefix}_imss"][value="${t.imss_estatus}"]`);
-            if (imssRadio) imssRadio.checked = true;
-          }
-          if (t.infonavit_estatus) {
-            const infRadio = document.querySelector(`[name="${prefix}_infonavit"][value="${t.infonavit_estatus}"]`);
-            if (infRadio) infRadio.checked = true;
-          }
-          if (t.email) {
-            const emailChk = document.querySelector(`[name="${prefix}_tiene_email"]`);
-            if (emailChk) { emailChk.checked = true; emailChk.dispatchEvent(new Event("change")); }
-            _setVal(`${prefix}_email`, t.email);
-          }
-          if (t.otras_fuentes_aplica) {
-            const otrasChk = document.querySelector(`[name="${prefix}_otras_fuentes_aplica"]`);
-            if (otrasChk) { otrasChk.checked = true; otrasChk.dispatchEvent(new Event("change")); }
-          }
-          if (t.otras_fuentes_ingreso) _setVal(`${prefix}_otras_fuentes_ingreso`, t.otras_fuentes_ingreso);
-          if (t.monto_otras_fuentes != null) _setVal(`${prefix}_monto_otras_fuentes`, SR_Validations.formatMoneyDisplay(String(t.monto_otras_fuentes)));
-          if (t.antiguedad_aplica === false) {
-            const antNoChk = document.querySelector(`[name="${prefix}_antiguedad_no_aplica"]`);
-            if (antNoChk) { antNoChk.checked = true; antNoChk.dispatchEvent(new Event("change")); }
-          }
-          if (num === 2) {
-            const agregarChk = document.querySelector('[name="agregar_tutor2"]');
-            if (agregarChk) { agregarChk.checked = true; agregarChk.dispatchEvent(new Event("change")); }
-          }
-        });
-
-        // Store estudio_id for PATCH submit and change button text
-        window._editEstudioId = estudioId;
-        const continueBtn = document.getElementById("btn-continuar-estudio");
-        if (continueBtn) continueBtn.textContent = "CONTINUAR EDICIÓN";
-      }
-
-      function cacheLoadedDraftForContinuation(data) {
-        const estudioId = data.estudio_id || data.id;
-        const beneficiarioId = data.beneficiario_id || data.beneficiario?.id;
-        const solicitud = data.solicitud || null;
-
-        if (estudioId) localStorage.setItem("estudio_id", String(estudioId));
-        if (beneficiarioId) localStorage.setItem("beneficiario_id", String(beneficiarioId));
-        if (solicitud?.id) localStorage.setItem("solicitud_id", String(solicitud.id));
-        if (!solicitud?.id) {
-          localStorage.removeItem("solicitud_id");
-          localStorage.removeItem("draft_tecnica");
-        }
-
-        localStorage.setItem("draft_socioeconomico", JSON.stringify({
-          region_id: data.beneficiario?.region_id || null,
-          sede: data.sede || data.beneficiario?.sede || null,
-          ciudad_registro: data.ciudad_registro || null,
-          beneficiario: data.beneficiario || {},
-          tutores: data.tutores || [],
-          estudio: {
-            tuvo_silla_previa: data.tuvo_silla_previa ?? null,
-            como_obtuvo_silla: data.como_obtuvo_silla || null,
-            elaboro_estudio: data.elaboro_estudio || null,
-            voluntario_contacto: data.voluntario_contacto || null,
-            fecha_estudio: data.fecha_estudio || null,
-            credencial_path: data.credencial_path || null,
-            credencial_url: data.credencial_url || null,
-            comprobante_domicilio_path: data.comprobante_domicilio_path || null,
-            comprobante_domicilio_url: data.comprobante_domicilio_url || null,
-            estudio_clinico_path: data.estudio_clinico_path || null,
-            estudio_clinico_url: data.estudio_clinico_url || null,
-            estudio_clinico_url_resolved: data.estudio_clinico_url_resolved || null,
-            status: data.status || "borrador",
-          },
-        }));
-
-        if (solicitud) {
-          localStorage.setItem("draft_tecnica", JSON.stringify({
-            entorno: solicitud.entorno || null,
-            control_tronco: solicitud.control_tronco || null,
-            control_cabeza: solicitud.control_cabeza || null,
-            control_de_piernas: solicitud.control_de_piernas || null,
-            padecimiento: solicitud.padecimiento || null,
-            altura_total_in: solicitud.altura_total_in || null,
-            peso_kg: solicitud.peso_kg || null,
-            medida_cabeza_asiento: solicitud.medida_cabeza_asiento || null,
-            medida_hombro_asiento: solicitud.medida_hombro_asiento || null,
-            medida_prof_asiento: solicitud.medida_prof_asiento || null,
-            medida_rodilla_talon: solicitud.medida_rodilla_talon || null,
-            medida_ancho_cadera: solicitud.medida_ancho_cadera || null,
-            unidad_medida: solicitud.unidad_captura || solicitud.unidad_medida || null,
-            foto_url: solicitud.foto_url || null,
-            foto_path: solicitud.foto_path || null,
-            soporte_oxigeno:
-              typeof solicitud.soporte_oxigeno === "boolean"
-                ? solicitud.soporte_oxigeno
-                : null,
-            equipo_solicitado: solicitud.equipo_solicitado || null,
-            estudio_clinico_path: solicitud.estudio_clinico_path || data.estudio_clinico_path || null,
-            estudio_clinico_url: solicitud.estudio_clinico_url || data.estudio_clinico_url || null,
-            estudio_clinico_url_resolved: solicitud.estudio_clinico_url_resolved || data.estudio_clinico_url_resolved || null,
-          }));
-
-        }
-
-        localStorage.setItem("draft_gestion", JSON.stringify({
-          silla_previa: data.tuvo_silla_previa === true || data.tuvo_silla_previa === 1 ? "Sí" : (data.tuvo_silla_previa === false || data.tuvo_silla_previa === 0 ? "No" : null),
-          como_obtuvo_silla: data.como_obtuvo_silla || null,
-          fecha_estudio: data.fecha_estudio || null,
-          entidad_solicitante: solicitud?.entidad_solicitante || null,
-          prioridad: solicitud?.prioridad || null,
-          justificacion: solicitud?.justificacion || null,
-        }));
-      }
-
-      async function loadExistingEstudio(id) {
-        const sessionData = SessionGuard.getSession();
-        if (!sessionData?.token) {
-          console.error("No session token found");
-          return;
-        }
-
-        try {
-          const res = await ApiClient.fetch(`/borrador/${id}`);
-          if (!res.ok) {
-            const errorText = await res.text();
-            console.error(`Error response: ${errorText}`);
-            if (res.status === 403) alert("No tiene permisos para editar este estudio.");
-            else alert("Error al cargar el estudio.");
-            window.location.href = "perfil-capturista.html";
-            return;
-          }
-          const data = await res.json();
-          // Best-effort: a failed catalog must not block loading the draft.
-          // Without it the municipio dropdown degrades, but the rest of the
-          // form still populates instead of aborting into the error banner.
-          await loadMunicipiosCatalog().catch((err) =>
-            console.error("Municipios catalog failed to load:", err),
-          );
-          cacheLoadedDraftForContinuation(data);
-          populateFormWithData(data);
-        } catch (err) {
-          console.error("Error in loadExistingEstudio:", err);
-          const errorBanner = document.getElementById("edit-banner");
-          if (errorBanner) {
-            errorBanner.classList.remove("hidden");
-            errorBanner.classList.replace("bg-amber-50", "bg-red-50");
-            errorBanner.classList.replace("border-amber-200", "border-red-200");
-            document.getElementById("edit-banner-text").textContent = "Error al cargar el estudio: " + (err.message || "Error de red");
-            document.getElementById("edit-banner-text").classList.replace("text-amber-800", "text-red-800");
-          }
-          // Do NOT redirect to perfil - stay on page to debug
-        }
-      }
-
-      function _setVal(name, value) {
-        const el = document.querySelector(`[name="${name}"]`);
-        if (el) el.value = value;
-      }
-
-      // ── Override submitEstudio for edit mode ──
-      const _origSubmit = window.submitEstudio;
-      window.submitEstudio = function (status) {
-        if (window._editEstudioId) {
-          _patchEstudio(status);
-        } else {
-          _origSubmit(status);
-        }
-      };
-
-      async function _patchEstudio(status) {
-        const session = SessionGuard.getSession();
-        if (!session?.token) return;
-        const id = window._editEstudioId;
-        const errorMsg = document.getElementById("error-msg");
-
-        // Build patch body - only send mutable fields
-        const body = {
-          status,
-          elaboro_estudio: document.querySelector('[name="elaboro_estudio"]')?.value || session.nombre,
-          fecha_estudio: new Date().toISOString().slice(0, 10),
-        };
-
-        // Also update beneficiario mutable fields (telefonos, email)
-        body.beneficiario = {};
-        const tels = document.querySelector('[name="telefonos"]')?.value;
-        if (tels) body.beneficiario.telefonos = tels;
-
-        try {
-          const res = await ApiClient.fetch(`/estudios/${id}`, {
-            method: "PATCH",
-            json: body,
-          });
-          if (!res.ok) {
-            const data = await res.json().catch(() => ({}));
-            errorMsg.textContent = data.detail || "Error al actualizar.";
-            errorMsg.classList.remove("hidden");
-            return;
-          }
-          _showToast("Estudio actualizado correctamente");
-          setTimeout(() => {
-            window.location.href = "perfil-capturista.html";
-          }, 1500);
-        } catch (_) {
-          errorMsg.textContent = "Error de conexión.";
-          errorMsg.classList.remove("hidden");
-        }
-      }
-
-      // Form submit handler (edit mode: PATCH backend; new: CONTINUAR)
-      document.querySelector("form").addEventListener("submit", async (e) => {
+      // Form submit siempre avanza el wizard (local-first): valida, persiste
+      // en draft_socioeconomico y navega. El guardado backend es único y
+      // vive en gestion.html; el viejo override de "modo edición"
+      // (_patchEstudio / PATCH directo) se eliminó junto con él.
+      document.querySelector("form").addEventListener("submit", (e) => {
         e.preventDefault();
-        if (window._editEstudioId) {
-          // Edit mode is draft-resume mode. Avoid PATCH /api/estudios/{id}
-          // because that endpoint validates completion semantics.
-          await guardarBorradorMaster();
-        } else {
-          // New record: validate + save to localStorage + navigate
-          continuarEstudioSocioeconomico();
-        }
+        continuarEstudioSocioeconomico();
       });
 
       // -- Restore localStorage draft after catalogs are loaded ----------------

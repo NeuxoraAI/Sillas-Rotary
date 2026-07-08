@@ -635,6 +635,7 @@
     if (!nombre || !codigo) { _show(errorEl, 'Nombre y código son obligatorios.'); return; }
     if (codigo.length < 2)  { _show(errorEl, 'El código debe tener al menos 2 caracteres.'); return; }
 
+    this.disabled = true; // guardia contra doble clic
     try {
       const res = await _authFetch(`/paises/${_editPaisId}`, {
         method: 'PATCH',
@@ -648,6 +649,8 @@
       await loadRegiones();
     } catch (_) {
       _show(errorEl, 'No se pudo conectar con el servidor.');
+    } finally {
+      this.disabled = false;
     }
   });
 
@@ -681,6 +684,7 @@
     if (!nombre || !codigo) { _show(errorEl, 'Nombre y código son obligatorios.'); return; }
     if (codigo.length < 2 || codigo.length > 5) { _show(errorEl, 'El código debe tener entre 2 y 5 caracteres.'); return; }
 
+    this.disabled = true; // guardia contra doble clic
     try {
       const res = await _authFetch(`/regiones/${_editRegionId}`, {
         method: 'PATCH',
@@ -693,6 +697,8 @@
       await loadRegiones();
     } catch (_) {
       _show(errorEl, 'No se pudo conectar con el servidor.');
+    } finally {
+      this.disabled = false;
     }
   });
 

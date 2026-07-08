@@ -797,6 +797,7 @@
         const payload = { nombre, email, rol };
         if (password) payload.password = password;
 
+        this.disabled = true; // guardia contra doble clic
         try {
           const res = await _authFetch(`/usuarios/${_editUserId}`, {
             method: "PATCH",
@@ -812,6 +813,8 @@
           await loadUsuarios();
         } catch (_) {
           _showEl("edit-user-error", "No se pudo conectar con el servidor.");
+        } finally {
+          this.disabled = false;
         }
       });
 
@@ -1005,6 +1008,7 @@
           return;
         }
         _hideEl("manage-org-error");
+        this.disabled = true; // guardia contra doble clic (asociación duplicada)
         try {
           const res = await _authFetch(`/organizaciones/${_manageOrgId}/lider`, {
             method: "POST",
@@ -1021,6 +1025,8 @@
           await loadUsuarios();
         } catch (_) {
           _showEl("manage-org-error", "Error de conexión.");
+        } finally {
+          this.disabled = false;
         }
       });
 
@@ -1037,6 +1043,7 @@
           return;
         }
         _hideEl("manage-org-error");
+        this.disabled = true; // guardia contra doble clic (asociación duplicada)
         try {
           const res = await _authFetch(`/organizaciones/${_manageOrgId}/miembros`, {
             method: "POST",
@@ -1053,6 +1060,8 @@
           await loadUsuarios();
         } catch (_) {
           _showEl("manage-org-error", "Error de conexión.");
+        } finally {
+          this.disabled = false;
         }
       });
 
@@ -1068,6 +1077,10 @@
         const telefono = document.getElementById("manage-org-telefono").value.trim() || null;
         _hideEl("manage-org-error");
 
+        // Guardia contra doble clic: sin ella, dos clics antes de que el POST
+        // resuelva (con _manageOrgId aún vacío) crean DOS organizaciones.
+        if (this.disabled) return;
+        this.disabled = true;
         try {
           let orgId = _manageOrgId;
 
@@ -1111,6 +1124,8 @@
         } catch (err) {
           console.error("Error guardando:", err);
           _showEl("manage-org-error", "Error de conexión.");
+        } finally {
+          this.disabled = false;
         }
       });
 

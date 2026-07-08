@@ -15,6 +15,7 @@ from pydantic import BaseModel, field_validator
 from database import get_db, _DBAdapter
 from routers.auth import CurrentUser, assert_resource_owner, require_roles
 from routers.socioeconomico import _assert_curp_disponible, _resolve_document_preview_url, _resolve_document_refs
+from routers.tecnica import _resolve_storage_url, _BUCKET as _FOTO_BUCKET, _DOCUMENT_BUCKET
 from utils.text import normalize_text
 from validators import (
     validate_nombre,
@@ -118,6 +119,7 @@ class GuardarBorradorRequest(BaseModel):
     control_de_piernas: Optional[str] = None
     padecimiento: Optional[str] = None
     soporte_oxigeno: Optional[bool] = None
+    observaciones_posturales: Optional[str] = None
     unidad_medida: Optional[str] = None
     altura_total_in: Optional[str] = None
     peso_kg: Optional[str] = None
@@ -191,7 +193,7 @@ class GuardarBorradorRequest(BaseModel):
                      "elaboro_estudio", "voluntario_contacto",
                      "tutor1_fuente_empleo", "tutor2_fuente_empleo",
                      "tutor1_otras_fuentes_ingreso", "tutor2_otras_fuentes_ingreso",
-                     "padecimiento", "justificacion",
+                     "padecimiento", "observaciones_posturales", "justificacion",
                      "entidad_solicitante", mode="before")
     @classmethod
     def _normalizar_textos_libres(cls, v: Optional[str]) -> Optional[str]:
@@ -391,7 +393,7 @@ class GuardarBorradorRequest(BaseModel):
     def _control_de_piernas_valido(cls, v: Optional[str]) -> Optional[str]:
         return validate_optional(validate_control_de_piernas)(v)
 
-    @field_validator("padecimiento")
+    @field_validator("padecimiento", "observaciones_posturales")
     @classmethod
     def _obs_posturales_valida(cls, v: Optional[str]) -> Optional[str]:
         if v is None or v == "":
@@ -483,6 +485,9 @@ def _build_tutor_params(body: GuardarBorradorRequest, numero: int, beneficiario_
         beneficiario_id,
         numero,
         nombre_compuesto or None,
+        nombres or None,
+        ap_pat or None,
+        ap_mat or None,
         g("email"),
         g("edad"),
         g("nivel_estudios"),
@@ -600,12 +605,13 @@ def _create_borrador(
                 db.execute(
                     """
                     INSERT INTO tutores
-                        (beneficiario_id, numero_tutor, nombre, email, edad, nivel_estudios,
+                        (beneficiario_id, numero_tutor, nombre, nombres,
+                         apellido_paterno, apellido_materno, email, edad, nivel_estudios,
                          estado_civil, num_hijos, vivienda, fuente_empleo,
                          ingreso_mensual, tiene_imss, tiene_infonavit,
                          antiguedad_meses, antiguedad_aplica, sin_empleo,
                          otras_fuentes_aplica, otras_fuentes_ingreso, monto_otras_fuentes)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """,
                     params,
                 )
@@ -663,49 +669,7 @@ def _create_borrador(
             )
 
         # 4. INSERT solicitud
-        solicitud_id = db.execute(
-            """
-            INSERT INTO solicitudes_tecnicas
-                (beneficiario_id, usuario_id, entorno, control_tronco, control_cabeza,
-                 control_de_piernas, padecimiento, soporte_oxigeno,
-                 altura_total_in, peso_kg,
-                 medida_cabeza_asiento, medida_hombro_asiento, medida_prof_asiento,
-                 medida_rodilla_talon, medida_ancho_cadera, unidad_captura,
-                 unidad_peso_captura, foto_url, equipo_solicitado,
-                 estudio_clinico_path, estudio_clinico_url,
-                 entidad_solicitante, prioridad,
-                 justificacion, status)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            RETURNING id
-            """,
-            (
-                beneficiario_id,
-                usuario.usuario_id,
-                body.entorno,
-                body.control_tronco,
-                body.control_cabeza,
-                body.control_de_piernas,
-                body.padecimiento,
-                bool(body.soporte_oxigeno),
-                _parse_decimal_or_none(body.altura_total_in),
-                _parse_decimal_or_none(body.peso_kg),
-                _parse_decimal_or_none(body.medida_cabeza_asiento),
-                _parse_decimal_or_none(body.medida_hombro_asiento),
-                _parse_decimal_or_none(body.medida_prof_asiento),
-                _parse_decimal_or_none(body.medida_rodilla_talon),
-                _parse_decimal_or_none(body.medida_ancho_cadera),
-                body.unidad_medida,
-                body.unidad_peso_captura,
-                body.foto_url,
-                body.equipo_solicitado,
-                body.estudio_clinico_path,
-                body.estudio_clinico_url,
-                body.entidad_solicitante,
-                body.prioridad,
-                body.justificacion,
-                body.status or "borrador",
-            ),
-        ).fetchone()["id"]
+        solicitud_id = _insert_solicitud(db, body, beneficiario_id, usuario.usuario_id)
 
     except HTTPException:
         raise
@@ -720,6 +684,65 @@ def _create_borrador(
         curp=body.curp,
         status=body.status or "borrador",
     )
+
+
+def _insert_solicitud(
+    db: _DBAdapter,
+    body: GuardarBorradorRequest,
+    beneficiario_id: int,
+    usuario_id: int,
+) -> int:
+    """INSERT a solicitud técnica row from the master draft payload; returns its id.
+
+    soporte_oxigeno se inserta tal cual (None → NULL): un radio sin responder
+    debe poder distinguirse de un "No" explícito para que la validación de
+    completitud de /finalizar-registro (issue #162) funcione.
+    """
+    return db.execute(
+        """
+        INSERT INTO solicitudes_tecnicas
+            (beneficiario_id, usuario_id, entorno, control_tronco, control_cabeza,
+             control_de_piernas, padecimiento, soporte_oxigeno,
+             observaciones_posturales,
+             altura_total_in, peso_kg,
+             medida_cabeza_asiento, medida_hombro_asiento, medida_prof_asiento,
+             medida_rodilla_talon, medida_ancho_cadera, unidad_captura,
+             unidad_peso_captura, foto_url, equipo_solicitado,
+             estudio_clinico_path, estudio_clinico_url,
+             entidad_solicitante, prioridad,
+             justificacion, status)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        RETURNING id
+        """,
+        (
+            beneficiario_id,
+            usuario_id,
+            body.entorno,
+            body.control_tronco,
+            body.control_cabeza,
+            body.control_de_piernas,
+            body.padecimiento,
+            body.soporte_oxigeno,
+            body.observaciones_posturales,
+            _parse_decimal_or_none(body.altura_total_in),
+            _parse_decimal_or_none(body.peso_kg),
+            _parse_decimal_or_none(body.medida_cabeza_asiento),
+            _parse_decimal_or_none(body.medida_hombro_asiento),
+            _parse_decimal_or_none(body.medida_prof_asiento),
+            _parse_decimal_or_none(body.medida_rodilla_talon),
+            _parse_decimal_or_none(body.medida_ancho_cadera),
+            body.unidad_medida,
+            body.unidad_peso_captura,
+            body.foto_url,
+            body.equipo_solicitado,
+            body.estudio_clinico_path,
+            body.estudio_clinico_url,
+            body.entidad_solicitante,
+            body.prioridad,
+            body.justificacion,
+            body.status or "borrador",
+        ),
+    ).fetchone()["id"]
 
 
 def _update_borrador(
@@ -771,12 +794,13 @@ def _update_borrador(
                 db.execute(
                     """
                     INSERT INTO tutores
-                        (beneficiario_id, numero_tutor, nombre, email, edad, nivel_estudios,
+                        (beneficiario_id, numero_tutor, nombre, nombres,
+                         apellido_paterno, apellido_materno, email, edad, nivel_estudios,
                          estado_civil, num_hijos, vivienda, fuente_empleo,
                          ingreso_mensual, tiene_imss, tiene_infonavit,
                          antiguedad_meses, antiguedad_aplica, sin_empleo,
                          otras_fuentes_aplica, otras_fuentes_ingreso, monto_otras_fuentes)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """,
                     params,
                 )
@@ -784,9 +808,15 @@ def _update_borrador(
         # 3. UPDATE estudio (only non-None fields)
         _patch_estudio(db, body, body.estudio_id)
 
-        # 4. UPDATE solicitud (only non-None fields, if solicitud exists)
+        # 4. UPDATE solicitud (only non-None fields). Si el estudio aún no
+        #    tiene solicitud (borradores legacy creados por POST /estudios),
+        #    se inserta una en vez de descartar los campos técnicos en
+        #    silencio — antes esto devolvía solicitud_id=0 y el frontend
+        #    perdía toda la sección técnica creyendo que se había guardado.
         if solicitud_id is not None:
             _patch_solicitud(db, body, solicitud_id)
+        else:
+            solicitud_id = _insert_solicitud(db, body, beneficiario_id, usuario.usuario_id)
 
     except HTTPException:
         raise
@@ -802,7 +832,7 @@ def _update_borrador(
 
     return GuardarBorradorResponse(
         estudio_id=body.estudio_id,
-        solicitud_id=solicitud_id or 0,
+        solicitud_id=solicitud_id,
         beneficiario_id=beneficiario_id,
         curp=curp,
         status="borrador",
@@ -920,6 +950,7 @@ def _patch_solicitud(db: _DBAdapter, body: GuardarBorradorRequest, solicitud_id:
         ("control_de_piernas", body.control_de_piernas),
         ("padecimiento", body.padecimiento),
         ("soporte_oxigeno", body.soporte_oxigeno),
+        ("observaciones_posturales", body.observaciones_posturales),
         ("equipo_solicitado", body.equipo_solicitado),
         ("entidad_solicitante", body.entidad_solicitante),
         ("prioridad", body.prioridad),
@@ -1037,6 +1068,18 @@ def obtener_borrador(
         )
     response["beneficiario"] = _row_to_json(dict(beneficiario_row)) if beneficiario_row else None
     response["tutores"] = [_row_to_json(_tutor_response(dict(t))) for t in tutores_rows] if tutores_rows else []
-    response["solicitud"] = _row_to_json(dict(solicitud_row)) if solicitud_row else None
+    solicitud = _row_to_json(dict(solicitud_row)) if solicitud_row else None
+    if solicitud:
+        # Resolve storage:// references to browser-renderable URLs so the
+        # frontend can render the photo / clinical-study previews right after
+        # hydrating local drafts from this endpoint (raw storage:// URIs can't
+        # be used as <img src>). Mirrors obtener_solicitud in routers/tecnica.
+        if solicitud.get("foto_url"):
+            solicitud["foto_url_resolved"] = _resolve_storage_url(solicitud["foto_url"], _FOTO_BUCKET)
+        if solicitud.get("estudio_clinico_url"):
+            solicitud["estudio_clinico_url_resolved"] = _resolve_storage_url(
+                solicitud["estudio_clinico_url"], _DOCUMENT_BUCKET
+            )
+    response["solicitud"] = solicitud
 
     return response
