@@ -305,6 +305,149 @@ class TestActualizarBorrador:
 
 
 # ──────────────────────────────────────────────────────────────────────────
+# Persistencia de campos técnicos del borrador (Issue #161)
+# ──────────────────────────────────────────────────────────────────────────
+
+class TestPersistenciaTecnicaBorrador:
+    """observaciones_posturales, soporte_oxigeno NULL-able e INSERT fallback."""
+
+    def _create_borrador(self, client, capturista_headers, region_lon, extra: dict | None = None) -> dict:
+        payload = {
+            "region_id": region_lon["id"],
+            "sede": "León sede Forum",
+            "nombres": "Persistencia",
+            "apellido_paterno": "Tecnica",
+            "fecha_nacimiento": "2010-03-03",
+            "sexo": "M",
+            "telefonos": "4620001111",
+        }
+        payload.update(extra or {})
+        res = client.post("/api/guardar-borrador", json=payload, headers=capturista_headers)
+        assert res.status_code == 201, f"Creation failed: {res.text}"
+        return res.json()
+
+    def test_observaciones_posturales_roundtrip_create(self, client, capturista_headers, region_lon):
+        """CREATE persiste observaciones_posturales y GET /borrador la devuelve.
+
+        Antes de la migración 0029 este campo no tenía columna (0013 renombró la
+        original a `padecimiento`) y el texto del textarea se perdía SIEMPRE.
+        """
+        ids = self._create_borrador(
+            client, capturista_headers, region_lon,
+            {"observaciones_posturales": "Escoliosis leve observada"},
+        )
+
+        res = client.get(f"/api/borrador/{ids['estudio_id']}", headers=capturista_headers)
+        assert res.status_code == 200, res.text
+        solicitud = res.json()["solicitud"]
+        # normalize_text: mayúsculas + sin diacríticos
+        assert solicitud["observaciones_posturales"] == "ESCOLIOSIS LEVE OBSERVADA"
+
+    def test_observaciones_posturales_update_patches(self, client, capturista_headers, region_lon):
+        """UPDATE mode actualiza observaciones_posturales vía _patch_solicitud."""
+        ids = self._create_borrador(
+            client, capturista_headers, region_lon,
+            {"observaciones_posturales": "Texto original"},
+        )
+
+        res = client.post(
+            "/api/guardar-borrador",
+            json={
+                "estudio_id": ids["estudio_id"],
+                "solicitud_id": ids["solicitud_id"],
+                "observaciones_posturales": "Texto actualizado",
+            },
+            headers=capturista_headers,
+        )
+        assert res.status_code == 201, res.text
+
+        res = client.get(f"/api/borrador/{ids['estudio_id']}", headers=capturista_headers)
+        assert res.json()["solicitud"]["observaciones_posturales"] == "TEXTO ACTUALIZADO"
+
+    def test_soporte_oxigeno_none_stays_null(self, client, capturista_headers, region_lon):
+        """CREATE sin soporte_oxigeno → NULL en BD (no FALSE sintético).
+
+        Antes, bool(None) → FALSE hacía indistinguible "sin responder" de un
+        "No" real y anulaba la validación de completitud del issue #162.
+        """
+        ids = self._create_borrador(client, capturista_headers, region_lon)
+
+        res = client.get(f"/api/borrador/{ids['estudio_id']}", headers=capturista_headers)
+        assert res.status_code == 200, res.text
+        assert res.json()["solicitud"]["soporte_oxigeno"] is None
+
+    def test_soporte_oxigeno_false_explicito_persiste(self, client, capturista_headers, region_lon):
+        """CREATE con soporte_oxigeno=false explícito guarda FALSE, no NULL."""
+        ids = self._create_borrador(
+            client, capturista_headers, region_lon, {"soporte_oxigeno": False}
+        )
+
+        res = client.get(f"/api/borrador/{ids['estudio_id']}", headers=capturista_headers)
+        assert res.json()["solicitud"]["soporte_oxigeno"] is False
+
+    def test_update_estudio_sin_solicitud_inserta_solicitud(
+        self, client, capturista_headers, _test_db_conn, region_lon
+    ):
+        """UPDATE sobre estudio sin solicitud → INSERT fallback, no descarte silencioso.
+
+        Antes: los campos técnicos se omitían en silencio y la respuesta traía
+        solicitud_id=0 (falsy), así que el frontend nunca guardaba el id y el
+        usuario perdía toda la sección técnica creyendo que se había guardado.
+        """
+        ids = self._create_borrador(client, capturista_headers, region_lon)
+
+        # Simular un borrador legacy sin solicitud (p. ej., creado por POST /estudios)
+        with _test_db_conn.cursor() as cur:
+            cur.execute(
+                "DELETE FROM solicitudes_tecnicas WHERE beneficiario_id = %s",
+                (ids["beneficiario_id"],),
+            )
+        _test_db_conn.commit()
+
+        res = client.post(
+            "/api/guardar-borrador",
+            json={
+                "estudio_id": ids["estudio_id"],
+                "entorno": "Urbano / Interiores",
+                "control_tronco": "Completo",
+                "peso_kg": "38.500",
+                "soporte_oxigeno": True,
+            },
+            headers=capturista_headers,
+        )
+        assert res.status_code == 201, res.text
+        assert res.json()["solicitud_id"] > 0
+
+        res = client.get(f"/api/borrador/{ids['estudio_id']}", headers=capturista_headers)
+        solicitud = res.json()["solicitud"]
+        assert solicitud is not None, "La solicitud debió reinsertarse"
+        assert solicitud["entorno"] == "Urbano / Interiores"
+        assert solicitud["control_tronco"] == "Completo"
+        assert float(solicitud["peso_kg"]) == 38.5
+        assert solicitud["soporte_oxigeno"] is True
+
+    def test_get_borrador_resolves_solicitud_urls(self, client, capturista_headers, region_lon):
+        """GET /borrador expone foto_url_resolved y estudio_clinico_url_resolved
+        en la solicitud para que los previews rendericen tras hidratar."""
+        ids = self._create_borrador(
+            client, capturista_headers, region_lon,
+            {
+                "foto_url": "storage://fotos-tecnica/test/foto-borrador.jpg",
+                "estudio_clinico_url": "storage://documentos-estudio/test/estudio.pdf",
+                "estudio_clinico_path": "test/estudio.pdf",
+            },
+        )
+
+        res = client.get(f"/api/borrador/{ids['estudio_id']}", headers=capturista_headers)
+        assert res.status_code == 200, res.text
+        solicitud = res.json()["solicitud"]
+        assert solicitud["foto_url_resolved"], "foto_url_resolved ausente o vacío"
+        assert solicitud["foto_url_resolved"].startswith("http")
+        assert solicitud["estudio_clinico_url_resolved"], "estudio_clinico_url_resolved ausente"
+        assert solicitud["estudio_clinico_url_resolved"].startswith("http")
+
+
+# ──────────────────────────────────────────────────────────────────────────
 # Integration tests for GET /api/borrador/{estudio_id}
 # ──────────────────────────────────────────────────────────────────────────
 
@@ -371,6 +514,38 @@ class TestObtenerBorrador:
         assert data["tutores"][0]["imss_estatus"] == "SI"
         assert data["solicitud"] is not None
         assert data["solicitud"]["entorno"] == "Urbano / Interiores"
+
+    def test_tutor_nombre_estructurado_round_trip(self, client, capturista_headers, region_lon):
+        """Migración 0030: el nombre del tutor vuelve estructurado en GET, no
+        solo compuesto — apellidos compuestos no deben requerir heurística."""
+        ids = self._create_borrador(client, capturista_headers, region_lon)
+
+        res = client.get(f"/api/borrador/{ids['estudio_id']}", headers=capturista_headers)
+        assert res.status_code == 200, res.text
+        tutor = res.json()["tutores"][0]
+        assert tutor["nombres"] == "TUTOR"
+        assert tutor["apellido_paterno"] == "GET"
+        assert tutor["apellido_materno"] == "TEST"
+        assert tutor["nombre"] == "TUTOR GET TEST"
+
+        # UPDATE con apellido compuesto: la división por espacios lo rompería.
+        update = {
+            "estudio_id": ids["estudio_id"],
+            "tutor1_nombres": "Maria Jose",
+            "tutor1_apellido_paterno": "De La Cruz",
+            "tutor1_apellido_materno": "San Juan",
+            "tutor1_edad": 42,
+        }
+        res = client.post("/api/guardar-borrador", json=update, headers=capturista_headers)
+        assert res.status_code == 201, res.text
+
+        res = client.get(f"/api/borrador/{ids['estudio_id']}", headers=capturista_headers)
+        assert res.status_code == 200, res.text
+        tutor = res.json()["tutores"][0]
+        assert tutor["nombres"] == "MARIA JOSE"
+        assert tutor["apellido_paterno"] == "DE LA CRUZ"
+        assert tutor["apellido_materno"] == "SAN JUAN"
+        assert tutor["nombre"] == "MARIA JOSE DE LA CRUZ SAN JUAN"
 
     def test_curp_persists_and_is_recovered(self, client, capturista_headers, region_lon):
         """Issue #32: CURP saved in a draft must come back on GET (prefill)."""
