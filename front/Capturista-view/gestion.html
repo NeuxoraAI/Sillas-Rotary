@@ -35,6 +35,7 @@
     <link href="../assets/css/theme.css" rel="stylesheet"/>
     <script src="../assets/js/session-guard.js"></script>
     <script src="../assets/js/apiClient.js"></script>
+    <script src="../assets/js/draft-store.js"></script>
     <script src="../assets/js/theme-toggle.js"></script>
     <script src="../assets/js/confirmation-modal.js?v=2"></script>
     <script src="../assets/js/mascot.js?v=2"></script>
@@ -449,100 +450,9 @@
         };
       }
 
-      function buildGuardarBorradorPayload(draftSocio, draftTecnica, gestionData, status = "borrador") {
-        const estudioId = localStorage.getItem("estudio_id");
-        const solicitudId = localStorage.getItem("solicitud_id");
-        const beneficiarioId = localStorage.getItem("beneficiario_id");
-        const tutor1 = (draftSocio.tutores || []).find((t) => t.numero_tutor === 1) || {};
-        const tutor2 = (draftSocio.tutores || []).find((t) => t.numero_tutor === 2) || {};
-
-        const mapTutor = (prefix, tutor) => ({
-          [`${prefix}_nombres`]: tutor.nombres || null,
-          [`${prefix}_apellido_paterno`]: tutor.apellido_paterno || null,
-          [`${prefix}_apellido_materno`]: tutor.apellido_materno || null,
-          [`${prefix}_email`]: tutor.email || null,
-          [`${prefix}_edad`]: tutor.edad ?? null,
-          [`${prefix}_nivel_estudios`]: tutor.nivel_estudios || null,
-          [`${prefix}_estado_civil`]: tutor.estado_civil || null,
-          [`${prefix}_num_hijos`]: tutor.num_hijos ?? null,
-          [`${prefix}_vivienda`]: tutor.vivienda || null,
-          [`${prefix}_fuente_empleo`]: tutor.fuente_empleo || null,
-          [`${prefix}_antiguedad_aplica`]: tutor.antiguedad_aplica ?? null,
-          [`${prefix}_antiguedad_anios`]: tutor.antiguedad_anios ?? null,
-          [`${prefix}_antiguedad_meses_extra`]: tutor.antiguedad_meses_extra ?? null,
-          [`${prefix}_ingreso_mensual`]: tutor.ingreso_mensual ?? null,
-          [`${prefix}_sin_empleo`]: tutor.sin_empleo ?? null,
-          [`${prefix}_otras_fuentes_aplica`]: tutor.otras_fuentes_aplica ?? null,
-          [`${prefix}_otras_fuentes_ingreso`]: tutor.otras_fuentes_ingreso || null,
-          [`${prefix}_monto_otras_fuentes`]: tutor.monto_otras_fuentes ?? null,
-          [`${prefix}_imss_estatus`]: tutor.imss_estatus || null,
-          [`${prefix}_infonavit_estatus`]: tutor.infonavit_estatus || null,
-        });
-
-        return {
-          estudio_id: estudioId ? parseInt(estudioId, 10) : null,
-          solicitud_id: solicitudId ? parseInt(solicitudId, 10) : null,
-          beneficiario_id: beneficiarioId ? parseInt(beneficiarioId, 10) : null,
-          region_id: draftSocio.region_id || null,
-          sede: draftSocio.sede || null,
-          ciudad_registro: draftSocio.ciudad_registro || null,
-
-          nombres: draftSocio.beneficiario?.nombres || null,
-          apellido_paterno: draftSocio.beneficiario?.apellido_paterno || null,
-          apellido_materno: draftSocio.beneficiario?.apellido_materno || null,
-          curp: draftSocio.beneficiario?.curp || null,
-          fecha_nacimiento: draftSocio.beneficiario?.fecha_nacimiento || null,
-          diagnostico: draftTecnica.diagnostico || draftSocio.beneficiario?.diagnostico || null,
-          calle: draftSocio.beneficiario?.calle || null,
-          num_ext: draftSocio.beneficiario?.num_ext || null,
-          num_int: draftSocio.beneficiario?.num_int || null,
-          colonia: draftSocio.beneficiario?.colonia || null,
-          ciudad: draftSocio.beneficiario?.ciudad || null,
-          estado_codigo: draftSocio.beneficiario?.estado_codigo || null,
-          estado_nombre: draftSocio.beneficiario?.estado_nombre || null,
-          sexo: draftSocio.beneficiario?.sexo || null,
-          telefonos: draftSocio.beneficiario?.telefonos || null,
-          email: draftSocio.beneficiario?.email || null,
-
-          tuvo_silla_previa: gestionData.silla_previa === "Sí" ? true : gestionData.silla_previa === "No" ? false : null,
-          como_obtuvo_silla: gestionData.como_obtuvo_silla || null,
-          elaboro_estudio: draftSocio.estudio?.elaboro_estudio || null,
-          voluntario_contacto: draftSocio.estudio?.voluntario_contacto || null,
-          fecha_estudio: gestionData.fecha_estudio || draftSocio.estudio?.fecha_estudio || null,
-          // Supporting documents captured in the socioeconomico step.
-          credencial_path: draftSocio.estudio?.credencial_path || null,
-          credencial_url: draftSocio.estudio?.credencial_url || null,
-          comprobante_domicilio_path: draftSocio.estudio?.comprobante_domicilio_path || null,
-          comprobante_domicilio_url: draftSocio.estudio?.comprobante_domicilio_url || null,
-          estudio_clinico_path: draftTecnica.estudio_clinico_path || draftSocio.estudio?.estudio_clinico_path || null,
-          estudio_clinico_url: draftTecnica.estudio_clinico_url || draftSocio.estudio?.estudio_clinico_url || null,
-          status,
-
-          entorno: draftTecnica.entorno || null,
-          control_tronco: draftTecnica.control_tronco || null,
-          control_cabeza: draftTecnica.control_cabeza || null,
-          control_de_piernas: draftTecnica.control_de_piernas || null,
-          padecimiento: draftTecnica.padecimiento || null,
-          altura_total_in: draftTecnica.altura_total_in || null,
-          peso_kg: draftTecnica.peso_kg || null,
-          medida_cabeza_asiento: draftTecnica.medida_cabeza_asiento || null,
-          medida_hombro_asiento: draftTecnica.medida_hombro_asiento || null,
-          medida_prof_asiento: draftTecnica.medida_prof_asiento || null,
-          medida_rodilla_talon: draftTecnica.medida_rodilla_talon || null,
-          medida_ancho_cadera: draftTecnica.medida_ancho_cadera || null,
-          unidad_medida: draftTecnica.unidad_medida || null,
-          unidad_peso_captura: draftTecnica.unidad_peso_captura || null,
-          foto_path: draftTecnica.foto_path || null,
-          foto_url: draftTecnica.foto_url || null,
-
-          entidad_solicitante: gestionData.entidad_solicitante || null,
-          prioridad: gestionData.prioridad || null,
-          justificacion: gestionData.justificacion || null,
-
-          ...mapTutor("tutor1", tutor1),
-          ...mapTutor("tutor2", tutor2),
-        };
-      }
+      // El payload maestro de /guardar-borrador ahora lo construye
+      // DraftStore.buildMasterPayload (draft-store.js) — único builder para
+      // todo el wizard; antes había tres copias divergentes, una por vista.
 
       // -- Handler: REGRESAR --
       function regresarGestion() {
@@ -555,8 +465,7 @@
           return;
         }
 
-        const formData = getGestionFormData();
-        localStorage.setItem("draft_gestion", JSON.stringify(formData));
+        DraftStore.setDraft("GESTION", getGestionFormData());
         window.location.href = "tecnica.html";
       }
 
@@ -588,17 +497,10 @@
             return;
           }
 
-          // 1. Recolectar datos del formulario gestión actual
-          const gestionData = getGestionFormData();
-
-          // 2. Mergear con localStorage de otros formularios
-          const draftSocioRaw = localStorage.getItem("draft_socioeconomico");
-          const draftTecnicaRaw = localStorage.getItem("draft_tecnica");
-          const draftSocio = draftSocioRaw ? JSON.parse(draftSocioRaw) : {};
-          const draftTecnica = draftTecnicaRaw ? JSON.parse(draftTecnicaRaw) : {};
-
-          // 3. Armar payload maestro para el backend
-          const payload = buildGuardarBorradorPayload(draftSocio, draftTecnica, gestionData, "borrador");
+          // 1. Volcar el formulario de gestión a su draft local; el payload
+          //    maestro se arma exclusivamente desde localStorage (los 3 drafts).
+          DraftStore.setDraft("GESTION", getGestionFormData());
+          const payload = DraftStore.buildMasterPayload("borrador");
 
           const res = await ApiClient.fetch("/guardar-borrador", {
             method: "POST",
@@ -607,9 +509,7 @@
 
           if (res.ok) {
             const data = await res.json();
-            if (data.estudio_id) localStorage.setItem("estudio_id", data.estudio_id);
-            if (data.solicitud_id) localStorage.setItem("solicitud_id", data.solicitud_id);
-            if (data.beneficiario_id) localStorage.setItem("beneficiario_id", data.beneficiario_id);
+            DraftStore.setIds(data);
             formDirty = false; // draft persisted — no longer dirty
             showSuccessToast("El borrador ha sido guardado con éxito.", null);
           } else {
@@ -882,163 +782,10 @@
         return errors.concat(collectDraftFormatErrors("Gestión", "gestion.html"));
       }
 
-      // -- Validación del formulario de gestión (sin enviar al backend) ----
-      function validarFormularioGestion() {
-        const f = document.querySelector("form");
-        const errorEl = document.getElementById("error-msg");
-        SR_Validations.clearAllFieldErrors(f);
-
-        const fd = new FormData(f);
-        const get = (name) => fd.get(name) || "";
-        const fechaEstudio = get("fecha_estudio").trim();
-        const missing = [];
-
-        if (!get("silla_previa")) {
-          missing.push({ id: "silla_previa", label: "¿El paciente ha tenido silla previamente?" });
-        }
-        if (get("silla_previa") === "Sí" && !get("como_obtuvo_silla")) {
-          missing.push({ id: "como_obtuvo_silla", label: "¿Cómo la obtuvo?" });
-        }
-        if (!fechaEstudio) {
-          missing.push({ id: "fecha_estudio", label: "Fecha del estudio" });
-        }
-        if (!get("entidad_solicitante")?.trim()) {
-          missing.push({ id: "entidad_solicitante", label: "Entidad Solicitante" });
-        }
-        if (!document.querySelector('[name="prioridad"]:checked')) {
-          missing.push({ id: "prioridad", label: "Prioridad" });
-        }
-
-        if (missing.length > 0) {
-          missing.forEach(({ id, label }) => {
-            SR_Validations.showFieldError(id, `${label} es obligatorio`);
-          });
-          errorEl.textContent = "Complete los campos obligatorios: " + missing.map(m => m.label).join(", ");
-          errorEl.classList.remove("hidden");
-          return false;
-        }
-
-        // Validate justificacion if checkbox is checked
-        const tieneJust = f.querySelector('[name="tiene_justificacion"]');
-        if (tieneJust?.checked) {
-          const justVal = (f.querySelector('[name="justificacion"]')?.value || "").trim();
-          if (!justVal) {
-            SR_Validations.showFieldError("justificacion", "Justificación es obligatorio");
-            errorEl.textContent = "Complete los campos obligatorios";
-            errorEl.classList.remove("hidden");
-            return false;
-          }
-        }
-
-        // Validar constraints HTML5
-        const constraintErrors = SR_Validations.validateHTML5Constraints(f);
-        if (constraintErrors.length > 0) {
-          constraintErrors.forEach(({ id, message }) => {
-            SR_Validations.showFieldError(id, message);
-          });
-          errorEl.textContent = "Revise los campos con formato incorrecto";
-          errorEl.classList.remove("hidden");
-          return false;
-        }
-
-        errorEl.classList.add("hidden");
-        return true;
-      }
-
-      // -- submitGestion ----------------------------------------------------
-      async function submitGestion(status) {
-        const errorEl = document.getElementById("error-msg");
-        errorEl.classList.add("hidden");
-        errorEl.textContent = "";
-
-        const session = SessionGuard.getSession();
-        if (!session?.token) {
-          window.location.href = "../login.html";
-          return;
-        }
-
-        const estudioId = localStorage.getItem("estudio_id");
-        const solicitudId = localStorage.getItem("solicitud_id");
-
-        if (!estudioId || !solicitudId) {
-          errorEl.textContent =
-            "No se encontró el estudio o la solicitud. Complete los pasos anteriores.";
-          errorEl.classList.remove("hidden");
-          return;
-        }
-
-        const f = document.querySelector("form");
-        SR_Validations.clearAllFieldErrors(f);
-
-        const fd = new FormData(f);
-        const get = (name) => fd.get(name) || "";
-
-        // Payload estudio: 6 campos
-        const fechaEstudio = get("fecha_estudio").trim();
-        const estudioPayload = {
-          tuvo_silla_previa: get("silla_previa") === "Sí",
-          como_obtuvo_silla: get("como_obtuvo_silla") || null,
-          fecha_estudio: fechaEstudio || null,
-          status,
-        };
-
-        // Payload solicitud: solo campos de gestión (status ya se guardó en tecnica.html)
-        const solicitudPayload = {
-          entidad_solicitante: get("entidad_solicitante") || null,
-          prioridad: get("prioridad") || null,
-          justificacion: get("justificacion") || null,
-        };
-
-        // Frontend validation before sending
-        if (status === "completo" && !validarFormularioGestion()) {
-          return;
-        }
-
-        try {
-          const [estudioRes, solicitudRes] = await Promise.all([
-            ApiClient.fetch(`/estudios/${estudioId}`, {
-              method: "PATCH",
-              json: estudioPayload,
-            }),
-            ApiClient.fetch(`/solicitudes/${solicitudId}`, {
-              method: "PATCH",
-              json: solicitudPayload,
-            }),
-          ]);
-
-          let estudioErr = null;
-          let solicitudErr = null;
-
-          if (!estudioRes.ok) {
-            const errData = await estudioRes.json().catch(() => ({}));
-            estudioErr = SR_Validations.formatBackendError(errData, "Error al actualizar el estudio.");
-          }
-
-          if (!solicitudRes.ok) {
-            const errData = await solicitudRes.json().catch(() => ({}));
-            solicitudErr = SR_Validations.formatBackendError(errData, "Error al actualizar la solicitud.");
-          }
-
-          if (estudioErr || solicitudErr) {
-            errorEl.textContent = [estudioErr, solicitudErr].filter(Boolean).join(" | ");
-            errorEl.classList.remove("hidden");
-            return;
-          }
-
-          // Ambos exitosos
-          if (status === "completo") {
-            localStorage.removeItem("estudio_id");
-            localStorage.removeItem("solicitud_id");
-            localStorage.removeItem("beneficiario_id");
-            showSuccessToast("Estudio guardado correctamente", "socioeconomico.html");
-          } else {
-            showSuccessToast("Borrador guardado correctamente", null);
-          }
-        } catch (err) {
-          errorEl.textContent = "No se pudo conectar con el servidor.";
-          errorEl.classList.remove("hidden");
-        }
-      }
+      // validarFormularioGestion() y submitGestion() (PATCH directo a
+      // /estudios y /solicitudes) eran una ruta legacy sin botón que la
+      // invocara; el flujo vigente es guardarBorradorDesdeGestion() +
+      // finalizarRegistro(). Eliminados al unificar el borrador maestro.
 
       // -- showErrorToast ----------------------------------------------------
       function showErrorToast(message) {
@@ -1080,8 +827,7 @@
           // tecnica.html (e.g. a missing photo/credencial evidence — Issue #121);
           // if we saved only after validation, that jump would lose whatever the
           // capturista already typed here.
-          const gestionData = getGestionFormData();
-          localStorage.setItem("draft_gestion", JSON.stringify(gestionData));
+          DraftStore.setDraft("GESTION", getGestionFormData());
 
           // 2. Validate gestion form fields client-side
           const gestionErrors = collectGestionFinalErrors();
@@ -1094,9 +840,11 @@
             return;
           }
 
-          // 3. Get drafts from localStorage
-          const draftSocioRaw = localStorage.getItem("draft_socioeconomico");
-          const draftTecnicaRaw = localStorage.getItem("draft_tecnica");
+          // 3. Red de seguridad: los pasos 1 y 2 deben existir como drafts
+          // locales (la hidratación al cargar la vista los siembra si el
+          // borrador venía del backend).
+          const draftSocioRaw = DraftStore.getDraft("SOCIO");
+          const draftTecnicaRaw = DraftStore.getDraft("TECNICA");
           if (!draftSocioRaw) {
             showValidationModal([{ form: "Socioeconómico", label: "Paso 1", message: "No se encontró el estudio socioeconómico. Complete el paso 1.", url: "socioeconomico.html" }], {
               title: "Falta información para finalizar",
@@ -1114,13 +862,10 @@
             return;
           }
 
-          const draftSocio = JSON.parse(draftSocioRaw);
-          const draftTecnica = JSON.parse(draftTecnicaRaw);
-
           // 4. Consolidar TODO el borrador usando el endpoint maestro.
           // Evitamos PATCH /api/estudios/{id}: ese endpoint tiene semántica de completar
           // y puede devolver 422 si aún faltan campos antes de consolidar técnica/gestión.
-          const payload = buildGuardarBorradorPayload(draftSocio, draftTecnica, gestionData, "borrador");
+          const payload = DraftStore.buildMasterPayload("borrador");
           const guardarRes = await ApiClient.fetch("/guardar-borrador", {
             method: "POST",
             json: payload,
@@ -1148,11 +893,10 @@
           }
 
           const guardarData = await guardarRes.json();
-          const finalEstudioId = guardarData.estudio_id || localStorage.getItem("estudio_id");
-          const finalSolicitudId = guardarData.solicitud_id || localStorage.getItem("solicitud_id");
-          if (guardarData.estudio_id) localStorage.setItem("estudio_id", guardarData.estudio_id);
-          if (guardarData.solicitud_id) localStorage.setItem("solicitud_id", guardarData.solicitud_id);
-          if (guardarData.beneficiario_id) localStorage.setItem("beneficiario_id", guardarData.beneficiario_id);
+          DraftStore.setIds(guardarData);
+          const ids = DraftStore.getIds();
+          const finalEstudioId = guardarData.estudio_id || ids.estudio_id;
+          const finalSolicitudId = guardarData.solicitud_id || ids.solicitud_id;
 
           // 5. Finalizar registro
           const finalizarRes = await ApiClient.fetch("/finalizar-registro", {
@@ -1166,12 +910,7 @@
           if (finalizarRes.ok) {
             const finalData = await finalizarRes.json();
             // Success: clear ALL localStorage drafts and IDs
-            localStorage.removeItem("draft_socioeconomico");
-            localStorage.removeItem("draft_tecnica");
-            localStorage.removeItem("draft_gestion");
-            localStorage.removeItem("estudio_id");
-            localStorage.removeItem("solicitud_id");
-            localStorage.removeItem("beneficiario_id");
+            DraftStore.clearAll();
             if (finalData.already_completed) {
               showSuccessToast("El registro ya estaba finalizado.", "perfil-capturista.html");
             } else if (window.SR_Mascot) {
@@ -1234,13 +973,24 @@
         }
       }
 
-      // -- Auth guard + Prefill + Draft Resume ------------------------------
+      // -- Auth guard + Prefill + Draft Resume (local-first, Issue #161) -----
       (async function () {
         const session = SessionGuard.getSession();
+        if (!session?.token) {
+          window.location.href = "../login.html";
+          return;
+        }
+
+        // Hidratación única: si hay estudio_id sin drafts locales (reanudación
+        // de un borrador guardado), GET /borrador siembra los 3 drafts + IDs y
+        // reconstruye region_ctx. En el resto de los casos es un no-op y la
+        // restauración de abajo es síncrona desde draft_gestion.
+        await DraftStore.hydrateIfNeeded();
+
         const regionCtx = JSON.parse(
           localStorage.getItem("region_ctx") || "null",
         );
-        if (!session?.token || !regionCtx?.region_id) {
+        if (!regionCtx?.region_id) {
           window.location.href = "../login.html";
           return;
         }
@@ -1253,78 +1003,13 @@
         const ciudadRegEl = document.querySelector('[name="ciudad_registro"]');
         if (ciudadRegEl) ciudadRegEl.value = regionCtx.region_nombre || "";
 
-        // Draft Resume: Estudio
-        const estudioId = localStorage.getItem("estudio_id");
-        if (estudioId) {
+        // Restauración desde el draft local — única fuente de verdad de los
+        // campos durante la captura (los GETs a /estudios y /solicitudes que
+        // vivían aquí pisaban con datos viejos del backend lo tecleado
+        // localmente entre navegaciones).
+        const data = DraftStore.getDraft("GESTION");
+        if (data) {
           try {
-            const res = await ApiClient.fetch(`/estudios/${estudioId}`, {
-              headers: { Accept: "application/json" },
-            });
-
-            if (res.ok) {
-              const data = await res.json();
-
-              const setVal = (name, val) => {
-                const el = document.querySelector(`[name="${name}"]`);
-                if (el && val != null) el.value = val;
-              };
-
-              setVal("sede", data.sede || regionCtx.sede);
-              setVal("ciudad_registro", data.ciudad_registro || regionCtx.region_nombre);
-            } else if (res.status === 404) {
-              localStorage.removeItem("estudio_id");
-            }
-          } catch (err) {
-            console.error("Error loading estudio draft:", err);
-          }
-        }
-
-        // Draft Resume: Solicitud
-        const solicitudId = localStorage.getItem("solicitud_id");
-        if (solicitudId) {
-          try {
-            const res = await ApiClient.fetch(`/solicitudes/${solicitudId}`, {
-              headers: { Accept: "application/json" },
-            });
-
-            if (res.ok) {
-              const data = await res.json();
-
-              const setVal = (name, val) => {
-                const el = document.querySelector(`[name="${name}"]`);
-                if (el && val != null) el.value = val;
-              };
-
-              setVal("entidad_solicitante", data.entidad_solicitante);
-              setVal("justificacion", data.justificacion);
-
-              if (data.justificacion && data.justificacion.trim()) {
-                const chk = document.querySelector('[name="tiene_justificacion"]');
-                if (chk) {
-                  chk.checked = true;
-                  chk.dispatchEvent(new Event("change"));
-                }
-              }
-
-              if (data.prioridad) {
-                const prioridadRadio = document.querySelector(
-                  `[name="prioridad"][value="${data.prioridad}"]`,
-                );
-                if (prioridadRadio) prioridadRadio.checked = true;
-              }
-            } else if (res.status === 404) {
-              localStorage.removeItem("solicitud_id");
-            }
-          } catch (err) {
-            console.error("Error loading solicitud draft:", err);
-          }
-        }
-
-        // NEW: Check for localStorage draft (offline-first flow)
-        const localDraft = localStorage.getItem("draft_gestion");
-        if (localDraft) {
-          try {
-            const data = JSON.parse(localDraft);
             const setVal = (name, val) => {
               const el = document.querySelector(`[name="${name}"]`);
               if (el && val != null) el.value = val;
