@@ -1265,17 +1265,21 @@ def _insertar_tutores(db: _DBAdapter, beneficiario_id: int, tutores: list[TutorI
         db.execute(
             """
             INSERT INTO tutores
-                (beneficiario_id, numero_tutor, nombre, email, edad, nivel_estudios,
+                (beneficiario_id, numero_tutor, nombre, nombres,
+                 apellido_paterno, apellido_materno, email, edad, nivel_estudios,
                  estado_civil, num_hijos, vivienda, fuente_empleo,
                  ingreso_mensual, tiene_imss, tiene_infonavit,
                   antiguedad_meses, antiguedad_aplica, sin_empleo,
                   otras_fuentes_aplica, otras_fuentes_ingreso, monto_otras_fuentes)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """,
             (
                 beneficiario_id,
                 tutor.numero_tutor,
                 nombre_compuesto,
+                tutor.nombres or None,
+                tutor.apellido_paterno or None,
+                tutor.apellido_materno or None,
                 tutor.email,
                 tutor.edad,
                 tutor.nivel_estudios or None,
