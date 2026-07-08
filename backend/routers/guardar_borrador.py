@@ -9,12 +9,13 @@ Provides:
 import logging
 from typing import Annotated, Optional
 
+import psycopg2.errors
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, field_validator
 
 from database import get_db, _DBAdapter
 from routers.auth import CurrentUser, assert_resource_owner, require_roles
-from routers.socioeconomico import _assert_curp_disponible, _resolve_document_preview_url, _resolve_document_refs
+from routers.socioeconomico import _assert_curp_disponible, _curp_duplicada_error, _resolve_document_preview_url, _resolve_document_refs
 from routers.tecnica import _resolve_storage_url, _BUCKET as _FOTO_BUCKET, _DOCUMENT_BUCKET
 from utils.text import normalize_text
 from validators import (
@@ -565,38 +566,47 @@ def _create_borrador(
 
     try:
         # 1. INSERT beneficiario (curp_benef is the natural identifier, Issue #32)
-        beneficiario_id = db.execute(
-            """
-            INSERT INTO beneficiarios
-                (nombre, nombres, apellido_paterno, apellido_materno, curp_benef,
-                 fecha_nacimiento, diagnostico, calle, num_ext, num_int, colonia, ciudad,
-                 estado_codigo, estado_nombre, sexo, telefonos, email,
-                 region_id, sede)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            RETURNING id
-            """,
-            (
-                nombre_composed,
-                body.nombres,
-                body.apellido_paterno,
-                body.apellido_materno,
-                body.curp,
-                body.fecha_nacimiento,
-                body.diagnostico,
-                body.calle,
-                body.num_ext,
-                body.num_int,
-                body.colonia,
-                body.ciudad,
-                body.estado_codigo,
-                body.estado_nombre,
-                body.sexo,
-                body.telefonos,
-                body.email,
-                body.region_id,
-                body.sede,
-            ),
-        ).fetchone()["id"]
+        try:
+            beneficiario_id = db.execute(
+                """
+                INSERT INTO beneficiarios
+                    (nombre, nombres, apellido_paterno, apellido_materno, curp_benef,
+                     fecha_nacimiento, diagnostico, calle, num_ext, num_int, colonia, ciudad,
+                     estado_codigo, estado_nombre, sexo, telefonos, email,
+                     region_id, sede)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                RETURNING id
+                """,
+                (
+                    nombre_composed,
+                    body.nombres,
+                    body.apellido_paterno,
+                    body.apellido_materno,
+                    body.curp,
+                    body.fecha_nacimiento,
+                    body.diagnostico,
+                    body.calle,
+                    body.num_ext,
+                    body.num_int,
+                    body.colonia,
+                    body.ciudad,
+                    body.estado_codigo,
+                    body.estado_nombre,
+                    body.sexo,
+                    body.telefonos,
+                    body.email,
+                    body.region_id,
+                    body.sede,
+                ),
+            ).fetchone()["id"]
+        except psycopg2.errors.UniqueViolation as exc:
+            # Red de seguridad (#131): un guardado concurrente con la misma
+            # CURP ganó la carrera al pre-check _assert_curp_disponible. El
+            # rollback es obligatorio: la transacción quedó abortada y el
+            # SELECT de _curp_duplicada_error fallaría sin él. (Mismo patrón
+            # que socioeconomico.crear_estudio.)
+            db.rollback()
+            raise _curp_duplicada_error(db, body.curp) from exc
 
         # 2. INSERT tutores (if any data)
         for num in (1, 2):
@@ -884,7 +894,14 @@ def _patch_beneficiario(db: _DBAdapter, body: GuardarBorradorRequest, ben_id: in
 
     set_clause = ", ".join(f"{k} = %s" for k in fields)
     values = list(fields.values()) + [ben_id]
-    db.execute(f"UPDATE beneficiarios SET {set_clause} WHERE id = %s", tuple(values))
+    try:
+        db.execute(f"UPDATE beneficiarios SET {set_clause} WHERE id = %s", tuple(values))
+    except psycopg2.errors.UniqueViolation as exc:
+        # Red de seguridad (#131): cambio concurrente de CURP a una que otro
+        # guardado acaba de registrar (la única UNIQUE de beneficiarios es
+        # curp_benef, y solo entra al SET cuando body.curp viene en el payload).
+        db.rollback()
+        raise _curp_duplicada_error(db, body.curp) from exc
 
 
 def _patch_estudio(db: _DBAdapter, body: GuardarBorradorRequest, estudio_id: int) -> None:
