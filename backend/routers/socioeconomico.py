@@ -998,10 +998,19 @@ def actualizar_estudio(
             ben_values.append(b.curp)
         if ben_fields:
             ben_values.append(existing["beneficiario_id"])
-            db.execute(
-                f"UPDATE beneficiarios SET {', '.join(ben_fields)} WHERE id = %s",
-                ben_values,
-            )
+            try:
+                db.execute(
+                    f"UPDATE beneficiarios SET {', '.join(ben_fields)} WHERE id = %s",
+                    ben_values,
+                )
+            except psycopg2.errors.UniqueViolation as exc:
+                # Red de seguridad (#131): cambio concurrente de CURP a una que
+                # otro guardado acaba de registrar — la carrera pasó el
+                # pre-check de arriba. La única UNIQUE de beneficiarios es
+                # curp_benef, y solo entra al SET cuando b.curp viene en el
+                # payload. El rollback es obligatorio antes del SELECT del 409.
+                db.rollback()
+                raise _curp_duplicada_error(db, b.curp) from exc
 
     if body.tutores is not None:
         _validar_tutores_update(body.tutores)
