@@ -45,6 +45,8 @@ ese entorno.
 | `0026` | `auditoria_eventos` |
 | `0027` | `add_equipo_solicitado_estudio_clinico` |
 | `0028` | `drop_dead_columns` |
+| `0029` | `observaciones_posturales_y_soporte_oxigeno_nullable` |
+| `0030` | `tutores_nombre_estructurado` |
 
 ## Deprecación de legado
 
