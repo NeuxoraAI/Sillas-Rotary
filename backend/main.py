@@ -9,6 +9,7 @@ from env_bootstrap import load_root_env_if_needed
 
 load_root_env_if_needed(__file__)
 
+import settings
 from routers import admin, auth, socioeconomico, tecnica, usuarios, regiones, perfiles, finalizar, guardar_borrador, password
 
 # Serve the frontend — path is resolved relative to this file so it works
@@ -51,8 +52,7 @@ def _cache_control_for_path(path: str) -> str:
 
 
 def create_app() -> FastAPI:
-    env = os.environ.get("ENV", "development").lower()
-    docs_enabled = env != "production"
+    docs_enabled = settings.env() != "production"
 
     app = FastAPI(
         title="Sillas Rotary API v2",

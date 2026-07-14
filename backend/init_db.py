@@ -20,10 +20,10 @@ Why this file still exists (do not delete it):
   - `_init_storage()` provisions the Supabase Storage buckets.
 """
 
-import os
-
 import psycopg2
 from supabase import create_client
+
+import settings
 
 
 DDL = [
@@ -282,11 +282,11 @@ DDL = [
 
 def init() -> None:
     conn = psycopg2.connect(
-        host=os.environ["DB_HOST"],
-        port=int(os.environ.get("DB_PORT", "5432")),
-        dbname=os.environ.get("DB_NAME", "postgres"),
-        user=os.environ.get("DB_USER", "postgres"),
-        password=os.environ["DB_PASSWORD"],
+        host=settings.db_host(),
+        port=settings.db_port(),
+        dbname=settings.db_name(),
+        user=settings.db_user(),
+        password=settings.db_password(),
         sslmode="require",
     )
     try:
@@ -302,8 +302,8 @@ def init() -> None:
 
 def _init_storage() -> None:
     client = create_client(
-        os.environ["SUPABASE_URL"],
-        os.environ["SUPABASE_SERVICE_KEY"],
+        settings.supabase_url(),
+        settings.supabase_service_key(),
     )
     _ensure_private_bucket(
         client,

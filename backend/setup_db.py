@@ -41,17 +41,18 @@ _load_env_file(_ENV_PATH)
 
 import psycopg2
 
+import settings
 from init_db import init as init_v1
 from seed_v2 import seed as seed_v2
 
 
 def _connect():
     return psycopg2.connect(
-        host=os.environ["DB_HOST"],
-        port=int(os.environ.get("DB_PORT", "5432")),
-        dbname=os.environ.get("DB_NAME", "postgres"),
-        user=os.environ.get("DB_USER", "postgres"),
-        password=os.environ["DB_PASSWORD"],
+        host=settings.db_host(),
+        port=settings.db_port(),
+        dbname=settings.db_name(),
+        user=settings.db_user(),
+        password=settings.db_password(),
         sslmode="require",
     )
 

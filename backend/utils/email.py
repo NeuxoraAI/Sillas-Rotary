@@ -17,13 +17,12 @@ admin can resend the invitation. Raw tokens appear only in the link and are
 never logged or persisted (only their sha256 hash is stored).
 """
 
-import os
-
 import httpx
+
+import settings
 
 _RESEND_ENDPOINT = "https://api.resend.com/emails"
 _TIMEOUT_SECONDS = 10.0
-_DEFAULT_FROM = "onboarding@resend.dev"
 
 
 class EmailDeliveryError(Exception):
@@ -32,8 +31,8 @@ class EmailDeliveryError(Exception):
 
 def _resend_post(to: str, subject: str, html: str) -> None:
     """POST a single email to Resend. Raises EmailDeliveryError on failure."""
-    api_key = os.environ["RESEND_API_KEY"]
-    from_addr = os.environ.get("EMAIL_FROM", _DEFAULT_FROM)
+    api_key = settings.resend_api_key()
+    from_addr = settings.email_from()
     try:
         resp = httpx.post(
             _RESEND_ENDPOINT,
@@ -58,20 +57,9 @@ def _resend_post(to: str, subject: str, html: str) -> None:
         raise EmailDeliveryError(f"Resend request failed: {exc}") from exc
 
 
-def _base_url() -> str:
-    """Return APP_BASE_URL without a trailing slash. Falls back to the
-    Vercel-injected deployment URL so preview deployments build working
-    email links without per-branch configuration."""
-    explicit = os.environ.get("APP_BASE_URL", "").rstrip("/")
-    if explicit:
-        return explicit
-    vercel_url = os.environ.get("VERCEL_URL", "")
-    return f"https://{vercel_url}" if vercel_url else ""
-
-
 def send_invite(to_email: str, raw_token: str, nombre: str) -> None:
     """Send the account-activation (invite) email. Valid for 72 hours."""
-    link = f"{_base_url()}/set-password.html?token={raw_token}"
+    link = f"{settings.app_base_url()}/set-password.html?token={raw_token}"
     html = f"""
     <p>Hola {nombre}:</p>
     <p>Tu cuenta en <strong>200 SILLAS 200 CAMPEONES</strong> ha sido creada.</p>
@@ -85,7 +73,7 @@ def send_invite(to_email: str, raw_token: str, nombre: str) -> None:
 
 def send_reset(to_email: str, raw_token: str) -> None:
     """Send the password-reset email. Valid for 1 hour."""
-    link = f"{_base_url()}/reset-password.html?token={raw_token}"
+    link = f"{settings.app_base_url()}/reset-password.html?token={raw_token}"
     html = f"""
     <p>Recibimos una solicitud para restablecer la contraseña de tu cuenta en
     <strong>200 SILLAS 200 CAMPEONES</strong>.</p>

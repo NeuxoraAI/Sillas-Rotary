@@ -9,7 +9,6 @@ Replaces the old name-only capturista login with:
 - require_tecnico       — FastAPI dependency for tecnico-or-admin routes
 """
 
-import os
 from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
@@ -20,26 +19,20 @@ from passlib.context import CryptContext
 from passlib.exc import UnknownHashError
 from pydantic import BaseModel, field_validator
 
+import settings
 from database import get_db, _DBAdapter
 from validators import validate_email_format
 
 router = APIRouter()
 
 # ---------------------------------------------------------------------------
-# Config
+# Config — JWT_SECRET presence/strength is validated in settings.py at
+# import time, so importing this router already fails fast on a bad secret.
 # ---------------------------------------------------------------------------
 
-_JWT_SECRET = os.environ.get("JWT_SECRET")
-if not _JWT_SECRET or _JWT_SECRET == "dev-secret-change-in-production":
-    raise RuntimeError(
-        "JWT_SECRET environment variable must be set to a strong secret "
-        "(>=32 bytes). The placeholder 'dev-secret-change-in-production' is "
-        "not accepted."
-    )
-if len(_JWT_SECRET) < 32:
-    raise RuntimeError("JWT_SECRET must be at least 32 bytes long.")
-_JWT_ALGORITHM = "HS256"
-_JWT_EXPIRE_HOURS = int(os.environ.get("JWT_EXPIRE_HOURS", "8"))
+_JWT_SECRET = settings.JWT_SECRET
+_JWT_ALGORITHM = settings.JWT_ALGORITHM
+_JWT_EXPIRE_HOURS = settings.JWT_EXPIRE_HOURS
 
 _pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 _oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")

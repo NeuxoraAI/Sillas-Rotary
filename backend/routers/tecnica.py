@@ -12,6 +12,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, field_validator, model_validator, ValidationInfo
 from supabase import create_client
 
+import settings
 from database import get_db, _DBAdapter
 from audit import registrar_evento
 from routers.auth import CurrentUser, assert_resource_owner, require_roles
@@ -85,8 +86,8 @@ def _resolve_storage_url(raw_url: Optional[str], bucket: str) -> Optional[str]:
     try:
         from supabase import create_client
         storage = create_client(
-            os.environ["SUPABASE_URL"],
-            os.environ["SUPABASE_SERVICE_KEY"],
+            settings.supabase_url(),
+            settings.supabase_service_key(),
         ).storage.from_(bucket)
         signed_raw = storage.create_signed_url(path, 300)
         signed = _signed_url_from_response(signed_raw)
@@ -99,8 +100,8 @@ def _resolve_storage_url(raw_url: Optional[str], bucket: str) -> Optional[str]:
     try:
         from supabase import create_client
         storage = create_client(
-            os.environ["SUPABASE_URL"],
-            os.environ["SUPABASE_SERVICE_KEY"],
+            settings.supabase_url(),
+            settings.supabase_service_key(),
         ).storage.from_(bucket)
         return storage.get_public_url(path)
     except Exception:
@@ -344,8 +345,8 @@ def _classify_db_error(exc: Exception) -> HTTPException:
 def _storage(bucket: str = _BUCKET):
     from supabase import create_client
     return create_client(
-        os.environ["SUPABASE_URL"],
-        os.environ["SUPABASE_SERVICE_KEY"],
+        settings.supabase_url(),
+        settings.supabase_service_key(),
     ).storage.from_(bucket)
 
 
