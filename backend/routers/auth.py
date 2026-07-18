@@ -268,6 +268,68 @@ def assert_resource_owner(
     )
 
 
+def _assert_case_pair(
+    *,
+    user: CurrentUser,
+    db: _DBAdapter,
+    estudio_id: int | None = None,
+    solicitud_id: int | None = None,
+    beneficiario_id: int | None = None,
+) -> tuple[dict, dict | None]:
+    """Authorize a case and prove all supplied records share one beneficiary."""
+    solicitud = None
+    if solicitud_id is not None:
+        solicitud = db.execute(
+            "SELECT id, usuario_id, beneficiario_id FROM solicitudes_tecnicas WHERE id = %s",
+            (solicitud_id,),
+        ).fetchone()
+        if solicitud is None:
+            raise HTTPException(status_code=404, detail="Solicitud no encontrada")
+
+    if estudio_id is not None:
+        estudio = db.execute(
+            "SELECT id, usuario_id, beneficiario_id FROM estudios_socioeconomicos WHERE id = %s",
+            (estudio_id,),
+        ).fetchone()
+    else:
+        lookup_beneficiario_id = beneficiario_id
+        if lookup_beneficiario_id is None and solicitud is not None:
+            lookup_beneficiario_id = solicitud["beneficiario_id"]
+        estudio = db.execute(
+            """
+            SELECT id, usuario_id, beneficiario_id
+            FROM estudios_socioeconomicos
+            WHERE beneficiario_id = %s
+            ORDER BY id DESC
+            LIMIT 1
+            """,
+            (lookup_beneficiario_id,),
+        ).fetchone()
+
+    if estudio is None:
+        raise HTTPException(status_code=404, detail="Estudio no encontrado")
+
+    case_beneficiario_id = estudio["beneficiario_id"]
+    supplied_beneficiario_ids = [
+        value
+        for value in (
+            beneficiario_id,
+            solicitud["beneficiario_id"] if solicitud is not None else None,
+        )
+        if value is not None
+    ]
+    if any(value != case_beneficiario_id for value in supplied_beneficiario_ids):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Los registros no pertenecen al mismo beneficiario",
+        )
+
+    assert_resource_owner(estudio["usuario_id"], user, db=db)
+    if solicitud is not None:
+        assert_resource_owner(solicitud["usuario_id"], user, db=db)
+    return dict(estudio), dict(solicitud) if solicitud is not None else None
+
+
 def require_tecnico_or_admin(
     user: Annotated[CurrentUser, Depends(require_auth)],
 ) -> CurrentUser:

@@ -14,7 +14,7 @@ from supabase import create_client
 
 from database import get_db, _DBAdapter
 from audit import registrar_evento
-from routers.auth import CurrentUser, assert_resource_owner, require_roles
+from routers.auth import CurrentUser, _assert_case_pair, assert_resource_owner, require_roles
 from validators import (
     validate_padecimiento,
     validate_medida_tecnica,
@@ -1138,6 +1138,11 @@ def crear_solicitud(
     db: Annotated[_DBAdapter, Depends(get_db)],
     usuario: Annotated[CurrentUser, Depends(require_roles("capturista", "organizacion"))],
 ) -> SolicitudCreateResponse:
+    _assert_case_pair(
+        beneficiario_id=body.beneficiario_id,
+        user=usuario,
+        db=db,
+    )
     # Normalize units only on final submission (status=completo).
     # For borradores, store values exactly as sent so open/save cycles
     # are idempotent and do not compound conversion errors.
@@ -1291,7 +1296,7 @@ def actualizar_solicitud(
     if existing is None:
         raise HTTPException(status_code=404, detail="Solicitud no encontrada")
 
-    assert_resource_owner(existing["usuario_id"], usuario, db=db)
+    _assert_case_pair(solicitud_id=id, user=usuario, db=db)
 
     fields = body.model_dump(exclude_none=True)
 
@@ -1299,7 +1304,7 @@ def actualizar_solicitud(
     # contra el estado FUSIONADO (lo enviado en el cuerpo + lo ya persistido en
     # `solicitudes_tecnicas` desde el borrador). Se hace en el endpoint —no en el
     # modelo Pydantic— porque aquí sí hay acceso a la BD. La autorización
-    # (`assert_resource_owner`) ya se evaluó arriba, de modo que un ajeno recibe
+    # (`_assert_case_pair`) ya se evaluó arriba, de modo que un ajeno recibe
     # 403 antes de llegar a esta validación. Mismo enfoque que
     # `finalizar._validate_all_complete`.
     if fields.get("status") == "completo":
