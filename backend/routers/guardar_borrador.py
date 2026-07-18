@@ -14,7 +14,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, field_validator
 
 from database import get_db, _DBAdapter
-from routers.auth import CurrentUser, assert_resource_owner, require_roles
+from routers.auth import CurrentUser, _assert_case_pair, assert_resource_owner, require_roles
 from routers.socioeconomico import _assert_curp_disponible, _curp_duplicada_error, _resolve_document_preview_url, _resolve_document_refs
 from routers.tecnica import _resolve_storage_url, _BUCKET as _FOTO_BUCKET, _DOCUMENT_BUCKET
 from utils.text import normalize_text
@@ -770,24 +770,36 @@ def _update_borrador(
     if existing is None:
         raise HTTPException(status_code=404, detail="Estudio no encontrado")
 
-    assert_resource_owner(existing["usuario_id"], usuario, db=db)
-
     beneficiario_id = existing["beneficiario_id"]
 
-    # Find solicitud by beneficiario_id (or by solicitud_id if provided)
-    solicitud_existing = None
+    # An explicit solicitud_id is authoritative: authorize that exact row and
+    # never substitute a different solicitud when it is unknown.
     if body.solicitud_id is not None:
-        solicitud_existing = db.execute(
-            "SELECT id FROM solicitudes_tecnicas WHERE id = %s",
-            (body.solicitud_id,),
-        ).fetchone()
-    if solicitud_existing is None:
+        solicitud_id = body.solicitud_id
+    else:
+        # Legacy drafts may omit solicitud_id; only that case may resolve the
+        # latest solicitud associated with the estudio's beneficiary.
         solicitud_existing = db.execute(
             "SELECT id FROM solicitudes_tecnicas WHERE beneficiario_id = %s ORDER BY id DESC LIMIT 1",
             (beneficiario_id,),
         ).fetchone()
+        solicitud_id = solicitud_existing["id"] if solicitud_existing else None
 
-    solicitud_id = solicitud_existing["id"] if solicitud_existing else None
+    if solicitud_id is not None:
+        _assert_case_pair(
+            estudio_id=body.estudio_id,
+            solicitud_id=solicitud_id,
+            beneficiario_id=body.beneficiario_id,
+            user=usuario,
+            db=db,
+        )
+    else:
+        _assert_case_pair(
+            estudio_id=body.estudio_id,
+            beneficiario_id=body.beneficiario_id,
+            user=usuario,
+            db=db,
+        )
 
     try:
         # 1. UPDATE beneficiario (only non-None fields)
