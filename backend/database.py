@@ -1,10 +1,11 @@
-import os
 from contextlib import contextmanager
 from typing import Generator
 from urllib.parse import urlparse
 
 import psycopg2
 import psycopg2.extras
+
+import settings
 
 
 def _looks_like_test_value(value: str | None) -> bool:
@@ -63,10 +64,10 @@ def assert_test_database_target(
 
 def build_test_conn_kwargs() -> dict:
     """Build connection kwargs for tests honoring TEST_DATABASE_URL and schema guardrails."""
-    test_database_url = os.environ.get("TEST_DATABASE_URL")
-    test_schema = os.environ.get("TEST_DB_SCHEMA")
-    db_name = os.environ.get("DB_NAME", "postgres")
-    db_host = os.environ.get("DB_HOST")
+    test_database_url = settings.test_database_url()
+    test_schema = settings.test_db_schema()
+    db_name = settings.db_name()
+    db_host = settings.db_host_or_none()
 
     assert_test_database_target(
         db_name=db_name,
@@ -80,7 +81,7 @@ def build_test_conn_kwargs() -> dict:
     else:
         conn_kwargs = _build_conn_kwargs()
 
-    options = os.environ.get("TEST_DB_OPTIONS")
+    options = settings.test_db_options()
     if test_schema:
         schema_option = f"-c search_path={test_schema}"
         options = f"{options} {schema_option}".strip() if options else schema_option
@@ -92,13 +93,13 @@ def build_test_conn_kwargs() -> dict:
 
 
 def _build_conn_kwargs() -> dict:
-    """Build psycopg2 connection kwargs from environment variables."""
+    """Build psycopg2 connection kwargs from settings."""
     return dict(
-        host=os.environ["DB_HOST"],
-        port=int(os.environ.get("DB_PORT", "5432")),
-        dbname=os.environ.get("DB_NAME", "postgres"),
-        user=os.environ.get("DB_USER", "postgres"),
-        password=os.environ["DB_PASSWORD"],
+        host=settings.db_host(),
+        port=settings.db_port(),
+        dbname=settings.db_name(),
+        user=settings.db_user(),
+        password=settings.db_password(),
         sslmode="require",
     )
 

@@ -21,6 +21,7 @@ from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, field_validator, model_validator
 from supabase import create_client
 
+import settings
 from database import get_db, _DBAdapter
 from audit import registrar_evento
 from routers.auth import CurrentUser, assert_resource_owner, require_roles
@@ -76,8 +77,8 @@ _DOCUMENT_SIGNED_URL_TTL_SECONDS = 60
 
 def _storage():
     return create_client(
-        os.environ["SUPABASE_URL"],
-        os.environ["SUPABASE_SERVICE_KEY"],
+        settings.supabase_url(),
+        settings.supabase_service_key(),
     ).storage.from_(_DOCUMENT_BUCKET)
 
 

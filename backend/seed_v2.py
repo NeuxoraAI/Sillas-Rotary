@@ -13,22 +13,23 @@ Run AFTER migrate_v2.sql:
 Requires DB_HOST, DB_PASSWORD env vars (same as production).
 """
 
-import os
 import sys
 
 import psycopg2
 from passlib.context import CryptContext
+
+import settings
 
 _pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 def _connect():
     return psycopg2.connect(
-        host=os.environ["DB_HOST"],
-        port=int(os.environ.get("DB_PORT", "5432")),
-        dbname=os.environ.get("DB_NAME", "postgres"),
-        user=os.environ.get("DB_USER", "postgres"),
-        password=os.environ["DB_PASSWORD"],
+        host=settings.db_host(),
+        port=settings.db_port(),
+        dbname=settings.db_name(),
+        user=settings.db_user(),
+        password=settings.db_password(),
         sslmode="require",
     )
 
