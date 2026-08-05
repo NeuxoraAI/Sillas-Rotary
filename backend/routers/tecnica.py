@@ -29,6 +29,10 @@ from validators import (
     validate_prioridad,
     validate_status,
     validate_diagnostico,
+    convert_medida_to_in,
+    convert_peso_to_lb,
+    normalize_medidas_to_canonical,
+    MEDIDA_TECNICA_COLUMNS,
 )
 from utils.text import normalize_text
 
@@ -1285,7 +1289,7 @@ def actualizar_solicitud(
     usuario: Annotated[CurrentUser, Depends(require_roles("capturista", "organizacion"))],
 ) -> SolicitudUpdateResponse:
     existing = db.execute(
-        """SELECT id, usuario_id, beneficiario_id,
+        """SELECT id, usuario_id, beneficiario_id, status,
                   unidad_captura, unidad_peso_captura,
                   altura_total_in, medida_cabeza_asiento, medida_hombro_asiento,
                   medida_prof_asiento, medida_rodilla_talon, medida_ancho_cadera,
@@ -1338,38 +1342,32 @@ def actualizar_solicitud(
         fields.get("unidad_medida") in ("cm", "in") or "unidad_peso_captura" in fields
     ):
         fields = _normalize_medidas_patch(fields)
-    elif fields.get("status") == "completo" and "unidad_medida" not in fields:
-        # Finalizing without body-provided measurement unit: use the stored capture unit to
-        # convert measurement values to canonical inches/lb so they are not silently promoted
-        # with the wrong unit.
-        # For each measurement column: if the body provided a value, convert that; otherwise
-        # if the stored DB value needs conversion, promote it so the stored canonical value is
-        # correct after this PATCH.
+    elif (
+        fields.get("status") == "completo"
+        and "unidad_medida" not in fields
+        and existing["status"] != "completo"
+    ):
+        # Finalizing (first borrador -> completo transition) without a
+        # body-provided measurement unit: use the stored capture unit to
+        # convert measurement values to canonical inches/lb so they are not
+        # silently promoted with the wrong unit. Guarded by
+        # existing["status"] != "completo" because unidad_captura/
+        # unidad_peso_captura are a permanent audit trail (never updated to
+        # reflect "already converted") — without this guard, a repeated
+        # PATCH with status="completo" on an already-completo record would
+        # re-convert already-canonical values a second time.
         stored_unidad = existing["unidad_captura"] or "in"
         stored_unidad_peso = existing["unidad_peso_captura"] or "lb"
-        _MEASURE_COLS = (
-            "altura_total_in", "medida_cabeza_asiento", "medida_hombro_asiento",
-            "medida_prof_asiento", "medida_rodilla_talon", "medida_ancho_cadera",
-        )
-        if stored_unidad == "cm":
-            for col in _MEASURE_COLS:
-                if col in fields:
-                    # Body provided a value in cm — convert it
-                    if fields[col] is not None:
-                        fields[col] = _to_inches(Decimal(str(fields[col])), "cm")
-                else:
-                    # No body value; convert the stored DB value and include it in UPDATE
-                    raw = existing[col]
-                    if raw is not None:
-                        fields[col] = _to_inches(Decimal(str(raw)), "cm")
-        if stored_unidad_peso == "kg":
-            if "peso_kg" in fields:
-                if fields["peso_kg"] is not None:
-                    fields["peso_kg"] = _to_kg(Decimal(str(fields["peso_kg"])), "kg")
-            else:
-                raw_peso = existing["peso_kg"]
-                if raw_peso is not None:
-                    fields["peso_kg"] = _to_kg(Decimal(str(raw_peso)), "kg")
+        effective = {
+            col: (fields[col] if col in fields else existing[col])
+            for col in MEDIDA_TECNICA_COLUMNS
+        }
+        effective["peso_kg"] = fields["peso_kg"] if "peso_kg" in fields else existing["peso_kg"]
+        fields.update(normalize_medidas_to_canonical(
+            effective,
+            unidad_medida=stored_unidad,
+            unidad_peso_captura=stored_unidad_peso,
+        ))
     # Rename to DB column name
     if "unidad_medida" in fields:
         fields["unidad_captura"] = fields.pop("unidad_medida")
@@ -1421,27 +1419,12 @@ def actualizar_solicitud(
 
 
 def _to_inches(v: Optional[Decimal], unidad: str) -> Optional[Decimal]:
-    if v is None:
-        return None
-    if unidad == "cm":
-        # cm to inches: divide by 2.54, round to 3 decimal places
-        inches = v / Decimal("2.54")
-        return inches.quantize(Decimal("0.001"))
-    return v
+    return convert_medida_to_in(v, unidad)
 
 
 def _to_kg(v: Optional[Decimal], unidad: str) -> Optional[Decimal]:
-    """Convert a weight value to pounds (canonical storage unit).
-
-    If the capture unit is 'kg', multiply by 2.20462 (1 kg ≈ 2.20462 lb)
-    and quantize to 3 decimal places. Otherwise return unchanged.
-    """
-    if v is None:
-        return None
-    if unidad == "kg":
-        lb = v * Decimal("2.20462")
-        return lb.quantize(Decimal("0.001"))
-    return v  # already lb
+    """Convert a weight value to pounds (canonical storage unit)."""
+    return convert_peso_to_lb(v, unidad)
 
 
 def _normalize_medidas(body: SolicitudCreateRequest) -> SolicitudCreateRequest:

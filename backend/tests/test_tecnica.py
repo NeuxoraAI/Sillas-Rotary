@@ -762,3 +762,63 @@ class TestWeightUnitConversion:
         assert float(body["altura_total_in"]) == pytest.approx(10.0, rel=1e-3)      # 25.4 cm ÷ 2.54
         assert float(body["peso_kg"]) == pytest.approx(220.462, rel=1e-3)           # 100 kg × 2.20462
         assert float(body["medida_cabeza_asiento"]) == pytest.approx(11.811, rel=1e-3)  # 30 cm ÷ 2.54
+
+    def test_patch_completo_dos_veces_no_reconvierte(
+        self, client, capturista_headers, sample_estudio
+    ):
+        """Idempotency guard: a second PATCH with status=completo (and no
+        unidad_medida) on an already-completo solicitud must NOT re-convert
+        values that are already canonical — unidad_captura stays "cm"
+        forever as an audit trail, so the conversion branch must key off
+        the solicitud's own status, not that field."""
+        borrador_payload = _solicitud_payload(sample_estudio["beneficiario_id"])
+        borrador_payload.update({
+            "unidad_medida": "cm",
+            "unidad_peso_captura": "kg",
+            "altura_total_in": 25.4,
+            "peso_kg": 100.0,
+            "medida_cabeza_asiento": 30.0,
+            "medida_hombro_asiento": 40.0,
+            "medida_prof_asiento": 45.0,
+            "medida_rodilla_talon": 35.0,
+            "medida_ancho_cadera": 38.0,
+        })
+        create_response = client.post("/api/solicitudes", headers=capturista_headers, json=borrador_payload)
+        assert create_response.status_code == 201
+        solicitud_id = create_response.json()["solicitud_id"]
+
+        finalize_body = {
+            "status": "completo",
+            "altura_total_in": 25.4,
+            "peso_kg": 100.0,
+            "medida_cabeza_asiento": 30.0,
+            "medida_hombro_asiento": 40.0,
+            "medida_prof_asiento": 45.0,
+            "medida_rodilla_talon": 35.0,
+            "medida_ancho_cadera": 38.0,
+        }
+
+        first = client.patch(
+            f"/api/solicitudes/{solicitud_id}", headers=capturista_headers, json=finalize_body,
+        )
+        assert first.status_code == 200
+
+        first_get = client.get(f"/api/solicitudes/{solicitud_id}", headers=capturista_headers)
+        first_body = first_get.json()
+        assert float(first_body["altura_total_in"]) == pytest.approx(10.0, rel=1e-3)
+
+        # Repeat call: no unidad_medida in body, solicitud already "completo".
+        second = client.patch(
+            f"/api/solicitudes/{solicitud_id}",
+            headers=capturista_headers,
+            json={"status": "completo"},
+        )
+        assert second.status_code == 200
+
+        second_get = client.get(f"/api/solicitudes/{solicitud_id}", headers=capturista_headers)
+        second_body = second_get.json()
+
+        # Values must be unchanged — NOT divided/multiplied a second time.
+        assert float(second_body["altura_total_in"]) == pytest.approx(10.0, rel=1e-3)
+        assert float(second_body["peso_kg"]) == pytest.approx(220.462, rel=1e-3)
+        assert float(second_body["medida_cabeza_asiento"]) == pytest.approx(11.811, rel=1e-3)
