@@ -119,6 +119,60 @@ PRIORIDAD_CATALOG = frozenset({"Alta", "Media"})
 UNIDAD_MEDIDA_CATALOG = frozenset({"in", "cm"})
 UNIDAD_PESO_CATALOG = frozenset({"kg", "lb"})
 STATUS_CATALOG = frozenset({"borrador", "completo"})
+
+# Linear measurement columns on solicitudes_tecnicas that are subject to
+# cm -> in conversion at finalization time (peso_kg is handled separately
+# since its canonical unit is lb, not in).
+MEDIDA_TECNICA_COLUMNS = (
+    "altura_total_in", "medida_cabeza_asiento", "medida_hombro_asiento",
+    "medida_prof_asiento", "medida_rodilla_talon", "medida_ancho_cadera",
+)
+
+
+def convert_medida_to_in(value: Optional[Decimal], unidad: str) -> Optional[Decimal]:
+    """Convert a linear measurement to canonical inches.
+
+    Pass-through if value is None or unidad is already "in".
+    """
+    if value is None:
+        return None
+    if unidad == "cm":
+        return (value / Decimal("2.54")).quantize(Decimal("0.001"))
+    return value
+
+
+def convert_peso_to_lb(value: Optional[Decimal], unidad: str) -> Optional[Decimal]:
+    """Convert a weight value to canonical pounds (the canonical storage
+    unit for peso_kg despite its column name).
+
+    Pass-through if value is None or unidad is already "lb".
+    """
+    if value is None:
+        return None
+    if unidad == "kg":
+        return (value * Decimal("2.20462")).quantize(Decimal("0.001"))
+    return value
+
+
+def normalize_medidas_to_canonical(
+    values: dict,
+    *,
+    unidad_medida: str,
+    unidad_peso_captura: str,
+    measure_cols: tuple = MEDIDA_TECNICA_COLUMNS,
+    peso_col: str = "peso_kg",
+) -> dict:
+    """Convert whichever of measure_cols/peso_col are present in `values` to
+    canonical in/lb. Keys not present in the input are not added to the
+    output; values are only converted, never added or removed.
+    """
+    out = dict(values)
+    for col in measure_cols:
+        if col in out and out[col] is not None:
+            out[col] = convert_medida_to_in(Decimal(str(out[col])), unidad_medida)
+    if peso_col in out and out[peso_col] is not None:
+        out[peso_col] = convert_peso_to_lb(Decimal(str(out[peso_col])), unidad_peso_captura)
+    return out
 SEXO_CATALOG = frozenset({"M", "F"})
 
 # Monetary limits
