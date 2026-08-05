@@ -873,7 +873,13 @@
 
       function restoreMeasurementSystem(data, setVal) {
         const system = toMeasurementSystem(data?.unidad_captura || data?.unidad_medida);
-        if (system) setVal("unidad_medida", system);
+        if (system) {
+          setVal("unidad_medida", system);
+          // setVal only assigns .value — dispatch "change" so
+          // setupUnidadMedidaLabels()'s apply() re-runs and the per-field
+          // unit labels stay in sync with the (async-restored) selector.
+          document.getElementById("unidad_medida")?.dispatchEvent(new Event("change"));
+        }
       }
 
       // Auth guard + Draft Resume (local-first, Issue #161)
