@@ -600,7 +600,15 @@ class TestFinalizarRegistroEndpoint:
     """Integration tests that exercise the full endpoint."""
 
     @staticmethod
-    def _seed_borrador_estudio(db_conn, region_lon, capturista_user) -> dict:
+    def _seed_borrador_estudio(
+        db_conn, region_lon, capturista_user,
+        *,
+        unidad_captura="in", unidad_peso_captura="kg",
+        altura_total_in=72.0, peso_kg=45.0,
+        medida_cabeza_asiento=10.0, medida_hombro_asiento=12.0,
+        medida_prof_asiento=14.0, medida_rodilla_talon=16.0,
+        medida_ancho_cadera=18.0, solicitud_status="borrador",
+    ) -> dict:
         """Create a beneficiario + estudio as borrador. Returns both IDs."""
         import psycopg2.extras
         with db_conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
@@ -677,18 +685,21 @@ class TestFinalizarRegistroEndpoint:
                      peso_kg, medida_cabeza_asiento, medida_hombro_asiento,
                      medida_prof_asiento, medida_rodilla_talon,
                      medida_ancho_cadera, entidad_solicitante, prioridad,
-                     foto_url, soporte_oxigeno, status)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                     foto_url, soporte_oxigeno, status,
+                     unidad_captura, unidad_peso_captura)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 RETURNING id
                 """,
                 (
                     ben_id, capturista_user["id"],
                     "Urbano / Interiores", "Completo", "Independiente", "Parcial",
-                    72.0, 45.0, 10.0, 12.0, 14.0, 16.0, 18.0,
+                    altura_total_in, peso_kg, medida_cabeza_asiento, medida_hombro_asiento,
+                    medida_prof_asiento, medida_rodilla_talon, medida_ancho_cadera,
                     "Rotary Club León", "Alta",
                     # Migración 0029: sin DEFAULT FALSE, el seeder debe responder
                     # explícitamente para que el registro sea finalizable.
-                    "storage://fotos-tecnica/1/foto.jpg", False, "borrador",
+                    "storage://fotos-tecnica/1/foto.jpg", False, solicitud_status,
+                    unidad_captura, unidad_peso_captura,
                 ),
             )
             solicitud_id = cur.fetchone()["id"]
@@ -939,6 +950,81 @@ class TestFinalizarRegistroEndpoint:
         data2 = res2.json()
         assert data2["status"] == "completo"
         assert data2["already_completed"] is True
+
+    def test_finaliza_convierte_medidas_cm_kg_a_canonico_in_lb(
+        self, client, capturista_headers, _test_db_conn, region_lon, capturista_user,
+    ):
+        """Bug fix: al finalizar una solicitud capturada en cm/kg, las medidas
+        deben quedar en in/lb canónico (antes: /finalizar-registro nunca
+        convertía, dejando valores crudos en cm/kg pese a status='completo')."""
+        ids = self._seed_borrador_estudio(
+            _test_db_conn, region_lon, capturista_user,
+            unidad_captura="cm", unidad_peso_captura="kg",
+            altura_total_in=25.4, peso_kg=100.0,
+            medida_cabeza_asiento=25.4, medida_hombro_asiento=30.48,
+            medida_prof_asiento=35.56, medida_rodilla_talon=40.64,
+            medida_ancho_cadera=45.72,
+        )
+
+        res = client.post(
+            "/api/finalizar-registro",
+            json={"estudio_id": ids["estudio_id"], "solicitud_id": ids["solicitud_id"]},
+            headers=capturista_headers,
+        )
+        assert res.status_code == 200, f"Expected 200, got {res.status_code}: {res.text}"
+
+        get_res = client.get(f"/api/solicitudes/{ids['solicitud_id']}", headers=capturista_headers)
+        assert get_res.status_code == 200
+        solicitud = get_res.json()
+
+        # Audit trail: unidad_captura/unidad_peso_captura record what was
+        # originally typed and are never rewritten to "canonical".
+        assert solicitud["unidad_captura"] == "cm"
+        assert solicitud["unidad_peso_captura"] == "kg"
+        # Numeric values are now canonical in/lb.
+        assert float(solicitud["altura_total_in"]) == pytest.approx(10.0, abs=0.001)
+        assert float(solicitud["peso_kg"]) == pytest.approx(220.462, abs=0.001)
+        assert float(solicitud["medida_cabeza_asiento"]) == pytest.approx(10.0, abs=0.001)
+        assert float(solicitud["medida_hombro_asiento"]) == pytest.approx(12.0, abs=0.001)
+        assert float(solicitud["medida_prof_asiento"]) == pytest.approx(14.0, abs=0.001)
+        assert float(solicitud["medida_rodilla_talon"]) == pytest.approx(16.0, abs=0.001)
+        assert float(solicitud["medida_ancho_cadera"]) == pytest.approx(18.0, abs=0.001)
+
+    def test_finaliza_no_reconvierte_si_solicitud_ya_completo(
+        self, client, capturista_headers, _test_db_conn, region_lon, capturista_user,
+    ):
+        """Idempotency guard: if the solicitud is already 'completo' (e.g.
+        finalized earlier via the legacy PATCH endpoint) while the estudio is
+        still 'borrador', finalizar-registro must NOT re-convert its
+        already-canonical measurement values a second time."""
+        ids = self._seed_borrador_estudio(
+            _test_db_conn, region_lon, capturista_user,
+            unidad_captura="cm", unidad_peso_captura="kg",
+            altura_total_in=10.0, peso_kg=220.462,
+            medida_cabeza_asiento=10.0, medida_hombro_asiento=12.0,
+            medida_prof_asiento=14.0, medida_rodilla_talon=16.0,
+            medida_ancho_cadera=18.0,
+            solicitud_status="completo",
+        )
+
+        res = client.post(
+            "/api/finalizar-registro",
+            json={"estudio_id": ids["estudio_id"], "solicitud_id": ids["solicitud_id"]},
+            headers=capturista_headers,
+        )
+        assert res.status_code == 200, f"Expected 200, got {res.status_code}: {res.text}"
+
+        get_res = client.get(f"/api/solicitudes/{ids['solicitud_id']}", headers=capturista_headers)
+        assert get_res.status_code == 200
+        solicitud = get_res.json()
+
+        assert float(solicitud["altura_total_in"]) == pytest.approx(10.0, abs=0.001)
+        assert float(solicitud["peso_kg"]) == pytest.approx(220.462, abs=0.001)
+        assert float(solicitud["medida_cabeza_asiento"]) == pytest.approx(10.0, abs=0.001)
+        assert float(solicitud["medida_hombro_asiento"]) == pytest.approx(12.0, abs=0.001)
+        assert float(solicitud["medida_prof_asiento"]) == pytest.approx(14.0, abs=0.001)
+        assert float(solicitud["medida_rodilla_talon"]) == pytest.approx(16.0, abs=0.001)
+        assert float(solicitud["medida_ancho_cadera"]) == pytest.approx(18.0, abs=0.001)
 
     def test_invalid_estudio_id_returns_422(self, client, capturista_headers):
         """TRIANGULATE: negative or zero estudio_id is rejected."""

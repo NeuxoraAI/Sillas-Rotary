@@ -16,7 +16,12 @@ from pydantic import BaseModel, field_validator
 
 from database import get_db, _DBAdapter
 from routers.auth import CurrentUser, assert_resource_owner, require_roles
-from validators import field_label, validate_curp
+from validators import (
+    field_label,
+    validate_curp,
+    normalize_medidas_to_canonical,
+    MEDIDA_TECNICA_COLUMNS,
+)
 
 router = APIRouter()
 
@@ -310,13 +315,31 @@ def finalizar_registro(
         (finalizado_at, body.estudio_id),
     )
 
+    # Convert measurement values to canonical in/lb on the first
+    # borrador -> completo transition. solicitud_row was fetched in step 1
+    # before any write, so its status still reflects the pre-update state.
+    # Guard against re-converting: the solicitud could already be "completo"
+    # here (e.g. finalized earlier via the legacy PATCH endpoint while the
+    # estudio remained "borrador") — re-running conversion in that case
+    # would double-convert already-canonical values. unidad_captura /
+    # unidad_peso_captura are a permanent audit trail of the original
+    # capture unit and are never rewritten, so they can't be used to detect
+    # "already converted" — only solicitud_row["status"] can.
+    solicitud_updates = {"status": "completo", "finalizado_at": finalizado_at}
+    if solicitud_row["status"] != "completo":
+        raw_medidas = {col: solicitud_row[col] for col in MEDIDA_TECNICA_COLUMNS}
+        raw_medidas["peso_kg"] = solicitud_row["peso_kg"]
+        solicitud_updates.update(normalize_medidas_to_canonical(
+            raw_medidas,
+            unidad_medida=solicitud_row["unidad_captura"] or "in",
+            unidad_peso_captura=solicitud_row["unidad_peso_captura"] or "lb",
+        ))
+
+    set_clause = ", ".join(f"{k} = %s" for k in solicitud_updates)
+    values = list(solicitud_updates.values()) + [body.solicitud_id]
     db.execute(
-        """
-        UPDATE solicitudes_tecnicas
-        SET status = 'completo', finalizado_at = %s, updated_at = NOW()
-        WHERE id = %s
-        """,
-        (finalizado_at, body.solicitud_id),
+        f"UPDATE solicitudes_tecnicas SET {set_clause}, updated_at = NOW() WHERE id = %s",
+        values,
     )
 
     return FinalizarRegistroResponse(
