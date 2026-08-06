@@ -2928,6 +2928,13 @@
             }
             if (b.estado_codigo) {
               _setVal("estado_codigo", b.estado_codigo);
+              // estado_codigo está mejorado por sr-select.js (combobox
+              // buscable): el widget oculta el <select> nativo y solo
+              // refresca su etiqueta visible con "change" o "sr:refresh"
+              // (ver sr-select.js). _setVal solo asigna .value, así que sin
+              // este evento el trigger visible se queda en "Seleccionar…"
+              // aunque el valor restaurado sí sea correcto.
+              document.getElementById("estado_codigo")?.dispatchEvent(new Event("sr:refresh"));
               await loadMunicipiosCatalog();
               renderMunicipiosSelect(b.estado_codigo, b.ciudad || "");
             }

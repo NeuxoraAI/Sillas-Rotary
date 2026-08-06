@@ -949,19 +949,36 @@
             setVal("medida_prof_asiento", data.medida_prof_asiento);
             setVal("medida_rodilla_talon", data.medida_rodilla_talon);
             setVal("medida_ancho_cadera", data.medida_ancho_cadera);
-            // Restore a previously uploaded photo. This path runs before the
-            // photo machinery is initialized, so only set the state here; the
-            // preview is rendered after setupPhotoInputs() via restorePhotoPreview().
+            // Restore a previously uploaded photo. This runs inside the
+            // async draft-restore continuation (after await
+            // DraftStore.hydrateIfNeeded()), which always resolves AFTER
+            // the top-level synchronous script — including
+            // setupPhotoInputs() — has already run. Render the preview here
+            // directly instead of relying on a synchronous post-setup check,
+            // which would run before these variables are set and silently
+            // never show the restored photo.
             if (data.foto_url) {
               uploadedPhotoUrl = data.foto_url;
               uploadedPhotoPreviewUrl = data.foto_url_resolved || null;
+              if (!photoPreviewState.sourceUrl && !photoPreviewState.objectUrl) {
+                setPhotoPreviewFromStoredUrl(uploadedPhotoPreviewUrl || uploadedPhotoUrl);
+                renderPhotoStatus();
+                renderPhotoPreviewCard();
+              }
             }
-            // Similarly, restore estudio clínico state so the post-setup
-            // block can render the preview.
+            // Similarly, restore estudio clínico state and render its preview.
             if (data.estudio_clinico_url) {
               uploadedEstudioPath = data.estudio_clinico_path || null;
               uploadedEstudioUrl = data.estudio_clinico_url;
               uploadedEstudioPreviewUrl = data.estudio_clinico_url_resolved || null;
+              if (!estudioPreviewState.sourceUrl && !estudioPreviewState.objectUrl) {
+                const guessedType = (uploadedEstudioPath || "").toLowerCase().endsWith(".pdf")
+                  ? "application/pdf"
+                  : "image/jpeg";
+                setEstudioPreviewFromStoredUrl(uploadedEstudioPreviewUrl || uploadedEstudioUrl, guessedType);
+                renderEstudioStatus();
+                renderEstudioPreviewCard();
+              }
             }
           } catch (err) {
             console.error("Error loading localStorage draft:", err);
@@ -2349,22 +2366,10 @@
       }
 
       setupPhotoInputs();
-      // Render a photo restored by the synchronous localStorage-draft path,
-      // which sets uploadedPhotoUrl before the photo machinery existed.
-      if (uploadedPhotoUrl && !photoPreviewState.sourceUrl && !photoPreviewState.objectUrl) {
-        setPhotoPreviewFromStoredUrl(uploadedPhotoPreviewUrl || uploadedPhotoUrl);
-        renderPhotoStatus();
-        renderPhotoPreviewCard();
-      }
-      // Render a stored estudio clínico set during localStorage-draft restore.
-      if (uploadedEstudioUrl && !estudioPreviewState.sourceUrl && !estudioPreviewState.objectUrl) {
-        const guessedType = (uploadedEstudioPath || "").toLowerCase().endsWith(".pdf")
-          ? "application/pdf"
-          : "image/jpeg";
-        setEstudioPreviewFromStoredUrl(uploadedEstudioPreviewUrl || uploadedEstudioUrl, guessedType);
-        renderEstudioStatus();
-        renderEstudioPreviewCard();
-      }
+      // Note: rendering a photo/estudio clínico preview restored from a
+      // draft happens inside the async draft-restore continuation above
+      // (it always resolves after this synchronous script finishes, so a
+      // check here would never see the restored uploadedPhotoUrl in time).
       setupUnidadMedidaLabels();
       setupImageZoom();
       _setupDiagnosticoValidation();
