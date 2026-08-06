@@ -1,10 +1,9 @@
-import io
 import json
 import os
 import uuid
 from decimal import Decimal
 from urllib.parse import urlparse, unquote
-from datetime import datetime, timezone, date
+from datetime import datetime, timezone
 from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File
@@ -14,6 +13,7 @@ from supabase import create_client
 
 from database import get_db, _DBAdapter
 from audit import registrar_evento
+from excel_export import build_beneficiarios_workbook
 from routers.auth import CurrentUser, _assert_case_pair, assert_resource_owner, require_roles
 from validators import (
     validate_padecimiento,
@@ -811,18 +811,98 @@ def listar_beneficiarios_tecnica(
     }
 
 
-def _calcular_edad(fecha_nacimiento_str: Optional[str]) -> Optional[int]:
-    """Calcular edad en años a partir de fecha_nacimiento (texto)."""
-    if not fecha_nacimiento_str:
-        return None
-    for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%m/%d/%Y", "%d-%m-%Y"):
-        try:
-            born = datetime.strptime(fecha_nacimiento_str.strip(), fmt).date()
-            today = date.today()
-            return today.year - born.year - ((today.month, today.day) < (born.month, born.day))
-        except ValueError:
-            continue
-    return None
+# ---------------------------------------------------------------------------
+# Beneficiarios export (shared by /tecnica/beneficiarios/export and
+# /admin/beneficiarios/export — see backend/excel_export.py for the workbook
+# builder both endpoints call with the rows this query produces).
+# ---------------------------------------------------------------------------
+
+_EXPORT_QUERY = """
+    SELECT
+        b.id AS beneficiario_id,
+        b.curp_benef,
+        b.nombre,
+        b.nombres,
+        b.apellido_paterno,
+        b.apellido_materno,
+        b.fecha_nacimiento,
+        b.sexo,
+        b.diagnostico,
+        b.telefonos,
+        b.calle,
+        b.num_ext,
+        b.num_int,
+        b.colonia,
+        b.ciudad,
+        b.estado_nombre,
+        COALESCE(p.nombre, '') AS pais_nombre,
+        COALESCE(r.nombre, '') AS region_nombre,
+        e.sede,
+        e.fecha_estudio,
+        st.status AS solicitud_status,
+        st.entorno,
+        st.control_tronco,
+        st.control_cabeza,
+        st.control_de_piernas,
+        st.padecimiento,
+        st.soporte_oxigeno,
+        st.altura_total_in,
+        st.peso_kg,
+        st.medida_cabeza_asiento,
+        st.medida_hombro_asiento,
+        st.medida_prof_asiento,
+        st.medida_rodilla_talon,
+        st.medida_ancho_cadera,
+        st.unidad_captura,
+        st.unidad_peso_captura,
+        st.equipo_solicitado,
+        st.foto_url,
+        st.entidad_solicitante,
+        st.prioridad,
+        st.justificacion,
+        t1.nombre_completo AS tutor1_nombre,
+        t1.email AS tutor1_email,
+        t2.nombre_completo AS tutor2_nombre,
+        t2.email AS tutor2_email
+    FROM beneficiarios b
+    LEFT JOIN LATERAL (
+        SELECT * FROM estudios_socioeconomicos
+        WHERE beneficiario_id = b.id ORDER BY id DESC LIMIT 1
+    ) e ON true
+    LEFT JOIN LATERAL (
+        SELECT * FROM solicitudes_tecnicas
+        WHERE beneficiario_id = b.id ORDER BY id DESC LIMIT 1
+    ) st ON true
+    LEFT JOIN regiones r ON r.id = b.region_id
+    LEFT JOIN paises p ON p.id = r.pais_id
+    LEFT JOIN LATERAL (
+        SELECT
+            COALESCE(
+                NULLIF(TRIM(CONCAT_WS(' ', nombres, apellido_paterno, apellido_materno)), ''),
+                nombre
+            ) AS nombre_completo,
+            email
+        FROM tutores WHERE beneficiario_id = b.id AND numero_tutor = 1
+    ) t1 ON true
+    LEFT JOIN LATERAL (
+        SELECT
+            COALESCE(
+                NULLIF(TRIM(CONCAT_WS(' ', nombres, apellido_paterno, apellido_materno)), ''),
+                nombre
+            ) AS nombre_completo,
+            email
+        FROM tutores WHERE beneficiario_id = b.id AND numero_tutor = 2
+    ) t2 ON true
+    WHERE {where_clause}
+    ORDER BY b.nombre ASC
+"""
+
+
+def _prepare_export_row(row: dict) -> dict:
+    """Resolve storage:// references to browser-accessible URLs before handing
+    the row to the Excel builder (which has no DB/storage knowledge)."""
+    row["foto_url_resolved"] = _resolve_storage_url(row.get("foto_url"), _BUCKET)
+    return row
 
 
 @router.get("/tecnica/beneficiarios/export")
@@ -869,148 +949,10 @@ def exportar_beneficiarios_tecnica(
         where_clause += f" AND b.id IN ({placeholders})"
         params.extend(ids_list)
 
-    rows = db.execute(
-        f"""
-        SELECT
-            b.id AS beneficiario_id,
-            b.curp_benef,
-            b.nombre,
-            b.email,
-            b.calle,
-            b.num_ext,
-            b.colonia,
-            b.ciudad,
-            b.estado_nombre,
-            b.telefonos,
-            b.diagnostico,
-            b.fecha_nacimiento,
-            st.peso_kg,
-            st.altura_total_in,
-            st.unidad_captura,
-            st.padecimiento,
-            st.justificacion,
-            st.entidad_solicitante,
-            t.nombre AS tutor_nombre
-        FROM beneficiarios b
-        LEFT JOIN estudios_socioeconomicos e ON e.beneficiario_id = b.id
-        LEFT JOIN solicitudes_tecnicas st ON st.beneficiario_id = b.id
-        LEFT JOIN regiones r ON r.id = b.region_id
-        LEFT JOIN paises p ON p.id = r.pais_id
-        LEFT JOIN LATERAL (
-            SELECT nombre FROM tutores WHERE beneficiario_id = b.id ORDER BY numero_tutor LIMIT 1
-        ) t ON true
-        WHERE {where_clause}
-        ORDER BY b.nombre ASC
-        """,
-        tuple(params),
-    ).fetchall()
+    rows = db.execute(_EXPORT_QUERY.format(where_clause=where_clause), tuple(params)).fetchall()
 
-    from openpyxl import Workbook
-    from openpyxl.styles import Alignment, Font, PatternFill
-    from openpyxl.worksheet.table import Table, TableStyleInfo
-    wb = Workbook()
-    ws = wb.active
-    ws.title = "MASTER"
-
-    headers = [
-        "# EXPEDIENTE",
-        "Nombre de Niño(a) Adolescente",
-        "Correo electrónico ",
-        "Dirección (calle, numero)",
-        "Colonia o comunidad",
-        "Municipio (ciudad) y Estado",
-        "Número de teléfono Fijo",
-        "No. de teléfono adicional",
-        "Padecimiento",
-        "Fecha de nacimiento",
-        "EDAD",
-        "PESO (lb)",
-        "ESTATURA (in)",
-        "Nombre de Padre o tutor",
-        "Club o A sociación",
-        "QUIEN CANALIZA",
-        "OBSERVACIONES ",
-    ]
-
-    # Fila 1 vacía (plantilla original tiene fila 1 vacía)
-    ws.append([])
-    # Fila 2: headers
-    ws.append(headers)
-
-    header_fill = PatternFill(fill_type="solid", fgColor="1F4E78")
-    header_font = Font(color="FFFFFF", bold=True)
-    for cell in ws[2]:
-        cell.fill = header_fill
-        cell.font = header_font
-        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
-
-    for row in rows:
-        direccion = (row["calle"] or "") + (f' {row["num_ext"]}' if row.get("num_ext") else "")
-        municipio_estado = (row["ciudad"] or "") + (f', {row["estado_nombre"]}' if row.get("estado_nombre") else "")
-
-        altura_in = row.get("altura_total_in")
-
-        edad = _calcular_edad(row.get("fecha_nacimiento"))
-
-        ws.append([
-            row.get("curp_benef") or row.get("beneficiario_id"),
-            row.get("nombre") or "",
-            row.get("email") or "Sin correo",
-            direccion,
-            row.get("colonia") or "",
-            municipio_estado,
-            row.get("telefonos") or "",
-            "",  # teléfono adicional — no hay campo separado
-            row.get("diagnostico") or "",
-            row.get("fecha_nacimiento") or "",
-            edad,
-            row.get("peso_kg"),
-            altura_in,
-            row.get("tutor_nombre") or "",
-            row.get("entidad_solicitante") or "",  # Club o Asociación — mapeamos a entidad solicitante
-            "",  # QUIEN CANALIZA — no hay campo
-            row.get("padecimiento") or "",
-        ])
-
-    ws.freeze_panes = "A3"
-
-    column_widths = {
-        "A": 18,
-        "B": 34,
-        "C": 24,
-        "D": 28,
-        "E": 24,
-        "F": 28,
-        "G": 20,
-        "H": 20,
-        "I": 24,
-        "J": 18,
-        "K": 10,
-        "L": 12,
-        "M": 14,
-        "N": 28,
-        "O": 24,
-        "P": 22,
-        "Q": 34,
-    }
-    for col, width in column_widths.items():
-        ws.column_dimensions[col].width = width
-
-    if ws.max_row >= 2:
-        table = Table(displayName="BeneficiariosTecnica", ref=f"A2:Q{ws.max_row}")
-        style = TableStyleInfo(
-            name="TableStyleMedium9",
-            showFirstColumn=False,
-            showLastColumn=False,
-            showRowStripes=True,
-            showColumnStripes=False,
-        )
-        table.tableStyleInfo = style
-        ws.add_table(table)
-
-    buffer = io.BytesIO()
-    wb.save(buffer)
-    buffer.seek(0)
+    export_rows = [_prepare_export_row(dict(row)) for row in rows]
+    buffer = build_beneficiarios_workbook(export_rows)
 
     registrar_evento(
         db,
@@ -1022,7 +964,7 @@ def exportar_beneficiarios_tecnica(
         request=request,
     )
 
-    filename = f"BASE_DE_DATOS_EXPORT_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    filename = f"Beneficiarios_Tecnico_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx"
     return StreamingResponse(
         buffer,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
