@@ -9,12 +9,6 @@
 }
 .animate-fade-in { animation: fadeIn 0.2s ease-out; }
 
-/* Status badges */
-.badge-sin_iniciar       { background: #f1f5f9; color: #475569; }
-.badge-en_proceso        { background: #ede7f6; color: var(--c-purple); }
-.badge-finalizado        { background: #dcfce7; color: #15803d; }
-.badge-revision_pendiente { background: #fff7ed; color: #c2410c; }
-
 /* Filter panel slide */
 .filter-panel {
   transition: max-height 0.3s ease, opacity 0.2s ease;

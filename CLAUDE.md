@@ -25,9 +25,11 @@ The project is in **active implementation**. The `PRD.md` file at the repository
 | File                       | Role Access          | Purpose                                                    |
 | -------------------------- | -------------------- | ---------------------------------------------------------- |
 | `front/login.html`         | All                  | Email + password → JWT; routes by role                     |
-| `front/seleccion-region.html` | capturista, tecnico | Select país/región + sede; saves `region_ctx` to localStorage |
-| `front/socioeconomico.html`| capturista           | Beneficiary + guardian data + study; sends region_id + sede |
-| `front/tecnica.html`       | tecnico              | Posture, measurements, photo upload, priority              |
+| `front/seleccion-region.html` | capturista, organizacion | Select país/región + sede; saves `region_ctx` to localStorage |
+| `front/Capturista-view/socioeconomico.html`| capturista, organizacion | Beneficiary + guardian data + study; sends region_id + sede |
+| `front/Capturista-view/tecnica.html`| capturista, organizacion | Posture, measurements, photo upload, priority (technical data capture form) |
+| `front/Tecnico-view/vista_tecnicos.html` | tecnico | Read-only view of ALL beneficiarios/estudios, no assignment scoping; same content as Admin's detail view; Excel export. No edit/delete — técnico has no write endpoints and no manufacturing/assignment workflow (removed) |
+| `front/admin-beneficiarios.html` | admin           | Full CRUD on beneficiarios/estudios/solicitudes; Excel export; reference implementation for técnico's read-only view |
 | `front/admin-usuarios.html`| admin                | Create/list/deactivate system users                        |
 | `front/admin-regiones.html`| admin                | Create/list países and regiones (folio catalog)            |
 
@@ -37,9 +39,9 @@ The project is in **active implementation**. The `PRD.md` file at the repository
 login.html
   POST /api/auth/login {email, password}
   → localStorage['session'] = {token, nombre, rol, usuario_id}
-  → admin        → admin-usuarios.html
+  → admin        → admin-beneficiarios.html
   → capturista   → seleccion-region.html → socioeconomico.html
-  → tecnico      → seleccion-region.html → tecnica.html
+  → tecnico      → Tecnico-view/vista_tecnicos.html (direct, no region selection — técnico is not tied to a capture region)
   → organizacion → seleccion-region.html → socioeconomico.html (captures on behalf of volunteers)
 
 seleccion-region.html
@@ -68,7 +70,7 @@ All 9 routers are mounted under the `/api` prefix in `backend/main.py` (`include
 | `usuarios.py`         | admin                                           | `POST/GET /usuarios`, `PATCH /usuarios/{id}`, `DELETE /usuarios/{id}`         |
 | `regiones.py`         | auth (reads) / admin (writes)                   | `GET /paises`, `PATCH /paises/{id}`, `GET /regiones`, `PATCH /regiones/{id}`  |
 | `socioeconomico.py`   | capturista, organizacion, admin (+ tecnico on doc read) | `POST /estudios`, `GET/PATCH /estudios/{id}`, `POST /upload-documento`, `GET /me/capturas` |
-| `tecnica.py`          | tecnico, admin (+ capturista, organizacion for shared reads/uploads) | `POST /solicitudes`, `GET /solicitudes/{id}`, `POST /upload-foto`, `POST /tecnica/procesos/{id}/finalizar` |
+| `tecnica.py`          | tecnico, admin (+ capturista, organizacion for shared reads/uploads) | `POST /solicitudes`, `GET /solicitudes/{id}`, `POST /upload-foto`; técnico-only read surface: `GET /tecnica/beneficiarios`, `GET /tecnica/beneficiarios/export`, `GET /tecnica/beneficiarios/{id}` (all unrestricted — no assignment/ownership filter) |
 | `admin.py`            | admin                                           | `GET /admin/beneficiarios`, `GET /admin/beneficiarios/export`, `PATCH/DELETE /admin/beneficiarios/{id}` |
 | `regiones.py`         | see above                                       | (folio catalog: países / regiones)                                           |
 | `perfiles.py`         | auth / admin (per endpoint)                     | `GET/PATCH /me/perfil`, `GET /me/heatmap`, `GET/POST /organizaciones`, `POST /organizaciones/{id}/lider` |
@@ -80,7 +82,8 @@ Role enforcement uses the `require_auth` / `require_admin` / `require_roles(...)
 ## Architecture Decisions
 
 - **JWT auth**: HS256 tokens, 8h expiry (`JWT_EXPIRE_HOURS`, default 8). Secret from `JWT_SECRET` env var (must be ≥32 bytes; the dev placeholder is rejected at startup). Dependencies: `require_auth` / `require_admin` / `require_roles(...)` in `backend/routers/auth.py`.
-- **Roles** (4): `admin`, `capturista`, `tecnico`, `organizacion`. Admin manages users and regions. Capturista does socioeconomic studies. Tecnico does technical exams. **Organizacion** accounts capture studies on behalf of volunteers who have NO system account — the volunteer's name is stored in `estudios.elaboro_estudio`, and `_upsert_voluntario` (`backend/routers/socioeconomico.py:738-741`) tracks their capture count. An org **leader** (via the `organizaciones_lideres` table) can see all studies captured under their organization through the `assert_resource_owner` leader bypass (`backend/routers/auth.py:163-196`).
+- **Roles** (4): `admin`, `capturista`, `tecnico`, `organizacion`. Admin manages users and regions. Capturista does socioeconomic studies. **Organizacion** accounts capture studies on behalf of volunteers who have NO system account — the volunteer's name is stored in `estudios.elaboro_estudio`, and `_upsert_voluntario` (`backend/routers/socioeconomico.py:738-741`) tracks their capture count. An org **leader** (via the `organizaciones_lideres` table) can see all studies captured under their organization through the `assert_resource_owner` leader bypass (`backend/routers/auth.py:163-196`).
+- **Técnico role**: read-only, admin-equivalent. Técnico can view every beneficiario/estudio/solicitud in the system with no assignment or ownership restriction (same `assert_resource_owner` bypass as admin — `backend/routers/auth.py`), sees the same content as Admin's detail view (`front/Tecnico-view/vista_tecnicos.html` mirrors `front/admin-beneficiarios.html`'s sections), and can export to Excel respecting active filters — but has zero write access (no técnico role in any create/update/delete endpoint). A previous "proceso de manufactura" workflow (assigned records, técnico-initiated processing) was fully removed from routes/UI; the `procesos_tecnicos`/`procesos_tecnicos_participantes` tables remain in `backend/init_db.py` for referential-integrity/cleanup purposes only (not dropped, not used by any live endpoint).
 - **Folio generation**: Atomic `INSERT ... ON CONFLICT DO UPDATE` on `region_counters`. Format: `{PAIS}-{REGION}-{YEAR}-{SEQ:03d}`. Generated server-side on POST /estudios.
 - **Region context**: `region_id` and `sede` travel from `seleccion-region.html` via `localStorage['region_ctx']` into the POST /estudios body. NOT re-prompted per study.
 - **Draft saving**: Both `/estudios` and `/solicitudes` support `status = 'borrador'`. IDs stored in localStorage for PATCH resumption.

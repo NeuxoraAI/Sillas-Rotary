@@ -52,12 +52,38 @@ def test_tecnica_renders_readonly_snapshot_and_participants() -> None:
     assert "id=\"modal-content\"" in html
     assert "Tutores / Referencias" in html
     assert "modal-tabs" in html
-    assert '{ id: "ident", label: "Identificación"' in html
-    assert '{ id: "clin",  label: "Datos clínicos"' in html
-    assert '{ id: "obs",   label: "Observaciones"' in html
-    assert '{ id: "files", label: "Archivos"' in html
+    assert '{ id: "ident",   label: "Identificación"' in html
+    assert '{ id: "estudio", label: "Estudio"' in html
+    assert '{ id: "clin",    label: "Datos clínicos"' in html
+    assert '{ id: "obs",     label: "Observaciones"' in html
+    assert '{ id: "gestion", label: "Gestión"' in html
+    assert '{ id: "files",   label: "Archivos"' in html
     assert "Vista de solo lectura" in html
     assert "modalFooter.classList.add(\"hidden\");" in html
+
+
+def test_tecnica_detail_matches_admin_content_parity() -> None:
+    """Business rule: técnico must see exactly the same info as Admin, read-only.
+    Admin's read view has sections for entorno/control_de_piernas, full
+    estudio-socioeconómico metadata, Gestión de Donación, and full tutor
+    profiles — these must not be missing from técnico's modal (regression
+    guard for the audit finding that técnico's modal was a thin subset)."""
+    html = _read(TECNICA_FILE)
+
+    assert "solicitud.entorno" in html
+    assert "solicitud.control_de_piernas" in html
+    assert "solicitud.entidad_solicitante" in html
+    assert "solicitud.prioridad" in html
+    assert "solicitud.justificacion" in html
+    assert "estudio.fecha_estudio" in html
+    assert "estudio.tuvo_silla_previa" in html
+    assert "estudio.elaboro_estudio" in html
+    assert "ben.apellido_paterno" in html
+    assert "ben.apellido_materno" in html
+    assert "ben.fecha_nacimiento" in html
+    assert "t.nivel_estudios" in html
+    assert "t.estado_civil" in html
+    assert "t.ingreso_mensual" in html
 
 
 def test_admin_users_does_not_declare_stale_pending_reviews_widget() -> None:
