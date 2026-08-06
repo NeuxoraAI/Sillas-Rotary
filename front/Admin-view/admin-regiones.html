@@ -376,6 +376,21 @@
   document.getElementById('pais-codigo').addEventListener('input', function () { this.value = this.value.toUpperCase(); });
   document.getElementById('region-codigo').addEventListener('input', function () { this.value = this.value.toUpperCase(); });
 
+  // Delegated on the (static) lists — survive re-renders from loadPaises()/
+  // loadRegiones(). Values travel via escaped data-* attributes rather than
+  // inline onclick(${JSON.stringify(...)}), which breaks HTML attribute
+  // parsing whenever the interpolated string contains a double quote.
+  document.getElementById('lista-paises').addEventListener('click', function (e) {
+    const btn = e.target.closest('[data-action="edit-pais"]');
+    if (!btn) return;
+    openEditPais(btn.dataset.id, btn.dataset.nombre, btn.dataset.codigo);
+  });
+  document.getElementById('lista-regiones').addEventListener('click', function (e) {
+    const btn = e.target.closest('[data-action="edit-region"]');
+    if (!btn) return;
+    openEditRegion(btn.dataset.id, btn.dataset.nombre, btn.dataset.codigo);
+  });
+
   // ── Load países ──────────────────────────────────────────────────────────────
   let _paisesCache = [];    // includes inactive for admin management
   let _regionesCache = [];
@@ -434,7 +449,7 @@
         </div>
         ${_estadoBadge(p.activo)}
         <div class="flex items-center gap-1 shrink-0 ml-1">
-          <button onclick="openEditPais(${p.pais_id}, ${JSON.stringify(p.nombre)}, ${JSON.stringify(p.codigo)})"
+          <button data-action="edit-pais" data-id="${p.pais_id}" data-nombre="${_esc(p.nombre)}" data-codigo="${_esc(p.codigo)}"
             class="w-8 h-8 rounded-lg border border-slate-200 text-slate-400 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-200 transition-all flex items-center justify-center"
             title="Editar país">
             <span class="material-symbols-outlined" style="font-size:17px">edit</span>
@@ -529,7 +544,7 @@
             </div>
             ${_estadoBadge(r.activo)}
             <div class="flex items-center gap-1 shrink-0 ml-1">
-              <button onclick="openEditRegion(${r.region_id}, ${JSON.stringify(r.nombre)}, ${JSON.stringify(r.codigo)})"
+              <button data-action="edit-region" data-id="${r.region_id}" data-nombre="${_esc(r.nombre)}" data-codigo="${_esc(r.codigo)}"
                 class="w-8 h-8 rounded-lg border border-slate-200 text-slate-400 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-200 transition-all flex items-center justify-center"
                 title="Editar región">
                 <span class="material-symbols-outlined" style="font-size:17px">edit</span>

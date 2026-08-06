@@ -600,6 +600,16 @@
         .getElementById("btn-refresh")
         .addEventListener("click", loadUsuarios);
 
+      // Delegated on the (static) tbody — survives re-renders from loadUsuarios().
+      // Values travel via escaped data-* attributes rather than inline
+      // onclick(${JSON.stringify(...)}), which breaks HTML attribute parsing
+      // whenever the interpolated string contains a double quote.
+      document.getElementById("tabla-usuarios").addEventListener("click", function (e) {
+        const btn = e.target.closest('[data-action="edit-usuario"]');
+        if (!btn) return;
+        openEditUser(btn.dataset.id, btn.dataset.nombre, btn.dataset.email, btn.dataset.rol);
+      });
+
       // ── Load users table ────────────────────────────────────────────────────────
       async function loadUsuarios() {
         const tbody = document.getElementById("tabla-usuarios");
@@ -666,7 +676,7 @@
                 </button>`
                 : ''
               }
-              <button onclick="openEditUser(${u.usuario_id}, ${JSON.stringify(u.nombre)}, ${JSON.stringify(u.email)}, ${JSON.stringify(u.rol)})"
+              <button data-action="edit-usuario" data-id="${u.usuario_id}" data-nombre="${_esc(u.nombre)}" data-email="${_esc(u.email)}" data-rol="${_esc(u.rol)}"
                 class="btn-icon hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200"
                 title="Editar usuario" aria-label="Editar usuario">
                 <span class="material-symbols-outlined" aria-hidden="true">edit</span>
