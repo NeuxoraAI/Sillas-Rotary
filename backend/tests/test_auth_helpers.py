@@ -39,8 +39,15 @@ def test_assert_resource_owner_allows_admin() -> None:
     assert_resource_owner(row_user_id=15, user=_user("admin", user_id=99))
 
 
-def test_assert_resource_owner_rejects_non_owner_non_admin() -> None:
+def test_assert_resource_owner_allows_tecnico() -> None:
+    """Técnico is a read-only, admin-equivalent role: it must be able to
+    read any resource regardless of ownership (business rule: no
+    assignment/ownership restriction for técnico)."""
+    assert_resource_owner(row_user_id=15, user=_user("tecnico", user_id=99))
+
+
+def test_assert_resource_owner_rejects_non_owner_non_admin_non_tecnico() -> None:
     with pytest.raises(HTTPException) as exc:
-        assert_resource_owner(row_user_id=15, user=_user("tecnico", user_id=18))
+        assert_resource_owner(row_user_id=15, user=_user("capturista", user_id=18))
 
     assert exc.value.status_code == 403

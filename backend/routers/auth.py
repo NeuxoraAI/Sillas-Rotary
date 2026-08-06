@@ -252,8 +252,14 @@ def assert_resource_owner(
     organization whose capture scope includes ``row_user_id`` is granted access.
     The org is derived from the capturer (``row_user_id``), so no estudio id is
     needed.
+
+    Técnico gets the same unrestricted bypass as admin: técnico is a
+    read-only, admin-equivalent role that can view every record, and never
+    owns a solicitud/estudio itself (write endpoints exclude técnico), so an
+    ownership check would only ever reject a técnico reading a legitimate
+    record.
     """
-    if user.rol == "admin":
+    if user.rol in ("admin", "tecnico"):
         return
     if row_user_id == user.usuario_id:
         return
