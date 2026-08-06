@@ -456,12 +456,12 @@
           </button>
           ${p.activo
             ? `<button onclick="togglePais(${p.pais_id}, false)"
-                class="w-8 h-8 rounded-lg border border-amber-100 text-amber-500 hover:bg-amber-50 hover:text-amber-700 hover:border-amber-200 transition-all flex items-center justify-center"
+                class="w-8 h-8 rounded-lg border border-green-100 text-green-500 hover:bg-green-50 hover:text-green-700 hover:border-green-200 transition-all flex items-center justify-center"
                 title="Desactivar país">
                 <span class="material-symbols-outlined" style="font-size:17px">toggle_on</span>
               </button>`
             : `<button onclick="togglePais(${p.pais_id}, true)"
-                class="w-8 h-8 rounded-lg border border-green-100 text-green-500 hover:bg-green-50 hover:text-green-700 hover:border-green-200 transition-all flex items-center justify-center"
+                class="w-8 h-8 rounded-lg border border-red-100 text-red-500 hover:bg-red-50 hover:text-red-700 hover:border-red-200 transition-all flex items-center justify-center"
                 title="Activar país">
                 <span class="material-symbols-outlined" style="font-size:17px">toggle_off</span>
               </button>`
@@ -551,12 +551,12 @@
               </button>
               ${r.activo
                 ? `<button onclick="toggleRegion(${r.region_id}, false)"
-                    class="w-8 h-8 rounded-lg border border-amber-100 text-amber-500 hover:bg-amber-50 hover:text-amber-700 hover:border-amber-200 transition-all flex items-center justify-center"
+                    class="w-8 h-8 rounded-lg border border-green-100 text-green-500 hover:bg-green-50 hover:text-green-700 hover:border-green-200 transition-all flex items-center justify-center"
                     title="Desactivar región">
                     <span class="material-symbols-outlined" style="font-size:17px">toggle_on</span>
                   </button>`
                 : `<button onclick="toggleRegion(${r.region_id}, true)"
-                    class="w-8 h-8 rounded-lg border border-green-100 text-green-500 hover:bg-green-50 hover:text-green-700 hover:border-green-200 transition-all flex items-center justify-center"
+                    class="w-8 h-8 rounded-lg border border-red-100 text-red-500 hover:bg-red-50 hover:text-red-700 hover:border-red-200 transition-all flex items-center justify-center"
                     title="Activar región">
                     <span class="material-symbols-outlined" style="font-size:17px">toggle_off</span>
                   </button>`
