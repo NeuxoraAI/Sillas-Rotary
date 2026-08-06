@@ -1,4 +1,4 @@
-/* session-guard.js — Cross-tab session consistency for Ecosistema VIDA UG.
+/* session-guard.js — Cross-tab session consistency for SIG-Tec.
    Include via <script src="...assets/js/session-guard.js"></script> BEFORE
    page logic. Exposes window.SessionGuard (plain global — no ES modules). */
 (function () {

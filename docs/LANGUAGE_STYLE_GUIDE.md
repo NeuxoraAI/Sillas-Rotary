@@ -1,4 +1,4 @@
-# Guía de Estilo de Idioma — Ecosistema VIDA UG
+# Guía de Estilo de Idioma — SIG-Tec
 
 ## Registro Oficial
 

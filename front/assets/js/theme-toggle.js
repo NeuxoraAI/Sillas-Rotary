@@ -1,4 +1,4 @@
-/* theme-toggle.js — shared dark mode toggle for Ecosistema VIDA UG.
+/* theme-toggle.js — shared dark mode toggle for SIG-Tec.
    Include in <head> right after theme.css: applies the saved theme
    immediately (no flash) and injects a floating toggle button. */
 (function () {

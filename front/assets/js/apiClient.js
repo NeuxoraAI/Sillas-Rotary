@@ -1,4 +1,4 @@
-/* apiClient.js — Centralized API layer for Ecosistema VIDA UG.
+/* apiClient.js — Centralized API layer for SIG-Tec.
 
    Single point for: (1) the API base URL, (2) the Authorization header, and
    (3) request/error plumbing. Every view calls the backend through this module

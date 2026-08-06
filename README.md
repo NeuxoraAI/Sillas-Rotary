@@ -8,8 +8,8 @@
 
 <br/><br/>
 
-# Sistema Integral de Gestión Social y Técnica
-## Ecosistema VIDA UG
+# Sistema Integral de Gestión Social y Técnica (SIG-Tec)
+## Para el programa Ecosistema VIDA UG
 
 > Digitalización del programa de donación de sillas de ruedas — eliminando el papel en el trabajo de campo.
 
@@ -45,7 +45,7 @@
 
 ## ¿Qué es este sistema?
 
-El **Sistema Integral de Gestión Social y Técnica** es una aplicación web **mobile-first** diseñada para capturistas de campo del programa **Ecosistema VIDA UG** (Universidad de Guanajuato + Rotary 200).
+El **Sistema Integral de Gestión Social y Técnica (SIG-Tec)** es una aplicación web **mobile-first** diseñada para capturistas de campo del programa **Ecosistema VIDA UG** (Universidad de Guanajuato + Rotary 200).
 
 ### El problema que resuelve
 
@@ -503,7 +503,7 @@ León, Guanajuato, México &nbsp;·&nbsp; Lun–Sab 9:00–20:00
 
 <br/>
 
-*Proyecto desarrollado para el programa **Ecosistema VIDA UG** —*
+*SIG-Tec — proyecto desarrollado para el programa **Ecosistema VIDA UG** —*
 *Universidad de Guanajuato en colaboración con Rotary 200.*
 
 </div>

@@ -1,4 +1,4 @@
-/* change-password.js — Shared "change my password" form for Ecosistema VIDA UG.
+/* change-password.js — Shared "change my password" form for SIG-Tec.
 
    Self-contained IIFE (plain global — no ES modules, consistent with
    session-guard.js / apiClient.js). Renders a small form into a container and

@@ -1,6 +1,6 @@
-# PRD — Sistema Integral de Gestión Social y Técnica
+# PRD — Sistema Integral de Gestión Social y Técnica (SIG-Tec)
 
-**Producto**: Sistema digital de captura de datos para un programa de donación de sillas de ruedas (Ecosistema VIDA UG).
+**Producto**: SIG-Tec, sistema digital de captura de datos para un programa de donación de sillas de ruedas (Ecosistema VIDA UG).
 **Estado**: Implementación activa.
 **Naturaleza de este documento**: PRD *as-built* (tal como está construido). Cada afirmación factual se rastrea a un archivo fuente con rango de líneas o a un hecho verificado del esquema en vivo de Supabase. No contiene afirmaciones inventadas.
 
