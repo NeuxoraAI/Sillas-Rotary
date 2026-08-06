@@ -59,7 +59,7 @@ def _create_beneficiario(
     return row
 
 
-def _create_estudio(_test_db_conn, beneficiario_id: int, usuario_id: int, sede: str) -> dict:
+def _create_estudio(_test_db_conn, beneficiario_id: int, usuario_id: int, sede: str, status: str = "completo") -> dict:
     with _test_db_conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
         cur.execute(
             """
@@ -67,7 +67,7 @@ def _create_estudio(_test_db_conn, beneficiario_id: int, usuario_id: int, sede: 
                 (beneficiario_id, usuario_id, sede, status)
             VALUES (%s, %s, %s, %s) RETURNING *
             """,
-            (beneficiario_id, usuario_id, sede, "completo"),
+            (beneficiario_id, usuario_id, sede, status),
         )
         row = dict(cur.fetchone())
     _test_db_conn.commit()
@@ -196,6 +196,28 @@ def test_peso_range_filter(client, _test_db_conn, tecnico_user, tecnico_headers)
     data = res.json()
     assert data["total"] == 1
     assert data["items"][0]["peso_kg"] == 60.0
+
+
+@pytest.mark.integration
+def test_lista_incluye_estudios_en_borrador(client, _test_db_conn, tecnico_user, tecnico_headers):
+    """Business rule: técnico must see ALL records, no restrictions — including
+    estudios still in 'borrador' status (previously excluded by a filter that
+    only applied to the técnico role, inconsistent with the detail/export
+    endpoints which never had it)."""
+    pais = _create_pais(_test_db_conn, "MX-BORRADOR", "MXB")
+    region = _create_region(_test_db_conn, pais["id"], "Sur", "SUR")
+
+    b1 = _create_beneficiario(_test_db_conn, nombre="EnBorrador", region_id=region["id"])
+    _create_estudio(_test_db_conn, b1["id"], tecnico_user["id"], "Sede Z", status="borrador")
+
+    res = client.get(
+        f"/api/tecnica/beneficiarios?region_id={region['id']}",
+        headers=tecnico_headers,
+    )
+    assert res.status_code == 200
+    data = res.json()
+    assert data["total"] == 1
+    assert data["items"][0]["nombre"] == "EnBorrador"
 
 
 @pytest.mark.integration

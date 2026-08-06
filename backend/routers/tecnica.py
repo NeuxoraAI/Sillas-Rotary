@@ -770,12 +770,6 @@ def listar_beneficiarios_tecnica(
         tiene_foto=tiene_foto,
     )
 
-    # Técnicos only work on finalized captures — never on a capturista's
-    # in-progress draft. Admins keep full visibility through this endpoint
-    # (and the dedicated admin-beneficiarios view).
-    if _usuario.rol == "tecnico":
-        where_clause += " AND COALESCE(e.status, 'borrador') = 'completo'"
-
     offset = (page - 1) * per_page
 
     rows = db.execute(
@@ -783,6 +777,7 @@ def listar_beneficiarios_tecnica(
         SELECT
             b.id AS beneficiario_id,
             b.nombre,
+            b.curp_benef,
             b.telefonos,
             b.ciudad,
             COALESCE(p.nombre, '') AS pais_nombre,
@@ -1045,7 +1040,6 @@ def obtener_detalle_tecnico(
     snapshot = _build_snapshot(db, beneficiario_id)
     snapshot["permisos"] = {
         "readonly_base": True,
-        "can_operate": usuario.rol == "tecnico",
     }
     registrar_evento(
         db,

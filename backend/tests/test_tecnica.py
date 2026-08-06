@@ -314,7 +314,8 @@ class TestTecnicaRbac:
     ):
         """Regression #54 + #130: el capturista crea/posee la solicitud; el líder
         de la organización que la capturó debe poder leerla vía el bypass de
-        líder (assert_resource_owner con db). Un ajeno recibe 403."""
+        líder (assert_resource_owner con db). Un ajeno (sin bypass de admin,
+        dueño, líder de org, ni técnico) recibe 403."""
         create_response = client.post(
             "/api/solicitudes",
             headers=capturista_headers,
@@ -348,15 +349,42 @@ class TestTecnicaRbac:
         )
         assert leader_response.status_code == 200
 
-        # Boundary: an unrelated user (not owner, not leader, not admin) → 403
+        # Boundary: an unrelated capturista (not owner, not leader, not admin,
+        # not técnico) → 403. Técnico is intentionally excluded from this
+        # boundary check — see test_tecnico_can_read_any_solicitud_unrestricted
+        # below, which asserts the opposite (técnico is admin-equivalent).
         outsider_headers = _create_user_and_login(
-            client, admin_headers, suffix="outsider", rol="tecnico"
+            client, admin_headers, suffix="outsider", rol="capturista"
         )
         outsider_response = client.get(
             f"/api/solicitudes/{solicitud_id}",
             headers=outsider_headers,
         )
         assert outsider_response.status_code == 403
+
+    def test_tecnico_can_read_any_solicitud_unrestricted(
+        self, client, admin_headers, capturista_headers, sample_estudio,
+    ):
+        """Técnico is a read-only, admin-equivalent role (business rule):
+        it must be able to read ANY solicitud, including ones it neither
+        owns nor leads — assert_resource_owner bypasses técnico the same
+        way it bypasses admin."""
+        create_response = client.post(
+            "/api/solicitudes",
+            headers=capturista_headers,
+            json=_solicitud_payload(sample_estudio["beneficiario_id"]),
+        )
+        assert create_response.status_code == 201, create_response.text
+        solicitud_id = create_response.json()["solicitud_id"]
+
+        tecnico_headers = _create_user_and_login(
+            client, admin_headers, suffix="reader", rol="tecnico"
+        )
+        response = client.get(
+            f"/api/solicitudes/{solicitud_id}",
+            headers=tecnico_headers,
+        )
+        assert response.status_code == 200, response.text
 
 
 # ---------------------------------------------------------------------------
