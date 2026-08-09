@@ -83,7 +83,7 @@ Sillas-Rotary/
 │       └── iconografia_silla.png   # Ícono de silla de ruedas
 │
 ├── backend/                        # API REST — FastAPI + Supabase/PostgreSQL
-│   ├── main.py                     # Punto de entrada: CORS, rutas, static files, security headers
+│   ├── main.py                     # Punto de entrada: rutas, static files, security headers
 │   ├── database.py                 # Conexión PostgreSQL + test guardrails
 │   ├── init_db.py                  # Bootstrap legacy v1 (tablas base) — NO es la fuente de verdad del schema
 │   ├── migrate_v2.sql              # Migración v2 (usuarios, paises, regiones, ...)
@@ -368,7 +368,7 @@ solicitudes_tecnicas  ──→  beneficiarios + usuarios
 | Almacenamiento | Supabase Storage bucket privado, signed URLs temporales |
 | Campos numéricos | Validación Pydantic + constraints en PostgreSQL (edad, medidas, ingresos) |
 | Integridad referencial | Foreign keys activas en PostgreSQL |
-| CORS | Configurado en `main.py` — restringir origins en producción |
+| CORS | No configurado — front y API comparten origen hoy, no hace falta. Especificación de allowlist para cuando se separen: `docs/migracion.md` |
 | Headers de seguridad | X-Frame-Options, X-Content-Type-Options, Cache-Control |
 | Docs en producción | `/docs`, `/redoc`, `/openapi.json` desactivados cuando `ENV=production` |
 
@@ -476,6 +476,10 @@ git push origin develop
 - [x] Bucket privado con signed URLs para fotos técnicas
 - [x] Crear migración para eliminar columnas `capturista_id` legacy de la base de datos
 - [ ] Verificar Python 3.12 en el entorno de despliegue
+
+> Para la hoja de ruta de migración de infraestructura (Vercel → contenedores,
+> AWS vs GCP, CORS al separar frontend/móvil) y sus disparadores reales, ver
+> `docs/migracion.md`.
 
 ---
 
