@@ -170,6 +170,38 @@ python-jose[cryptography]  # JWT
 passlib[bcrypt]        # Password hashing
 ```
 
+### 4. Alternativa: correr con Docker (sin Vercel)
+
+El `Dockerfile` en la raíz del repo empaqueta la misma app de `backend/main.py`
+detrás de un servidor ASGI estándar (uvicorn) — sin el shim serverless de
+Vercel (`api/index.py`). La misma imagen corre en Vercel (en paralelo, sin
+cambios) y en cualquier runtime de contenedores (App Runner, Cloud Run, ECS,
+`docker run` local, etc.).
+
+```bash
+# 1. Construir la imagen
+docker build -t sillas-rotary-api .
+
+# 2. Levantarla pasando las variables de entorno (nunca se hornean en la imagen)
+docker run --rm -p 8080:8080 --env-file .env sillas-rotary-api
+
+# 3. Verificar
+curl http://localhost:8080/api/health
+# {"status":"ok"}
+```
+
+> El contenedor respeta la variable `PORT` (por defecto `8080`) — útil en
+> runtimes que la inyectan automáticamente (Cloud Run, App Runner). Para usar
+> otro puerto: `docker run --rm -p 3000:3000 --env-file .env -e PORT=3000 sillas-rotary-api`.
+
+También existe `scripts/docker-smoke-test.sh`, que construye la imagen, la
+levanta y valida `GET /api/health` (y opcionalmente `POST /api/auth/login`
+si se definen `LOGIN_EMAIL`/`LOGIN_PASSWORD`):
+
+```bash
+./scripts/docker-smoke-test.sh
+```
+
 ---
 
 ## Cómo funciona la aplicación

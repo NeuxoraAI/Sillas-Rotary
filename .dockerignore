@@ -1,0 +1,59 @@
+# Version control / editor / local tooling — never needed inside the image
+.git
+.gitignore
+.mcp.json
+.claude/
+.engram/
+.vscode/
+.idea/
+
+# Secrets — must be passed at `docker run` time, never baked into the image
+.env
+*.env
+
+# Docs and non-runtime project material
+README.md
+PRD.md
+CLAUDE.md
+REFERENCIAS/
+docs/
+openspec/
+
+# Frontend-only tooling, not used by the Python backend
+node_modules/
+package.json
+package-lock.json
+scripts/
+
+# Root-level frontend/security test suite (not shipped, not run in prod)
+tests/
+
+# Backend test suites (not shipped, not run in prod)
+backend/tests/
+backend/tests_vista_tecnicos/
+
+# Local dev artifacts
+backend/venv/
+venv/
+.venv/
+backend/uploads/*
+!backend/uploads/.gitkeep
+backend/server.log
+backend/sillas.db
+*.log
+
+# Python bytecode
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+
+# Beneficiary data — never bundle real spreadsheets
+*.xlsx
+*.xls
+
+# OS cruft
+.DS_Store
+Thumbs.db
